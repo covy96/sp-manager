@@ -265,9 +265,13 @@ export default function DashboardPage() {
 
         {/* Right - Tomorrow's tasks */}
         <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
-          <h3 className="mb-4 text-base font-semibold text-white">Task di domani</h3>
+          <h3 className="mb-4 text-base font-semibold text-white">
+            {new Date().getDay() === 5 ? "Task di lunedì" : "Task di domani"}
+          </h3>
           {tomorrowTasks.length === 0 ? (
-            <p className="py-8 text-center text-sm text-white/40">Nessun task pianificato per domani</p>
+            <p className="py-8 text-center text-sm text-white/40">
+              {new Date().getDay() === 5 ? "Nessun task pianificato per lunedì" : "Nessun task pianificato per domani"}
+            </p>
           ) : (
             <ul className="space-y-2">
               {tomorrowTasks.map((task) => (
