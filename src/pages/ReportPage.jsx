@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
@@ -50,6 +51,7 @@ function csvEscape(value) {
 
 export default function ReportPage() {
   const { studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
@@ -188,6 +190,14 @@ export default function ReportPage() {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  if (!studioLoading && !permissions.canViewReport) {
+    return (
+      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
+        Non hai i permessi per accedere a questa sezione.
+      </section>
+    );
+  }
 
   if (loading) {
     return (

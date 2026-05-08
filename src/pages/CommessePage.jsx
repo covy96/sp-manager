@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
@@ -14,6 +15,7 @@ function currency(value) {
 export default function CommessePage() {
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const [commesse, setCommesse] = useState([]);
   const [pagamentiByCommessa, setPagamentiByCommessa] = useState({});
   const [loading, setLoading] = useState(true);
@@ -257,6 +259,14 @@ export default function CommessePage() {
       <div className="flex h-64 items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
       </div>
+    );
+  }
+
+  if (!permissions.canViewCommesse) {
+    return (
+      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
+        Non hai i permessi per accedere a questa sezione.
+      </section>
     );
   }
 

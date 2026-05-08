@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePermissions } from "../hooks/usePermissions";
+import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 
-const ROLE_OPTIONS = ["Architetto", "Collaboratore", "Titolare", "Stagista"];
+const ROLE_OPTIONS = ["Owner", "Project Manager", "Member"];
+const LEGACY_ROLE_OPTIONS = ["Architetto", "Collaboratore", "Titolare", "Stagista"];
 
 const ALL_TABS = [
   { id: "profilo", label: "Profilo" },
@@ -38,6 +41,8 @@ function Modal({ title, children, onClose }) {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { studioId } = useStudio();
+  const permissions = usePermissions();
   const [selectedTab, setSelectedTab] = useState("profilo");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -157,7 +162,7 @@ export default function SettingsPage() {
     setContacts(contactsRes.data ?? []);
     setArchivedProjects(projectsRes.data ?? []);
     setArchivedCommesse(commesseRes.data ?? []);
-    setIsAdmin(currentMember?.role_internal === "Titolare");
+    setIsAdmin(currentMember?.role_internal === "Owner");
     setDisplayName(currentMember?.user_name || user.user_metadata?.display_name || "");
     setProfileEmail(currentMember?.user_email || user.email || "");
     setLoading(false);
@@ -173,8 +178,8 @@ export default function SettingsPage() {
   }, [theme]);
 
   const visibleTabs = useMemo(
-    () => ALL_TABS.filter((tab) => !tab.adminOnly || isAdmin),
-    [isAdmin],
+    () => ALL_TABS.filter((tab) => !tab.adminOnly || permissions.canManageUsers),
+    [permissions.canManageUsers],
   );
 
   useEffect(() => {
@@ -235,6 +240,16 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
+  const updateMemberRole = async (memberId, newRole) => {
+    const { error: updateError } = await supabase
+      .from("team_members")
+      .update({ role_internal: newRole })
+      .eq("id", memberId);
+    if (!updateError) {
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, role_internal: newRole } : m)));
+    }
+  };
+
   const addMember = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -244,6 +259,7 @@ export default function SettingsPage() {
         user_name: memberForm.user_name.trim(),
         user_email: memberForm.user_email.trim(),
         role_internal: memberForm.role_internal,
+        studio: studioId,
       })
       .select("*")
       .single();
@@ -614,18 +630,26 @@ export default function SettingsPage() {
           <div className="space-y-2">
             {members.map((member) => (
               <div key={member.id} className="flex items-center justify-between rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium">{member.user_name}</p>
                   <p className="text-xs text-white/70">{member.user_email}</p>
-                  <p className="text-xs text-white/50">{member.role_internal}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeMember(member.id)}
-                  className="rounded-md border border-[#48484a] px-3 py-1 text-xs text-red-300 hover:bg-red-500/10"
-                >
-                  Elimina
-                </button>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={member.role_internal || "Member"}
+                    onChange={(e) => updateMemberRole(member.id, e.target.value)}
+                    className="rounded-md border border-[#48484a] bg-[#3a3a3c] px-2 py-1 text-xs text-white outline-none"
+                  >
+                    {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeMember(member.id)}
+                    className="rounded-md border border-[#48484a] px-3 py-1 text-xs text-red-300 hover:bg-red-500/10"
+                  >
+                    Elimina
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import {
@@ -64,6 +65,7 @@ function getDaysOpen(referenceDate) {
 
 export default function MonitoraggioCommessePage() {
   const { studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const [commesse, setCommesse] = useState([]);
   const [pagamentiByCommessa, setPagamentiByCommessa] = useState({});
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -245,6 +247,14 @@ export default function MonitoraggioCommessePage() {
     return (
       <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
         Caricamento monitoraggio commesse...
+      </section>
+    );
+  }
+
+  if (!studioLoading && !permissions.canViewMonitoraggio) {
+    return (
+      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
+        Non hai i permessi per accedere a questa sezione.
       </section>
     );
   }

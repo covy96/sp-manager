@@ -1,25 +1,38 @@
+import { useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { usePermissions } from "../hooks/usePermissions";
 import { supabase } from "../lib/supabase";
 
-const menuItems = [
-  { label: "Dashboard", path: "/dashboard" },
-  { label: "Progetti", path: "/progetti" },
-  { label: "Commesse", path: "/commesse" },
-  { label: "Clienti", path: "/clienti" },
-  { label: "Calendario", path: "/calendario" },
-  { label: "Timesheet", path: "/timesheet" },
-  { label: "Gantt Progetti", path: "/gantt-progetti" },
-  { label: "Team", path: "/team" },
-  { label: "Report", path: "/report" },
-  { label: "Monitoraggio Commesse", path: "/monitoraggio-commesse" },
-  { label: "Proforma", path: "/proforma" },
-  { label: "Le mie Task", path: "/le-mie-task" },
+const ALL_MENU_ITEMS = [
+  { label: "Dashboard", path: "/dashboard", roles: "all" },
+  { label: "Progetti", path: "/progetti", roles: "all" },
+  { label: "Le mie Task", path: "/le-mie-task", roles: "all" },
+  { label: "Timesheet", path: "/timesheet", roles: "all" },
+  { label: "Calendario", path: "/calendario", roles: "all" },
+  { label: "Team", path: "/team", roles: "all" },
+  { label: "Commesse", path: "/commesse", roles: "pm" },
+  { label: "Monitoraggio Commesse", path: "/monitoraggio-commesse", roles: "pm" },
+  { label: "Proforma", path: "/proforma", roles: "pm" },
+  { label: "Clienti", path: "/clienti", roles: "pm" },
+  { label: "Report", path: "/report", roles: "pm" },
+  { label: "Gantt Progetti", path: "/gantt-progetti", roles: "pm" },
 ];
 
 export default function AppLayout({ session, children }) {
   const location = useLocation();
+  const permissions = usePermissions();
+
+  const menuItems = useMemo(() => {
+    return ALL_MENU_ITEMS.filter((item) => {
+      if (item.roles === "all") return true;
+      if (item.roles === "pm") return permissions.isProjectManager;
+      if (item.roles === "owner") return permissions.isOwner;
+      return true;
+    });
+  }, [permissions.isProjectManager, permissions.isOwner]);
+
   const currentPage =
-    menuItems.find((item) => item.path === location.pathname)?.label ?? "SP Manager";
+    ALL_MENU_ITEMS.find((item) => item.path === location.pathname)?.label ?? "SP Manager";
   const email = session?.user?.email ?? "Utente";
 
   const handleLogout = async () => {
@@ -53,6 +66,7 @@ export default function AppLayout({ session, children }) {
         </nav>
 
         <div className="mt-auto pt-4">
+          {permissions.canManageSettings && (
           <NavLink
             to="/impostazioni"
             className={({ isActive }) =>
@@ -76,6 +90,7 @@ export default function AppLayout({ session, children }) {
             </svg>
             <span>Impostazioni</span>
           </NavLink>
+          )}
         </div>
       </aside>
 

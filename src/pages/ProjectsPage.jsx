@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
@@ -115,6 +116,7 @@ function ProjectCard({ project, onClick }) {
 export default function ProjectsPage() {
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const [projects, setProjects] = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts] = useState([]);
@@ -383,12 +385,14 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-semibold text-white">Progetti</h2>
           <p className="text-sm text-white/60">Panoramica dei progetti attivi</p>
         </div>
-        <button
-          onClick={openModal}
-          className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-        >
-          Nuovo Progetto
-        </button>
+        {permissions.canCreateProjects && (
+          <button
+            onClick={openModal}
+            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
+          >
+            Nuovo Progetto
+          </button>
+        )}
       </div>
 
       {content}

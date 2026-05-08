@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 
@@ -35,11 +36,11 @@ function getMondayISODate() {
 
 export default function TeamPage() {
   const { studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const [members, setMembers] = useState([]);
   const [statsByMember, setStatsByMember] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -146,7 +147,6 @@ export default function TeamPage() {
         return;
       }
     }
-    setIsAdmin(currentMember?.role_internal === "Titolare");
     setMembers(loadedMembers);
     setStatsByMember(normalizedStats);
     setLoading(false);
@@ -259,7 +259,7 @@ export default function TeamPage() {
           <h2 className="text-2xl font-semibold text-white">Team</h2>
           <p className="text-sm text-white/60">Panoramica membri e produttivita settimanale</p>
         </div>
-        {isAdmin ? (
+        {permissions.canManageUsers ? (
           <button
             type="button"
             onClick={openModal}
