@@ -89,17 +89,18 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   const loadAll = async () => {
+    if (!studioId) return;
     setLoading(true);
     setError("");
 
     const [{ data: authData, error: authError }, membersRes, servicesRes, contactsRes, projectsRes, commesseRes] =
       await Promise.all([
         supabase.auth.getUser(),
-        supabase.from("team_members").select("*").order("user_name", { ascending: true }),
+        supabase.from("team_members").select("*").eq("studio", studioId).order("user_name", { ascending: true }),
         supabase.from("service_task_templates").select("*").order("order", { ascending: true }),
         supabase.from("global_contacts").select("*").order("created_at", { ascending: false }),
-        supabase.from("projects").select("*").eq("archived", true).order("created_at", { ascending: false }),
-        supabase.from("commesse").select("*").eq("archived", true).order("created_at", { ascending: false }),
+        supabase.from("projects").select("*").eq("studio", studioId).eq("archived", true).order("created_at", { ascending: false }),
+        supabase.from("commesse").select("*").eq("studio", studioId).eq("archived", true).order("created_at", { ascending: false }),
       ]);
 
     if (
@@ -169,8 +170,8 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    if (studioId) loadAll();
+  }, [studioId]);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -635,13 +636,18 @@ export default function SettingsPage() {
                   <p className="text-xs text-white/70">{member.user_email}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
-                    value={member.role_internal || "Member"}
-                    onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                    className="rounded-md border border-[#48484a] bg-[#3a3a3c] px-2 py-1 text-xs text-white outline-none"
-                  >
-                    {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                  {member.user_account !== currentUserId ? (
+                    <select
+                      value={member.role_internal || "Member"}
+                      onChange={(e) => updateMemberRole(member.id, e.target.value)}
+                      className="rounded-md border border-[#48484a] bg-[#3a3a3c] px-2 py-1 text-xs text-white outline-none"
+                    >
+                      {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  ) : (
+                    <span className="rounded-md border border-[#48484a] bg-[#1c1c1e] px-2 py-1 text-xs text-white/40">{member.role_internal || "Member"}</span>
+                  )}
+                  {member.user_account !== currentUserId && (
                   <button
                     type="button"
                     onClick={() => removeMember(member.id)}
@@ -649,6 +655,7 @@ export default function SettingsPage() {
                   >
                     Elimina
                   </button>
+                  )}
                 </div>
               </div>
             ))}
