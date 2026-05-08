@@ -165,7 +165,7 @@ export default function LandingPage({ session }) {
   };
 
   return (
-    <>
+    <div style={{ background: '#0a0a0a', color: '#fff', minHeight: '100vh' }}>
       <style>{styles}</style>
 
       {/* NAV */}
@@ -416,6 +416,6 @@ export default function LandingPage({ session }) {
           <a>Contatti</a>
         </div>
       </div>
-    </>
+    </div>
   );
 }
