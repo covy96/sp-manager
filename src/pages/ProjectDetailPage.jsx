@@ -830,7 +830,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col overflow-hidden" style={{ height: "calc(100vh - 112px)" }}>
       <section className="mb-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -1001,83 +1001,107 @@ export default function ProjectDetailPage() {
           Nessun task per questo progetto.
         </section>
       ) : (
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            overflowX: "auto",
+            overflowY: "hidden",
+            flex: "1 1 0",
+            minHeight: 0,
+            gap: "16px",
+            padding: "0 0 16px 0",
+          }}
+        >
           {groupedTasks.map((group) => {
             const categoryCompleted = Boolean(completedCategories[group.category]);
 
             return (
-            <article
+            <div
               key={group.category}
-              className={`rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4 ${categoryCompleted ? "opacity-50" : ""}`}
+              style={{
+                flex: "0 0 calc(33.333% - 11px)",
+                minWidth: "280px",
+                maxWidth: "calc(33.333% - 11px)",
+                display: "flex",
+                flexDirection: "column",
+                background: "#2c2c2e",
+                borderRadius: "12px",
+                border: "1px solid #48484a",
+                overflow: "hidden",
+                height: "100%",
+                opacity: categoryCompleted ? 0.5 : 1,
+              }}
             >
-              <div className="mb-3 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={categoryCompleted}
-                  onChange={() => handleToggleCategory(group.category)}
-                  className="h-4 w-4 accent-[#30d158]"
-                />
-                <h3 className="text-base font-semibold text-white">{group.category}</h3>
-                <span className="ml-auto rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/70">
-                  {group.completedCount}/{group.totalCount}
-                </span>
-                {categoryCompleted ? <span className="text-sm font-semibold text-[#30d158]">✓</span> : null}
-              </div>
-              <div className="mb-3 flex items-center gap-2">
-                <input
-                  ref={(node) => {
-                    inputRefs.current[group.category] = node;
-                  }}
-                  type="text"
-                  value={newTaskInputs[group.category] ?? ""}
-                  onChange={(event) =>
-                    handleTaskInputChange(group.category, event.target.value)
-                  }
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      createTaskForCategory(group.category);
-                    }
-                  }}
-                  placeholder="Aggiungi task..."
-                  className="min-w-0 flex-1 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                />
-                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
-                  <span className="pointer-events-none text-base">👤</span>
-                  <select
-                    value={newTaskAssignments[group.category] ?? ""}
-                    onChange={(event) => handleNewTaskAssignmentChange(group.category, event.target.value)}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    aria-label="Assegna membro"
-                  >
-                    <option value="">Non assegnato</option>
-                    {teamMembers.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.user_name || member.user_email || "Membro"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
-                  <span className="pointer-events-none text-base">📅</span>
+              {/* Header colonna — fisso */}
+              <div style={{ flexShrink: 0, padding: "12px", borderBottom: "1px solid #48484a" }}>
+                <div className="mb-2 flex items-center gap-2">
                   <input
-                    type="date"
-                    value={newTaskDates[group.category] ?? ""}
-                    onChange={(event) => handleNewTaskDateChange(group.category, event.target.value)}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    aria-label="Data pianificata"
+                    type="checkbox"
+                    checked={categoryCompleted}
+                    onChange={() => handleToggleCategory(group.category)}
+                    className="h-4 w-4 accent-[#30d158]"
                   />
+                  <h3 className="text-base font-semibold text-white">{group.category}</h3>
+                  <span className="ml-auto rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/70">
+                    {group.completedCount}/{group.totalCount}
+                  </span>
+                  {categoryCompleted ? <span className="text-sm font-semibold text-[#30d158]">✓</span> : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => createTaskForCategory(group.category)}
-                  disabled={creatingCategory === group.category}
-                  className="h-9 w-9 shrink-0 rounded-lg bg-[#0a84ff] text-sm font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  +
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={(node) => { inputRefs.current[group.category] = node; }}
+                    type="text"
+                    value={newTaskInputs[group.category] ?? ""}
+                    onChange={(event) => handleTaskInputChange(group.category, event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        createTaskForCategory(group.category);
+                      }
+                    }}
+                    placeholder="Aggiungi task..."
+                    className="min-w-0 flex-1 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                  />
+                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
+                    <span className="pointer-events-none text-base">👤</span>
+                    <select
+                      value={newTaskAssignments[group.category] ?? ""}
+                      onChange={(event) => handleNewTaskAssignmentChange(group.category, event.target.value)}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Assegna membro"
+                    >
+                      <option value="">Non assegnato</option>
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.user_name || member.user_email || "Membro"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
+                    <span className="pointer-events-none text-base">📅</span>
+                    <input
+                      type="date"
+                      value={newTaskDates[group.category] ?? ""}
+                      onChange={(event) => handleNewTaskDateChange(group.category, event.target.value)}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Data pianificata"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => createTaskForCategory(group.category)}
+                    disabled={creatingCategory === group.category}
+                    className="h-9 w-9 shrink-0 rounded-lg bg-[#0a84ff] text-sm font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-              <div className="space-y-2">
+
+              {/* Lista task — scrollabile */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "12px", minHeight: 0 }} className="space-y-2">
                 {group.tasks.map((task) => (
                   <TaskRow
                     key={task.id ?? `${group.category}-${task.title}`}
@@ -1100,10 +1124,10 @@ export default function ProjectDetailPage() {
                   />
                 ))}
               </div>
-            </article>
+            </div>
             );
           })}
-        </section>
+        </div>
       )}
     </div>
   );
