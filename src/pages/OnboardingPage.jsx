@@ -160,7 +160,7 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#1c1c1e] p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">Benvenuto in SP Manager</h1>
+          <h1 className="text-3xl font-bold text-white">Benvenuto in ASM</h1>
           <p className="mt-2 text-sm text-white/50">Per iniziare, crea il tuo studio oppure unisciti a uno esistente.</p>
         </div>
 

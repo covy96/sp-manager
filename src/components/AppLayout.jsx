@@ -32,7 +32,7 @@ export default function AppLayout({ session, children }) {
   }, [permissions.isProjectManager, permissions.isOwner]);
 
   const currentPage =
-    ALL_MENU_ITEMS.find((item) => item.path === location.pathname)?.label ?? "SP Manager";
+    ALL_MENU_ITEMS.find((item) => item.path === location.pathname)?.label ?? "ASM";
   const email = session?.user?.email ?? "Utente";
 
   const handleLogout = async () => {
@@ -43,8 +43,8 @@ export default function AppLayout({ session, children }) {
     <div className="flex min-h-screen bg-[#1c1c1e] text-[#f5f5f7]">
       <aside className="flex w-72 flex-col border-r border-white/10 bg-[#2c2c2e] p-4">
         <div className="mb-6 rounded-lg bg-[#1c1c1e] p-4">
-          <p className="text-lg font-semibold">SP Manager</p>
-          <p className="mt-1 text-xs text-white/60">Gestionale Studio Architettura</p>
+          <p className="text-lg font-semibold">ASM</p>
+          <p className="mt-1 text-xs text-white/60">Architect Studio Management</p>
         </div>
 
         <nav className="space-y-1">

@@ -60,7 +60,8 @@ export default function RegisterPage({ session }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#1c1c1e] p-4">
       <div className="w-full max-w-md rounded-xl bg-[#2c2c2e] p-6 shadow">
-        <h1 className="text-2xl font-semibold text-white">SP Manager</h1>
+        <h1 className="text-2xl font-semibold text-white">ASM</h1>
+        <p className="text-xs text-white/40">Architect Studio Management</p>
         <p className="mt-1 text-sm text-white/60">Crea il tuo account gratuito.</p>
 
         {success ? (

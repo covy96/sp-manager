@@ -144,7 +144,7 @@ const faqData = [
   },
   {
     q: "Funziona su mobile?",
-    a: "SP Manager è una web app ottimizzata per desktop, dove gli architetti lavorano principalmente. È accessibile da qualsiasi browser, incluso mobile, ma l'esperienza migliore è su Mac o PC.",
+    a: "ASM è una web app ottimizzata per desktop, dove gli architetti lavorano principalmente. È accessibile da qualsiasi browser, incluso mobile, ma l'esperienza migliore è su Mac o PC.",
   },
   {
     q: "Posso invitare tutto il mio team?",
@@ -174,7 +174,7 @@ export default function LandingPage({ session }) {
           <div className="nav-logo-icon">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1" /><rect x="13" y="3" width="8" height="8" rx="1" /><rect x="3" y="13" width="8" height="8" rx="1" /><rect x="13" y="13" width="8" height="8" rx="1" /></svg>
           </div>
-          <span className="nav-logo-text">SP Manager</span>
+          <span className="nav-logo-text">ASM</span>
         </div>
         <div className="nav-links">
           <a href="#features">Funzionalità</a>
@@ -260,7 +260,7 @@ export default function LandingPage({ session }) {
       <div className="section" id="features">
         <div className="section-label">Funzionalità</div>
         <div className="section-title">Tutto quello che serve,<br />niente di superfluo</div>
-        <div className="section-sub">SP Manager è stato costruito partendo da un problema reale: gestire uno studio di architettura con troppi strumenti diversi.</div>
+        <div className="section-sub">ASM è stato costruito partendo da un problema reale: gestire uno studio di architettura con troppi strumenti diversi.</div>
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon">
@@ -409,7 +409,7 @@ export default function LandingPage({ session }) {
 
       {/* FOOTER */}
       <div className="footer">
-        <div className="footer-text">© 2026 SP Manager. Fatto a Milano.</div>
+        <div className="footer-text">© 2026 ASM - Architect Studio Management. Fatto a Milano.</div>
         <div className="footer-links">
           <a>Privacy</a>
           <a>Termini</a>
