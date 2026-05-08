@@ -4,6 +4,17 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
+function getInitials(name = "") {
+  return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+}
+
+const AVATAR_COLORS = ["#0a84ff", "#64d2ff", "#5e5ce6", "#30d158", "#bf5af2", "#ff9f0a"];
+function avatarColor(seed = "") {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
 function getProgress(completedTasks, totalTasks) {
   const safeTotal = Number(totalTasks) || 0;
   const safeCompleted = Number(completedTasks) || 0;
@@ -115,14 +126,16 @@ function ProjectCard({ project, onClick }) {
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const { studioId, loading: studioLoading } = useStudio();
+  const { studioId, loading: studioLoading, teamMember } = useStudio();
   const permissions = usePermissions();
   const [projects, setProjects] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [clientSuggestions, setClientSuggestions] = useState([]);
+  const [filterBy, setFilterBy] = useState("mine");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [formError, setFormError] = useState("");
@@ -132,6 +145,7 @@ export default function ProjectsPage() {
     address: "",
     startDate: "",
     selectedServices: [],
+    selectedMembers: [],
     createCommessa: false,
   });
   const [commessaModal, setCommessaModal] = useState(false);
@@ -168,12 +182,8 @@ export default function ProjectsPage() {
         .from("service_task_templates")
         .select("*")
         .order("order", { ascending: true });
-
-      if (!templatesError) {
-        setServiceTemplates(data ?? []);
-      }
+      if (!templatesError) setServiceTemplates(data ?? []);
     };
-
     loadServices();
 
     const loadContacts = async () => {
@@ -181,6 +191,18 @@ export default function ProjectsPage() {
       setGlobalContacts(data ?? []);
     };
     loadContacts();
+
+    if (studioId) {
+      const loadMembers = async () => {
+        const { data } = await supabase
+          .from("team_members")
+          .select("id,user_name,user_email")
+          .eq("studio", studioId)
+          .order("user_name", { ascending: true });
+        setTeamMembers(data ?? []);
+      };
+      loadMembers();
+    }
   }, [studioId]);
 
   const resetForm = () => {
@@ -190,9 +212,20 @@ export default function ProjectsPage() {
       address: "",
       startDate: "",
       selectedServices: [],
+      selectedMembers: teamMember?.id ? [teamMember.id] : [],
       createCommessa: false,
     });
     setFormError("");
+  };
+
+  const toggleMember = (memberId) => {
+    if (memberId === teamMember?.id) return;
+    setFormData((prev) => ({
+      ...prev,
+      selectedMembers: prev.selectedMembers.includes(memberId)
+        ? prev.selectedMembers.filter((id) => id !== memberId)
+        : [...prev.selectedMembers, memberId],
+    }));
   };
 
   const openModal = () => {
@@ -249,6 +282,10 @@ export default function ProjectsPage() {
 
     setSaveLoading(true);
 
+    const assignedUsers = formData.selectedMembers.length > 0
+      ? formData.selectedMembers
+      : (teamMember?.id ? [teamMember.id] : []);
+
     const payload = {
       name: formData.name.trim(),
       client: formData.client.trim(),
@@ -257,6 +294,7 @@ export default function ProjectsPage() {
       status: "planning",
       total_hours: 0,
       servizi_selezionati: formData.selectedServices,
+      assigned_users: assignedUsers,
       studio: studioId,
     };
 
@@ -321,6 +359,18 @@ export default function ProjectsPage() {
     setCommessaModal(false);
   };
 
+  const visibleProjects = useMemo(() => {
+    if (!projects.length) return projects;
+    if (permissions.isProjectManager) {
+      if (filterBy === "mine") {
+        return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(teamMember?.id));
+      }
+      if (filterBy === "all") return projects;
+      return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(filterBy));
+    }
+    return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(teamMember?.id));
+  }, [projects, filterBy, permissions.isProjectManager, teamMember?.id]);
+
   const content = useMemo(() => {
     if (studioLoading || !studioId) {
       return (
@@ -345,7 +395,7 @@ export default function ProjectsPage() {
       );
     }
 
-    if (projects.length === 0) {
+    if (visibleProjects.length === 0) {
       return (
         <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
           Nessun progetto disponibile.
@@ -355,7 +405,7 @@ export default function ProjectsPage() {
 
     return (
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        {projects.map((project) => (
+        {visibleProjects.map((project) => (
           <ProjectCard
             key={project.id ?? project.name ?? JSON.stringify(project)}
             project={project}
@@ -364,7 +414,7 @@ export default function ProjectsPage() {
         ))}
       </section>
     );
-  }, [error, loading, navigate, projects]);
+  }, [error, loading, navigate, visibleProjects, studioLoading, studioId]);
 
   const toggleService = (serviceName) => {
     setFormData((prev) => {
@@ -385,14 +435,29 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-semibold text-white">Progetti</h2>
           <p className="text-sm text-white/60">Panoramica dei progetti attivi</p>
         </div>
-        {permissions.canCreateProjects && (
-          <button
-            onClick={openModal}
-            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-          >
-            Nuovo Progetto
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {permissions.isProjectManager && (
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="rounded-lg border border-[#48484a] bg-[#2c2c2e] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
+            >
+              <option value="mine">I miei progetti</option>
+              <option value="all">Tutti i progetti</option>
+              {teamMembers.map((m) => (
+                <option key={m.id} value={m.id}>{`Progetti di ${m.user_name || m.user_email}`}</option>
+              ))}
+            </select>
+          )}
+          {permissions.canCreateProjects && (
+            <button
+              onClick={openModal}
+              className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
+            >
+              Nuovo Progetto
+            </button>
+          )}
+        </div>
       </div>
 
       {content}
@@ -494,6 +559,38 @@ export default function ProjectsPage() {
                             className="h-4 w-4 rounded border-[#48484a] bg-[#3a3a3c] accent-[#0a84ff]"
                           />
                           <span>{label}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 block text-sm font-medium text-white">Membri del team</p>
+                <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                  {teamMembers.length === 0 ? (
+                    <p className="text-sm text-white/50">Nessun membro disponibile</p>
+                  ) : (
+                    teamMembers.map((m) => {
+                      const isMe = m.id === teamMember?.id;
+                      const checked = formData.selectedMembers.includes(m.id);
+                      return (
+                        <label key={m.id} className={`flex cursor-pointer items-center gap-2 text-sm text-white/90 ${isMe ? "opacity-60" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={isMe}
+                            onChange={() => toggleMember(m.id)}
+                            className="h-4 w-4 accent-[#0a84ff]"
+                          />
+                          <span
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                            style={{ background: avatarColor(m.user_name || m.user_email) }}
+                          >
+                            {getInitials(m.user_name || m.user_email)}
+                          </span>
+                          <span>{m.user_name || m.user_email}{isMe ? " (tu)" : ""}</span>
                         </label>
                       );
                     })

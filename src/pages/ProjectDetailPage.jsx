@@ -579,6 +579,7 @@ export default function ProjectDetailPage() {
       address: project?.address ?? "",
       start_date: project?.start_date ?? "",
       selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [],
+      selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [],
     });
     setEditError("");
     setEditOpen(true);
@@ -599,6 +600,7 @@ export default function ProjectDetailPage() {
       address: editForm.address.trim() || null,
       start_date: editForm.start_date || null,
       servizi_selezionati: editForm.selectedServices,
+      assigned_users: editForm.selectedMembers ?? [],
     };
     const { error: updateError } = await supabase.from("projects").update(payload).eq("id", id);
     if (updateError) {
@@ -887,6 +889,25 @@ export default function ProjectDetailPage() {
         <p className="mt-1 text-sm text-white/70">
           <span className="text-white/50">Indirizzo:</span> {project.address ?? "N/D"}
         </p>
+        {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-white/40">Team:</span>
+            {project.assigned_users.map((uid) => {
+              const m = teamMembers.find((tm) => tm.id === uid);
+              if (!m) return null;
+              const name = m.user_name || m.user_email || "?";
+              const colors = ["#0a84ff","#64d2ff","#5e5ce6","#30d158","#bf5af2","#ff9f0a"];
+              let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+              const bg = colors[Math.abs(h) % colors.length];
+              const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map((w)=>w[0].toUpperCase()).join("");
+              return (
+                <span key={uid} title={name} className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: bg }}>
+                  {initials}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {error ? <p className="mb-3 text-sm text-red-300">{error}</p> : null}
@@ -927,6 +948,34 @@ export default function ProjectDetailPage() {
                         <label key={svc.id ?? label} className="flex cursor-pointer items-center gap-2 text-sm text-white/90">
                           <input type="checkbox" checked={editForm.selectedServices.includes(label)} onChange={() => toggleEditService(label)} className="h-4 w-4 accent-[#0a84ff]" />
                           <span>{label}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium text-white/80">Membri del team</p>
+                <div className="max-h-36 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                  {teamMembers.length === 0 ? (
+                    <p className="text-sm text-white/50">Nessun membro disponibile</p>
+                  ) : (
+                    teamMembers.map((m) => {
+                      const checked = (editForm.selectedMembers ?? []).includes(m.id);
+                      return (
+                        <label key={m.id} className="flex cursor-pointer items-center gap-2 text-sm text-white/90">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => setEditForm((prev) => ({
+                              ...prev,
+                              selectedMembers: checked
+                                ? (prev.selectedMembers ?? []).filter((id) => id !== m.id)
+                                : [...(prev.selectedMembers ?? []), m.id],
+                            }))}
+                            className="h-4 w-4 accent-[#0a84ff]"
+                          />
+                          <span>{m.user_name || m.user_email}</span>
                         </label>
                       );
                     })
