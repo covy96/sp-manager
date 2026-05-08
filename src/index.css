@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-bg: #1c1c1e;
+  --app-card: #2c2c2e;
+  --app-text: #f5f5f7;
+  --app-border: #48484a;
+}
+
+body {
+  margin: 0;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body.light-mode {
+  --app-bg: #ffffff;
+  --app-card: #f5f5f7;
+  --app-text: #1d1d1f;
+  --app-border: #d2d2d7;
+  background-color: var(--app-bg);
+  color: var(--app-text);
+}
