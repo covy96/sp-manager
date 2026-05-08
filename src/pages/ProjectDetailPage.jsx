@@ -830,7 +830,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: "calc(100vh - 112px)" }}>
+    <div>
       <section className="mb-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -1007,10 +1007,10 @@ export default function ProjectDetailPage() {
             flexDirection: "row",
             overflowX: "auto",
             overflowY: "hidden",
-            flex: "1 1 0",
-            minHeight: 0,
+            width: "calc(100vw - 220px)",
+            height: "calc(100vh - 160px)",
             gap: "16px",
-            padding: "0 0 16px 0",
+            padding: "16px",
           }}
         >
           {groupedTasks.map((group) => {
@@ -1020,9 +1020,9 @@ export default function ProjectDetailPage() {
             <div
               key={group.category}
               style={{
-                flex: "0 0 calc(33.333% - 11px)",
-                minWidth: "280px",
-                maxWidth: "calc(33.333% - 11px)",
+                flex: "0 0 calc((100vw - 220px - 64px) / 3)",
+                minWidth: "calc((100vw - 220px - 64px) / 3)",
+                maxWidth: "calc((100vw - 220px - 64px) / 3)",
                 display: "flex",
                 flexDirection: "column",
                 background: "#2c2c2e",
