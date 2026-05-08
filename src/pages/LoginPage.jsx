@@ -17,13 +17,19 @@ export default function LoginPage({ session }) {
     setError("");
     setLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (signInError) {
-      setError(signInError.message);
+      if (signInError) {
+        console.error("Login error:", signInError);
+        setError(JSON.stringify(signInError));
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(JSON.stringify(error));
     }
 
     setLoading(false);
@@ -66,7 +72,11 @@ export default function LoginPage({ session }) {
             />
           </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? (
+            <div style={{ background: "#ff3b30", color: "#fff", padding: "10px 12px", borderRadius: "8px", fontSize: "13px", wordBreak: "break-all" }}>
+              <strong>Errore:</strong> {error}
+            </div>
+          ) : null}
 
           <button
             type="submit"
