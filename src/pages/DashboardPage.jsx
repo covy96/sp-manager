@@ -38,6 +38,8 @@ function getMonday(d) {
 
 export default function DashboardPage() {
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
+
   const [user, setUser] = useState(null);
   const [teamMember, setTeamMember] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,6 @@ export default function DashboardPage() {
   const [todayTasks, setTodayTasks] = useState([]);
   const [tomorrowTasks, setTomorrowTasks] = useState([]);
 
-  const permissions = usePermissions();
-
   // Greeting based on hour
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -64,8 +64,17 @@ export default function DashboardPage() {
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
+  // Early return if loading or missing essential data
+  if (studioLoading || !studioMember || !studioId) {
+    return (
+      <div className="flex h-64 items-center justify-center text-white/60">
+        Caricamento...
+      </div>
+    );
+  }
+
   useEffect(() => {
-    if (studioLoading || !studioId) return;
+    if (studioLoading || !studioId || !studioMember?.id) return;
     const init = async () => {
       setLoading(true);
 
@@ -74,7 +83,7 @@ export default function DashboardPage() {
       setUser(u);
       setTeamMember(tm);
 
-      if (u?.id && studioId) {
+      if (u?.id && studioId && tm?.id) {
         // 1. Active projects count
         const { count: projCount } = await supabase
           .from("projects")
@@ -122,29 +131,25 @@ export default function DashboardPage() {
 
         // 5. Today's tasks for this user
         const today = new Date().toISOString().split("T")[0];
-        if (tm?.id) {
-          const { data: allTasks } = await supabase
-            .from("tasks")
-            .select("*, projects(name)")
-            .eq("studio", studioId)
-            .eq("assigned_member", tm.id);
-          const todayFiltered = (allTasks || []).filter(
-            (t) => String(t.data_pianificata).slice(0, 10) === today,
-          );
-          setTodayTasks(todayFiltered);
-        }
+        const { data: allTasks } = await supabase
+          .from("tasks")
+          .select("*, projects(name)")
+          .eq("studio", studioId)
+          .eq("assigned_member", tm.id);
+        const todayFiltered = (allTasks || []).filter(
+          (t) => String(t.data_pianificata).slice(0, 10) === today,
+        );
+        setTodayTasks(todayFiltered);
 
         // 6. Tomorrow's tasks (next working day) for this user
-        if (tm?.id) {
-          const nwd = nextWorkingDay();
-          const { data: tomorrowData } = await supabase
-            .from("tasks")
-            .select("*, projects(name)")
-            .eq("assigned_member", tm.id)
-            .eq("data_pianificata", nwd)
-            .neq("status", "completed");
-          setTomorrowTasks(tomorrowData || []);
-        }
+        const nwd = nextWorkingDay();
+        const { data: tomorrowData } = await supabase
+          .from("tasks")
+          .select("*, projects(name)")
+          .eq("assigned_member", tm.id)
+          .eq("data_pianificata", nwd)
+          .neq("status", "completed");
+        setTomorrowTasks(tomorrowData || []);
       }
 
       setLoading(false);
