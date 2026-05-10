@@ -32,7 +32,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const [form, setForm] = useState({
     title: task.title ?? task.name ?? "",
     categoria: task.categoria ?? "",
-    assigned_member: task.assigned_member ?? "",
+    assigned_member: (task.assigned_member && task.assigned_member !== "null" && task.assigned_member !== "undefined") ? task.assigned_member : "",
     data_pianificata: task.data_pianificata ?? "",
     note: task.note ?? "",
   });
@@ -52,7 +52,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     setSaving(true);
     const updates = {
       title: form.title.trim(),
-      assigned_member: form.assigned_member || null,
+      assigned_member: form.assigned_member || null,  // converte stringa vuota/'null'/undefined in null reale
       data_pianificata: form.data_pianificata || null,
       note: form.note || null,
     };
@@ -680,7 +680,8 @@ export default function ProjectDetailPage() {
     }
 
     setCreatingSubtaskId(parentTask.id);
-    const assignedMemberId = subtaskAssignments[parentTask.id] || null;
+    const rawAssignedId = subtaskAssignments[parentTask.id];
+    const assignedMemberId = (rawAssignedId && rawAssignedId !== "null" && rawAssignedId !== "undefined") ? rawAssignedId : null;
     const assignedMember = teamMembers.find((m) => m.id === assignedMemberId);
     const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
     const plannedDate = subtaskDates[parentTask.id] || null;
@@ -692,7 +693,7 @@ export default function ProjectDetailPage() {
       title,
       categoria: parentTask.categoria,
       status: "todo",
-      assigned_member: assignedMemberId,
+      assigned_member: assignedMemberId,  // già sanitizzato sopra
       assigned_to_name: assignedToName,
       data_pianificata: plannedDate,
       created_at: new Date().toISOString(),
@@ -715,7 +716,7 @@ export default function ProjectDetailPage() {
         title,
         categoria: parentTask.categoria,
         status: "todo",
-        assigned_member: assignedMemberId,
+        assigned_member: assignedMemberId || null,  // assicura null reale, non stringa 'null'
         assigned_to_name: assignedToName,
         data_pianificata: plannedDate,
         studio: studioId,
@@ -753,7 +754,8 @@ export default function ProjectDetailPage() {
 
     setCreatingCategory(category);
     const optimisticId = `tmp-${Date.now()}`;
-    const assignedMemberId = newTaskAssignments[category] || null;
+    const rawAssignedId = newTaskAssignments[category];
+    const assignedMemberId = (rawAssignedId && rawAssignedId !== "null" && rawAssignedId !== "undefined") ? rawAssignedId : null;
     const assignedMember = teamMembers.find((member) => member.id === assignedMemberId);
     const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
     const plannedDate = newTaskDates[category] || null;
@@ -763,7 +765,7 @@ export default function ProjectDetailPage() {
       title,
       categoria: category,
       status: "todo",
-      assigned_member: assignedMemberId,
+      assigned_member: assignedMemberId,  // già sanitizzato sopra
       assigned_to_name: assignedToName,
       data_pianificata: plannedDate,
       order: 0,
@@ -782,7 +784,7 @@ export default function ProjectDetailPage() {
         title,
         categoria: category,
         status: "todo",
-        assigned_member: assignedMemberId,
+        assigned_member: assignedMemberId || null,  // assicura null reale, non stringa 'null'
         assigned_to_name: assignedToName,
         data_pianificata: plannedDate,
         order: 0,
