@@ -29,12 +29,15 @@ const TASK_VISIBILITY_KEY = "projectDetailTaskVisibility";
 
 function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClose, isSubtask }) {
   const ref = useRef(null);
+  const safeTask = task || {};
+  const rawAssigned = safeTask.assigned_member;
+  const initialAssigned = (rawAssigned && rawAssigned !== "null" && rawAssigned !== "undefined") ? rawAssigned : "";
   const [form, setForm] = useState({
-    title: task.title ?? task.name ?? "",
-    categoria: task.categoria ?? "",
-    assigned_member: (task.assigned_member && task.assigned_member !== "null" && task.assigned_member !== "undefined") ? task.assigned_member : "",
-    data_pianificata: task.data_pianificata ?? "",
-    note: task.note ?? "",
+    title: safeTask.title ?? safeTask.name ?? "",
+    categoria: safeTask.categoria ?? "",
+    assigned_member: initialAssigned,
+    data_pianificata: safeTask.data_pianificata ?? "",
+    note: safeTask.note ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
