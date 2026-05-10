@@ -29,15 +29,12 @@ const TASK_VISIBILITY_KEY = "projectDetailTaskVisibility";
 
 function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClose, isSubtask }) {
   const ref = useRef(null);
-  const safeTask = task || {};
-  const rawAssigned = safeTask.assigned_member;
-  const initialAssigned = (rawAssigned && rawAssigned !== "null" && rawAssigned !== "undefined") ? rawAssigned : "";
   const [form, setForm] = useState({
-    title: safeTask.title ?? safeTask.name ?? "",
-    categoria: safeTask.categoria ?? "",
-    assigned_member: initialAssigned,
-    data_pianificata: safeTask.data_pianificata ?? "",
-    note: safeTask.note ?? "",
+    title: task.title ?? task.name ?? "",
+    categoria: task.categoria ?? "",
+    assigned_member: task.assigned_member ?? "",
+    data_pianificata: task.data_pianificata ?? "",
+    note: task.note ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -55,7 +52,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     setSaving(true);
     const updates = {
       title: form.title.trim(),
-      assigned_member: form.assigned_member || null,  // converte stringa vuota/'null'/undefined in null reale
+      assigned_member: form.assigned_member || null,
       data_pianificata: form.data_pianificata || null,
       note: form.note || null,
     };
@@ -683,8 +680,7 @@ export default function ProjectDetailPage() {
     }
 
     setCreatingSubtaskId(parentTask.id);
-    const rawAssignedId = subtaskAssignments[parentTask.id];
-    const assignedMemberId = (rawAssignedId && rawAssignedId !== "null" && rawAssignedId !== "undefined") ? rawAssignedId : null;
+    const assignedMemberId = subtaskAssignments[parentTask.id] || null;
     const assignedMember = teamMembers.find((m) => m.id === assignedMemberId);
     const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
     const plannedDate = subtaskDates[parentTask.id] || null;
@@ -696,7 +692,7 @@ export default function ProjectDetailPage() {
       title,
       categoria: parentTask.categoria,
       status: "todo",
-      assigned_member: assignedMemberId,  // già sanitizzato sopra
+      assigned_member: assignedMemberId,
       assigned_to_name: assignedToName,
       data_pianificata: plannedDate,
       created_at: new Date().toISOString(),
@@ -719,7 +715,7 @@ export default function ProjectDetailPage() {
         title,
         categoria: parentTask.categoria,
         status: "todo",
-        assigned_member: assignedMemberId || null,  // assicura null reale, non stringa 'null'
+        assigned_member: assignedMemberId,
         assigned_to_name: assignedToName,
         data_pianificata: plannedDate,
         studio: studioId,
@@ -757,8 +753,7 @@ export default function ProjectDetailPage() {
 
     setCreatingCategory(category);
     const optimisticId = `tmp-${Date.now()}`;
-    const rawAssignedId = newTaskAssignments[category];
-    const assignedMemberId = (rawAssignedId && rawAssignedId !== "null" && rawAssignedId !== "undefined") ? rawAssignedId : null;
+    const assignedMemberId = newTaskAssignments[category] || null;
     const assignedMember = teamMembers.find((member) => member.id === assignedMemberId);
     const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
     const plannedDate = newTaskDates[category] || null;
@@ -768,7 +763,7 @@ export default function ProjectDetailPage() {
       title,
       categoria: category,
       status: "todo",
-      assigned_member: assignedMemberId,  // già sanitizzato sopra
+      assigned_member: assignedMemberId,
       assigned_to_name: assignedToName,
       data_pianificata: plannedDate,
       order: 0,
@@ -787,7 +782,7 @@ export default function ProjectDetailPage() {
         title,
         categoria: category,
         status: "todo",
-        assigned_member: assignedMemberId || null,  // assicura null reale, non stringa 'null'
+        assigned_member: assignedMemberId,
         assigned_to_name: assignedToName,
         data_pianificata: plannedDate,
         order: 0,
