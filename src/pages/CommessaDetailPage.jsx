@@ -39,6 +39,10 @@ export default function CommessaDetailPage() {
   const [rataStep, setRataStep] = useState("config");
   const [rataSaving, setRataSaving] = useState(false);
   const [rataError, setRataError] = useState("");
+  const [pagamentoProformaModal, setPagamentoProformaModal] = useState(false);
+  const [pagamentoProformaData, setPagamentoProformaData] = useState({ numero_fattura: "", data_pagamento: "" });
+  const [pagamentoProformaSaving, setPagamentoProformaSaving] = useState(false);
+  const [selectedProforma, setSelectedProforma] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -91,12 +95,16 @@ export default function CommessaDetailPage() {
     loadData();
   }, [id]);
 
-  const totPagato = useMemo(
-    () => pagamenti.reduce((sum, item) => sum + (Number(item.importo) || 0), 0),
-    [pagamenti],
-  );
   const base = Number(commessa?.importo_offerta_base) || 0;
+  const totPagato = Number(commessa?.importo_incassato) || 0;
   const residuo = Math.max(0, base - totPagato);
+
+  const totalePercentualeEsistente = useMemo(
+    () => suddivisione.reduce((s, r) => s + (Number(r.percentuale) || 0), 0),
+    [suddivisione],
+  );
+  const rimanentePercentuale = Math.max(0, 100 - totalePercentualeEsistente);
+  const rateComplete = totalePercentualeEsistente >= 99.99;
 
   const openModal = (type) => {
     setModalType(type);
@@ -184,6 +192,58 @@ export default function CommessaDetailPage() {
     setRataModal(true);
   };
 
+  const openPagamentoProformaModal = (pf) => {
+    if (pf.pagato) return;
+    setSelectedProforma(pf);
+    setPagamentoProformaData({ numero_fattura: "", data_pagamento: new Date().toISOString().slice(0, 10) });
+    setPagamentoProformaModal(true);
+  };
+
+  const handleSavePagamentoProforma = async () => {
+    if (!selectedProforma) return;
+    setPagamentoProformaSaving(true);
+
+    const { error: updateError } = await supabase
+      .from("proforma")
+      .update({
+        pagato: true,
+        numero_fattura: pagamentoProformaData.numero_fattura || null,
+        data_pagamento: pagamentoProformaData.data_pagamento || null,
+      })
+      .eq("id", selectedProforma.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setPagamentoProformaSaving(false);
+      return;
+    }
+
+    const { data: commessaData } = await supabase.from("commesse").select("importo_offerta_base").eq("id", id).maybeSingle();
+    const baseVal = Number(commessaData?.importo_offerta_base) || 0;
+
+    const { data: proformaPagate } = await supabase
+      .from("proforma")
+      .select("rate_ids")
+      .eq("commessa_id", id)
+      .eq("pagato", true);
+
+    let nuovoIncassato = 0;
+    const rateIdsPagate = (proformaPagate || []).flatMap((p) => p.rate_ids || []);
+    if (rateIdsPagate.length > 0) {
+      const { data: rateData } = await supabase.from("suddivisione_pagamenti").select("percentuale").in("id", rateIdsPagate);
+      const totalePercentuale = (rateData || []).reduce((s, r) => s + (Number(r.percentuale) || 0), 0);
+      nuovoIncassato = (baseVal * totalePercentuale) / 100;
+    }
+
+    await supabase.from("commesse").update({ importo_incassato: nuovoIncassato }).eq("id", id);
+
+    setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: true, numero_fattura: pagamentoProformaData.numero_fattura, data_pagamento: pagamentoProformaData.data_pagamento } : p)));
+    setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
+    setPagamentoProformaSaving(false);
+    setPagamentoProformaModal(false);
+    setSelectedProforma(null);
+  };
+
   const generateRows = () => {
     const n = Math.max(1, Math.min(50, parseInt(rataCount) || 1));
     if (rataMode === "percentuale") {
@@ -215,6 +275,9 @@ export default function CommessaDetailPage() {
   };
 
   const rataTotal = rateRows.reduce((s, r) => s + (parseFloat(r.valore) || 0), 0);
+  const rataTotalPercentuale = rataMode === "percentuale" ? rataTotal : (base > 0 ? (rataTotal / base) * 100 : 0);
+  const sommaPercentualeConEsistenti = totalePercentualeEsistente + rataTotalPercentuale;
+  const rataErrorLimite = sommaPercentualeConEsistenti > 100.001 ? `La somma delle rate supera il 100% dell'importo (attuale: ${totalePercentualeEsistente.toFixed(2)}% + nuove: ${rataTotalPercentuale.toFixed(2)}%)` : "";
 
   const saveRate = async () => {
     setRataError("");
@@ -225,6 +288,10 @@ export default function CommessaDetailPage() {
     }
     if (rataMode === "importo" && baseVal > 0 && rataTotal > baseVal + 0.01) {
       setRataError(`Totale importi ${currency(rataTotal)} supera l'importo base ${currency(baseVal)}.`);
+      return;
+    }
+    if (sommaPercentualeConEsistenti > 100.001) {
+      setRataError(rataErrorLimite);
       return;
     }
     setRataSaving(true);
@@ -413,23 +480,23 @@ export default function CommessaDetailPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-          <span className="rounded-md border border-[#48484a] bg-black px-2 py-1 text-white">
-            Base: {currency(base)}
-          </span>
-          <span className="rounded-md border border-[#48484a] bg-[#30d158]/20 px-2 py-1 text-[#30d158]">
-            Pagato: {currency(totPagato)}
-          </span>
-          <span
-            className={`rounded-md border border-[#48484a] px-2 py-1 ${
-              residuo > 0 ? "bg-[#ff453a]/20 text-[#ff453a]" : "bg-[#30d158]/20 text-[#30d158]"
-            }`}
-          >
-            Residuo: {currency(residuo)}
-          </span>
-          <span className="rounded-md border border-[#48484a] bg-[#ff9f0a]/20 px-2 py-1 text-[#ff9f0a]">
-            Data: {commessa.data_commessa || "N/D"}
-          </span>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <div className="rounded-xl border border-[#48484a] bg-black px-5 py-4 min-w-[140px]">
+            <p className="text-[13px] text-white/60">Base</p>
+            <p className="text-2xl font-bold text-white">{currency(base)}</p>
+          </div>
+          <div className="rounded-xl border border-[#48484a] bg-[#30d158]/20 px-5 py-4 min-w-[140px]">
+            <p className="text-[13px] text-[#30d158]/80">Pagato</p>
+            <p className="text-2xl font-bold text-[#30d158]">{currency(totPagato)}</p>
+          </div>
+          <div className={`rounded-xl border border-[#48484a] px-5 py-4 min-w-[140px] ${residuo > 0 ? "bg-[#ff453a]/20" : "bg-[#30d158]/20"}`}>
+            <p className={`text-[13px] ${residuo > 0 ? "text-[#ff453a]/80" : "text-[#30d158]/80"}`}>Residuo</p>
+            <p className={`text-2xl font-bold ${residuo > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>{currency(residuo)}</p>
+          </div>
+          <div className="rounded-xl border border-[#48484a] bg-[#ff9f0a]/20 px-5 py-4 min-w-[140px]">
+            <p className="text-[13px] text-[#ff9f0a]/80">Costi Extra</p>
+            <p className="text-2xl font-bold text-[#ff9f0a]">{currency(costiExtra.reduce((s, c) => s + (Number(c.importo) || 0), 0))}</p>
+          </div>
         </div>
         {commessa.note_amministrative ? (
           <p className="mt-3 text-sm text-white/65">{commessa.note_amministrative}</p>
@@ -498,9 +565,18 @@ export default function CommessaDetailPage() {
           <ul className="space-y-2">
             {proforma.map((pf) => (
               <li key={pf.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
+                <input
+                  type="checkbox"
+                  checked={pf.pagato}
+                  onChange={() => openPagamentoProformaModal(pf)}
+                  className="h-4 w-4 accent-[#0a84ff] cursor-pointer"
+                  title="Marca come pagata"
+                />
                 <span className="font-medium text-white">{pf.numero_proforma}</span>
+                <span className="text-sm font-semibold text-[#0a84ff]">{currency(pf.importo_totale)}</span>
                 {pf.data_creazione ? <span className="text-xs text-white/50">Creata: {pf.data_creazione}</span> : null}
                 {pf.data_scadenza ? <span className="text-xs text-white/50">Scadenza: {pf.data_scadenza}</span> : null}
+                {pf.pagato ? <span className="ml-1 rounded-md bg-[#30d158]/20 px-2 py-0.5 text-xs text-[#30d158]">✓ Pagata</span> : null}
                 <span className="ml-auto text-xs text-white/40">
                   {(pf.rate_ids?.length ?? 0) > 0 ? `${pf.rate_ids.length} rat${pf.rate_ids.length === 1 ? "a" : "e"}` : ""}
                   {(pf.costi_ids?.length ?? 0) > 0 ? ` · ${pf.costi_ids.length} cost${pf.costi_ids.length === 1 ? "o" : "i"}` : ""}
@@ -555,15 +631,20 @@ export default function CommessaDetailPage() {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h3 className="text-base font-semibold text-white">Suddivisione Pagamenti</h3>
-              {suddivisione.length > 0 ? (() => {
-                const totPerc = suddivisione.reduce((s, r) => s + (Number(r.percentuale) || 0), 0);
-                return <p className="mt-0.5 text-xs text-white/50">Totale: {totPerc.toFixed(2)}% → {currency((base * totPerc) / 100)}</p>;
-              })() : null}
+              {suddivisione.length > 0 ? (
+                <p className="mt-0.5 text-xs text-white/50">Totale: {totalePercentualeEsistente.toFixed(2)}% → {currency((base * totalePercentualeEsistente) / 100)}</p>
+              ) : null}
+              {rateComplete ? (
+                <p className="mt-0.5 text-xs text-[#30d158]">Importo già suddiviso al 100%</p>
+              ) : (
+                <p className="mt-0.5 text-xs text-white/40">Rimanente: {rimanentePercentuale.toFixed(2)}%</p>
+              )}
             </div>
             <button
               type="button"
               onClick={openRataModal}
-              className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+              disabled={rateComplete}
+              className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Genera Rate
             </button>
@@ -701,6 +782,31 @@ export default function CommessaDetailPage() {
         </div>
       ) : null}
 
+      {pagamentoProformaModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!pagamentoProformaSaving) setPagamentoProformaModal(false); }}>
+          <div className="w-full max-w-md rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">Conferma Pagamento Proforma</h3>
+              <button type="button" onClick={() => setPagamentoProformaModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Numero Fattura</label>
+                <input type="text" value={pagamentoProformaData.numero_fattura} onChange={(e) => setPagamentoProformaData((p) => ({ ...p, numero_fattura: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" placeholder="es. 123/2024" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Data Ricevuta Pagamento</label>
+                <input type="date" value={pagamentoProformaData.data_pagamento} onChange={(e) => setPagamentoProformaData((p) => ({ ...p, data_pagamento: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setPagamentoProformaModal(false)} disabled={pagamentoProformaSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+                <button type="button" onClick={handleSavePagamentoProforma} disabled={pagamentoProformaSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{pagamentoProformaSaving ? "Salvataggio..." : "Conferma Pagamento"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {rataModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl">
@@ -781,12 +887,14 @@ export default function CommessaDetailPage() {
 
                 <div className={`rounded-lg border px-4 py-2 text-sm font-medium ${
                   (rataMode === "percentuale" && rataTotal > 100.001) ||
-                  (rataMode === "importo" && base > 0 && rataTotal > base + 0.01)
+                  (rataMode === "importo" && base > 0 && rataTotal > base + 0.01) ||
+                  sommaPercentualeConEsistenti > 100.001
                     ? "border-[#ff453a]/40 bg-[#ff453a]/10 text-[#ff453a]"
                     : "border-[#30d158]/30 bg-[#30d158]/10 text-[#30d158]"
                 }`}>
                   Totale: {rataMode === "percentuale" ? `${rataTotal.toFixed(2)}%` : currency(rataTotal)}
                   {rataMode === "percentuale" && base > 0 ? ` → ${currency((base * rataTotal) / 100)}` : ""}
+                  {sommaPercentualeConEsistenti > 100.001 ? ` • Supera il 100% con esistenti!` : ""}
                 </div>
 
                 {rataError ? <p className="text-sm text-red-300">{rataError}</p> : null}

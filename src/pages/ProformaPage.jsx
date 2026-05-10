@@ -17,6 +17,7 @@ export default function ProformaPage() {
   const [rateMap, setRateMap] = useState({});
   const [costiMap, setCostiMap] = useState({});
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [commessaData, setCommessaData] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -40,24 +41,33 @@ export default function ProformaPage() {
     setSelected(pf);
     setRateMap({});
     setCostiMap({});
+    setCommessaData(null);
     if (!pf) return;
     setLoadingDetail(true);
-    const [rateRes, costiRes] = await Promise.all([
+
+    const [rateRes, costiRes, commessaRes] = await Promise.all([
       pf.rate_ids?.length
         ? supabase.from("suddivisione_pagamenti").select("*").in("id", pf.rate_ids)
         : Promise.resolve({ data: [] }),
       pf.costi_ids?.length
         ? supabase.from("costi_extra").select("*").in("id", pf.costi_ids)
         : Promise.resolve({ data: [] }),
+      pf.commessa_id
+        ? supabase.from("commesse").select("nome_commessa, numero_offerta, importo_offerta_base").eq("id", pf.commessa_id).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
+
     const rMap = {};
     (rateRes.data ?? []).forEach((r) => { rMap[r.id] = r; });
     const cMap = {};
     (costiRes.data ?? []).forEach((c) => { cMap[c.id] = c; });
     setRateMap(rMap);
     setCostiMap(cMap);
+    setCommessaData(commessaRes.data);
     setLoadingDetail(false);
   };
+
+  const baseCommessa = Number(commessaData?.importo_offerta_base) || 0;
 
   const selectedRate = selected?.rate_ids?.map((rid) => rateMap[rid]).filter(Boolean) ?? [];
   const selectedCosti = selected?.costi_ids?.map((cid) => costiMap[cid]).filter(Boolean) ?? [];
@@ -87,7 +97,10 @@ export default function ProformaPage() {
                         : "hover:bg-white/8"
                     }`}
                   >
-                    <p className="text-sm font-semibold text-white">{pf.numero_proforma}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-white">{pf.numero_proforma}</p>
+                      <p className="text-sm font-bold text-[#0a84ff]">{currency(pf.importo_totale)}</p>
+                    </div>
                     <p className="mt-0.5 text-xs text-white/55 truncate">{pf.nome_commessa || "—"}</p>
                     {pf.data_creazione ? (
                       <p className="mt-0.5 text-xs text-white/40">{pf.data_creazione}</p>
@@ -112,11 +125,23 @@ export default function ProformaPage() {
               <div>
                 <p className="text-xs text-white/45">Proforma</p>
                 <h2 className="text-2xl font-bold text-white">{selected.numero_proforma}</h2>
-                {selected.nome_commessa ? (
+                {selected.importo_totale ? (
+                  <p className="mt-1 text-xl font-semibold text-[#0a84ff]">{currency(selected.importo_totale)}</p>
+                ) : null}
+
+                {/* COMMESA COLLEGATA */}
+                {commessaData ? (
+                  <div className="mt-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                    <p className="text-xs text-white/50">Commessa collegata</p>
+                    <p className="text-sm font-medium text-white">{commessaData.nome_commessa}</p>
+                    <p className="text-xs text-white/40">Offerta: {commessaData.numero_offerta || "N/D"}</p>
+                  </div>
+                ) : selected.nome_commessa ? (
                   <p className="mt-1 text-sm text-white/70">{selected.nome_commessa}</p>
                 ) : null}
+
                 {selected.cliente ? (
-                  <p className="text-sm text-white/50">{selected.cliente}</p>
+                  <p className="mt-2 text-sm text-white/50">{selected.cliente}</p>
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-2 text-xs font-medium">
@@ -146,10 +171,11 @@ export default function ProformaPage() {
                     <ul className="space-y-1.5">
                       {selectedRate.map((rata, idx) => {
                         const perc = Number(rata.percentuale) || 0;
+                        const importoCalcolato = baseCommessa > 0 ? (baseCommessa * perc) / 100 : 0;
                         return (
                           <li key={rata.id} className="flex items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/80">
                             <span className="w-16 font-medium text-white">Rata {idx + 1}</span>
-                            <span className="flex-1 text-white/60">{perc.toFixed(2)}%</span>
+                            <span className="flex-1 text-white/60">{perc.toFixed(2)}% → {currency(importoCalcolato)}</span>
                             <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${rata.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"}`}>
                               {rata.pagato ? "✓ Pagata" : "Non pagata"}
                             </span>
@@ -171,6 +197,7 @@ export default function ProformaPage() {
                         <li key={costo.id} className="flex items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/80">
                           <span className="flex-1">{costo.description || costo.tipo_costo || "—"}</span>
                           <span className="font-medium text-white">{currency(costo.importo)}</span>
+                          {costo.data_costo ? <span className="text-xs text-white/40">{costo.data_costo}</span> : null}
                           <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${costo.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"}`}>
                             {costo.pagato ? "✓ Pagato" : "Non pagato"}
                           </span>
