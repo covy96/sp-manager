@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
@@ -18,109 +18,44 @@ function avatarColor(seed = "") {
 function getProgress(completedTasks, totalTasks) {
   const safeTotal = Number(totalTasks) || 0;
   const safeCompleted = Number(completedTasks) || 0;
-
-  if (safeTotal <= 0) {
-    return 0;
-  }
-
+  if (safeTotal <= 0) return 0;
   return Math.min(100, Math.round((safeCompleted / safeTotal) * 100));
 }
 
-function normalizeMembers(rawMembers) {
-  if (!rawMembers) {
-    return [];
-  }
-
-  if (Array.isArray(rawMembers)) {
-    return rawMembers.map((member, index) => {
-      if (typeof member === "string") {
-        return { id: `${member}-${index}`, name: member };
-      }
-
-      return {
-        id: member.id ?? `${member.name ?? "member"}-${index}`,
-        name: member.name ?? "Membro",
-      };
-    });
-  }
-
-  return [];
-}
-
-function initialsFromName(name) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((chunk) => chunk[0]?.toUpperCase())
-    .join("");
-}
-
-function ProjectCard({ project, onClick }) {
-  const members = normalizeMembers(
-    project.members ?? project.assigned_members ?? project.team_members,
-  );
-  const completedTasks = project.completed_tasks ?? project.tasks_completed ?? 0;
-  const totalTasks = project.total_tasks ?? project.tasks_total ?? 0;
-  const progress = getProgress(completedTasks, totalTasks);
-
+// Icons
+function PinIcon({ className }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5 text-left transition hover:border-[#0a84ff] hover:bg-[#343436]"
-    >
-      <h3 className="text-lg font-bold text-white">
-        {project.name ?? project.project_name ?? "Progetto senza nome"}
-      </h3>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
 
-      <div className="mt-3 space-y-1 text-sm text-white/70">
-        <p>
-          <span className="text-white/50">Cliente:</span>{" "}
-          {project.client_name ?? project.client ?? "N/D"}
-        </p>
-        <p>
-          <span className="text-white/50">Indirizzo:</span>{" "}
-          {project.address ?? project.project_address ?? "N/D"}
-        </p>
-        <p>
-          <span className="text-white/50">Ore lavorate:</span>{" "}
-          {project.worked_hours ?? project.hours_worked ?? 0}
-        </p>
-        <p>
-          <span className="text-white/50">Task:</span> {completedTasks}/{totalTasks}
-        </p>
-      </div>
+function ClockIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
 
-      <div className="mt-4">
-        <div className="mb-1 flex items-center justify-between text-xs text-white/60">
-          <span>Progresso</span>
-          <span>{progress}%</span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-[#1c1c1e]">
-          <div
-            className="h-full rounded-full bg-[#0a84ff] transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
+function MoreIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="12" cy="19" r="2" />
+    </svg>
+  );
+}
 
-      <div className="mt-4 flex items-center gap-2">
-        {members.length > 0 ? (
-          members.slice(0, 5).map((member) => (
-            <div
-              key={member.id}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-[#48484a] bg-[#1c1c1e] text-xs font-semibold text-white"
-              title={member.name}
-            >
-              {initialsFromName(member.name)}
-            </div>
-          ))
-        ) : (
-          <p className="text-xs text-white/50">Nessun membro assegnato</p>
-        )}
-      </div>
-    </button>
+function ChevronDownIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
   );
 }
 
@@ -128,17 +63,27 @@ export default function ProjectsPage() {
   const navigate = useNavigate();
   const { studioId, loading: studioLoading, teamMember } = useStudio();
   const permissions = usePermissions();
+
+  // Data states
   const [projects, setProjects] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts] = useState([]);
+  const [timesheetByProject, setTimesheetByProject] = useState({});
+  const [tasksByProject, setTasksByProject] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [clientSuggestions, setClientSuggestions] = useState([]);
-  const [filterBy, setFilterBy] = useState("mine");
+
+  // Filter states
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const filterDropdownRef = useRef(null);
+
+  // Create modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [clientSuggestions, setClientSuggestions] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     client: "",
@@ -148,41 +93,106 @@ export default function ProjectsPage() {
     selectedMembers: [],
     createCommessa: false,
   });
+
+  // Edit modal states
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editProject, setEditProject] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Archive confirmation
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [projectToArchive, setProjectToArchive] = useState(null);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+
+  // Linked commessa modal
   const [commessaModal, setCommessaModal] = useState(false);
   const [commessaForm, setCommessaForm] = useState({});
   const [commessaSaving, setCommessaSaving] = useState(false);
   const [commessaError, setCommessaError] = useState("");
 
-  const loadProjects = async () => {
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setFilterDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Pre-select current user when team members load
+  useEffect(() => {
+    if (teamMember?.id && selectedUserIds.length === 0) {
+      setSelectedUserIds([teamMember.id]);
+    }
+  }, [teamMember?.id]);
+
+  const loadData = async () => {
     if (!studioId) return;
     setLoading(true);
     setError("");
 
-    const { data, error: queryError } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("studio", studioId)
-      .order("created_at", { ascending: false });
+    try {
+      // Load all projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("studio", studioId)
+        .eq("archived", false)
+        .order("created_at", { ascending: false });
 
-    if (queryError) {
-      setError(queryError.message);
-      setProjects([]);
-    } else {
-      setProjects(data ?? []);
+      if (projectsError) throw projectsError;
+      setProjects(projectsData ?? []);
+
+      // Load all timesheet for this studio and group by project_id
+      const { data: timesheetData } = await supabase
+        .from("timesheet")
+        .select("project_id, hours")
+        .eq("studio", studioId);
+
+      const hoursMap = (timesheetData || []).reduce((acc, t) => {
+        acc[t.project_id] = (acc[t.project_id] || 0) + (Number(t.hours) || 0);
+        return acc;
+      }, {});
+      setTimesheetByProject(hoursMap);
+
+      // Load all tasks for this studio and group by project_id
+      const { data: tasksData } = await supabase
+        .from("tasks")
+        .select("project_id, status, parent_task_id")
+        .eq("studio", studioId)
+        .is("parent_task_id", null); // Only parent tasks
+
+      const tasksMap = (tasksData || []).reduce((acc, t) => {
+        if (!acc[t.project_id]) {
+          acc[t.project_id] = { total: 0, completed: 0 };
+        }
+        acc[t.project_id].total += 1;
+        if (t.status === "completed") {
+          acc[t.project_id].completed += 1;
+        }
+        return acc;
+      }, {});
+      setTasksByProject(tasksMap);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (studioId) loadProjects();
+    if (studioId) loadData();
 
+    // Load services and contacts
     const loadServices = async () => {
-      const { data, error: templatesError } = await supabase
+      const { data } = await supabase
         .from("service_task_templates")
         .select("*")
         .order("order", { ascending: true });
-      if (!templatesError) setServiceTemplates(data ?? []);
+      setServiceTemplates(data ?? []);
     };
     loadServices();
 
@@ -192,6 +202,7 @@ export default function ProjectsPage() {
     };
     loadContacts();
 
+    // Load team members
     if (studioId) {
       const loadMembers = async () => {
         const { data } = await supabase
@@ -205,6 +216,29 @@ export default function ProjectsPage() {
     }
   }, [studioId]);
 
+  // Filter handlers
+  const toggleUserFilter = (userId) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedUserIds([]);
+  };
+
+  const filteredProjects = useMemo(() => {
+    if (selectedUserIds.length === 0) return projects;
+    return projects.filter((p) =>
+      Array.isArray(p.assigned_users) &&
+      p.assigned_users.some((id) => selectedUserIds.includes(id))
+    );
+  }, [projects, selectedUserIds]);
+
+  // Get member info by ID
+  const getMemberById = (id) => teamMembers.find((m) => m.id === id);
+
+  // Form handlers
   const resetForm = () => {
     setFormData({
       name: "",
@@ -218,14 +252,34 @@ export default function ProjectsPage() {
     setFormError("");
   };
 
-  const toggleMember = (memberId) => {
-    if (memberId === teamMember?.id) return;
-    setFormData((prev) => ({
-      ...prev,
-      selectedMembers: prev.selectedMembers.includes(memberId)
-        ? prev.selectedMembers.filter((id) => id !== memberId)
-        : [...prev.selectedMembers, memberId],
-    }));
+  const resetEditForm = () => {
+    setEditFormData({
+      name: "",
+      client: "",
+      address: "",
+      startDate: "",
+      selectedServices: [],
+      selectedMembers: [],
+    });
+  };
+
+  const toggleMember = (memberId, isEdit = false) => {
+    if (isEdit) {
+      setEditFormData((prev) => ({
+        ...prev,
+        selectedMembers: prev.selectedMembers?.includes(memberId)
+          ? prev.selectedMembers.filter((id) => id !== memberId)
+          : [...(prev.selectedMembers || []), memberId],
+      }));
+    } else {
+      if (memberId === teamMember?.id) return;
+      setFormData((prev) => ({
+        ...prev,
+        selectedMembers: prev.selectedMembers.includes(memberId)
+          ? prev.selectedMembers.filter((id) => id !== memberId)
+          : [...prev.selectedMembers, memberId],
+      }));
+    }
   };
 
   const openModal = () => {
@@ -234,25 +288,58 @@ export default function ProjectsPage() {
   };
 
   const closeModal = () => {
-    if (saveLoading) {
-      return;
-    }
-
+    if (saveLoading) return;
     setIsModalOpen(false);
     setFormError("");
   };
 
-  const handleChange = (field) => (event) => {
+  const openEditModal = (project) => {
+    setEditProject(project);
+    setEditFormData({
+      name: project.name || "",
+      client: project.client || "",
+      address: project.address || "",
+      startDate: project.start_date || "",
+      selectedServices: project.servizi_selezionati || [],
+      selectedMembers: project.assigned_users || [],
+    });
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    if (editLoading) return;
+    setEditModalOpen(false);
+    setEditProject(null);
+    resetEditForm();
+  };
+
+  const openArchiveModal = (project, e) => {
+    e.stopPropagation();
+    setProjectToArchive(project);
+    setArchiveModalOpen(true);
+  };
+
+  const closeArchiveModal = () => {
+    if (archiveLoading) return;
+    setArchiveModalOpen(false);
+    setProjectToArchive(null);
+  };
+
+  const handleChange = (field, isEdit = false) => (event) => {
     const value = event.target.value;
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === "client") {
-      const q = value.trim().toLowerCase();
-      if (q.length >= 3) {
-        setClientSuggestions(
-          globalContacts.filter((c) => (c.name ?? "").toLowerCase().startsWith(q)).slice(0, 8),
-        );
-      } else {
-        setClientSuggestions([]);
+    if (isEdit) {
+      setEditFormData((prev) => ({ ...prev, [field]: value }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (field === "client") {
+        const q = value.trim().toLowerCase();
+        if (q.length >= 3) {
+          setClientSuggestions(
+            globalContacts.filter((c) => (c.name ?? "").toLowerCase().startsWith(q)).slice(0, 8),
+          );
+        } else {
+          setClientSuggestions([]);
+        }
       }
     }
   };
@@ -268,6 +355,30 @@ export default function ProjectsPage() {
     if (!exists) {
       const { data } = await supabase.from("global_contacts").insert({ name: name.trim() }).select("id,name").single();
       if (data) setGlobalContacts((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+    }
+  };
+
+  const toggleService = (serviceName, isEdit = false) => {
+    if (isEdit) {
+      setEditFormData((prev) => {
+        const isSelected = prev.selectedServices?.includes(serviceName);
+        return {
+          ...prev,
+          selectedServices: isSelected
+            ? prev.selectedServices.filter((item) => item !== serviceName)
+            : [...(prev.selectedServices || []), serviceName],
+        };
+      });
+    } else {
+      setFormData((prev) => {
+        const isSelected = prev.selectedServices.includes(serviceName);
+        return {
+          ...prev,
+          selectedServices: isSelected
+            ? prev.selectedServices.filter((item) => item !== serviceName)
+            : [...prev.selectedServices, serviceName],
+        };
+      });
     }
   };
 
@@ -315,7 +426,7 @@ export default function ProjectsPage() {
 
     setIsModalOpen(false);
     resetForm();
-    await loadProjects();
+    await loadData();
     setSaveLoading(false);
 
     if (shouldCreateCommessa) {
@@ -330,6 +441,61 @@ export default function ProjectsPage() {
       setCommessaError("");
       setCommessaModal(true);
     }
+  };
+
+  const handleEditProject = async (event) => {
+    event.preventDefault();
+    if (!editProject) return;
+
+    setEditLoading(true);
+
+    const payload = {
+      name: editFormData.name.trim(),
+      client: editFormData.client.trim(),
+      address: editFormData.address.trim() || null,
+      start_date: editFormData.startDate || null,
+      servizi_selezionati: editFormData.selectedServices,
+      assigned_users: editFormData.selectedMembers,
+    };
+
+    await upsertContact(editFormData.client);
+
+    const { error: updateError } = await supabase
+      .from("projects")
+      .update(payload)
+      .eq("id", editProject.id);
+
+    if (updateError) {
+      alert("Errore durante la modifica: " + updateError.message);
+    } else {
+      setEditModalOpen(false);
+      setEditProject(null);
+      resetEditForm();
+      await loadData();
+    }
+
+    setEditLoading(false);
+  };
+
+  const handleArchiveProject = async () => {
+    if (!projectToArchive) return;
+
+    setArchiveLoading(true);
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ archived: true })
+      .eq("id", projectToArchive.id);
+
+    if (error) {
+      alert("Errore durante l'archiviazione: " + error.message);
+    } else {
+      setArchiveModalOpen(false);
+      setProjectToArchive(null);
+      await loadData();
+    }
+
+    setArchiveLoading(false);
   };
 
   const handleSaveLinkedCommessa = async (event) => {
@@ -359,96 +525,202 @@ export default function ProjectsPage() {
     setCommessaModal(false);
   };
 
-  const visibleProjects = useMemo(() => {
-    if (!projects.length) return projects;
-    if (permissions.isProjectManager) {
-      if (filterBy === "mine") {
-        return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(teamMember?.id));
+  // Project card component
+  const ProjectCard = ({ project }) => {
+    const hours = timesheetByProject[project.id] || 0;
+    const tasks = tasksByProject[project.id] || { total: 0, completed: 0 };
+    const progress = getProgress(tasks.completed, tasks.total);
+    const assignedMembers = (project.assigned_users || [])
+      .map((id) => getMemberById(id))
+      .filter(Boolean);
+
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (menuRef.current && !menuRef.current.contains(event.target)) {
+          setMenuOpen(false);
+        }
       }
-      if (filterBy === "all") return projects;
-      return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(filterBy));
-    }
-    return projects.filter((p) => Array.isArray(p.assigned_users) && p.assigned_users.includes(teamMember?.id));
-  }, [projects, filterBy, permissions.isProjectManager, teamMember?.id]);
-
-  const content = useMemo(() => {
-    if (studioLoading || !studioId) {
-      return (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
-        </div>
-      );
-    }
-    if (loading) {
-      return (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-          Caricamento progetti...
-        </section>
-      );
-    }
-
-    if (error) {
-      return (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-          Errore nel caricamento dei progetti: {error}
-        </section>
-      );
-    }
-
-    if (visibleProjects.length === 0) {
-      return (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          Nessun progetto disponibile.
-        </section>
-      );
-    }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        {visibleProjects.map((project) => (
-          <ProjectCard
-            key={project.id ?? project.name ?? JSON.stringify(project)}
-            project={project}
-            onClick={() => navigate(`/progetti/${project.id}`)}
-          />
-        ))}
-      </section>
-    );
-  }, [error, loading, navigate, visibleProjects, studioLoading, studioId]);
+      <div className="relative rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5 transition hover:border-[#0a84ff] hover:bg-[#343436]">
+        {/* Menu button */}
+        <div ref={menuRef} className="absolute right-3 top-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
+            className="rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+          >
+            <MoreIcon className="h-5 w-5" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-lg border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  openEditModal(project);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10"
+              >
+                Modifica progetto
+              </button>
+              <button
+                onClick={(e) => openArchiveModal(project, e)}
+                className="w-full px-4 py-2.5 text-left text-sm text-[#ff453a] hover:bg-white/10"
+              >
+                Archivia progetto
+              </button>
+            </div>
+          )}
+        </div>
 
-  const toggleService = (serviceName) => {
-    setFormData((prev) => {
-      const isSelected = prev.selectedServices.includes(serviceName);
-      return {
-        ...prev,
-        selectedServices: isSelected
-          ? prev.selectedServices.filter((item) => item !== serviceName)
-          : [...prev.selectedServices, serviceName],
-      };
-    });
+        {/* Clickable area */}
+        <div className="cursor-pointer" onClick={() => navigate(`/progetti/${project.id}`)}>
+          {/* Project name and client */}
+          <h3 className="pr-8 text-lg font-bold text-white">{project.name || "Progetto senza nome"}</h3>
+          <p className="mt-1 text-sm text-white/60">{project.client || "N/D"}</p>
+
+          {/* Address */}
+          {project.address && (
+            <div className="mt-3 flex items-center gap-1.5 text-sm text-white/50">
+              <PinIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{project.address}</span>
+            </div>
+          )}
+
+          {/* Hours and tasks row */}
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1.5 text-white/60">
+              <ClockIcon className="h-4 w-4" />
+              <span>{hours}h</span>
+            </div>
+            <div className="text-white/60">
+              Task {tasks.completed}/{tasks.total}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#1c1c1e]">
+              <div
+                className="h-full rounded-full bg-[#0a84ff] transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-white/60">{progress}%</span>
+          </div>
+
+          {/* Assigned members avatars */}
+          <div className="mt-4 flex items-center gap-1.5">
+            {assignedMembers.length > 0 ? (
+              <div className="flex -space-x-2">
+                {assignedMembers.slice(0, 5).map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#2c2c2e] text-[10px] font-semibold text-white"
+                    style={{ backgroundColor: avatarColor(member.user_name || member.user_email) }}
+                    title={member.user_name || member.user_email}
+                  >
+                    {getInitials(member.user_name || member.user_email)}
+                  </div>
+                ))}
+                {assignedMembers.length > 5 && (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#2c2c2e] bg-[#48484a] text-[10px] font-semibold text-white">
+                    +{assignedMembers.length - 5}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs text-white/40">Nessun membro assegnato</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
+
+  // Loading state
+  if (studioLoading || !studioId) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
+      </div>
+    );
+  }
 
   return (
     <div>
+      {/* Header with filter and new project button */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Progetti</h2>
           <p className="text-sm text-white/60">Panoramica dei progetti attivi</p>
         </div>
         <div className="flex items-center gap-3">
-          {permissions.isProjectManager && (
-            <select
-              value={filterBy}
-              onChange={(e) => setFilterBy(e.target.value)}
-              className="rounded-lg border border-[#48484a] bg-[#2c2c2e] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
+          {/* User filter dropdown */}
+          <div ref={filterDropdownRef} className="relative">
+            <button
+              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              className="flex items-center gap-2 rounded-lg border border-[#48484a] bg-[#2c2c2e] px-3 py-2 text-sm text-white hover:bg-[#3a3a3c]"
             >
-              <option value="mine">I miei progetti</option>
-              <option value="all">Tutti i progetti</option>
-              {teamMembers.map((m) => (
-                <option key={m.id} value={m.id}>{`Progetti di ${m.user_name || m.user_email}`}</option>
-              ))}
-            </select>
-          )}
+              Utenti ({selectedUserIds.length})
+              <ChevronDownIcon className="h-4 w-4" />
+            </button>
+            {filterDropdownOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-lg border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                <div className="max-h-64 overflow-y-auto p-2">
+                  {teamMembers.length === 0 ? (
+                    <p className="px-3 py-2 text-sm text-white/50">Nessun membro</p>
+                  ) : (
+                    teamMembers.map((m) => {
+                      const isMe = m.id === teamMember?.id;
+                      const isSelected = selectedUserIds.includes(m.id);
+                      return (
+                        <label
+                          key={m.id}
+                          className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 hover:bg-white/10"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleUserFilter(m.id)}
+                            className="h-4 w-4 accent-[#0a84ff]"
+                          />
+                          <span
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                            style={{ backgroundColor: avatarColor(m.user_name || m.user_email) }}
+                          >
+                            {getInitials(m.user_name || m.user_email)}
+                          </span>
+                          <span className="text-sm text-white">
+                            {m.user_name || m.user_email}
+                            {isMe && <span className="ml-1 text-white/50">(io)</span>}
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="border-t border-[#48484a] p-2">
+                  <button
+                    onClick={clearAllFilters}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm text-[#ff453a] hover:bg-white/10"
+                  >
+                    Rimuovi tutti i filtri
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {permissions.canCreateProjects && (
             <button
               onClick={openModal}
@@ -460,7 +732,28 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {content}
+      {/* Projects grid */}
+      {loading ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
+        </div>
+      ) : error ? (
+        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
+          Errore: {error}
+        </section>
+      ) : filteredProjects.length === 0 ? (
+        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
+          {selectedUserIds.length > 0
+            ? "Nessun progetto trovato per gli utenti selezionati."
+            : "Nessun progetto disponibile."}
+        </section>
+      ) : (
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </section>
+      )}
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -678,6 +971,178 @@ export default function ProjectsPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Edit Project Modal */}
+      {editModalOpen && editProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-xl rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
+            <h3 className="text-xl font-semibold text-white">Modifica Progetto</h3>
+            <p className="mt-1 text-sm text-white/60">
+              Modifica i dati del progetto.
+            </p>
+
+            <form className="mt-5 space-y-4" onSubmit={handleEditProject}>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">
+                  Nome progetto *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={handleChange("name", true)}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">
+                  Cliente *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.client}
+                  onChange={handleChange("client", true)}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">
+                  Indirizzo
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.address}
+                  onChange={handleChange("address", true)}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">
+                  Data inizio
+                </label>
+                <input
+                  type="date"
+                  value={editFormData.startDate}
+                  onChange={handleChange("startDate", true)}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                />
+              </div>
+
+              <div>
+                <p className="mb-2 block text-sm font-medium text-white">Servizi</p>
+                <div className="max-h-44 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                  {serviceTemplates.length === 0 ? (
+                    <p className="text-sm text-white/50">Nessun servizio disponibile</p>
+                  ) : (
+                    serviceTemplates.map((service) => {
+                      const label = service.service_name ?? "Servizio";
+                      const checked = editFormData.selectedServices?.includes(label);
+                      return (
+                        <label
+                          key={service.id ?? label}
+                          className="flex cursor-pointer items-center gap-2 text-sm text-white/90"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleService(label, true)}
+                            className="h-4 w-4 rounded border-[#48484a] bg-[#3a3a3c] accent-[#0a84ff]"
+                          />
+                          <span>{label}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 block text-sm font-medium text-white">Membri del team</p>
+                <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                  {teamMembers.length === 0 ? (
+                    <p className="text-sm text-white/50">Nessun membro disponibile</p>
+                  ) : (
+                    teamMembers.map((m) => {
+                      const checked = editFormData.selectedMembers?.includes(m.id);
+                      return (
+                        <label key={m.id} className="flex cursor-pointer items-center gap-2 text-sm text-white/90">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleMember(m.id, true)}
+                            className="h-4 w-4 accent-[#0a84ff]"
+                          />
+                          <span
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                            style={{ background: avatarColor(m.user_name || m.user_email) }}
+                          >
+                            {getInitials(m.user_name || m.user_email)}
+                          </span>
+                          <span>{m.user_name || m.user_email}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {editLoading ? "Salvataggio..." : "Salva"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Confirmation Modal */}
+      {archiveModalOpen && projectToArchive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
+            <h3 className="text-lg font-semibold text-white">Archivia progetto?</h3>
+            <p className="mt-2 text-sm text-white/60">
+              Sei sicuro di voler archiviare il progetto <strong className="text-white">{projectToArchive.name}</strong>?
+              <br />
+              Il progetto non sarà più visibile nella lista principale.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeArchiveModal}
+                disabled={archiveLoading}
+                className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                onClick={handleArchiveProject}
+                disabled={archiveLoading}
+                className="rounded-lg bg-[#ff453a] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
+              >
+                {archiveLoading ? "Archiviazione..." : "Archivia"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
