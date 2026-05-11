@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
+import { usePermissions } from "../hooks/usePermissions";
 import { supabase } from "../lib/supabase";
+import { calcolaIncassato } from "../lib/utils";
 
 function currency(value) {
   return new Intl.NumberFormat("it-IT", {
@@ -28,6 +30,7 @@ function getMonday(d) {
 
 export default function DashboardPage() {
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
+  const permissions = usePermissions();
   const [user, setUser] = useState(null);
   const [teamMember, setTeamMember] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -106,20 +109,22 @@ export default function DashboardPage() {
           setWeekHours(sum);
         }
 
-        // 4. Credit to collect (commesse total - pagamenti total)
-        const [{ data: commesse }, { data: pagamenti }] = await Promise.all([
-          supabase.from("commesse").select("importo_offerta_base").eq("studio", studioId),
-          supabase.from("pagamenti").select("importo"),
-        ]);
+        // 4. Credit to collect (commesse total - incassato da proforma pagate)
+        const { data: commesse } = await supabase
+          .from("commesse")
+          .select("id, importo_offerta_base")
+          .eq("studio", studioId);
         const totalCommesse = (commesse || []).reduce(
           (s, c) => s + (Number(c.importo_offerta_base) || 0),
           0
         );
-        const totalPagamenti = (pagamenti || []).reduce(
-          (s, p) => s + (Number(p.importo) || 0),
-          0
-        );
-        setCreditToCollect(totalCommesse - totalPagamenti);
+
+        // Calcola incassato reale dalle proforma pagate
+        const commessaIds = (commesse || []).map((c) => c.id);
+        const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);
+        const totalIncassato = Object.values(incassatoMap).reduce((s, v) => s + v, 0);
+
+        setCreditToCollect(totalCommesse - totalIncassato);
 
         // 5. Today's tasks for this user
         const today = new Date().toISOString().split("T")[0];
@@ -318,11 +323,13 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
           <p className="mt-1 text-xs text-white/40">dall&apos;inizio settimana</p>
         </div>
 
-        <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
-          <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Credito da Incassare</p>
-          <p className="mt-2 text-3xl font-bold text-[#30d158]">{currency(creditToCollect)}</p>
-          <p className="mt-1 text-xs text-white/40">da commesse - pagamenti</p>
-        </div>
+        {permissions.canViewFinancials && (
+          <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
+            <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Credito da Incassare</p>
+            <p className="mt-2 text-3xl font-bold text-[#30d158]">{currency(creditToCollect)}</p>
+            <p className="mt-1 text-xs text-white/40">da commesse - proforma pagate</p>
+          </div>
+        )}
       </div>
 
       {/* Two Columns */}

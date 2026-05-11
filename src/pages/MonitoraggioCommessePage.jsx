@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
+import { calcolaIncassato } from "../lib/utils";
 import {
   LineChart,
   Line,
@@ -68,6 +69,7 @@ export default function MonitoraggioCommessePage() {
   const permissions = usePermissions();
   const [commesse, setCommesse] = useState([]);
   const [pagamentiByCommessa, setPagamentiByCommessa] = useState({});
+  const [incassatoPerCommessa, setIncassatoPerCommessa] = useState({});
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy] = useState("offerta");
   const [sortDirection, setSortDirection] = useState("desc");
@@ -107,6 +109,14 @@ export default function MonitoraggioCommessePage() {
       setPagamentiByCommessa(groupedPayments);
       setCommesse(loadedCommesse);
 
+      // Calcola incassato reale dalle proforma pagate
+      const incassatoMap = await calcolaIncassato(
+        loadedCommesse.map((c) => c.id),
+        studioId,
+        supabase
+      );
+      setIncassatoPerCommessa(incassatoMap);
+
       const years = loadedCommesse
         .map((item) => {
           const refDate = getReferenceDate(item);
@@ -132,7 +142,9 @@ export default function MonitoraggioCommessePage() {
   const rows = useMemo(() => {
     return commesse.map((item) => {
       const valoreContratto = Number(item.importo_offerta_base) || 0;
-      const incassato = Number(pagamentiByCommessa[item.id]) || 0;
+      const incassato = permissions.canViewFinancials
+        ? (incassatoPerCommessa[item.id] || 0)
+        : (Number(pagamentiByCommessa[item.id]) || 0);
       const residuo = valoreContratto - incassato;
       const giorniApertura = getDaysOpen(getReferenceDate(item));
 
@@ -146,7 +158,7 @@ export default function MonitoraggioCommessePage() {
         nomeOfferta: `${item.numero_offerta || "-"} - ${item.nome_commessa || ""}`.trim(),
       };
     });
-  }, [commesse, pagamentiByCommessa]);
+  }, [commesse, pagamentiByCommessa, incassatoPerCommessa, permissions.canViewFinancials]);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -269,19 +281,23 @@ export default function MonitoraggioCommessePage() {
 
   return (
     <div className="space-y-6 bg-[#1c1c1e] text-white">
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className={`grid grid-cols-1 gap-4 ${permissions.canViewFinancials ? "md:grid-cols-3" : "md:grid-cols-1"}`}>
         <article className="rounded-xl border border-[#0a84ff]/60 bg-[#2c2c2e] p-5">
           <p className="text-sm text-white/70">Valore Contratti totale</p>
           <p className="mt-2 text-2xl font-bold text-[#0a84ff]">{currency(totals.valoreContratti)}</p>
         </article>
-        <article className="rounded-xl border border-[#30d158]/60 bg-[#2c2c2e] p-5">
-          <p className="text-sm text-white/70">Incassato totale</p>
-          <p className="mt-2 text-2xl font-bold text-[#30d158]">{currency(totals.incassato)}</p>
-        </article>
-        <article className="rounded-xl border border-[#ff453a]/60 bg-[#2c2c2e] p-5">
-          <p className="text-sm text-white/70">Da Incassare totale</p>
-          <p className="mt-2 text-2xl font-bold text-[#ff453a]">{currency(daIncassare)}</p>
-        </article>
+        {permissions.canViewFinancials && (
+          <>
+            <article className="rounded-xl border border-[#30d158]/60 bg-[#2c2c2e] p-5">
+              <p className="text-sm text-white/70">Incassato totale</p>
+              <p className="mt-2 text-2xl font-bold text-[#30d158]">{currency(totals.incassato)}</p>
+            </article>
+            <article className="rounded-xl border border-[#ff453a]/60 bg-[#2c2c2e] p-5">
+              <p className="text-sm text-white/70">Da Incassare totale</p>
+              <p className="mt-2 text-2xl font-bold text-[#ff453a]">{currency(daIncassare)}</p>
+            </article>
+          </>
+        )}
       </section>
 
       <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
@@ -333,8 +349,7 @@ export default function MonitoraggioCommessePage() {
                   ["offerta", "Nome Offerta"],
                   ["cliente", "Cliente"],
                   ["valore", "Valore Contratto"],
-                  ["incassato", "Incassato"],
-                  ["residuo", "Residuo"],
+                  ...(permissions.canViewFinancials ? [["incassato", "Incassato"], ["residuo", "Residuo"]] : []),
                   ["giorni", "Giorni Apertura"],
                 ].map(([key, label]) => (
                   <th key={key} className="border-b border-[#48484a] px-4 py-3">
@@ -357,10 +372,14 @@ export default function MonitoraggioCommessePage() {
                 <td className="px-4 py-3">TOTALE COMPLESSIVO</td>
                 <td className="px-4 py-3">-</td>
                 <td className="px-4 py-3 text-[#0a84ff]">{currency(totals.valoreContratti)}</td>
-                <td className="px-4 py-3 text-[#30d158]">{currency(totals.incassato)}</td>
-                <td className={`px-4 py-3 ${daIncassare > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
-                  {currency(daIncassare)}
-                </td>
+                {permissions.canViewFinancials && (
+                  <>
+                    <td className="px-4 py-3 text-[#30d158]">{currency(totals.incassato)}</td>
+                    <td className={`px-4 py-3 ${daIncassare > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
+                      {currency(daIncassare)}
+                    </td>
+                  </>
+                )}
                 <td className="px-4 py-3">-</td>
               </tr>
 
@@ -376,10 +395,14 @@ export default function MonitoraggioCommessePage() {
                     <td className="px-4 py-3">{row.nomeOfferta}</td>
                     <td className="px-4 py-3 text-white/85">{row.cliente || "-"}</td>
                     <td className="px-4 py-3">{currency(row.valoreContratto)}</td>
-                    <td className="px-4 py-3 text-[#30d158]">{currency(row.incassato)}</td>
-                    <td className={`px-4 py-3 ${row.residuo > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
-                      {currency(row.residuo)}
-                    </td>
+                    {permissions.canViewFinancials && (
+                      <>
+                        <td className="px-4 py-3 text-[#30d158]">{currency(row.incassato)}</td>
+                        <td className={`px-4 py-3 ${row.residuo > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
+                          {currency(row.residuo)}
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-3">{row.giorniApertura}</td>
                   </tr>
                 );
