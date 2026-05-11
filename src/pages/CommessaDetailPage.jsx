@@ -28,6 +28,8 @@ export default function CommessaDetailPage() {
   const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState({});
   const [proforma, setProforma] = useState([]);
+  const [proformaPerRata, setProformaPerRata] = useState({});
+  const [proformaPerCosto, setProformaPerCosto] = useState({});
   const [proformaModal, setProformaModal] = useState(false);
   const [proformaForm, setProformaForm] = useState({});
   const [proformaSaving, setProformaSaving] = useState(false);
@@ -148,11 +150,26 @@ export default function CommessaDetailPage() {
     }
 
     const commessaData = commessaResult.data ?? null;
+    const proformaData = proformaResult.data ?? [];
     setCommessa(commessaData);
     setPagamenti(pagamentiResult.data ?? []);
     setCostiExtra(costiResult.data ?? []);
     setSuddivisione(suddivisioneResult.data ?? []);
-    setProforma(proformaResult.data ?? []);
+    setProforma(proformaData);
+
+    // Crea mappe per lookup veloce proforma per rate e costi
+    const mapRata = {};
+    const mapCosto = {};
+    for (const pf of proformaData) {
+      for (const rataId of pf.suddivisione_pagamento_ids || []) {
+        mapRata[rataId] = pf;
+      }
+      for (const costoId of pf.costo_extra_ids || []) {
+        mapCosto[costoId] = pf;
+      }
+    }
+    setProformaPerRata(mapRata);
+    setProformaPerCosto(mapCosto);
 
     if (commessaData) {
       await ricalcolaValori(commessaData.importo_offerta_base);
@@ -381,6 +398,22 @@ export default function CommessaDetailPage() {
     const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
     setCostiExtra(costiRes.data ?? []);
 
+    // Ricarica proforma e ricrea mappe
+    const { data: proformaData } = await supabase.from("proforma").select("*").eq("commessa_id", id);
+    setProforma(proformaData ?? []);
+    const mapRata = {};
+    const mapCosto = {};
+    for (const pf of proformaData || []) {
+      for (const rataId of pf.suddivisione_pagamento_ids || []) {
+        mapRata[rataId] = pf;
+      }
+      for (const costoId of pf.costo_extra_ids || []) {
+        mapCosto[costoId] = pf;
+      }
+    }
+    setProformaPerRata(mapRata);
+    setProformaPerCosto(mapCosto);
+
     await ricalcolaValori(commessa);
 
     setPagamentoProformaSaving(false);
@@ -432,6 +465,22 @@ export default function CommessaDetailPage() {
     setSuddivisione(suddivisioneRes.data ?? []);
     const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
     setCostiExtra(costiRes.data ?? []);
+
+    // Ricarica proforma e ricrea mappe
+    const { data: proformaData } = await supabase.from("proforma").select("*").eq("commessa_id", id);
+    setProforma(proformaData ?? []);
+    const mapRata = {};
+    const mapCosto = {};
+    for (const pf of proformaData || []) {
+      for (const rataId of pf.suddivisione_pagamento_ids || []) {
+        mapRata[rataId] = pf;
+      }
+      for (const costoId of pf.costo_extra_ids || []) {
+        mapCosto[costoId] = pf;
+      }
+    }
+    setProformaPerRata(mapRata);
+    setProformaPerCosto(mapCosto);
 
     await ricalcolaValori(commessa);
 
@@ -858,6 +907,14 @@ export default function CommessaDetailPage() {
                   }`}>
                     {costo.pagato ? "✓ Pagato" : "Non pagato"}
                   </span>
+                  {costo.pagato && proformaPerCosto[costo.id] && (
+                    <span className="text-xs text-white/50 ml-2">
+                      {proformaPerCosto[costo.id].numero_proforma}
+                      {proformaPerCosto[costo.id].data_pagamento &&
+                        ` · ${new Date(proformaPerCosto[costo.id].data_pagamento).toLocaleDateString("it-IT")}`
+                      }
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -903,6 +960,14 @@ export default function CommessaDetailPage() {
                     }`}>
                       {rata.pagato ? "✓ Pagata" : "Non pagata"}
                     </span>
+                    {rata.pagato && proformaPerRata[rata.id] && (
+                      <span className="text-xs text-white/50 ml-2">
+                        {proformaPerRata[rata.id].numero_proforma}
+                        {proformaPerRata[rata.id].data_pagamento &&
+                          ` · ${new Date(proformaPerRata[rata.id].data_pagamento).toLocaleDateString("it-IT")}`
+                        }
+                      </span>
+                    )}
                   </li>
                 );
               })}
