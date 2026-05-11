@@ -258,7 +258,6 @@ export default function TimesheetPage() {
       .insert({
         project_id: selectedProject.id,
         project_name: selectedProject.name,
-        client_name: selectedProject.client || null,
         date: selectedDate,
         hours: hours,
         notes: notes.trim() || null,
@@ -344,6 +343,12 @@ export default function TimesheetPage() {
   const getMemberName = (memberId) => {
     const member = teamMembers.find((m) => m.id === memberId);
     return member?.user_name || member?.user_email || "Utente";
+  };
+
+  // Get client name from projects using project_id
+  const getClientName = (projectId) => {
+    const project = projects.find((p) => p.id === projectId);
+    return project?.client || null;
   };
 
   if (!studioId) {
@@ -520,8 +525,8 @@ export default function TimesheetPage() {
               {/* Project & Client Info */}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-white">{entry.project_name}</p>
-                {entry.client_name && (
-                  <p className="truncate text-sm text-white/50">{entry.client_name}</p>
+                {getClientName(entry.project_id) && (
+                  <p className="truncate text-sm text-white/50">{getClientName(entry.project_id)}</p>
                 )}
                 {entry.notes && (
                   <p className="mt-1 truncate text-xs text-white/40">{entry.notes}</p>
@@ -572,8 +577,8 @@ export default function TimesheetPage() {
                 <label className="mb-1 block text-xs font-medium text-white/60">Progetto</label>
                 <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/70">
                   {editingEntry.project_name}
-                  {editingEntry.client_name && (
-                    <span className="ml-2 text-white/40">• {editingEntry.client_name}</span>
+                  {getClientName(editingEntry.project_id) && (
+                    <span className="ml-2 text-white/40">• {getClientName(editingEntry.project_id)}</span>
                   )}
                 </div>
               </div>
