@@ -62,34 +62,36 @@ export default function CommessaDetailPage() {
   const [residuo, setResiduo] = useState(0);
 
   const ricalcolaValori = async (importoBaseParam) => {
-    const importoBase = importoBaseParam || Number(commessa?.importo_offerta_base) || 0;
+    const base = importoBaseParam ?? Number(commessa?.importo_offerta_base) ?? 0;
 
-    const { data: proformePagate } = await supabase
+    const { data: tutteProforma, error } = await supabase
       .from("proforma")
-      .select("suddivisione_pagamento_ids")
-      .eq("commessa_id", id)
-      .eq("pagato", true);
+      .select("*")
+      .eq("commessa_id", id);
+
+    console.log("Proforma trovate:", tutteProforma, "Errore:", error);
+
+    const proformePagate = tutteProforma?.filter((p) => p.pagato) || [];
 
     let totalePagato = 0;
-    for (const pf of proformePagate || []) {
-      if (pf.suddivisione_pagamento_ids?.length > 0) {
-        const { data: rate } = await supabase
-          .from("suddivisione_pagamenti")
-          .select("percentuale, importo_fisso")
-          .in("id", pf.suddivisione_pagamento_ids);
-
-        for (const r of rate || []) {
-          totalePagato += r.importo_fisso || (importoBase * (Number(r.percentuale) || 0)) / 100;
-        }
+    for (const pf of proformePagate) {
+      let importoCostiExtra = 0;
+      if (pf.costo_extra_ids?.length > 0) {
+        const { data: costi } = await supabase
+          .from("costi_extra")
+          .select("importo")
+          .in("id", pf.costo_extra_ids);
+        importoCostiExtra = costi?.reduce((sum, c) => sum + (c.importo || 0), 0) || 0;
       }
+      totalePagato += (pf.importo_totale || 0) - importoCostiExtra;
     }
 
-    const nuovoResiduo = Math.max(0, importoBase - totalePagato);
+    console.log("Totale pagato calcolato:", totalePagato);
 
     await supabase.from("commesse").update({ importo_incassato: totalePagato }).eq("id", id);
 
     setImportoPagato(totalePagato);
-    setResiduo(nuovoResiduo);
+    setResiduo(Math.max(0, base - totalePagato));
 
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: totalePagato } : prev));
 
@@ -102,9 +104,9 @@ export default function CommessaDetailPage() {
 
     setValoriCommessa((prev) => ({
       ...prev,
-      importoBase: importoBase,
+      importoBase: base,
       pagato: totalePagato,
-      residuo: nuovoResiduo,
+      residuo: Math.max(0, base - totalePagato),
       costiExtra: totaleCostiExtra,
     }));
   };
