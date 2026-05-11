@@ -143,6 +143,22 @@ export default function CommessaDetailPage() {
     setProformaModal(true);
   };
 
+  const calcolaImportoTotaleProforma = () => {
+    const importoRate = proformaRateIds.reduce((sum, rataId) => {
+      const rata = suddivisione.find((s) => s.id === rataId);
+      if (!rata) return sum;
+      const importoRata = rata.importo_fisso || (base * (Number(rata.percentuale) || 0)) / 100;
+      return sum + importoRata;
+    }, 0);
+
+    const importoCostiExtra = proformaCostiIds.reduce((sum, costoId) => {
+      const costo = costiExtra.find((c) => c.id === costoId);
+      return sum + (costo?.importo || 0);
+    }, 0);
+
+    return importoRate + importoCostiExtra;
+  };
+
   const handleSaveProforma = async (event) => {
     event.preventDefault();
     setProformaError("");
@@ -151,11 +167,18 @@ export default function CommessaDetailPage() {
       return;
     }
     setProformaSaving(true);
+
+    const importoTotaleCalcolato = calcolaImportoTotaleProforma();
+
     const payload = {
       commessa_id: id,
       numero_proforma: proformaForm.numero_proforma.trim(),
       data_creazione: proformaForm.data_creazione || null,
       data_scadenza: proformaForm.data_scadenza || null,
+      suddivisione_pagamento_ids: proformaRateIds,
+      costo_extra_ids: proformaCostiIds,
+      importo_totale: importoTotaleCalcolato,
+      pagato: false,
     };
     const { data, error: insertError } = await supabase
       .from("proforma")
@@ -783,6 +806,19 @@ export default function CommessaDetailPage() {
                 </div>
               ) : null}
               {proformaError ? <p className="text-sm text-red-300">{proformaError}</p> : null}
+
+              {/* IMPORTO TOTALE CALCOLATO */}
+              <div className="rounded-lg border border-[#0a84ff]/30 bg-[#0a84ff]/10 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-white/80">Importo totale proforma:</span>
+                  <span className="text-xl font-bold text-[#0a84ff]">{currency(calcolaImportoTotaleProforma())}</span>
+                </div>
+                <p className="mt-1 text-xs text-white/50">
+                  {proformaRateIds.length > 0 ? `${proformaRateIds.length} rate selezionate` : "Nessuna rata"}
+                  {proformaCostiIds.length > 0 ? ` · ${proformaCostiIds.length} costi extra` : ""}
+                </p>
+              </div>
+
               <div className="mt-6 flex justify-end gap-3">
                 <button type="button" onClick={() => setProformaModal(false)} disabled={proformaSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
                 <button type="submit" disabled={proformaSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{proformaSaving ? "Salvataggio..." : "Crea Proforma"}</button>
