@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
@@ -16,6 +17,36 @@ export default function CommessaDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { studioId } = useStudio();
+  const permissions = usePermissions();
+
+  // Menu contestuale 3 puntini
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  // Popup modifica rata
+  const [editRataModal, setEditRataModal] = useState(false);
+  const [editRataData, setEditRataData] = useState(null);
+  const [editRataForm, setEditRataForm] = useState({});
+  const [editRataSaving, setEditRataSaving] = useState(false);
+
+  // Popup modifica costo extra
+  const [editCostoModal, setEditCostoModal] = useState(false);
+  const [editCostoData, setEditCostoData] = useState(null);
+  const [editCostoForm, setEditCostoForm] = useState({});
+  const [editCostoSaving, setEditCostoSaving] = useState(false);
+
+  // Popup modifica collaboratore
+  const [editCollabModal, setEditCollabModal] = useState(false);
+  const [editCollabData, setEditCollabData] = useState(null);
+  const [editCollabForm, setEditCollabForm] = useState({});
+  const [editCollabSaving, setEditCollabSaving] = useState(false);
+
+  // Popup modifica proforma
+  const [editProformaModal, setEditProformaModal] = useState(false);
+  const [editProformaData, setEditProformaData] = useState(null);
+  const [editProformaForm, setEditProformaForm] = useState({});
+  const [editProformaSaving, setEditProformaSaving] = useState(false);
+
   const [commessa, setCommessa] = useState(null);
   const [pagamenti, setPagamenti] = useState([]);
   const [costiExtra, setCostiExtra] = useState([]);
@@ -742,9 +773,193 @@ export default function CommessaDetailPage() {
     }
     const updated = collaboratori.filter((c) => c.id !== collabId);
     setCollaboratori(updated);
-    // Aggiorna il totale collaboratori
     const nuovoTotale = updated.reduce((sum, c) => sum + (Number(c.importo) || 0), 0);
     setValoriCommessa((prev) => ({ ...prev, costiCollaboratori: nuovoTotale }));
+  };
+
+  // Controllo permessi
+  const handleAzioneProtetta = (callback) => {
+    if (!permissions.canViewFinancials) {
+      alert("Non hai le autorizzazioni necessarie per questa operazione.");
+      return;
+    }
+    callback();
+  };
+
+  // Chiudi menu su click esterno
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // --- EDIT/DELETE RATA ---
+  const openEditRata = (rata) => {
+    setEditRataData(rata);
+    setEditRataForm({ percentuale: rata.percentuale ?? "" });
+    setEditRataModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSaveRata = async (e) => {
+    e.preventDefault();
+    setEditRataSaving(true);
+    const { error: updateError } = await supabase
+      .from("suddivisione_pagamenti")
+      .update({ percentuale: Number(editRataForm.percentuale) })
+      .eq("id", editRataData.id);
+    if (updateError) {
+      setError(updateError.message);
+      setEditRataSaving(false);
+      return;
+    }
+    setSuddivisione((prev) =>
+      prev.map((r) => (r.id === editRataData.id ? { ...r, percentuale: Number(editRataForm.percentuale) } : r))
+    );
+    setEditRataModal(false);
+    setEditRataSaving(false);
+  };
+
+  const handleDeleteRata = async (rataId) => {
+    if (!confirm("Sei sicuro di voler eliminare questa rata?")) return;
+    const { error: deleteError } = await supabase.from("suddivisione_pagamenti").delete().eq("id", rataId);
+    if (deleteError) { setError(deleteError.message); return; }
+    setSuddivisione((prev) => prev.filter((r) => r.id !== rataId));
+    setOpenMenuId(null);
+  };
+
+  // --- EDIT/DELETE COSTO EXTRA ---
+  const openEditCosto = (costo) => {
+    setEditCostoData(costo);
+    setEditCostoForm({
+      tipo_costo: costo.tipo_costo ?? "",
+      description: costo.description ?? "",
+      importo: costo.importo ?? "",
+      data_costo: costo.data_costo ?? "",
+    });
+    setEditCostoModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSaveCosto = async (e) => {
+    e.preventDefault();
+    setEditCostoSaving(true);
+    const payload = {
+      tipo_costo: editCostoForm.tipo_costo,
+      description: editCostoForm.description || null,
+      importo: Number(editCostoForm.importo) || 0,
+      data_costo: editCostoForm.data_costo || null,
+    };
+    const { error: updateError } = await supabase.from("costi_extra").update(payload).eq("id", editCostoData.id);
+    if (updateError) {
+      setError(updateError.message);
+      setEditCostoSaving(false);
+      return;
+    }
+    setCostiExtra((prev) => prev.map((c) => (c.id === editCostoData.id ? { ...c, ...payload } : c)));
+    setEditCostoModal(false);
+    setEditCostoSaving(false);
+    await ricalcolaValori(commessa?.importo_offerta_base);
+  };
+
+  const handleDeleteCosto = async (costoId) => {
+    if (!confirm("Sei sicuro di voler eliminare questo costo extra?")) return;
+    const { error: deleteError } = await supabase.from("costi_extra").delete().eq("id", costoId);
+    if (deleteError) { setError(deleteError.message); return; }
+    setCostiExtra((prev) => prev.filter((c) => c.id !== costoId));
+    setOpenMenuId(null);
+    await ricalcolaValori(commessa?.importo_offerta_base);
+  };
+
+  // --- EDIT/DELETE COLLABORATORE ---
+  const openEditCollab = (collab) => {
+    setEditCollabData(collab);
+    setEditCollabForm({
+      ruolo: collab.ruolo ?? "",
+      nome_cognome: collab.nome_cognome ?? "",
+      importo: collab.importo ?? "",
+    });
+    setEditCollabModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSaveCollab = async (e) => {
+    e.preventDefault();
+    setEditCollabSaving(true);
+    const payload = {
+      ruolo: editCollabForm.ruolo.trim(),
+      nome_cognome: editCollabForm.nome_cognome.trim(),
+      importo: Number(editCollabForm.importo) || 0,
+    };
+    const { error: updateError } = await supabase.from("collaboratori_esterni").update(payload).eq("id", editCollabData.id);
+    if (updateError) {
+      setError(updateError.message);
+      setEditCollabSaving(false);
+      return;
+    }
+    const updated = collaboratori.map((c) => (c.id === editCollabData.id ? { ...c, ...payload } : c));
+    setCollaboratori(updated);
+    const nuovoTotale = updated.reduce((sum, c) => sum + (Number(c.importo) || 0), 0);
+    setValoriCommessa((prev) => ({ ...prev, costiCollaboratori: nuovoTotale }));
+    setEditCollabModal(false);
+    setEditCollabSaving(false);
+  };
+
+  const handleDeleteCollaboratoreProtetto = async (collabId) => {
+    if (!confirm("Sei sicuro di voler eliminare questo collaboratore?")) return;
+    const { error: deleteError } = await supabase.from("collaboratori_esterni").delete().eq("id", collabId);
+    if (deleteError) { setError(deleteError.message); return; }
+    const updated = collaboratori.filter((c) => c.id !== collabId);
+    setCollaboratori(updated);
+    const nuovoTotale = updated.reduce((sum, c) => sum + (Number(c.importo) || 0), 0);
+    setValoriCommessa((prev) => ({ ...prev, costiCollaboratori: nuovoTotale }));
+    setOpenMenuId(null);
+  };
+
+  // --- EDIT/DELETE PROFORMA ---
+  const openEditProforma = (pf) => {
+    setEditProformaData(pf);
+    setEditProformaForm({
+      numero_proforma: pf.numero_proforma ?? "",
+      data_creazione: pf.data_creazione ?? "",
+      data_scadenza: pf.data_scadenza ?? "",
+      importo_totale: pf.importo_totale ?? "",
+    });
+    setEditProformaModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleSaveProformaEdit = async (e) => {
+    e.preventDefault();
+    setEditProformaSaving(true);
+    const payload = {
+      numero_proforma: editProformaForm.numero_proforma.trim(),
+      data_creazione: editProformaForm.data_creazione || null,
+      data_scadenza: editProformaForm.data_scadenza || null,
+      importo_totale: Number(editProformaForm.importo_totale) || 0,
+    };
+    const { error: updateError } = await supabase.from("proforma").update(payload).eq("id", editProformaData.id);
+    if (updateError) {
+      setError(updateError.message);
+      setEditProformaSaving(false);
+      return;
+    }
+    setProforma((prev) => prev.map((p) => (p.id === editProformaData.id ? { ...p, ...payload } : p)));
+    setEditProformaModal(false);
+    setEditProformaSaving(false);
+  };
+
+  const handleDeleteProforma = async (pfId) => {
+    if (!confirm("Sei sicuro di voler eliminare questa proforma?")) return;
+    const { error: deleteError } = await supabase.from("proforma").delete().eq("id", pfId);
+    if (deleteError) { setError(deleteError.message); return; }
+    setProforma((prev) => prev.filter((p) => p.id !== pfId));
+    setOpenMenuId(null);
+    await ricalcolaValori(commessa?.importo_offerta_base);
   };
 
   if (loading) {
@@ -904,10 +1119,19 @@ export default function CommessaDetailPage() {
                         <span className="text-sm font-semibold text-[#0a84ff]">{currency(pf.importo_totale)}</span>
                         {pf.data_creazione ? <span className="text-xs text-white/50">Creata: {pf.data_creazione}</span> : null}
                         {pf.data_scadenza ? <span className="text-xs text-white/50">Scadenza: {pf.data_scadenza}</span> : null}
-                        <span className="ml-auto text-xs text-white/40">
+                        <span className="text-xs text-white/40">
                           {(pf.suddivisione_pagamento_ids?.length ?? 0) > 0 ? `${pf.suddivisione_pagamento_ids.length} rat${pf.suddivisione_pagamento_ids.length === 1 ? "a" : "e"}` : ""}
                           {(pf.costo_extra_ids?.length ?? 0) > 0 ? ` · ${pf.costo_extra_ids.length} cost${pf.costo_extra_ids.length === 1 ? "o" : "i"}` : ""}
                         </span>
+                        <div className="relative ml-auto" ref={openMenuId === `pf-${pf.id}` ? menuRef : null}>
+                          <button type="button" onClick={() => setOpenMenuId(openMenuId === `pf-${pf.id}` ? null : `pf-${pf.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
+                          {openMenuId === `pf-${pf.id}` && (
+                            <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                              <button type="button" onClick={() => handleAzioneProtetta(() => openEditProforma(pf))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
+                              <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteProforma(pf.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
+                            </div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -975,7 +1199,7 @@ export default function CommessaDetailPage() {
                   <span className="w-24 text-white/50">{costo.data_costo || "—"}</span>
                   <span className="font-medium text-white">{currency(costo.importo)}</span>
                   <span className="rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/60">{costo.tipo_costo || "—"}</span>
-                  {costo.description ? <span className="flex-1 text-xs text-white/50">{costo.description}</span> : null}
+                  {costo.description ? <span className="text-xs text-white/50">{costo.description}</span> : null}
                   <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${
                     costo.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"
                   }`}>
@@ -989,6 +1213,15 @@ export default function CommessaDetailPage() {
                       }
                     </span>
                   )}
+                  <div className="relative ml-auto" ref={openMenuId === `ce-${costo.id}` ? menuRef : null}>
+                    <button type="button" onClick={() => setOpenMenuId(openMenuId === `ce-${costo.id}` ? null : `ce-${costo.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
+                    {openMenuId === `ce-${costo.id}` && (
+                      <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                        <button type="button" onClick={() => handleAzioneProtetta(() => openEditCosto(costo))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
+                        <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCosto(costo.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
+                      </div>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -1041,6 +1274,17 @@ export default function CommessaDetailPage() {
                           ` · ${new Date(proformaPerRata[rata.id].data_pagamento).toLocaleDateString("it-IT")}`
                         }
                       </span>
+                    )}
+                    {!rata.pagato && (
+                      <div className="relative" ref={openMenuId === `rata-${rata.id}` ? menuRef : null}>
+                        <button type="button" onClick={() => setOpenMenuId(openMenuId === `rata-${rata.id}` ? null : `rata-${rata.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
+                        {openMenuId === `rata-${rata.id}` && (
+                          <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                            <button type="button" onClick={() => handleAzioneProtetta(() => openEditRata(rata))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
+                            <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteRata(rata.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </li>
                 );
@@ -1114,19 +1358,21 @@ export default function CommessaDetailPage() {
             ) : (
               <ul className="space-y-2">
                 {collaboratori.map((collab) => (
-                  <li key={collab.id} className="flex items-center justify-between rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
+                  <li key={collab.id} className="flex items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
                     <div className="flex flex-1 flex-wrap items-center gap-3">
                       <span className="font-medium text-white">{collab.ruolo}</span>
                       <span className="text-white/70">{collab.nome_cognome}</span>
                       <span className="font-medium text-[#bf5af2]">{currency(collab.importo)}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCollaboratore(collab.id)}
-                      className="rounded-md border border-[#48484a] px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10"
-                    >
-                      Elimina
-                    </button>
+                    <div className="relative" ref={openMenuId === `col-${collab.id}` ? menuRef : null}>
+                      <button type="button" onClick={() => setOpenMenuId(openMenuId === `col-${collab.id}` ? null : `col-${collab.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
+                      {openMenuId === `col-${collab.id}` && (
+                        <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                          <button type="button" onClick={() => handleAzioneProtetta(() => openEditCollab(collab))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
+                          <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCollaboratoreProtetto(collab.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
+                        </div>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -1411,6 +1657,130 @@ export default function CommessaDetailPage() {
           </div>
         </div>
       ) : null}
+      {/* POPUP MODIFICA RATA */}
+      {editRataModal && editRataData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!editRataSaving) setEditRataModal(false); }}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Modifica Rata</h3>
+              <button type="button" onClick={() => setEditRataModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <form className="space-y-4" onSubmit={handleSaveRata}>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Percentuale (%)</label>
+                <input type="number" step="0.01" value={editRataForm.percentuale} onChange={(e) => setEditRataForm({ ...editRataForm, percentuale: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Importo calcolato</label>
+                <p className="rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/60">{currency((base * (parseFloat(editRataForm.percentuale) || 0)) / 100)}</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditRataModal(false)} disabled={editRataSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+                <button type="submit" disabled={editRataSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{editRataSaving ? "Salvataggio..." : "Salva"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODIFICA COSTO EXTRA */}
+      {editCostoModal && editCostoData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!editCostoSaving) setEditCostoModal(false); }}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Modifica Costo Extra</h3>
+              <button type="button" onClick={() => setEditCostoModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <form className="space-y-4" onSubmit={handleSaveCosto}>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Tipo costo</label>
+                <input type="text" value={editCostoForm.tipo_costo} onChange={(e) => setEditCostoForm({ ...editCostoForm, tipo_costo: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Descrizione</label>
+                <input type="text" value={editCostoForm.description} onChange={(e) => setEditCostoForm({ ...editCostoForm, description: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Importo (€)</label>
+                <input type="number" step="0.01" value={editCostoForm.importo} onChange={(e) => setEditCostoForm({ ...editCostoForm, importo: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Data costo</label>
+                <input type="date" value={editCostoForm.data_costo} onChange={(e) => setEditCostoForm({ ...editCostoForm, data_costo: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditCostoModal(false)} disabled={editCostoSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+                <button type="submit" disabled={editCostoSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{editCostoSaving ? "Salvataggio..." : "Salva"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODIFICA COLLABORATORE */}
+      {editCollabModal && editCollabData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!editCollabSaving) setEditCollabModal(false); }}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Modifica Collaboratore</h3>
+              <button type="button" onClick={() => setEditCollabModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <form className="space-y-4" onSubmit={handleSaveCollab}>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Ruolo</label>
+                <input type="text" value={editCollabForm.ruolo} onChange={(e) => setEditCollabForm({ ...editCollabForm, ruolo: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Nome Cognome</label>
+                <input type="text" value={editCollabForm.nome_cognome} onChange={(e) => setEditCollabForm({ ...editCollabForm, nome_cognome: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Importo (€)</label>
+                <input type="number" step="0.01" value={editCollabForm.importo} onChange={(e) => setEditCollabForm({ ...editCollabForm, importo: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditCollabModal(false)} disabled={editCollabSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+                <button type="submit" disabled={editCollabSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{editCollabSaving ? "Salvataggio..." : "Salva"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODIFICA PROFORMA */}
+      {editProformaModal && editProformaData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!editProformaSaving) setEditProformaModal(false); }}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Modifica Proforma</h3>
+              <button type="button" onClick={() => setEditProformaModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <form className="space-y-4" onSubmit={handleSaveProformaEdit}>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Numero proforma</label>
+                <input type="text" value={editProformaForm.numero_proforma} onChange={(e) => setEditProformaForm({ ...editProformaForm, numero_proforma: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Data creazione</label>
+                <input type="date" value={editProformaForm.data_creazione} onChange={(e) => setEditProformaForm({ ...editProformaForm, data_creazione: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Data scadenza</label>
+                <input type="date" value={editProformaForm.data_scadenza} onChange={(e) => setEditProformaForm({ ...editProformaForm, data_scadenza: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Importo totale (€)</label>
+                <input type="number" step="0.01" value={editProformaForm.importo_totale} onChange={(e) => setEditProformaForm({ ...editProformaForm, importo_totale: e.target.value })} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]" required />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setEditProformaModal(false)} disabled={editProformaSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+                <button type="submit" disabled={editProformaSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{editProformaSaving ? "Salvataggio..." : "Salva"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
