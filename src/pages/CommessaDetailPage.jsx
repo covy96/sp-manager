@@ -97,6 +97,8 @@ export default function CommessaDetailPage() {
 
     await supabase.from("commesse").update({ importo_incassato: totalePagato }).eq("id", commessaId);
 
+    setCommessa((prev) => (prev ? { ...prev, importo_incassato: totalePagato } : prev));
+
     setValoriCommessa({
       importoBase: importoBase,
       pagato: totalePagato,
@@ -157,9 +159,9 @@ export default function CommessaDetailPage() {
     loadData();
   }, [id]);
 
-  const base = valoriCommessa.importoBase;
-  const totPagato = valoriCommessa.pagato;
-  const residuo = valoriCommessa.residuo;
+  const base = Number(commessa?.importo_offerta_base) || 0;
+  const totPagato = Number(commessa?.importo_incassato) || 0;
+  const residuo = Math.max(0, base - totPagato);
 
   const totalePercentualeEsistente = useMemo(
     () => suddivisione.reduce((s, r) => s + (Number(r.percentuale) || 0), 0),
