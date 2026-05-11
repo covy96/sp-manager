@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -9,7 +10,12 @@ function getInitials(name = "") {
 }
 
 const AVATAR_COLORS = ["#0a84ff", "#64d2ff", "#5e5ce6", "#30d158", "#bf5af2", "#ff9f0a"];
-function avatarColor(seed = "") {
+function avatarColor(member) {
+  // Usa il colore salvato se disponibile
+  if (member?.color) return member.color;
+
+  // Fallback: calcola colore in base al nome/email
+  const seed = member?.user_name || member?.user_email || "";
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
@@ -60,8 +66,9 @@ function ChevronDownIcon({ className }) {
 }
 
 export default function ProjectsPage() {
+  usePageTitleOnMount("Progetti");
   const navigate = useNavigate();
-  const { studioId, loading: studioLoading, teamMember } = useStudio();
+  const { teamMember, studioId, studioLoading } = useStudio();
   const permissions = usePermissions();
 
   // Data states
@@ -202,12 +209,12 @@ export default function ProjectsPage() {
     };
     loadContacts();
 
-    // Load team members
+    // Load team members (con color)
     if (studioId) {
       const loadMembers = async () => {
         const { data } = await supabase
           .from("team_members")
-          .select("id,user_name,user_email")
+          .select("id,user_name,user_email,color")
           .eq("studio", studioId)
           .order("user_name", { ascending: true });
         setTeamMembers(data ?? []);
@@ -626,7 +633,7 @@ export default function ProjectsPage() {
                   <div
                     key={member.id}
                     className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#2c2c2e] text-[10px] font-semibold text-white"
-                    style={{ backgroundColor: avatarColor(member.user_name || member.user_email) }}
+                    style={{ backgroundColor: avatarColor(member) }}
                     title={member.user_name || member.user_email}
                   >
                     {getInitials(member.user_name || member.user_email)}
@@ -696,7 +703,7 @@ export default function ProjectsPage() {
                           />
                           <span
                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                            style={{ backgroundColor: avatarColor(m.user_name || m.user_email) }}
+                            style={{ backgroundColor: avatarColor(m) }}
                           >
                             {getInitials(m.user_name || m.user_email)}
                           </span>
@@ -879,7 +886,7 @@ export default function ProjectsPage() {
                           />
                           <span
                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                            style={{ background: avatarColor(m.user_name || m.user_email) }}
+                            style={{ backgroundColor: avatarColor(m) }}
                           >
                             {getInitials(m.user_name || m.user_email)}
                           </span>
@@ -1078,7 +1085,7 @@ export default function ProjectsPage() {
                           />
                           <span
                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                            style={{ background: avatarColor(m.user_name || m.user_email) }}
+                            style={{ backgroundColor: avatarColor(m) }}
                           >
                             {getInitials(m.user_name || m.user_email)}
                           </span>

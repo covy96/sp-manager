@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { PageTitleProvider } from "./contexts/PageTitleContext";
 import AppLayout from "./components/AppLayout";
 import CalendarioPage from "./pages/CalendarioPage";
 import ClientiPage from "./pages/ClientiPage";
@@ -20,6 +21,9 @@ import SectionPage from "./pages/SectionPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
 import TimesheetPage from "./pages/TimesheetPage";
+import GestioneUtentiPage from "./pages/GestioneUtentiPage";
+import ProgettiArchiviatiPage from "./pages/ProgettiArchiviatiPage";
+import CommesseArchiviatePage from "./pages/CommesseArchiviatePage";
 import { supabase } from "./lib/supabase";
 
 function ProtectedLayout({ session, children }) {
@@ -27,7 +31,11 @@ function ProtectedLayout({ session, children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <AppLayout session={session}>{children}</AppLayout>;
+  return (
+    <PageTitleProvider>
+      <AppLayout session={session}>{children}</AppLayout>
+    </PageTitleProvider>
+  );
 }
 
 function OnboardingGuard({ session, children }) {
@@ -195,6 +203,30 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><SettingsPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/gestione-utenti"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><GestioneUtentiPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/progetti-archiviati"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><ProgettiArchiviatiPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/commesse-archiviate"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><CommesseArchiviatePage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
