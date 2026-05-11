@@ -70,6 +70,7 @@ export default function CommessaDetailPage() {
           .from("proforma")
           .select("*")
           .eq("commessa_id", id)
+          .eq("pagato", false)
           .order("created_at", { ascending: false }),
       ]);
 
@@ -304,7 +305,7 @@ export default function CommessaDetailPage() {
 
     await supabase.from("commesse").update({ importo_incassato: nuovoIncassato }).eq("id", id);
 
-    setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: true, numero_fattura: pagamentoProformaData.numero_fattura, data_pagamento: pagamentoProformaData.data_pagamento } : p)));
+    setProforma((prev) => prev.filter((p) => p.id !== selectedProforma.id));
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
 
     const suddivisioneRes = await supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id);
@@ -354,7 +355,7 @@ export default function CommessaDetailPage() {
 
     await supabase.from("commesse").update({ importo_incassato: nuovoIncassato }).eq("id", id);
 
-    setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: false, numero_fattura: null, data_pagamento: null } : p)));
+    setProforma((prev) => [{ ...selectedProforma, pagato: false, numero_fattura: null, data_pagamento: null }, ...prev]);
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
 
     const suddivisioneRes = await supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id);
@@ -734,15 +735,11 @@ export default function CommessaDetailPage() {
                   <span className="font-medium text-white">{currency(costo.importo)}</span>
                   <span className="rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/60">{costo.tipo_costo || "—"}</span>
                   {costo.description ? <span className="flex-1 text-xs text-white/50">{costo.description}</span> : null}
-                  <button
-                    type="button"
-                    onClick={() => toggleField("costi_extra", "id", costo, "pagato")}
-                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-                      costo.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"
-                    }`}
-                  >
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                    costo.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"
+                  }`}>
                     {costo.pagato ? "✓ Pagato" : "Non pagato"}
-                  </button>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -783,15 +780,11 @@ export default function CommessaDetailPage() {
                   <li key={rata.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
                     <span className="w-16 font-medium text-white">Rata {idx + 1}</span>
                     <span className="flex-1 text-white/60">{perc.toFixed(2)}% → {currency(importoCalcolato)}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleField("suddivisione_pagamenti", "id", rata, "pagato")}
-                      className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-                        rata.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"
-                      }`}
-                    >
+                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+                      rata.pagato ? "bg-[#30d158]/20 text-[#30d158]" : "bg-[#ff453a]/20 text-[#ff453a]"
+                    }`}>
                       {rata.pagato ? "✓ Pagata" : "Non pagata"}
-                    </button>
+                    </span>
                   </li>
                 );
               })}
