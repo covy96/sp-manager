@@ -18,15 +18,20 @@ export default function ProformaPage() {
   const [commessaData, setCommessaData] = useState(null);
   const [rateAssociate, setRateAssociate] = useState([]);
   const [costiExtraAssociati, setCostiExtraAssociati] = useState([]);
+  const [mostraPagate, setMostraPagate] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       setError("");
-      const { data, error: err } = await supabase
+      let query = supabase
         .from("proforma")
         .select("*")
         .order("created_at", { ascending: false });
+      if (!mostraPagate) {
+        query = query.eq("pagato", false);
+      }
+      const { data, error: err } = await query;
       if (err) {
         setError(err.message);
       } else {
@@ -35,7 +40,7 @@ export default function ProformaPage() {
       setLoading(false);
     };
     load();
-  }, []);
+  }, [mostraPagate]);
 
   const selectProforma = async (pf) => {
     setSelected(pf);
@@ -78,8 +83,19 @@ export default function ProformaPage() {
     <div className="flex gap-5">
       {/* COLONNA SINISTRA — lista proforma */}
       <aside className="w-72 shrink-0">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Proforma</h2>
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-white/70">
+            <input
+              type="checkbox"
+              checked={mostraPagate}
+              onChange={(e) => setMostraPagate(e.target.checked)}
+              className="h-3.5 w-3.5 accent-[#0a84ff]"
+            />
+            Mostra anche pagate
+          </label>
+        </div>
         <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-3">
-          <h2 className="mb-3 px-1 text-sm font-semibold text-white">Tutte le Proforma</h2>
           {loading ? (
             <p className="py-6 text-center text-sm text-white/50">Caricamento...</p>
           ) : error ? (
