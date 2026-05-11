@@ -32,6 +32,8 @@ export default function CommessaDetailPage() {
   const [proformaError, setProformaError] = useState("");
   const [proformaRateIds, setProformaRateIds] = useState([]);
   const [proformaCostiIds, setProformaCostiIds] = useState([]);
+  const [rateGiaUsate, setRateGiaUsate] = useState(new Set());
+  const [costiGiaUsati, setCostiGiaUsati] = useState(new Set());
   const [rataModal, setRataModal] = useState(false);
   const [rataMode, setRataMode] = useState("percentuale");
   const [rataCount, setRataCount] = useState("2");
@@ -130,7 +132,7 @@ export default function CommessaDetailPage() {
     }
   };
 
-  const openProformaModal = () => {
+  const openProformaModal = async () => {
     const today = new Date().toISOString().slice(0, 10);
     setProformaForm({
       numero_proforma: "",
@@ -140,6 +142,21 @@ export default function CommessaDetailPage() {
     setProformaRateIds([]);
     setProformaCostiIds([]);
     setProformaError("");
+
+    const { data: proformeEsistenti } = await supabase
+      .from("proforma")
+      .select("suddivisione_pagamento_ids, costo_extra_ids")
+      .eq("commessa_id", id);
+
+    const rateUsate = new Set(
+      proformeEsistenti?.flatMap((p) => p.suddivisione_pagamento_ids || []) || []
+    );
+    const costiUsati = new Set(
+      proformeEsistenti?.flatMap((p) => p.costo_extra_ids || []) || []
+    );
+    setRateGiaUsate(rateUsate);
+    setCostiGiaUsati(costiUsati);
+
     setProformaModal(true);
   };
 
@@ -267,6 +284,19 @@ export default function CommessaDetailPage() {
       return;
     }
 
+    const dataPagamento = pagamentoProformaData.data_pagamento || new Date().toISOString().slice(0, 10);
+
+    if (selectedProforma.suddivisione_pagamento_ids?.length > 0) {
+      await supabase
+        .from("suddivisione_pagamenti")
+        .update({ pagato: true, data_pagamento: dataPagamento })
+        .in("id", selectedProforma.suddivisione_pagamento_ids);
+    }
+
+    if (selectedProforma.costo_extra_ids?.length > 0) {
+      await supabase.from("costi_extra").update({ pagato: true }).in("id", selectedProforma.costo_extra_ids);
+    }
+
     const { data: commessaData } = await supabase.from("commesse").select("importo_offerta_base").eq("id", id).maybeSingle();
     const baseVal = Number(commessaData?.importo_offerta_base) || 0;
 
@@ -276,6 +306,12 @@ export default function CommessaDetailPage() {
 
     setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: true, numero_fattura: pagamentoProformaData.numero_fattura, data_pagamento: pagamentoProformaData.data_pagamento } : p)));
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
+
+    const suddivisioneRes = await supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id);
+    setSuddivisione(suddivisioneRes.data ?? []);
+    const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
+    setCostiExtra(costiRes.data ?? []);
+
     setPagamentoProformaSaving(false);
     setPagamentoProformaModal(false);
     setSelectedProforma(null);
@@ -300,6 +336,17 @@ export default function CommessaDetailPage() {
       return;
     }
 
+    if (selectedProforma.suddivisione_pagamento_ids?.length > 0) {
+      await supabase
+        .from("suddivisione_pagamenti")
+        .update({ pagato: false, data_pagamento: null })
+        .in("id", selectedProforma.suddivisione_pagamento_ids);
+    }
+
+    if (selectedProforma.costo_extra_ids?.length > 0) {
+      await supabase.from("costi_extra").update({ pagato: false }).in("id", selectedProforma.costo_extra_ids);
+    }
+
     const { data: commessaData } = await supabase.from("commesse").select("importo_offerta_base").eq("id", id).maybeSingle();
     const baseVal = Number(commessaData?.importo_offerta_base) || 0;
 
@@ -309,6 +356,12 @@ export default function CommessaDetailPage() {
 
     setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: false, numero_fattura: null, data_pagamento: null } : p)));
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
+
+    const suddivisioneRes = await supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id);
+    setSuddivisione(suddivisioneRes.data ?? []);
+    const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
+    setCostiExtra(costiRes.data ?? []);
+
     setRimuoviPagamentoSaving(false);
     setRimuoviPagamentoModal(false);
     setSelectedProforma(null);
@@ -780,11 +833,19 @@ export default function CommessaDetailPage() {
                     {suddivisione.map((rata, idx) => {
                       const perc = Number(rata.percentuale) || 0;
                       const imp = (base * perc) / 100;
+                      const giaUsata = rateGiaUsate.has(rata.id);
                       return (
-                        <label key={rata.id} className="flex cursor-pointer items-center gap-2 text-sm text-white/80 hover:text-white">
-                          <input type="checkbox" checked={proformaRateIds.includes(rata.id)} onChange={() => toggleProformaRata(rata.id)} className="h-4 w-4 accent-[#0a84ff]" />
-                          <span>Rata {idx + 1} — {perc.toFixed(2)}% → {currency(imp)}</span>
-                          {rata.pagato ? <span className="ml-auto text-xs text-[#30d158]">✓ Pagata</span> : null}
+                        <label key={rata.id} className={`flex items-center gap-2 text-sm ${giaUsata ? "text-white/30 cursor-not-allowed" : "text-white/80 hover:text-white cursor-pointer"}`}>
+                          <input
+                            type="checkbox"
+                            checked={proformaRateIds.includes(rata.id)}
+                            onChange={() => !giaUsata && toggleProformaRata(rata.id)}
+                            disabled={giaUsata}
+                            className="h-4 w-4 accent-[#0a84ff] disabled:opacity-30"
+                          />
+                          <span className={giaUsata ? "line-through" : ""}>Rata {idx + 1} — {perc.toFixed(2)}% → {currency(imp)}</span>
+                          {giaUsata ? <span className="ml-auto text-xs text-white/40">(già in proforma)</span> : null}
+                          {!giaUsata && rata.pagato ? <span className="ml-auto text-xs text-[#30d158]">✓ Pagata</span> : null}
                         </label>
                       );
                     })}
@@ -795,13 +856,23 @@ export default function CommessaDetailPage() {
                 <div>
                   <p className="mb-2 text-sm font-medium text-white/80">Costi extra da associare</p>
                   <div className="max-h-36 space-y-1.5 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                    {costiExtra.map((costo) => (
-                      <label key={costo.id} className="flex cursor-pointer items-center gap-2 text-sm text-white/80 hover:text-white">
-                        <input type="checkbox" checked={proformaCostiIds.includes(costo.id)} onChange={() => toggleProformaCosto(costo.id)} className="h-4 w-4 accent-[#0a84ff]" />
-                        <span>{costo.description || costo.tipo_costo} — {currency(costo.importo)}</span>
-                        {costo.pagato ? <span className="ml-auto text-xs text-[#30d158]">✓ Pagato</span> : null}
-                      </label>
-                    ))}
+                    {costiExtra.map((costo) => {
+                      const giaUsato = costiGiaUsati.has(costo.id);
+                      return (
+                        <label key={costo.id} className={`flex items-center gap-2 text-sm ${giaUsato ? "text-white/30 cursor-not-allowed" : "text-white/80 hover:text-white cursor-pointer"}`}>
+                          <input
+                            type="checkbox"
+                            checked={proformaCostiIds.includes(costo.id)}
+                            onChange={() => !giaUsato && toggleProformaCosto(costo.id)}
+                            disabled={giaUsato}
+                            className="h-4 w-4 accent-[#0a84ff] disabled:opacity-30"
+                          />
+                          <span className={giaUsato ? "line-through" : ""}>{costo.description || costo.tipo_costo} — {currency(costo.importo)}</span>
+                          {giaUsato ? <span className="ml-auto text-xs text-white/40">(già in proforma)</span> : null}
+                          {!giaUsato && costo.pagato ? <span className="ml-auto text-xs text-[#30d158]">✓ Pagato</span> : null}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
