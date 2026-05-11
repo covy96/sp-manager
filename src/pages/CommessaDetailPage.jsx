@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
 
@@ -14,6 +15,7 @@ function currency(value) {
 export default function CommessaDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { studioId } = useStudio();
   const [commessa, setCommessa] = useState(null);
   const [pagamenti, setPagamenti] = useState([]);
   const [costiExtra, setCostiExtra] = useState([]);
@@ -260,6 +262,7 @@ export default function CommessaDetailPage() {
       costo_extra_ids: proformaCostiIds,
       importo_totale: importoTotaleCalcolato,
       pagato: false,
+      studio: studioId,
     };
     const { data, error: insertError } = await supabase
       .from("proforma")
@@ -491,7 +494,7 @@ export default function CommessaDetailPage() {
     const payload = rateRows.map((r) => {
       const val = parseFloat(r.valore) || 0;
       const perc = rataMode === "percentuale" ? val : (baseVal > 0 ? (val / baseVal) * 100 : 0);
-      return { commessa_id: id, percentuale: perc };
+      return { commessa_id: id, percentuale: perc, studio: studioId };
     });
     const { data, error: insertError } = await supabase
       .from("suddivisione_pagamenti")
@@ -568,6 +571,7 @@ export default function CommessaDetailPage() {
         tipo_pagamento: formData.tipo_pagamento,
         numero_nota: formData.numero_nota || null,
         note: formData.note || null,
+        studio: studioId,
       };
       const { data, error: insertError } = await supabase
         .from("pagamenti")
@@ -589,6 +593,7 @@ export default function CommessaDetailPage() {
         tipo_costo: formData.tipo_costo,
         description: formData.description || null,
         importo: Number(formData.importo) || 0,
+        studio: studioId,
       };
       const { data, error: insertError } = await supabase
         .from("costi_extra")
