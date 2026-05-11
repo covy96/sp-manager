@@ -122,7 +122,6 @@ export default function CommessaDetailPage() {
           .from("proforma")
           .select("*")
           .eq("commessa_id", id)
-          .eq("pagato", false)
           .order("created_at", { ascending: false }),
       ]);
 
@@ -746,32 +745,76 @@ export default function CommessaDetailPage() {
             Crea Proforma
           </button>
         </div>
-        {proforma.length === 0 ? (
-          <p className="py-4 text-center text-sm text-white/40">Nessuna proforma creata.</p>
-        ) : (
-          <ul className="space-y-2">
-            {proforma.map((pf) => (
-              <li key={pf.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
-                <input
-                  type="checkbox"
-                  checked={pf.pagato}
-                  onChange={() => openPagamentoProformaModal(pf)}
-                  className="h-4 w-4 accent-[#0a84ff] cursor-pointer"
-                  title="Marca come pagata"
-                />
-                <span className="font-medium text-white">{pf.numero_proforma}</span>
-                <span className="text-sm font-semibold text-[#0a84ff]">{currency(pf.importo_totale)}</span>
-                {pf.data_creazione ? <span className="text-xs text-white/50">Creata: {pf.data_creazione}</span> : null}
-                {pf.data_scadenza ? <span className="text-xs text-white/50">Scadenza: {pf.data_scadenza}</span> : null}
-                {pf.pagato ? <span className="ml-1 rounded-md bg-[#30d158]/20 px-2 py-0.5 text-xs text-[#30d158]">✓ Pagata</span> : null}
-                <span className="ml-auto text-xs text-white/40">
-                  {(pf.rate_ids?.length ?? 0) > 0 ? `${pf.rate_ids.length} rat${pf.rate_ids.length === 1 ? "a" : "e"}` : ""}
-                  {(pf.costi_ids?.length ?? 0) > 0 ? ` · ${pf.costi_ids.length} cost${pf.costi_ids.length === 1 ? "o" : "i"}` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {(() => {
+          const proformeAperte = proforma.filter((p) => !p.pagato);
+          const proformePagate = proforma.filter((p) => p.pagato);
+
+          return (
+            <div className="space-y-4">
+              {/* Proforma aperte */}
+              {proformeAperte.length > 0 && (
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-white/70">Proforma aperte</h4>
+                  <ul className="space-y-2">
+                    {proformeAperte.map((pf) => (
+                      <li key={pf.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
+                        <input
+                          type="checkbox"
+                          checked={pf.pagato}
+                          onChange={() => openPagamentoProformaModal(pf)}
+                          className="h-4 w-4 accent-[#0a84ff] cursor-pointer"
+                          title="Marca come pagata"
+                        />
+                        <span className="font-medium text-white">{pf.numero_proforma}</span>
+                        <span className="text-sm font-semibold text-[#0a84ff]">{currency(pf.importo_totale)}</span>
+                        {pf.data_creazione ? <span className="text-xs text-white/50">Creata: {pf.data_creazione}</span> : null}
+                        {pf.data_scadenza ? <span className="text-xs text-white/50">Scadenza: {pf.data_scadenza}</span> : null}
+                        <span className="ml-auto text-xs text-white/40">
+                          {(pf.suddivisione_pagamento_ids?.length ?? 0) > 0 ? `${pf.suddivisione_pagamento_ids.length} rat${pf.suddivisione_pagamento_ids.length === 1 ? "a" : "e"}` : ""}
+                          {(pf.costo_extra_ids?.length ?? 0) > 0 ? ` · ${pf.costo_extra_ids.length} cost${pf.costo_extra_ids.length === 1 ? "o" : "i"}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Proforma pagate */}
+              {proformePagate.length > 0 && (
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-white/70">Proforma pagate</h4>
+                  <ul className="space-y-2">
+                    {proformePagate.map((pf) => (
+                      <li key={pf.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[#48484a]/50 bg-[#1c1c1e]/50 px-3 py-2.5 text-sm text-white/60">
+                        <input
+                          type="checkbox"
+                          checked={pf.pagato}
+                          onChange={() => openPagamentoProformaModal(pf)}
+                          className="h-4 w-4 accent-[#30d158] cursor-pointer"
+                          title="Rimuovi pagamento"
+                        />
+                        <span className="font-medium text-white/70">{pf.numero_proforma}</span>
+                        <span className="text-sm font-semibold text-[#0a84ff]/70">{currency(pf.importo_totale)}</span>
+                        {pf.data_creazione ? <span className="text-xs text-white/40">Creata: {pf.data_creazione}</span> : null}
+                        <span className="ml-1 rounded-md bg-[#30d158]/20 px-2 py-0.5 text-xs text-[#30d158]">✓ Pagata</span>
+                        {pf.numero_fattura ? <span className="text-xs text-white/50">Fattura: {pf.numero_fattura}</span> : null}
+                        {pf.data_pagamento ? <span className="text-xs text-white/50">Pagata il: {pf.data_pagamento}</span> : null}
+                        <span className="ml-auto text-xs text-white/30">
+                          {(pf.suddivisione_pagamento_ids?.length ?? 0) > 0 ? `${pf.suddivisione_pagamento_ids.length} rat${pf.suddivisione_pagamento_ids.length === 1 ? "a" : "e"}` : ""}
+                          {(pf.costo_extra_ids?.length ?? 0) > 0 ? ` · ${pf.costo_extra_ids.length} cost${pf.costo_extra_ids.length === 1 ? "o" : "i"}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {proforma.length === 0 && (
+                <p className="py-4 text-center text-sm text-white/40">Nessuna proforma creata.</p>
+              )}
+            </div>
+          );
+        })()}
       </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
