@@ -43,20 +43,8 @@ export default function DashboardPage() {
 
   // Tasks and projects
   const [todayTasks, setTodayTasks] = useState([]);
+  const [overdueTasks, setOverdueTasks] = useState([]);
   const [recentProjects, setRecentProjects] = useState([]);
-
-  // Chat
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Ciao! Sono il tuo assistente per lo studio. Ho accesso ai dati aggiornati dello studio. Come posso aiutarti oggi?",
-    },
-  ]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatEndRef = useRef(null);
 
   // Greeting based on hour
   const greeting = useMemo(() => {
@@ -138,6 +126,18 @@ export default function DashboardPage() {
             (t) => String(t.data_pianificata).slice(0, 10) === today,
           );
           setTodayTasks(todayFiltered);
+
+          // 5b. Overdue tasks (not completed, past date, parent tasks only)
+          const { data: overdue } = await supabase
+            .from("tasks")
+            .select("*, projects(name)")
+            .eq("assigned_member", tm.id)
+            .eq("studio", studioId)
+            .neq("status", "completed")
+            .lt("data_pianificata", today)
+            .is("parent_task_id", null)
+            .order("data_pianificata", { ascending: true });
+          setOverdueTasks(overdue || []);
         }
 
         // 6. Recent projects (last 5, not archived)
@@ -184,11 +184,6 @@ export default function DashboardPage() {
     init();
   }, [todayStr, studioId, studioLoading, studioUser, studioMember]);
 
-  // Scroll chat to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatOpen]);
-
   const toggleTaskStatus = async (task) => {
     const newStatus = task.status === "completed" ? "open" : "completed";
     const { error } = await supabase
@@ -199,90 +194,11 @@ export default function DashboardPage() {
       setTodayTasks((prev) =>
         prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t))
       );
+      // Also update overdue tasks list if task is there
+      setOverdueTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)).filter((t) => t.status !== "completed")
+      );
     }
-  };
-
-  const handleChatSubmit = async (e) => {
-    e.preventDefault();
-    if (!chatInput.trim() || chatLoading) return;
-
-    const userMsg = chatInput.trim();
-    setChatInput("");
-    setChatMessages((prev) => [...prev, { role: "user", content: userMsg }]);
-    setChatLoading(true);
-
-    // Build context from dashboard data
-    const context = `
-Dati attuali dello studio:
-- Progetti attivi: ${activeProjects}
-- Task aperti: ${openTasks}
-- Ore questa settimana: ${formatOre(weekHours)} h
-- Credito da incassare: ${currency(creditToCollect)}
-- Task di oggi: ${todayTasks.length}
-- Data: ${formatDateIt(new Date())}
-`;
-
-    try {
-      // Try Supabase Edge Function first
-      let response;
-      try {
-        const { data, error } = await supabase.functions.invoke("chat-agent", {
-          body: {
-            messages: [
-              { role: "system", content: getSystemPrompt(context) },
-              ...chatMessages.slice(1).map((m) => ({ role: m.role, content: m.content })),
-              { role: "user", content: userMsg },
-            ],
-          },
-        });
-        if (!error && data?.response) {
-          response = data.response;
-        }
-      } catch {
-        // Fallback to direct Anthropic API call (if user has their own key)
-        // This won't work without API key, so we show a fallback message
-      }
-
-      if (!response) {
-        // Fallback: simulate a helpful response based on context
-        response = generateLocalResponse(userMsg, context);
-      }
-
-      setChatMessages((prev) => [...prev, { role: "assistant", content: response }]);
-    } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Mi dispiace, ho avuto un problema a elaborare la risposta. Riprova più tardi." },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const getSystemPrompt = (context) => {
-    return `Sei un assistente AI per uno studio di architettura italiano. Rispondi sempre in italiano.
-${context}
-
-Il tuo ruolo è aiutare lo studio a gestire progetti, task, tempi e finanze.
-Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. crediti alti, task in ritardo), segnalale con tono costruttivo.`;
-  };
-
-  const generateLocalResponse = (userMsg, context) => {
-    const msg = userMsg.toLowerCase();
-
-    if (msg.includes("credito") || msg.includes("incassare") || msg.includes("fatture")) {
-      return `Il credito totale da incassare ammonta a ${currency(creditToCollect)}. Ti consiglio di verificare le proforma scadute e inviare solleciti se necessario.`;
-    }
-    if (msg.includes("ore") || msg.includes("tempo") || msg.includes("settimana")) {
-      return `Questa settimana sono state registrate ${formatOre(weekHours)} ore. Continua così per mantenere il controllo sui tempi di progetto.`;
-    }
-    if (msg.includes("task") || msg.includes("lavoro") || msg.includes("da fare")) {
-      return `Hai ${openTasks} task aperti in totale e ${todayTasks.length} task pianificati per oggi. Prioritizza quelli più urgenti.`;
-    }
-    if (msg.includes("progetto") || msg.includes("commessa")) {
-      return `Al momento ci sono ${activeProjects} progetti attivi. Tutti sembrano in corso, ma verifica quelli con task in ritardo.`;
-    }
-    return "Ho i dati dello studio a disposizione. Posso aiutarti con informazioni su crediti, ore, task o progetti. Cosa ti interessa sapere?";
   };
 
   if (loading) {
@@ -298,7 +214,7 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-semibold text-white">
-          {greeting} {user?.email ? user.email.split("@")[0] : ""}
+          {greeting}{teamMember?.user_name ? ` ${teamMember.user_name}` : ""}
         </h1>
         <p className="mt-1 text-sm text-white/50">{formatDateIt(new Date())}</p>
       </div>
@@ -380,6 +296,46 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
               ))}
             </ul>
           )}
+
+          {/* Task scadute */}
+          {overdueTasks.length > 0 && (
+            <div className="mt-6">
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#ff453a]">
+                Task scadute
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#ff453a] text-xs font-bold text-white">
+                  {overdueTasks.length}
+                </span>
+              </h4>
+              <ul className="space-y-2">
+                {overdueTasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="flex items-center gap-3 rounded-lg border border-[#ff453a]/50 bg-[#1c1c1e] px-3 py-2.5"
+                  >
+                    <button
+                      onClick={() => toggleTaskStatus(task)}
+                      className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#ff453a] hover:bg-[#ff453a]/20"
+                      title="Completa task"
+                    >
+                      <span className="h-2 w-2 rounded-full bg-[#ff453a]" />
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">{task.title}</p>
+                      <p className="truncate text-xs text-white/50">
+                        {task.projects?.name} · {task.category || "Generale"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-medium text-[#ff453a]">
+                      {new Date(task.data_pianificata).toLocaleDateString("it-IT", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Right - Recent Projects */}
@@ -414,72 +370,6 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
         </div>
       </div>
 
-      {/* AI Agent Chat */}
-      <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e]">
-        <button
-          onClick={() => setChatOpen((v) => !v)}
-          className="flex w-full items-center justify-between px-4 py-3 text-left"
-        >
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0a84ff] text-xs font-bold text-white">
-              AI
-            </span>
-            <span className="font-medium text-white">Assistente Studio</span>
-          </div>
-          <svg
-            className={`h-5 w-5 text-white/60 transition ${chatOpen ? "rotate-180" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {chatOpen && (
-          <div className="border-t border-[#48484a] px-4 pb-4">
-            <div className="my-3 max-h-64 space-y-3 overflow-y-auto pr-1">
-              {chatMessages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
-                      m.role === "user"
-                        ? "bg-[#0a84ff] text-white"
-                        : "border border-[#48484a] bg-[#1c1c1e] text-white/90"
-                    }`}
-                  >
-                    {m.content}
-                  </div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/60">
-                    Sto pensando...
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <form onSubmit={handleChatSubmit} className="flex gap-2">
-              <input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Chiedi qualcosa sullo studio..."
-                className="flex-1 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-[#0a84ff]"
-              />
-              <button
-                type="submit"
-                disabled={chatLoading || !chatInput.trim()}
-                className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
-              >
-                Invia
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
