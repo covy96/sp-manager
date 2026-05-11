@@ -1087,13 +1087,37 @@ export default function CommessaDetailPage() {
       <section className="mb-4 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-base font-semibold text-white">Proforma</h3>
-          <button
-            type="button"
-            onClick={openProformaModal}
-            className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-          >
-            Crea Proforma
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={openProformaModal}
+              className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+            >
+              Crea Proforma
+            </button>
+            {proforma.length > 0 && (
+              <div className="relative" ref={openMenuId === "section-proforma" ? menuRef : null}>
+                <button type="button" onClick={() => setOpenMenuId(openMenuId === "section-proforma" ? null : "section-proforma")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#48484a] text-white/60 hover:border-[#0a84ff] hover:text-white">⋯</button>
+                {openMenuId === "section-proforma" && (
+                  <div className="absolute right-0 top-full z-30 mt-1 min-w-[260px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                    <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/40">Proforma aperte</p>
+                    {proforma.filter((p) => !p.pagato).length === 0 && (
+                      <p className="px-4 py-2.5 text-sm text-white/40">Nessuna proforma aperta</p>
+                    )}
+                    {proforma.filter((p) => !p.pagato).map((pf) => (
+                      <div key={pf.id} className="flex items-center justify-between border-t border-[#48484a]/50 px-3 py-2">
+                        <span className="flex-1 truncate text-sm text-white/80">{pf.numero_proforma} <span className="text-xs text-white/40">{currency(pf.importo_totale)}</span></span>
+                        <div className="flex gap-1 ml-2">
+                          <button type="button" onClick={() => handleAzioneProtetta(() => openEditProforma(pf))} className="rounded px-2 py-1 text-xs text-white/70 hover:bg-white/10">✏️</button>
+                          <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteProforma(pf.id))} className="rounded px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10">🗑</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         {(() => {
           const proformeAperte = proforma.filter((p) => !p.pagato);
@@ -1119,19 +1143,10 @@ export default function CommessaDetailPage() {
                         <span className="text-sm font-semibold text-[#0a84ff]">{currency(pf.importo_totale)}</span>
                         {pf.data_creazione ? <span className="text-xs text-white/50">Creata: {pf.data_creazione}</span> : null}
                         {pf.data_scadenza ? <span className="text-xs text-white/50">Scadenza: {pf.data_scadenza}</span> : null}
-                        <span className="text-xs text-white/40">
+                        <span className="ml-auto text-xs text-white/40">
                           {(pf.suddivisione_pagamento_ids?.length ?? 0) > 0 ? `${pf.suddivisione_pagamento_ids.length} rat${pf.suddivisione_pagamento_ids.length === 1 ? "a" : "e"}` : ""}
                           {(pf.costo_extra_ids?.length ?? 0) > 0 ? ` · ${pf.costo_extra_ids.length} cost${pf.costo_extra_ids.length === 1 ? "o" : "i"}` : ""}
                         </span>
-                        <div className="relative ml-auto" ref={openMenuId === `pf-${pf.id}` ? menuRef : null}>
-                          <button type="button" onClick={() => setOpenMenuId(openMenuId === `pf-${pf.id}` ? null : `pf-${pf.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
-                          {openMenuId === `pf-${pf.id}` && (
-                            <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                              <button type="button" onClick={() => handleAzioneProtetta(() => openEditProforma(pf))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
-                              <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteProforma(pf.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
-                            </div>
-                          )}
-                        </div>
                       </li>
                     ))}
                   </ul>
@@ -1182,13 +1197,37 @@ export default function CommessaDetailPage() {
         <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-base font-semibold text-white">Costi Extra</h3>
-            <button
-              type="button"
-              onClick={() => openModal("costo")}
-              className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-            >
-              + Aggiungi
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openModal("costo")}
+                className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
+              >
+                + Aggiungi
+              </button>
+              {costiExtra.length > 0 && (
+                <div className="relative" ref={openMenuId === "section-costi" ? menuRef : null}>
+                  <button type="button" onClick={() => setOpenMenuId(openMenuId === "section-costi" ? null : "section-costi")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#48484a] text-white/60 hover:border-[#0a84ff] hover:text-white">⋯</button>
+                  {openMenuId === "section-costi" && (
+                    <div className="absolute right-0 top-full z-30 mt-1 min-w-[280px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                      <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/40">Costi Extra</p>
+                      {costiExtra.map((costo) => (
+                        <div key={costo.id} className="flex items-center justify-between border-t border-[#48484a]/50 px-3 py-2">
+                          <div className="flex-1 min-w-0">
+                            <span className="block truncate text-sm text-white/80">{costo.tipo_costo || "—"} <span className="text-xs text-white/40">{currency(costo.importo)}</span></span>
+                            {costo.data_costo && <span className="text-xs text-white/40">{costo.data_costo}</span>}
+                          </div>
+                          <div className="flex gap-1 ml-2">
+                            <button type="button" onClick={() => handleAzioneProtetta(() => openEditCosto(costo))} className="rounded px-2 py-1 text-xs text-white/70 hover:bg-white/10">✏️</button>
+                            <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCosto(costo.id))} className="rounded px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10">🗑</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {costiExtra.length === 0 ? (
             <p className="py-4 text-center text-sm text-white/40">Nessun costo extra registrato.</p>
@@ -1213,15 +1252,6 @@ export default function CommessaDetailPage() {
                       }
                     </span>
                   )}
-                  <div className="relative ml-auto" ref={openMenuId === `ce-${costo.id}` ? menuRef : null}>
-                    <button type="button" onClick={() => setOpenMenuId(openMenuId === `ce-${costo.id}` ? null : `ce-${costo.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
-                    {openMenuId === `ce-${costo.id}` && (
-                      <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                        <button type="button" onClick={() => handleAzioneProtetta(() => openEditCosto(costo))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
-                        <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCosto(costo.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
-                      </div>
-                    )}
-                  </div>
                 </li>
               ))}
             </ul>
@@ -1242,14 +1272,35 @@ export default function CommessaDetailPage() {
                 <p className="mt-0.5 text-xs text-white/40">Rimanente: {rimanentePercentuale.toFixed(2)}%</p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={openRataModal}
-              disabled={rateComplete}
-              className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Genera Rate
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openRataModal}
+                disabled={rateComplete}
+                className="rounded-lg bg-[#0a84ff] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Genera Rate
+              </button>
+              {suddivisione.filter((r) => !r.pagato).length > 0 && (
+                <div className="relative" ref={openMenuId === "section-rate" ? menuRef : null}>
+                  <button type="button" onClick={() => setOpenMenuId(openMenuId === "section-rate" ? null : "section-rate")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#48484a] text-white/60 hover:border-[#0a84ff] hover:text-white">⋯</button>
+                  {openMenuId === "section-rate" && (
+                    <div className="absolute right-0 top-full z-30 mt-1 min-w-[260px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                      <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/40">Rate non pagate</p>
+                      {suddivisione.filter((r) => !r.pagato).map((rata, idx) => (
+                        <div key={rata.id} className="flex items-center justify-between border-t border-[#48484a]/50 px-3 py-2">
+                          <span className="flex-1 text-sm text-white/80">Rata {suddivisione.indexOf(rata) + 1} <span className="text-xs text-white/40">{Number(rata.percentuale).toFixed(2)}% → {currency((base * Number(rata.percentuale)) / 100)}</span></span>
+                          <div className="flex gap-1 ml-2">
+                            <button type="button" onClick={() => handleAzioneProtetta(() => openEditRata(rata))} className="rounded px-2 py-1 text-xs text-white/70 hover:bg-white/10">✏️</button>
+                            <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteRata(rata.id))} className="rounded px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10">🗑</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {suddivisione.length === 0 ? (
             <p className="py-4 text-center text-sm text-white/40">Nessuna rata configurata.</p>
@@ -1275,17 +1326,6 @@ export default function CommessaDetailPage() {
                         }
                       </span>
                     )}
-                    {!rata.pagato && (
-                      <div className="relative" ref={openMenuId === `rata-${rata.id}` ? menuRef : null}>
-                        <button type="button" onClick={() => setOpenMenuId(openMenuId === `rata-${rata.id}` ? null : `rata-${rata.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
-                        {openMenuId === `rata-${rata.id}` && (
-                          <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                            <button type="button" onClick={() => handleAzioneProtetta(() => openEditRata(rata))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
-                            <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteRata(rata.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </li>
                 );
               })}
@@ -1297,7 +1337,31 @@ export default function CommessaDetailPage() {
 
       {/* COLLABORATORI ESTERNI */}
       <section className="mt-4 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
-        <h3 className="mb-3 text-base font-semibold text-white">Collaboratori Esterni</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-white">Collaboratori Esterni</h3>
+          {collaboratori.length > 0 && (
+            <div className="relative" ref={openMenuId === "section-collab" ? menuRef : null}>
+              <button type="button" onClick={() => setOpenMenuId(openMenuId === "section-collab" ? null : "section-collab")} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#48484a] text-white/60 hover:border-[#0a84ff] hover:text-white">⋯</button>
+              {openMenuId === "section-collab" && (
+                <div className="absolute right-0 top-full z-30 mt-1 min-w-[280px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                  <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white/40">Collaboratori</p>
+                  {collaboratori.map((collab) => (
+                    <div key={collab.id} className="flex items-center justify-between border-t border-[#48484a]/50 px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="block truncate text-sm text-white/80">{collab.nome_cognome}</span>
+                        <span className="text-xs text-white/40">{collab.ruolo} · {currency(collab.importo)}</span>
+                      </div>
+                      <div className="flex gap-1 ml-2">
+                        <button type="button" onClick={() => handleAzioneProtetta(() => openEditCollab(collab))} className="rounded px-2 py-1 text-xs text-white/70 hover:bg-white/10">✏️</button>
+                        <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCollaboratoreProtetto(collab.id))} className="rounded px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10">🗑</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Form aggiungi collaboratore */}
         <form onSubmit={handleAddCollaboratore} className="mb-4 flex flex-wrap items-end gap-2">
@@ -1363,15 +1427,6 @@ export default function CommessaDetailPage() {
                       <span className="font-medium text-white">{collab.ruolo}</span>
                       <span className="text-white/70">{collab.nome_cognome}</span>
                       <span className="font-medium text-[#bf5af2]">{currency(collab.importo)}</span>
-                    </div>
-                    <div className="relative" ref={openMenuId === `col-${collab.id}` ? menuRef : null}>
-                      <button type="button" onClick={() => setOpenMenuId(openMenuId === `col-${collab.id}` ? null : `col-${collab.id}`)} className="flex h-7 w-7 items-center justify-center rounded-md text-white/50 hover:bg-white/10 hover:text-white">⋯</button>
-                      {openMenuId === `col-${collab.id}` && (
-                        <div className="absolute right-0 top-full z-30 mt-1 min-w-[130px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                          <button type="button" onClick={() => handleAzioneProtetta(() => openEditCollab(collab))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10">✏️ Modifica</button>
-                          <button type="button" onClick={() => handleAzioneProtetta(() => handleDeleteCollaboratoreProtetto(collab.id))} className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-[#ff453a]/10">🗑 Elimina</button>
-                        </div>
-                      )}
                     </div>
                   </li>
                 ))}
