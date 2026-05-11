@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -14,6 +14,7 @@ function currency(value) {
 
 export default function CommessePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
   const [commesse, setCommesse] = useState([]);
@@ -77,6 +78,9 @@ export default function CommessePage() {
 
   useEffect(() => {
     if (studioId) loadData();
+  }, [studioId, location.key]);
+
+  useEffect(() => {
     const loadServices = async () => {
       const { data, error: templatesError } = await supabase
         .from("service_task_templates")
@@ -308,7 +312,7 @@ export default function CommessePage() {
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {filtered.map((commessa) => {
             const base = Number(commessa.importo_offerta_base) || 0;
-            const pagato = pagamentiByCommessa[commessa.id] || 0;
+            const pagato = commessa.importo_incassato || 0;
             const residuo = Math.max(0, base - pagato);
             const extra = Number(commessa.costi_extra_totali) || 0;
 
