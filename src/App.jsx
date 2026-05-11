@@ -18,12 +18,18 @@ import ProjectsPage from "./pages/ProjectsPage";
 import ReportPage from "./pages/ReportPage";
 import ProformaPage from "./pages/ProformaPage";
 import SectionPage from "./pages/SectionPage";
-import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
 import TimesheetPage from "./pages/TimesheetPage";
-import GestioneUtentiPage from "./pages/GestioneUtentiPage";
-import ProgettiArchiviatiPage from "./pages/ProgettiArchiviatiPage";
-import CommesseArchiviatePage from "./pages/CommesseArchiviatePage";
+
+// Settings pages
+import ProfiloPage from "./pages/settings/ProfiloPage";
+import AspettoPage from "./pages/settings/AspettoPage";
+import GestioneUtentiPage from "./pages/settings/GestioneUtentiPage";
+import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
+import SettingsClientiPage from "./pages/settings/ClientiPage";
+import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
+import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
+
 import { supabase } from "./lib/supabase";
 
 function ProtectedLayout({ session, children }) {
@@ -198,16 +204,29 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
+      {/* Settings Routes */}
       <Route
         path="/impostazioni"
+        element={<Navigate to="/impostazioni/profilo" replace />}
+      />
+      <Route
+        path="/impostazioni/profilo"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><SettingsPage /></OnboardingGuard>
+            <OnboardingGuard session={session}><ProfiloPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
       <Route
-        path="/gestione-utenti"
+        path="/impostazioni/aspetto"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><AspettoPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/utenti"
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><GestioneUtentiPage /></OnboardingGuard>
@@ -215,18 +234,34 @@ export default function App({ session }) {
         }
       />
       <Route
-        path="/progetti-archiviati"
+        path="/impostazioni/servizi"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><ProgettiArchiviatiPage /></OnboardingGuard>
+            <OnboardingGuard session={session}><GestioneServiziPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
       <Route
-        path="/commesse-archiviate"
+        path="/impostazioni/clienti"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><CommesseArchiviatePage /></OnboardingGuard>
+            <OnboardingGuard session={session}><SettingsClientiPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/progetti-archiviati"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><SettingsProgettiArchiviatiPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/commesse-archiviate"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><SettingsCommesseArchiviatePage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

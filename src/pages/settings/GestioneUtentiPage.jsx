@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { usePageTitleOnMount } from "../hooks/usePageTitle";
-import { useStudio } from "../hooks/useStudio";
-import { supabase } from "../lib/supabase";
+import { usePageTitleOnMount } from "../../hooks/usePageTitle";
+import { useStudio } from "../../hooks/useStudio";
+import { supabase } from "../../lib/supabase";
 
 // Predefined colors for avatars
 const PREDEFINED_COLORS = [
@@ -32,7 +31,6 @@ function getInitials(text) {
 
 export default function GestioneUtentiPage() {
   usePageTitleOnMount("Gestione Utenti");
-  const navigate = useNavigate();
   const { studioId, teamMember: currentMember } = useStudio();
 
   const [members, setMembers] = useState([]);
@@ -53,7 +51,7 @@ export default function GestioneUtentiPage() {
 
     const { data, error: fetchError } = await supabase
       .from("team_members")
-      .select("id, user_name, user_email, color, is_owner")
+      .select("id, user_name, user_email, color, is_owner, role")
       .eq("studio", studioId)
       .order("user_name", { ascending: true });
 
@@ -89,11 +87,8 @@ export default function GestioneUtentiPage() {
     if (updateError) {
       alert("Errore durante il salvataggio: " + updateError.message);
     } else {
-      // Update local state
       setMembers((prev) =>
-        prev.map((m) =>
-          m.id === editingMember.id ? { ...m, color: selectedColor } : m
-        )
+        prev.map((m) => (m.id === editingMember.id ? { ...m, color: selectedColor } : m))
       );
       closeColorPicker();
     }
@@ -110,7 +105,7 @@ export default function GestioneUtentiPage() {
   }
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-white">Gestione Utenti</h2>
         <p className="text-sm text-white/60">
@@ -124,7 +119,7 @@ export default function GestioneUtentiPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {members.map((member) => {
           const isMe = member.id === currentMember?.id;
           const color = member.color || "#0a84ff";
@@ -146,13 +141,14 @@ export default function GestioneUtentiPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-white">
                   {member.user_name || "Utente"}
-                  {isMe && (
-                    <span className="ml-2 text-xs text-white/50">(tu)</span>
-                  )}
+                  {isMe && <span className="ml-2 text-xs text-white/50">(tu)</span>}
                 </p>
-                <p className="truncate text-sm text-white/50">
-                  {member.user_email}
-                </p>
+                <p className="truncate text-sm text-white/50">{member.user_email}</p>
+                {member.role && (
+                  <span className="mt-1 inline-block rounded bg-[#48484a] px-2 py-0.5 text-xs text-white/70">
+                    {member.role}
+                  </span>
+                )}
               </div>
 
               {/* Color picker button */}
@@ -160,10 +156,7 @@ export default function GestioneUtentiPage() {
                 onClick={() => openColorPicker(member)}
                 className="flex shrink-0 items-center gap-2 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white/80 hover:bg-[#48484a]"
               >
-                <div
-                  className="h-4 w-4 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
+                <div className="h-4 w-4 rounded-full" style={{ backgroundColor: color }} />
                 Colore
               </button>
             </div>
@@ -175,9 +168,7 @@ export default function GestioneUtentiPage() {
       {editingMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-lg font-semibold text-white">
-              Scegli colore avatar
-            </h3>
+            <h3 className="text-lg font-semibold text-white">Scegli colore avatar</h3>
             <p className="mt-1 text-sm text-white/60">
               Per: {editingMember.user_name || editingMember.user_email}
             </p>
@@ -200,9 +191,7 @@ export default function GestioneUtentiPage() {
 
             {/* Custom color input */}
             <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-white">
-                Colore personalizzato
-              </label>
+              <label className="mb-1 block text-sm font-medium text-white">Colore personalizzato</label>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
@@ -227,9 +216,7 @@ export default function GestioneUtentiPage() {
                 className="flex h-12 w-12 items-center justify-center rounded-full text-base font-bold text-white"
                 style={{ backgroundColor: selectedColor }}
               >
-                {getInitials(
-                  editingMember.user_name || editingMember.user_email
-                )}
+                {getInitials(editingMember.user_name || editingMember.user_email)}
               </div>
             </div>
 

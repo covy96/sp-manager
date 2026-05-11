@@ -296,7 +296,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/impostazioni?tab=profilo");
+                      navigate("/impostazioni/profilo");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
@@ -309,7 +309,10 @@ export default function AppLayout({ session, children }) {
                 <div className="border-t border-[#48484a] px-2 py-2">
                   <p className="px-2 py-1 text-xs font-medium text-white/40 uppercase">Studio</p>
                   <button
-                    onClick={toggleDarkMode}
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      navigate("/impostazioni/aspetto");
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
                     {darkMode ? <MoonIcon className="h-4 w-4" /> : <SunIcon className="h-4 w-4" />}
@@ -318,7 +321,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/gestione-utenti");
+                      navigate("/impostazioni/utenti");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
@@ -328,7 +331,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/gestione-servizi");
+                      navigate("/impostazioni/servizi");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
@@ -342,7 +345,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/clienti");
+                      navigate("/impostazioni/clienti");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
@@ -352,7 +355,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/progetti-archiviati");
+                      navigate("/impostazioni/progetti-archiviati");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
@@ -362,7 +365,7 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
-                      navigate("/commesse-archiviate");
+                      navigate("/impostazioni/commesse-archiviate");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
                   >
