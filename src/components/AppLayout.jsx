@@ -15,7 +15,6 @@ const ALL_MENU_ITEMS = [
   { label: "Commesse", path: "/commesse", roles: "pm" },
   { label: "Monitoraggio Commesse", path: "/monitoraggio-commesse", roles: "pm" },
   { label: "Proforma", path: "/proforma", roles: "pm" },
-  { label: "Clienti", path: "/clienti", roles: "pm" },
   { label: "Report", path: "/report", roles: "pm" },
   { label: "Gantt Progetti", path: "/gantt-progetti", roles: "pm" },
 ];
