@@ -58,53 +58,55 @@ export default function CommessaDetailPage() {
     residuo: 0,
     costiExtra: 0,
   });
+  const [importoPagato, setImportoPagato] = useState(0);
+  const [residuo, setResiduo] = useState(0);
 
-  const ricalcolaValori = async (commessaData) => {
-    const commessaId = commessaData?.id || id;
-    const importoBase = Number(commessaData?.importo_offerta_base) || 0;
+  const ricalcolaValori = async (importoBaseParam) => {
+    const importoBase = importoBaseParam || Number(commessa?.importo_offerta_base) || 0;
 
-    const { data: tutteProforma } = await supabase
+    const { data: proformePagate } = await supabase
       .from("proforma")
-      .select("*")
-      .eq("commessa_id", commessaId);
+      .select("suddivisione_pagamento_ids")
+      .eq("commessa_id", id)
+      .eq("pagato", true);
 
-    const proformePagate = tutteProforma?.filter((p) => p.pagato) || [];
     let totalePagato = 0;
-
-    for (const pf of proformePagate) {
+    for (const pf of proformePagate || []) {
       if (pf.suddivisione_pagamento_ids?.length > 0) {
         const { data: rate } = await supabase
           .from("suddivisione_pagamenti")
           .select("percentuale, importo_fisso")
           .in("id", pf.suddivisione_pagamento_ids);
 
-        const importoRate = rate?.reduce((sum, r) => {
-          return sum + (r.importo_fisso || (importoBase * (Number(r.percentuale) || 0)) / 100);
-        }, 0) || 0;
-
-        totalePagato += importoRate;
+        for (const r of rate || []) {
+          totalePagato += r.importo_fisso || (importoBase * (Number(r.percentuale) || 0)) / 100;
+        }
       }
     }
 
-    const residuo = Math.max(0, importoBase - totalePagato);
+    const nuovoResiduo = Math.max(0, importoBase - totalePagato);
+
+    await supabase.from("commesse").update({ importo_incassato: totalePagato }).eq("id", id);
+
+    setImportoPagato(totalePagato);
+    setResiduo(nuovoResiduo);
+
+    setCommessa((prev) => (prev ? { ...prev, importo_incassato: totalePagato } : prev));
 
     const { data: costiExtraList } = await supabase
       .from("costi_extra")
       .select("importo")
-      .eq("commessa_id", commessaId);
+      .eq("commessa_id", id);
 
     const totaleCostiExtra = costiExtraList?.reduce((sum, c) => sum + (Number(c.importo) || 0), 0) || 0;
 
-    await supabase.from("commesse").update({ importo_incassato: totalePagato }).eq("id", commessaId);
-
-    setCommessa((prev) => (prev ? { ...prev, importo_incassato: totalePagato } : prev));
-
-    setValoriCommessa({
+    setValoriCommessa((prev) => ({
+      ...prev,
       importoBase: importoBase,
       pagato: totalePagato,
-      residuo: residuo,
+      residuo: nuovoResiduo,
       costiExtra: totaleCostiExtra,
-    });
+    }));
   };
 
   const loadData = async () => {
@@ -149,7 +151,7 @@ export default function CommessaDetailPage() {
     setProforma(proformaResult.data ?? []);
 
     if (commessaData) {
-      await ricalcolaValori(commessaData);
+      await ricalcolaValori(commessaData.importo_offerta_base);
     }
 
     setLoading(false);
@@ -160,8 +162,8 @@ export default function CommessaDetailPage() {
   }, [id]);
 
   const base = Number(commessa?.importo_offerta_base) || 0;
-  const totPagato = Number(commessa?.importo_incassato) || 0;
-  const residuo = Math.max(0, base - totPagato);
+  const totPagato = importoPagato;
+  const residuoVal = residuo;
 
   const totalePercentualeEsistente = useMemo(
     () => suddivisione.reduce((s, r) => s + (Number(r.percentuale) || 0), 0),
@@ -317,10 +319,11 @@ export default function CommessaDetailPage() {
       if (pf.suddivisione_pagamento_ids?.length > 0) {
         const { data: rate } = await supabase
           .from("suddivisione_pagamenti")
-          .select("percentuale")
+          .select("percentuale, importo_fisso")
           .in("id", pf.suddivisione_pagamento_ids);
-        const sommaPercentuale = (rate || []).reduce((sum, r) => sum + (Number(r.percentuale) || 0), 0);
-        totaleIncassato += (importoBase * sommaPercentuale) / 100;
+        for (const r of rate || []) {
+          totaleIncassato += r.importo_fisso || (importoBase * (Number(r.percentuale) || 0)) / 100;
+        }
       }
     }
     return totaleIncassato;
