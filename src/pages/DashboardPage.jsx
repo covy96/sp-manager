@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
 import { supabase } from "../lib/supabase";
-import { calcolaIncassato } from "../lib/utils";
+import { calcolaIncassato, formatOre } from "../lib/utils";
 
 function currency(value) {
   return new Intl.NumberFormat("it-IT", {
@@ -216,7 +216,7 @@ export default function DashboardPage() {
 Dati attuali dello studio:
 - Progetti attivi: ${activeProjects}
 - Task aperti: ${openTasks}
-- Ore questa settimana: ${weekHours}h
+- Ore questa settimana: ${formatOre(weekHours)} h
 - Credito da incassare: ${currency(creditToCollect)}
 - Task di oggi: ${todayTasks.length}
 - Data: ${formatDateIt(new Date())}
@@ -274,7 +274,7 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
       return `Il credito totale da incassare ammonta a ${currency(creditToCollect)}. Ti consiglio di verificare le proforma scadute e inviare solleciti se necessario.`;
     }
     if (msg.includes("ore") || msg.includes("tempo") || msg.includes("settimana")) {
-      return `Questa settimana sono state registrate ${weekHours} ore. Continua così per mantenere il controllo sui tempi di progetto.`;
+      return `Questa settimana sono state registrate ${formatOre(weekHours)} ore. Continua così per mantenere il controllo sui tempi di progetto.`;
     }
     if (msg.includes("task") || msg.includes("lavoro") || msg.includes("da fare")) {
       return `Hai ${openTasks} task aperti in totale e ${todayTasks.length} task pianificati per oggi. Prioritizza quelli più urgenti.`;
@@ -319,7 +319,7 @@ Dai risposte concise, professionali e actionable. Quando rilevi criticità (es. 
 
         <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
           <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Ore Questa Settimana</p>
-          <p className="mt-2 text-3xl font-bold text-[#0a84ff]">{weekHours}h</p>
+          <p className="mt-2 text-3xl font-bold text-[#0a84ff]">{formatOre(weekHours)} h</p>
           <p className="mt-1 text-xs text-white/40">dall&apos;inizio settimana</p>
         </div>
 

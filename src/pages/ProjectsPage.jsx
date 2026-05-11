@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
+import { formatOre } from "../lib/utils";
 
 function getInitials(name = "") {
   return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
@@ -607,7 +608,7 @@ export default function ProjectsPage() {
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5 text-white/60">
               <ClockIcon className="h-4 w-4" />
-              <span>{hours}h</span>
+              <span>{formatOre(hours)} h</span>
             </div>
             <div className="text-white/60">
               Task {tasks.completed}/{tasks.total}

@@ -1,3 +1,12 @@
+// Formatta ore decimali in formato HH:MM
+// Esempi: 2.75 → '2:45', 1.5 → '1:30', 0.25 → '0:15', 3 → '3:00'
+export function formatOre(decimale) {
+  if (!decimale && decimale !== 0) return "0:00";
+  const ore = Math.floor(decimale);
+  const minuti = Math.round((decimale - ore) * 60);
+  return `${ore}:${minuti.toString().padStart(2, "0")}`;
+}
+
 export async function calcolaIncassato(commesseIds, studioId, supabase) {
   // Carica tutte le proforma pagate dello studio
   const { data: proformePagate } = await supabase

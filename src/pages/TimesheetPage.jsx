@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
+import { formatOre } from "../lib/utils";
 
 // Chevron left icon
 function ChevronLeftIcon({ className }) {
@@ -90,13 +91,6 @@ function formatDateDisplay(dateStr) {
   return isToday ? `${formatted} (Oggi)` : formatted;
 }
 
-function formatHoursLabel(hours) {
-  const h = Math.floor(hours);
-  const minuti = Math.round((hours - h) * 60);
-  if (minuti === 0) return `${h}:00`;
-  return `${h}:${minuti.toString().padStart(2, "0")}`;
-}
-
 function getInitials(text) {
   if (!text) return "?";
   const parts = text.trim().split(/\s+/);
@@ -109,7 +103,7 @@ function getInitials(text) {
 // Generate hours options from 0.25 to 12 with step 0.25
 const HOURS_OPTIONS = [];
 for (let h = 0.25; h <= 12; h += 0.25) {
-  HOURS_OPTIONS.push({ value: h, label: formatHoursLabel(h) });
+  HOURS_OPTIONS.push({ value: h, label: formatOre(h) });
 }
 
 export default function TimesheetPage() {
@@ -536,7 +530,7 @@ export default function TimesheetPage() {
               {/* Hours */}
               <div className="shrink-0 text-right">
                 <span className="text-lg font-semibold text-[#0a84ff]">
-                  {formatHoursLabel(entry.hours)}
+                  {formatOre(entry.hours)} h
                 </span>
                 <p className="text-xs text-white/40">ore</p>
               </div>
@@ -552,7 +546,7 @@ export default function TimesheetPage() {
             <span className="text-sm font-medium text-white/70">
               Totale {new Date(selectedDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
             </span>
-            <span className="text-2xl font-bold text-[#0a84ff]">{formatHoursLabel(totalHours)}</span>
+            <span className="text-2xl font-bold text-[#0a84ff]">{formatOre(totalHours)} h</span>
           </div>
         </div>
       )}

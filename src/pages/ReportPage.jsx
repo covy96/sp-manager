@@ -11,6 +11,7 @@ import {
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
+import { formatOre } from "../lib/utils";
 
 const MONTHS = [
   "Gennaio",
@@ -35,10 +36,6 @@ function getMonthRange(year, monthIndex) {
   const start = new Date(year, monthIndex, 1);
   const end = new Date(year, monthIndex + 1, 0);
   return { start: toISODate(start), end: toISODate(end) };
-}
-
-function formatHours(value) {
-  return `${Number(value || 0).toFixed(1)} h`;
 }
 
 function csvEscape(value) {
@@ -250,7 +247,7 @@ export default function ReportPage() {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <article className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
           <p className="text-sm text-white/70">Ore Totali del mese</p>
-          <p className="mt-1 text-2xl font-bold text-[#0a84ff]">{formatHours(summary.oreTotali)}</p>
+          <p className="mt-1 text-2xl font-bold text-[#0a84ff]">{formatOre(summary.oreTotali)}</p>
         </article>
         <article className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
           <p className="text-sm text-white/70">Progetti Attivi</p>
@@ -279,7 +276,7 @@ export default function ReportPage() {
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#1c1c1e", borderColor: "#48484a" }}
-                  formatter={(value) => formatHours(value)}
+                  formatter={(value) => formatOre(value)}
                 />
                 <Bar dataKey="hours" fill="#0a84ff" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -297,7 +294,7 @@ export default function ReportPage() {
                 <YAxis stroke="#f5f5f7" tick={{ fill: "#f5f5f7", fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#1c1c1e", borderColor: "#48484a" }}
-                  formatter={(value) => formatHours(value)}
+                  formatter={(value) => formatOre(value)}
                 />
                 <Bar dataKey="hours" fill="#0a84ff" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -321,8 +318,8 @@ export default function ReportPage() {
               {tableRows.map((row) => (
                 <tr key={row.name} className="border-t border-[#48484a]">
                   <td className="px-4 py-3">{row.name}</td>
-                  <td className="px-4 py-3">{formatHours(row.monthHours)}</td>
-                  <td className="px-4 py-3">{formatHours(row.yearHours)}</td>
+                  <td className="px-4 py-3">{formatOre(row.monthHours)}</td>
+                  <td className="px-4 py-3">{formatOre(row.yearHours)}</td>
                 </tr>
               ))}
               {tableRows.length === 0 ? (

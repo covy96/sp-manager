@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
+import { formatOre } from "../lib/utils";
 
 const ROLE_OPTIONS = ["Architetto", "Collaboratore", "Titolare", "Stagista"];
 
@@ -297,7 +298,7 @@ export default function TeamPage() {
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
                   <p className="text-xs text-white/60">Ore settimana</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{stats.weeklyHours}</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{formatOre(stats.weeklyHours)}</p>
                 </div>
                 <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
                   <p className="text-xs text-white/60">Task attivi</p>
