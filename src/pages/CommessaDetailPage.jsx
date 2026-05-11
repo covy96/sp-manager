@@ -52,6 +52,58 @@ export default function CommessaDetailPage() {
   const [editForm, setEditForm] = useState({});
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
+  const [valoriCommessa, setValoriCommessa] = useState({
+    importoBase: 0,
+    pagato: 0,
+    residuo: 0,
+    costiExtra: 0,
+  });
+
+  const ricalcolaValori = async (commessaData) => {
+    const commessaId = commessaData?.id || id;
+    const importoBase = Number(commessaData?.importo_offerta_base) || 0;
+
+    const { data: tutteProforma } = await supabase
+      .from("proforma")
+      .select("*")
+      .eq("commessa_id", commessaId);
+
+    const proformePagate = tutteProforma?.filter((p) => p.pagato) || [];
+    let totalePagato = 0;
+
+    for (const pf of proformePagate) {
+      if (pf.suddivisione_pagamento_ids?.length > 0) {
+        const { data: rate } = await supabase
+          .from("suddivisione_pagamenti")
+          .select("percentuale, importo_fisso")
+          .in("id", pf.suddivisione_pagamento_ids);
+
+        const importoRate = rate?.reduce((sum, r) => {
+          return sum + (r.importo_fisso || (importoBase * (Number(r.percentuale) || 0)) / 100);
+        }, 0) || 0;
+
+        totalePagato += importoRate;
+      }
+    }
+
+    const residuo = Math.max(0, importoBase - totalePagato);
+
+    const { data: costiExtraList } = await supabase
+      .from("costi_extra")
+      .select("importo")
+      .eq("commessa_id", commessaId);
+
+    const totaleCostiExtra = costiExtraList?.reduce((sum, c) => sum + (Number(c.importo) || 0), 0) || 0;
+
+    await supabase.from("commesse").update({ importo_incassato: totalePagato }).eq("id", commessaId);
+
+    setValoriCommessa({
+      importoBase: importoBase,
+      pagato: totalePagato,
+      residuo: residuo,
+      costiExtra: totaleCostiExtra,
+    });
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -88,11 +140,17 @@ export default function CommessaDetailPage() {
       );
     }
 
-    setCommessa(commessaResult.data ?? null);
+    const commessaData = commessaResult.data ?? null;
+    setCommessa(commessaData);
     setPagamenti(pagamentiResult.data ?? []);
     setCostiExtra(costiResult.data ?? []);
     setSuddivisione(suddivisioneResult.data ?? []);
     setProforma(proformaResult.data ?? []);
+
+    if (commessaData) {
+      await ricalcolaValori(commessaData);
+    }
+
     setLoading(false);
   };
 
@@ -100,9 +158,9 @@ export default function CommessaDetailPage() {
     loadData();
   }, [id]);
 
-  const base = Number(commessa?.importo_offerta_base) || 0;
-  const totPagato = Number(commessa?.importo_incassato) || 0;
-  const residuo = Math.max(0, base - totPagato);
+  const base = valoriCommessa.importoBase;
+  const totPagato = valoriCommessa.pagato;
+  const residuo = valoriCommessa.residuo;
 
   const totalePercentualeEsistente = useMemo(
     () => suddivisione.reduce((s, r) => s + (Number(r.percentuale) || 0), 0),
@@ -212,6 +270,7 @@ export default function CommessaDetailPage() {
     setProforma((prev) => [data, ...prev]);
     setProformaSaving(false);
     setProformaModal(false);
+    await ricalcolaValori(commessa);
   };
 
   const toggleProformaRata = (rataId) => {
@@ -313,6 +372,8 @@ export default function CommessaDetailPage() {
     const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
     setCostiExtra(costiRes.data ?? []);
 
+    await ricalcolaValori(commessa);
+
     setPagamentoProformaSaving(false);
     setPagamentoProformaModal(false);
     setSelectedProforma(null);
@@ -362,6 +423,8 @@ export default function CommessaDetailPage() {
     setSuddivisione(suddivisioneRes.data ?? []);
     const costiRes = await supabase.from("costi_extra").select("*").eq("commessa_id", id);
     setCostiExtra(costiRes.data ?? []);
+
+    await ricalcolaValori(commessa);
 
     setRimuoviPagamentoSaving(false);
     setRimuoviPagamentoModal(false);
@@ -619,7 +682,7 @@ export default function CommessaDetailPage() {
           </div>
           <div className="rounded-xl border border-[#48484a] bg-[#ff9f0a]/20 px-5 py-4 min-w-[140px]">
             <p className="text-[13px] text-[#ff9f0a]/80">Costi Extra</p>
-            <p className="text-2xl font-bold text-[#ff9f0a]">{currency(costiExtra.reduce((s, c) => s + (Number(c.importo) || 0), 0))}</p>
+            <p className="text-2xl font-bold text-[#ff9f0a]">{currency(valoriCommessa.costiExtra)}</p>
           </div>
         </div>
         {commessa.note_amministrative ? (
