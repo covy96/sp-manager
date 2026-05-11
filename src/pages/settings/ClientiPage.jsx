@@ -50,7 +50,7 @@ export default function ClientiPage() {
 
   // Add contact modal state
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [newContact, setNewContact] = useState({ name: "", company: "" });
+  const [newContact, setNewContact] = useState({ full_name: "", company: "" });
 
   useEffect(() => {
     if (!studioId) return;
@@ -65,7 +65,7 @@ export default function ClientiPage() {
       .from("global_contacts")
       .select("*")
       .eq("studio", studioId)
-      .order("name", { ascending: true });
+      .order("full_name", { ascending: true });
 
     if (fetchError) {
       setError(fetchError.message);
@@ -78,7 +78,7 @@ export default function ClientiPage() {
 
   const handleAddContact = async (e) => {
     e.preventDefault();
-    if (!newContact.name.trim()) return;
+    if (!newContact.full_name.trim()) return;
 
     setSaving(true);
     setError("");
@@ -86,7 +86,7 @@ export default function ClientiPage() {
     const { data, error: insertError } = await supabase
       .from("global_contacts")
       .insert({
-        name: newContact.name.trim(),
+        full_name: newContact.full_name.trim(),
         company: newContact.company.trim() || null,
         studio: studioId,
       })
@@ -96,9 +96,9 @@ export default function ClientiPage() {
     if (insertError) {
       setError(insertError.message);
     } else {
-      setContacts((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setContacts((prev) => [...prev, data].sort((a, b) => a.full_name.localeCompare(b.full_name)));
       setAddModalOpen(false);
-      setNewContact({ name: "", company: "" });
+      setNewContact({ full_name: "", company: "" });
     }
 
     setSaving(false);
@@ -172,7 +172,7 @@ export default function ClientiPage() {
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-white">{contact.name}</p>
+                  <p className="font-medium text-white">{contact.full_name}</p>
                   {contact.company && <p className="text-sm text-white/50">{contact.company}</p>}
                 </div>
               </div>
@@ -202,8 +202,8 @@ export default function ClientiPage() {
                 <input
                   type="text"
                   placeholder="Nome cliente"
-                  value={newContact.name}
-                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                  value={newContact.full_name}
+                  onChange={(e) => setNewContact({ ...newContact, full_name: e.target.value })}
                   className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
                   required
                   autoFocus
@@ -226,7 +226,7 @@ export default function ClientiPage() {
                   type="button"
                   onClick={() => {
                     setAddModalOpen(false);
-                    setNewContact({ name: "", company: "" });
+                    setNewContact({ full_name: "", company: "" });
                   }}
                   className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
                 >
@@ -234,7 +234,7 @@ export default function ClientiPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || !newContact.name.trim()}
+                  disabled={saving || !newContact.full_name.trim()}
                   className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
                 >
                   {saving ? "Salvataggio..." : "Aggiungi"}
