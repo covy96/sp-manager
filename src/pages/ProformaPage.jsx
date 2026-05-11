@@ -14,10 +14,10 @@ export default function ProformaPage() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [rateMap, setRateMap] = useState({});
-  const [costiMap, setCostiMap] = useState({});
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [commessaData, setCommessaData] = useState(null);
+  const [rateAssociate, setRateAssociate] = useState([]);
+  const [costiExtraAssociati, setCostiExtraAssociati] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -39,38 +39,40 @@ export default function ProformaPage() {
 
   const selectProforma = async (pf) => {
     setSelected(pf);
-    setRateMap({});
-    setCostiMap({});
+    setRateAssociate([]);
+    setCostiExtraAssociati([]);
     setCommessaData(null);
     if (!pf) return;
     setLoadingDetail(true);
 
-    const [rateRes, costiRes, commessaRes] = await Promise.all([
-      pf.rate_ids?.length
-        ? supabase.from("suddivisione_pagamenti").select("*").in("id", pf.rate_ids)
-        : Promise.resolve({ data: [] }),
-      pf.costi_ids?.length
-        ? supabase.from("costi_extra").select("*").in("id", pf.costi_ids)
-        : Promise.resolve({ data: [] }),
+    const [commessaRes] = await Promise.all([
       pf.commessa_id
         ? supabase.from("commesse").select("nome_commessa, numero_offerta, importo_offerta_base").eq("id", pf.commessa_id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
 
-    const rMap = {};
-    (rateRes.data ?? []).forEach((r) => { rMap[r.id] = r; });
-    const cMap = {};
-    (costiRes.data ?? []).forEach((c) => { cMap[c.id] = c; });
-    setRateMap(rMap);
-    setCostiMap(cMap);
     setCommessaData(commessaRes.data);
+
+    if (pf.suddivisione_pagamento_ids?.length > 0) {
+      const { data: rate } = await supabase
+        .from("suddivisione_pagamenti")
+        .select("*")
+        .in("id", pf.suddivisione_pagamento_ids);
+      setRateAssociate(rate || []);
+    }
+
+    if (pf.costo_extra_ids?.length > 0) {
+      const { data: costiExtra } = await supabase
+        .from("costi_extra")
+        .select("*")
+        .in("id", pf.costo_extra_ids);
+      setCostiExtraAssociati(costiExtra || []);
+    }
+
     setLoadingDetail(false);
   };
 
   const baseCommessa = Number(commessaData?.importo_offerta_base) || 0;
-
-  const selectedRate = selected?.rate_ids?.map((rid) => rateMap[rid]).filter(Boolean) ?? [];
-  const selectedCosti = selected?.costi_ids?.map((cid) => costiMap[cid]).filter(Boolean) ?? [];
 
   return (
     <div className="flex gap-5">
@@ -165,11 +167,11 @@ export default function ProformaPage() {
                 {/* RATE ASSOCIATE */}
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-white/80">Rate associate</h3>
-                  {selectedRate.length === 0 ? (
+                  {rateAssociate.length === 0 ? (
                     <p className="text-sm text-white/40">Nessuna rata associata.</p>
                   ) : (
                     <ul className="space-y-1.5">
-                      {selectedRate.map((rata, idx) => {
+                      {rateAssociate.map((rata, idx) => {
                         const perc = Number(rata.percentuale) || 0;
                         const importoCalcolato = baseCommessa > 0 ? (baseCommessa * perc) / 100 : 0;
                         return (
@@ -189,11 +191,11 @@ export default function ProformaPage() {
                 {/* COSTI EXTRA ASSOCIATI */}
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-white/80">Costi extra associati</h3>
-                  {selectedCosti.length === 0 ? (
+                  {costiExtraAssociati.length === 0 ? (
                     <p className="text-sm text-white/40">Nessun costo extra associato.</p>
                   ) : (
                     <ul className="space-y-1.5">
-                      {selectedCosti.map((costo) => (
+                      {costiExtraAssociati.map((costo) => (
                         <li key={costo.id} className="flex items-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/80">
                           <span className="flex-1">{costo.description || costo.tipo_costo || "—"}</span>
                           <span className="font-medium text-white">{currency(costo.importo)}</span>

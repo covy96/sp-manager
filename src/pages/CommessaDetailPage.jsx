@@ -43,6 +43,8 @@ export default function CommessaDetailPage() {
   const [pagamentoProformaData, setPagamentoProformaData] = useState({ numero_fattura: "", data_pagamento: "" });
   const [pagamentoProformaSaving, setPagamentoProformaSaving] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState(null);
+  const [rimuoviPagamentoModal, setRimuoviPagamentoModal] = useState(false);
+  const [rimuoviPagamentoSaving, setRimuoviPagamentoSaving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
@@ -193,10 +195,34 @@ export default function CommessaDetailPage() {
   };
 
   const openPagamentoProformaModal = (pf) => {
-    if (pf.pagato) return;
     setSelectedProforma(pf);
+    if (pf.pagato) {
+      setRimuoviPagamentoModal(true);
+      return;
+    }
     setPagamentoProformaData({ numero_fattura: "", data_pagamento: new Date().toISOString().slice(0, 10) });
     setPagamentoProformaModal(true);
+  };
+
+  const calcolaIncassatoDaProforme = async (commessaId, importoBase) => {
+    const { data: proformePagate } = await supabase
+      .from("proforma")
+      .select("suddivisione_pagamento_ids")
+      .eq("commessa_id", commessaId)
+      .eq("pagato", true);
+
+    let totaleIncassato = 0;
+    for (const pf of proformePagate || []) {
+      if (pf.suddivisione_pagamento_ids?.length > 0) {
+        const { data: rate } = await supabase
+          .from("suddivisione_pagamenti")
+          .select("percentuale")
+          .in("id", pf.suddivisione_pagamento_ids);
+        const sommaPercentuale = (rate || []).reduce((sum, r) => sum + (Number(r.percentuale) || 0), 0);
+        totaleIncassato += (importoBase * sommaPercentuale) / 100;
+      }
+    }
+    return totaleIncassato;
   };
 
   const handleSavePagamentoProforma = async () => {
@@ -221,19 +247,7 @@ export default function CommessaDetailPage() {
     const { data: commessaData } = await supabase.from("commesse").select("importo_offerta_base").eq("id", id).maybeSingle();
     const baseVal = Number(commessaData?.importo_offerta_base) || 0;
 
-    const { data: proformaPagate } = await supabase
-      .from("proforma")
-      .select("rate_ids")
-      .eq("commessa_id", id)
-      .eq("pagato", true);
-
-    let nuovoIncassato = 0;
-    const rateIdsPagate = (proformaPagate || []).flatMap((p) => p.rate_ids || []);
-    if (rateIdsPagate.length > 0) {
-      const { data: rateData } = await supabase.from("suddivisione_pagamenti").select("percentuale").in("id", rateIdsPagate);
-      const totalePercentuale = (rateData || []).reduce((s, r) => s + (Number(r.percentuale) || 0), 0);
-      nuovoIncassato = (baseVal * totalePercentuale) / 100;
-    }
+    const nuovoIncassato = await calcolaIncassatoDaProforme(id, baseVal);
 
     await supabase.from("commesse").update({ importo_incassato: nuovoIncassato }).eq("id", id);
 
@@ -241,6 +255,39 @@ export default function CommessaDetailPage() {
     setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
     setPagamentoProformaSaving(false);
     setPagamentoProformaModal(false);
+    setSelectedProforma(null);
+  };
+
+  const handleRimuoviPagamento = async () => {
+    if (!selectedProforma) return;
+    setRimuoviPagamentoSaving(true);
+
+    const { error: updateError } = await supabase
+      .from("proforma")
+      .update({
+        pagato: false,
+        numero_fattura: null,
+        data_pagamento: null,
+      })
+      .eq("id", selectedProforma.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setRimuoviPagamentoSaving(false);
+      return;
+    }
+
+    const { data: commessaData } = await supabase.from("commesse").select("importo_offerta_base").eq("id", id).maybeSingle();
+    const baseVal = Number(commessaData?.importo_offerta_base) || 0;
+
+    const nuovoIncassato = await calcolaIncassatoDaProforme(id, baseVal);
+
+    await supabase.from("commesse").update({ importo_incassato: nuovoIncassato }).eq("id", id);
+
+    setProforma((prev) => prev.map((p) => (p.id === selectedProforma.id ? { ...p, pagato: false, numero_fattura: null, data_pagamento: null } : p)));
+    setCommessa((prev) => (prev ? { ...prev, importo_incassato: nuovoIncassato } : prev));
+    setRimuoviPagamentoSaving(false);
+    setRimuoviPagamentoModal(false);
     setSelectedProforma(null);
   };
 
@@ -802,6 +849,22 @@ export default function CommessaDetailPage() {
                 <button type="button" onClick={() => setPagamentoProformaModal(false)} disabled={pagamentoProformaSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
                 <button type="button" onClick={handleSavePagamentoProforma} disabled={pagamentoProformaSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{pagamentoProformaSaving ? "Salvataggio..." : "Conferma Pagamento"}</button>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {rimuoviPagamentoModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!rimuoviPagamentoSaving) setRimuoviPagamentoModal(false); }}>
+          <div className="w-full max-w-md rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">Rimuovi Pagamento</h3>
+              <button type="button" onClick={() => setRimuoviPagamentoModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <p className="mb-5 text-sm text-white/80">Sei sicuro di voler rimuovere il pagamento registrato? Verranno cancellati numero fattura e data pagamento.</p>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setRimuoviPagamentoModal(false)} disabled={rimuoviPagamentoSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
+              <button type="button" onClick={handleRimuoviPagamento} disabled={rimuoviPagamentoSaving} className="rounded-lg bg-[#ff453a] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{rimuoviPagamentoSaving ? "Rimozione..." : "Rimuovi pagamento"}</button>
             </div>
           </div>
         </div>
