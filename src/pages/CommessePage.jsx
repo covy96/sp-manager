@@ -42,13 +42,16 @@ export default function CommessePage() {
   const [progettoSaving, setProgettoSaving] = useState(false);
   const [progettoError, setProgettoError] = useState("");
 
+  const [collaboratoriByCommessa, setCollaboratoriByCommessa] = useState({});
+
   const loadData = async () => {
     if (!studioId) return;
     setLoading(true);
     setError("");
-    const [commesseResult, pagamentiResult] = await Promise.all([
+    const [commesseResult, pagamentiResult, collaboratoriResult] = await Promise.all([
       supabase.from("commesse").select("*").eq("studio", studioId).order("created_at", { ascending: false }),
       supabase.from("pagamenti").select("commessa_id,importo"),
+      supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio", studioId),
     ]);
 
     if (commesseResult.error) {
@@ -71,7 +74,15 @@ export default function CommessePage() {
       return acc;
     }, {});
 
+    // Raggruppa collaboratori per commessa
+    const collabGrouped = (collaboratoriResult.data ?? []).reduce((acc, collab) => {
+      const key = collab.commessa_id;
+      acc[key] = (acc[key] || 0) + (Number(collab.importo) || 0);
+      return acc;
+    }, {});
+
     setPagamentiByCommessa(grouped);
+    setCollaboratoriByCommessa(collabGrouped);
     setCommesse(commesseResult.data ?? []);
     setLoading(false);
   };
@@ -315,6 +326,7 @@ export default function CommessePage() {
             const pagato = commessa.importo_incassato || 0;
             const residuo = Math.max(0, base - pagato);
             const extra = Number(commessa.costi_extra_totali) || 0;
+            const collabTotale = collaboratoriByCommessa[commessa.id] || 0;
 
             return (
               <button
@@ -343,6 +355,11 @@ export default function CommessePage() {
                   <span className="rounded-md border border-[#48484a] bg-[#ff9f0a]/20 px-2 py-1 text-[#ff9f0a]">
                     Costi Extra: {currency(extra)}
                   </span>
+                  {collabTotale > 0 && (
+                    <span className="rounded-md border border-[#48484a] bg-[#bf5af2]/20 px-2 py-1 text-[#bf5af2]">
+                      Collaboratori: {currency(collabTotale)}
+                    </span>
+                  )}
                 </div>
               </button>
             );

@@ -61,9 +61,16 @@ export default function CommessaDetailPage() {
     pagato: 0,
     residuo: 0,
     costiExtra: 0,
+    costiCollaboratori: 0,
   });
   const [importoPagato, setImportoPagato] = useState(0);
   const [residuo, setResiduo] = useState(0);
+
+  // Collaboratori esterni
+  const [collaboratori, setCollaboratori] = useState([]);
+  const [showCollaboratori, setShowCollaboratori] = useState(false);
+  const [newCollaboratore, setNewCollaboratore] = useState({ ruolo: "", nome_cognome: "", importo: "" });
+  const [savingCollaboratore, setSavingCollaboratore] = useState(false);
 
   const ricalcolaValori = async (importoBaseParam) => {
     const base = importoBaseParam ?? Number(commessa?.importo_offerta_base) ?? 0;
@@ -106,19 +113,28 @@ export default function CommessaDetailPage() {
 
     const totaleCostiExtra = costiExtraList?.reduce((sum, c) => sum + (Number(c.importo) || 0), 0) || 0;
 
+    // Carica costi collaboratori
+    const { data: collabList } = await supabase
+      .from("collaboratori_esterni")
+      .select("importo")
+      .eq("commessa_id", id);
+
+    const totaleCollaboratori = collabList?.reduce((sum, c) => sum + (Number(c.importo) || 0), 0) || 0;
+
     setValoriCommessa((prev) => ({
       ...prev,
       importoBase: base,
       pagato: totalePagato,
       residuo: Math.max(0, base - totalePagato),
       costiExtra: totaleCostiExtra,
+      costiCollaboratori: totaleCollaboratori,
     }));
   };
 
   const loadData = async () => {
     setLoading(true);
     setError("");
-    const [commessaResult, pagamentiResult, costiResult, suddivisioneResult, proformaResult] =
+    const [commessaResult, pagamentiResult, costiResult, suddivisioneResult, proformaResult, collaboratoriResult] =
       await Promise.all([
         supabase.from("commesse").select("*").eq("id", id).maybeSingle(),
         supabase.from("pagamenti").select("*").eq("commessa_id", id).order("data_pagamento"),
@@ -130,6 +146,11 @@ export default function CommessaDetailPage() {
           .order("created_at"),
         supabase
           .from("proforma")
+          .select("*")
+          .eq("commessa_id", id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("collaboratori_esterni")
           .select("*")
           .eq("commessa_id", id)
           .order("created_at", { ascending: false }),
@@ -156,6 +177,7 @@ export default function CommessaDetailPage() {
     setCostiExtra(costiResult.data ?? []);
     setSuddivisione(suddivisioneResult.data ?? []);
     setProforma(proformaData);
+    setCollaboratori(collaboratoriResult.data ?? []);
 
     // Crea mappe per lookup veloce proforma per rate e costi
     const mapRata = {};
@@ -679,6 +701,52 @@ export default function CommessaDetailPage() {
     }
   };
 
+  // Gestione collaboratori esterni
+  const handleAddCollaboratore = async (e) => {
+    e.preventDefault();
+    if (!newCollaboratore.ruolo.trim() || !newCollaboratore.nome_cognome.trim() || !newCollaboratore.importo) {
+      return;
+    }
+    setSavingCollaboratore(true);
+    const payload = {
+      commessa_id: id,
+      studio: studioId,
+      ruolo: newCollaboratore.ruolo.trim(),
+      nome_cognome: newCollaboratore.nome_cognome.trim(),
+      importo: Number(newCollaboratore.importo) || 0,
+    };
+    const { data, error: insertError } = await supabase
+      .from("collaboratori_esterni")
+      .insert(payload)
+      .select("*")
+      .single();
+    if (insertError) {
+      setError(insertError.message);
+      setSavingCollaboratore(false);
+      return;
+    }
+    setCollaboratori((prev) => [data, ...prev]);
+    setNewCollaboratore({ ruolo: "", nome_cognome: "", importo: "" });
+    // Aggiorna il totale collaboratori
+    const nuovoTotale = [...collaboratori, data].reduce((sum, c) => sum + (Number(c.importo) || 0), 0);
+    setValoriCommessa((prev) => ({ ...prev, costiCollaboratori: nuovoTotale }));
+    setSavingCollaboratore(false);
+  };
+
+  const handleDeleteCollaboratore = async (collabId) => {
+    if (!confirm("Sei sicuro di voler eliminare questo collaboratore?")) return;
+    const { error: deleteError } = await supabase.from("collaboratori_esterni").delete().eq("id", collabId);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+    const updated = collaboratori.filter((c) => c.id !== collabId);
+    setCollaboratori(updated);
+    // Aggiorna il totale collaboratori
+    const nuovoTotale = updated.reduce((sum, c) => sum + (Number(c.importo) || 0), 0);
+    setValoriCommessa((prev) => ({ ...prev, costiCollaboratori: nuovoTotale }));
+  };
+
   if (loading) {
     return <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">Caricamento commessa...</section>;
   }
@@ -744,6 +812,12 @@ export default function CommessaDetailPage() {
             <p className="text-[13px] text-[#ff9f0a]/80">Costi Extra</p>
             <p className="text-2xl font-bold text-[#ff9f0a]">{currency(valoriCommessa.costiExtra)}</p>
           </div>
+          {valoriCommessa.costiCollaboratori > 0 && (
+            <div className="rounded-xl border border-[#48484a] bg-[#bf5af2]/20 px-5 py-4 min-w-[140px]">
+              <p className="text-[13px] text-[#bf5af2]/80">Collaboratori</p>
+              <p className="text-2xl font-bold text-[#bf5af2]">{currency(valoriCommessa.costiCollaboratori)}</p>
+            </div>
+          )}
         </div>
         {commessa.note_amministrative ? (
           <p className="mt-3 text-sm text-white/65">{commessa.note_amministrative}</p>
@@ -976,6 +1050,90 @@ export default function CommessaDetailPage() {
         </section>
 
       </div>
+
+      {/* COLLABORATORI ESTERNI */}
+      <section className="mt-4 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
+        <h3 className="mb-3 text-base font-semibold text-white">Collaboratori Esterni</h3>
+
+        {/* Form aggiungi collaboratore */}
+        <form onSubmit={handleAddCollaboratore} className="mb-4 flex flex-wrap items-end gap-2">
+          <div className="flex-1 min-w-[140px]">
+            <label className="mb-1 block text-xs font-medium text-white/70">Ruolo</label>
+            <input
+              type="text"
+              placeholder="Es. Coordinatore Sicurezza"
+              value={newCollaboratore.ruolo}
+              onChange={(e) => setNewCollaboratore({ ...newCollaboratore, ruolo: e.target.value })}
+              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
+            />
+          </div>
+          <div className="flex-1 min-w-[140px]">
+            <label className="mb-1 block text-xs font-medium text-white/70">Nome Cognome</label>
+            <input
+              type="text"
+              placeholder="Es. Mario Rossi"
+              value={newCollaboratore.nome_cognome}
+              onChange={(e) => setNewCollaboratore({ ...newCollaboratore, nome_cognome: e.target.value })}
+              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
+            />
+          </div>
+          <div className="w-32">
+            <label className="mb-1 block text-xs font-medium text-white/70">Importo (€)</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={newCollaboratore.importo}
+              onChange={(e) => setNewCollaboratore({ ...newCollaboratore, importo: e.target.value })}
+              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={savingCollaboratore || !newCollaboratore.ruolo.trim() || !newCollaboratore.nome_cognome.trim() || !newCollaboratore.importo}
+            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+          >
+            + Aggiungi
+          </button>
+        </form>
+
+        {/* Toggle lista collaboratori */}
+        <button
+          type="button"
+          onClick={() => setShowCollaboratori((v) => !v)}
+          className="mb-2 flex items-center gap-2 text-sm text-white/70 hover:text-white"
+        >
+          <span>{showCollaboratori ? "▼" : "▶"}</span>
+          Visualizza Collaboratori ({collaboratori.length})
+        </button>
+
+        {/* Lista collaboratori */}
+        {showCollaboratori && (
+          <div className="mt-2">
+            {collaboratori.length === 0 ? (
+              <p className="py-4 text-center text-sm text-white/40">Nessun collaboratore registrato.</p>
+            ) : (
+              <ul className="space-y-2">
+                {collaboratori.map((collab) => (
+                  <li key={collab.id} className="flex items-center justify-between rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/80">
+                    <div className="flex flex-1 flex-wrap items-center gap-3">
+                      <span className="font-medium text-white">{collab.ruolo}</span>
+                      <span className="text-white/70">{collab.nome_cognome}</span>
+                      <span className="font-medium text-[#bf5af2]">{currency(collab.importo)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCollaboratore(collab.id)}
+                      className="rounded-md border border-[#48484a] px-2 py-1 text-xs text-[#ff453a] hover:bg-[#ff453a]/10"
+                    >
+                      Elimina
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </section>
 
       {proformaModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!proformaSaving) setProformaModal(false); }}>
