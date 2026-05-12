@@ -855,13 +855,15 @@ export default function ProjectDetailPage() {
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate("/progetti")}
-              className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:border-[#0a84ff] hover:bg-white/10"
-            >
-              Torna ai Progetti
-            </button>
+            {project?.commessa_id && (
+              <button
+                type="button"
+                onClick={() => navigate(`/commesse/${project.commessa_id}`)}
+                className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:border-[#0a84ff] hover:bg-white/10"
+              >
+                € Commessa
+              </button>
+            )}
             <div className="relative">
               <button
                 type="button"

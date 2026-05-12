@@ -220,10 +220,14 @@ export default function AppLayout({ session, children }) {
     <div className="flex min-h-screen bg-[#1c1c1e] text-[#f5f5f7]">
       {/* Sidebar */}
       <aside className="flex w-72 flex-col border-r border-white/10 bg-[#2c2c2e] p-4">
-        <div className="mb-6 rounded-lg bg-[#1c1c1e] p-4">
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard")}
+          className="mb-6 w-full rounded-lg bg-[#1c1c1e] p-4 text-left hover:bg-[#3a3a3c] transition-colors cursor-pointer"
+        >
           <p className="text-lg font-semibold">ASM</p>
           <p className="mt-1 text-xs text-white/60">Architect Studio Management</p>
-        </div>
+        </button>
 
         <nav className="space-y-1">
           {menuItems.map((item) => (
