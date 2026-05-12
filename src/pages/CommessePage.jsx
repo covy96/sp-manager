@@ -44,6 +44,9 @@ export default function CommessePage() {
 
   const [collaboratoriByCommessa, setCollaboratoriByCommessa] = useState({});
 
+  // Progetti per dropdown collegamento
+  const [projectsList, setProjectsList] = useState([]);
+
   const loadData = async () => {
     if (!studioId) return;
     setLoading(true);
@@ -92,6 +95,18 @@ export default function CommessePage() {
   }, [studioId, location.key]);
 
   useEffect(() => {
+    const loadProjectsList = async () => {
+      if (!studioId) return;
+      const { data } = await supabase
+        .from("projects")
+        .select("id,name,client")
+        .eq("studio", studioId)
+        .eq("archived", false)
+        .order("created_at", { ascending: false });
+      setProjectsList(data ?? []);
+    };
+    if (studioId) loadProjectsList();
+
     const loadServices = async () => {
       const { data, error: templatesError } = await supabase
         .from("service_task_templates")
@@ -158,6 +173,7 @@ export default function CommessePage() {
       importo_offerta_base: "",
       note_amministrative: "",
       createProgetto: false,
+      selectedProjectId: "",
     });
     setIsModalOpen(true);
   };
@@ -205,6 +221,12 @@ export default function CommessePage() {
       setFormError(insertError.message);
       setSaving(false);
       return;
+    }
+
+    // Collegamento bidirezionale con progetto esistente
+    if (formData.selectedProjectId) {
+      await supabase.from("commesse").update({ project_id: formData.selectedProjectId }).eq("id", data.id);
+      await supabase.from("projects").update({ commessa_id: data.id }).eq("id", formData.selectedProjectId);
     }
 
     const shouldCreateProgetto = formData.createProgetto;
@@ -431,6 +453,20 @@ export default function CommessePage() {
                   className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">Progetto collegato</label>
+                <select
+                  value={formData.selectedProjectId}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, selectedProjectId: e.target.value }))}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                >
+                  <option value="">Nessuno</option>
+                  {projectsList.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}{p.client ? ` — ${p.client}` : ""}</option>
+                  ))}
+                </select>
+              </div>
+
               <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/90 hover:border-[#0a84ff]">
                 <input
                   type="checkbox"

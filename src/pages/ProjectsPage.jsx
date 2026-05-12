@@ -119,6 +119,9 @@ export default function ProjectsPage() {
   const [commessaSaving, setCommessaSaving] = useState(false);
   const [commessaError, setCommessaError] = useState("");
 
+  // Commesse per dropdown collegamento
+  const [commesseList, setCommesseList] = useState([]);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
@@ -136,6 +139,16 @@ export default function ProjectsPage() {
       setSelectedUserIds([teamMember.id]);
     }
   }, [teamMember?.id]);
+
+  const loadCommesseList = async () => {
+    if (!studioId) return;
+    const { data } = await supabase
+      .from("commesse")
+      .select("id,nome_commessa,numero_offerta")
+      .eq("studio", studioId)
+      .order("created_at", { ascending: false });
+    setCommesseList(data ?? []);
+  };
 
   const loadData = async () => {
     if (!studioId) return;
@@ -192,7 +205,10 @@ export default function ProjectsPage() {
   };
 
   useEffect(() => {
-    if (studioId) loadData();
+    if (studioId) {
+      loadData();
+      loadCommesseList();
+    }
 
     // Load services and contacts
     const loadServices = async () => {
@@ -256,6 +272,7 @@ export default function ProjectsPage() {
       selectedServices: [],
       selectedMembers: teamMember?.id ? [teamMember.id] : [],
       createCommessa: false,
+      selectedCommessaId: "",
     });
     setFormError("");
   };
@@ -310,7 +327,9 @@ export default function ProjectsPage() {
       startDate: project.start_date || "",
       selectedServices: project.servizi_selezionati || [],
       selectedMembers: project.assigned_users || [],
+      selectedCommessaId: project.commessa_id || "",
     });
+    loadCommesseList();
     setEditModalOpen(true);
   };
 
@@ -419,12 +438,21 @@ export default function ProjectsPage() {
 
     await upsertContact(formData.client);
 
-    const { error: insertError } = await supabase.from("projects").insert(payload);
+    const { data: newProject, error: insertError } = await supabase
+      .from("projects")
+      .insert(payload)
+      .select("*")
+      .single();
 
     if (insertError) {
       setFormError(insertError.message);
       setSaveLoading(false);
       return;
+    }
+
+    if (formData.selectedCommessaId) {
+      await supabase.from("commesse").update({ project_id: newProject.id }).eq("id", formData.selectedCommessaId);
+      await supabase.from("projects").update({ commessa_id: formData.selectedCommessaId }).eq("id", newProject.id);
     }
 
     const shouldCreateCommessa = formData.createCommessa;
@@ -476,6 +504,17 @@ export default function ProjectsPage() {
     if (updateError) {
       alert("Errore durante la modifica: " + updateError.message);
     } else {
+      const newCommessaId = editFormData.selectedCommessaId || null;
+      // Scollega vecchia commessa se cambiata
+      if (editProject.commessa_id && editProject.commessa_id !== newCommessaId) {
+        await supabase.from("commesse").update({ project_id: null }).eq("id", editProject.commessa_id);
+      }
+      // Aggiorna progetto con nuova commessa
+      await supabase.from("projects").update({ commessa_id: newCommessaId }).eq("id", editProject.id);
+      // Collega nuova commessa al progetto
+      if (newCommessaId) {
+        await supabase.from("commesse").update({ project_id: editProject.id }).eq("id", newCommessaId);
+      }
       setEditModalOpen(false);
       setEditProject(null);
       resetEditForm();
@@ -899,6 +938,20 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">Commessa collegata</label>
+                <select
+                  value={formData.selectedCommessaId}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, selectedCommessaId: e.target.value }))}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                >
+                  <option value="">Nessuna</option>
+                  {commesseList.map((c) => (
+                    <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>
+                  ))}
+                </select>
+              </div>
+
               <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/90 hover:border-[#0a84ff]">
                 <input
                   type="checkbox"
@@ -1096,6 +1149,20 @@ export default function ProjectsPage() {
                     })
                   )}
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white">Commessa collegata</label>
+                <select
+                  value={editFormData.selectedCommessaId ?? ""}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, selectedCommessaId: e.target.value }))}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                >
+                  <option value="">Nessuna</option>
+                  {commesseList.map((c) => (
+                    <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="mt-6 flex justify-end gap-3">
