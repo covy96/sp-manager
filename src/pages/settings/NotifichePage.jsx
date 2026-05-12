@@ -92,34 +92,63 @@ export default function NotifichePage() {
     setPushLoading(true);
     setPushError("");
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setPushError("Permesso negato. Abilitalo nelle impostazioni del browser.");
+      // Controlla se il permesso è già stato dato
+      let permesso = Notification.permission;
+
+      // Chiedi permesso solo se non è già stato dato
+      if (permesso === "default") {
+        permesso = await Notification.requestPermission();
+      }
+
+      if (permesso !== "granted") {
+        alert("Permesso notifiche negato. Abilitalo nelle impostazioni del browser.");
         setPushLoading(false);
         return;
       }
-      const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-      if (!token) {
-        setPushError("Impossibile ottenere il token FCM. Riprova.");
-        setPushLoading(false);
-        return;
+
+      // Forza il refresh del service worker prima di ottenere il token
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.update();
       }
+
+      // Ottieni il token con retry
+      let token = null;
+      let tentativi = 0;
+
+      while (!token && tentativi < 3) {
+        try {
+          token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
+          tentativi++;
+          if (!token) await new Promise((r) => setTimeout(r, 1000)); // aspetta 1 secondo
+        } catch (e) {
+          tentativi++;
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+
       if (!teamMember?.id) {
         setPushError("Utente non trovato.");
         setPushLoading(false);
         return;
       }
-      const { error } = await supabase
-        .from("team_members")
-        .update({ fcm_token: token })
-        .eq("id", teamMember.id);
-      if (error) {
-        setPushError("Errore salvataggio token: " + error.message);
+
+      if (token) {
+        const { error } = await supabase
+          .from("team_members")
+          .update({ fcm_token: token })
+          .eq("id", teamMember.id);
+        if (error) {
+          setPushError("Errore salvataggio token: " + error.message);
+        } else {
+          setPushEnabled(true);
+        }
       } else {
-        setPushEnabled(true);
+        alert("Impossibile ottenere il token FCM dopo 3 tentativi. Ricarica la pagina e riprova.");
       }
     } catch (err) {
-      setPushError("Errore: " + (err.message ?? "Sconosciuto"));
+      console.error("Errore attivazione notifiche:", err);
+      alert("Errore durante l'attivazione delle notifiche.");
     }
     setPushLoading(false);
   };
