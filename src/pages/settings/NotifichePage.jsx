@@ -89,43 +89,39 @@ export default function NotifichePage() {
 
   // ── Enable push ───────────────────────────────────────────────────────────
   const handleEnablePush = async () => {
-    setPushLoading(true);
-    setPushError("");
     try {
-      // Controlla se il permesso è già stato dato
+      console.log("1. Inizio attivazione notifiche");
+      setPushLoading(true);
+      setPushError("");
+
+      console.log("2. Permesso attuale:", Notification.permission);
       let permesso = Notification.permission;
 
-      // Chiedi permesso solo se non è già stato dato
       if (permesso === "default") {
+        console.log("3. Richiedo permesso...");
         permesso = await Notification.requestPermission();
+        console.log("4. Permesso ottenuto:", permesso);
       }
 
       if (permesso !== "granted") {
-        alert("Permesso notifiche negato. Abilitalo nelle impostazioni del browser.");
+        alert("Abilita le notifiche nelle impostazioni del browser.");
         setPushLoading(false);
         return;
       }
 
-      // Forza il refresh del service worker prima di ottenere il token
-      if ("serviceWorker" in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        await registration.update();
-      }
+      console.log("5. Registro service worker...");
+      const registration = await Promise.race([
+        navigator.serviceWorker.register("/firebase-messaging-sw.js"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("SW timeout")), 5000)),
+      ]);
+      console.log("6. Service worker registrato:", registration);
 
-      // Ottieni il token con retry
-      let token = null;
-      let tentativi = 0;
-
-      while (!token && tentativi < 3) {
-        try {
-          token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-          tentativi++;
-          if (!token) await new Promise((r) => setTimeout(r, 1000)); // aspetta 1 secondo
-        } catch (e) {
-          tentativi++;
-          await new Promise((r) => setTimeout(r, 1000));
-        }
-      }
+      console.log("7. Ottengo token FCM...");
+      const token = await Promise.race([
+        richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Token timeout")), 10000)),
+      ]);
+      console.log("8. Token ottenuto:", token ? "SI" : "NO");
 
       if (!teamMember?.id) {
         setPushError("Utente non trovato.");
@@ -142,15 +138,17 @@ export default function NotifichePage() {
           setPushError("Errore salvataggio token: " + error.message);
         } else {
           setPushEnabled(true);
+          console.log("9. Notifiche attivate con successo");
         }
       } else {
-        alert("Impossibile ottenere il token FCM dopo 3 tentativi. Ricarica la pagina e riprova.");
+        alert("Token FCM non ottenuto. Controlla la configurazione Firebase.");
       }
-    } catch (err) {
-      console.error("Errore attivazione notifiche:", err);
-      alert("Errore durante l'attivazione delle notifiche.");
+    } catch (error) {
+      console.error("ERRORE attivazione:", error.message);
+      alert("Errore: " + error.message);
+    } finally {
+      setPushLoading(false);
     }
-    setPushLoading(false);
   };
 
   // ── Disable push ──────────────────────────────────────────────────────────
