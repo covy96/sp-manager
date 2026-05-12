@@ -1,5 +1,5 @@
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
 
 firebase.initializeApp({
   apiKey: "AIzaSyApe81xh3lMl5JogK5YX6jLOIgLcaAV9MM",
@@ -13,9 +13,19 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const { title, body } = payload.notification ?? {};
+  console.log("Notifica in background:", payload);
+  const { title, body, icon } = payload.notification ?? {};
   self.registration.showNotification(title ?? "SP Manager", {
     body: body ?? "",
-    icon: "/favicon.ico",
+    icon: icon || "/favicon.ico",
+    badge: "/badge.png",
+    data: payload.data,
   });
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.openWindow(event.notification.data?.url || "/")
+  );
 });

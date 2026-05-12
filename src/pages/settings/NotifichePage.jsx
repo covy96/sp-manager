@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { messaging, VAPID_KEY, getToken } from "../../lib/firebase";
+import { richiediFCMToken } from "../../lib/firebase";
 
 // ─── Apple-style Toggle ──────────────────────────────────────────────────────
 function Toggle({ checked, onChange, disabled = false }) {
@@ -98,23 +98,21 @@ export default function NotifichePage() {
         setPushLoading(false);
         return;
       }
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
       if (!token) {
         setPushError("Impossibile ottenere il token FCM. Riprova.");
         setPushLoading(false);
         return;
       }
-      const { data: authData } = await supabase.auth.getUser();
-      const userId = authData?.user?.id;
-      if (!userId) {
-        setPushError("Utente non autenticato.");
+      if (!teamMember?.id) {
+        setPushError("Utente non trovato.");
         setPushLoading(false);
         return;
       }
       const { error } = await supabase
         .from("team_members")
         .update({ fcm_token: token })
-        .eq("user_account", userId);
+        .eq("id", teamMember.id);
       if (error) {
         setPushError("Errore salvataggio token: " + error.message);
       } else {
@@ -130,13 +128,11 @@ export default function NotifichePage() {
   const handleDisablePush = async () => {
     setPushLoading(true);
     setPushError("");
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData?.user?.id;
-    if (userId) {
+    if (teamMember?.id) {
       await supabase
         .from("team_members")
         .update({ fcm_token: null })
-        .eq("user_account", userId);
+        .eq("id", teamMember.id);
     }
     setPushEnabled(false);
     setPushLoading(false);

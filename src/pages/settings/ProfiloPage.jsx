@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { messaging, VAPID_KEY, getToken } from "../../lib/firebase";
+import { richiediFCMToken } from "../../lib/firebase";
 
 export default function ProfiloPage() {
   usePageTitleOnMount("Profilo");
@@ -174,23 +174,16 @@ export default function ProfiloPage() {
                   setNotifLoading(false);
                   return;
                 }
-                const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+                const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
                 if (!token) {
                   setNotifError("Impossibile ottenere il token FCM. Riprova.");
-                  setNotifLoading(false);
-                  return;
-                }
-                const { data: authData } = await supabase.auth.getUser();
-                const userId = authData?.user?.id;
-                if (!userId) {
-                  setNotifError("Utente non autenticato.");
                   setNotifLoading(false);
                   return;
                 }
                 const { error: updateError } = await supabase
                   .from("team_members")
                   .update({ fcm_token: token })
-                  .eq("user_account", userId);
+                  .eq("id", teamMember?.id);
                 if (updateError) {
                   setNotifError("Errore salvataggio token: " + updateError.message);
                 } else {
