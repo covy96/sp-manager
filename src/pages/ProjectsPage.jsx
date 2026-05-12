@@ -89,6 +89,7 @@ export default function ProjectsPage() {
 
   // Create modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState(1);
   const [saveLoading, setSaveLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [clientSuggestions, setClientSuggestions] = useState([]);
@@ -100,7 +101,17 @@ export default function ProjectsPage() {
     selectedServices: [],
     selectedMembers: [],
     createCommessa: false,
+    createInlineCommessa: false,
+    numero_offerta: "",
+    importo_offerta_base: "",
   });
+
+  // Toast
+  const [toast, setToast] = useState("");
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3500);
+  };
 
   // Edit modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -273,8 +284,12 @@ export default function ProjectsPage() {
       selectedMembers: teamMember?.id ? [teamMember.id] : [],
       createCommessa: false,
       selectedCommessaId: "",
+      createInlineCommessa: false,
+      numero_offerta: "",
+      importo_offerta_base: "",
     });
     setFormError("");
+    setModalStep(1);
   };
 
   const resetEditForm = () => {
@@ -316,6 +331,17 @@ export default function ProjectsPage() {
     if (saveLoading) return;
     setIsModalOpen(false);
     setFormError("");
+    setModalStep(1);
+  };
+
+  const goToStep2 = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.client.trim()) {
+      setFormError("Nome progetto e cliente sono obbligatori.");
+      return;
+    }
+    setFormError("");
+    setModalStep(2);
   };
 
   const openEditModal = (project) => {
@@ -412,12 +438,6 @@ export default function ProjectsPage() {
   const handleSaveProject = async (event) => {
     event.preventDefault();
     setFormError("");
-
-    if (!formData.name.trim() || !formData.client.trim()) {
-      setFormError("Nome progetto e cliente sono obbligatori.");
-      return;
-    }
-
     setSaveLoading(true);
 
     const assignedUsers = formData.selectedMembers.length > 0
@@ -450,33 +470,42 @@ export default function ProjectsPage() {
       return;
     }
 
+    // Collega commessa esistente selezionata
     if (formData.selectedCommessaId) {
       await supabase.from("commesse").update({ project_id: newProject.id }).eq("id", formData.selectedCommessaId);
       await supabase.from("projects").update({ commessa_id: formData.selectedCommessaId }).eq("id", newProject.id);
     }
 
-    const shouldCreateCommessa = formData.createCommessa;
-    const prefillName = formData.name.trim();
-    const prefillClient = formData.client.trim();
-    const prefillAddress = formData.address.trim();
+    // Crea commessa inline (step 2)
+    if (formData.createInlineCommessa && formData.numero_offerta.trim() && formData.importo_offerta_base) {
+      const commessaPayload = {
+        nome_commessa: formData.name.trim(),
+        cliente: formData.client.trim(),
+        numero_offerta: formData.numero_offerta.trim(),
+        importo_offerta_base: Number(formData.importo_offerta_base),
+        project_id: newProject.id,
+        studio: studioId,
+      };
+      const { data: nuovaCommessa, error: commessaError } = await supabase
+        .from("commesse")
+        .insert(commessaPayload)
+        .select("*")
+        .single();
+      if (!commessaError && nuovaCommessa) {
+        await supabase.from("projects").update({ commessa_id: nuovaCommessa.id }).eq("id", newProject.id);
+        setIsModalOpen(false);
+        resetForm();
+        await loadData();
+        setSaveLoading(false);
+        showToast("Progetto e commessa creati e collegati correttamente");
+        return;
+      }
+    }
 
     setIsModalOpen(false);
     resetForm();
     await loadData();
     setSaveLoading(false);
-
-    if (shouldCreateCommessa) {
-      setCommessaForm({
-        numero_offerta: "",
-        nome_commessa: prefillName,
-        cliente: prefillClient,
-        data_commessa: "",
-        importo_offerta_base: "",
-        note_amministrative: prefillAddress,
-      });
-      setCommessaError("");
-      setCommessaModal(true);
-    }
   };
 
   const handleEditProject = async (event) => {
@@ -802,184 +831,214 @@ export default function ProjectsPage() {
         </section>
       )}
 
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-xl border border-[#30d158]/40 bg-[#1c1c1e] px-5 py-3 text-sm font-medium text-[#30d158] shadow-2xl">
+          ✓ {toast}
+        </div>
+      )}
+
       {isModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-xl rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-xl font-semibold text-white">Nuovo Progetto</h3>
-            <p className="mt-1 text-sm text-white/60">
-              Inserisci i dati principali del progetto.
+            <div className="mb-1 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">Nuovo Progetto</h3>
+              <span className="text-xs text-white/40">Step {modalStep} di 2</span>
+            </div>
+            <p className="text-sm text-white/60">
+              {modalStep === 1 ? "Inserisci i dati principali del progetto." : "Vuoi creare anche la commessa collegata?"}
             </p>
 
-            <form className="mt-5 space-y-4" onSubmit={handleSaveProject}>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">
-                  Nome progetto *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange("name")}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  required
-                />
-              </div>
+            <form className="mt-5 space-y-4" onSubmit={modalStep === 1 ? goToStep2 : handleSaveProject}>
+              {modalStep === 1 && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-white">
+                      Nome progetto *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={handleChange("name")}
+                      className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                      required
+                    />
+                  </div>
 
-              <div className="relative">
-                <label className="mb-1 block text-sm font-medium text-white">
-                  Cliente *
-                </label>
-                <input
-                  type="text"
-                  value={formData.client}
-                  onChange={handleChange("client")}
-                  onBlur={() => setTimeout(() => setClientSuggestions([]), 150)}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  required
-                  autoComplete="off"
-                />
-                {clientSuggestions.length > 0 ? (
-                  <ul className="absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                    {clientSuggestions.map((c) => (
-                      <li key={c.id}>
-                        <button
-                          type="button"
-                          onMouseDown={() => selectClientSuggestion(c.name)}
-                          className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10"
-                        >
-                          {c.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+                  <div className="relative">
+                    <label className="mb-1 block text-sm font-medium text-white">
+                      Cliente *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.client}
+                      onChange={handleChange("client")}
+                      onBlur={() => setTimeout(() => setClientSuggestions([]), 150)}
+                      className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                      required
+                      autoComplete="off"
+                    />
+                    {clientSuggestions.length > 0 ? (
+                      <ul className="absolute z-40 mt-1 w-full overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
+                        {clientSuggestions.map((c) => (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              onMouseDown={() => selectClientSuggestion(c.name)}
+                              className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10"
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">
-                  Indirizzo
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={handleChange("address")}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                />
-              </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-white">
+                      Indirizzo
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={handleChange("address")}
+                      className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">
-                  Data inizio
-                </label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={handleChange("startDate")}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                />
-              </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-white">
+                      Data inizio
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={handleChange("startDate")}
+                      className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                    />
+                  </div>
 
-              <div>
-                <p className="mb-2 block text-sm font-medium text-white">Servizi</p>
-                <div className="max-h-44 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  {serviceTemplates.length === 0 ? (
-                    <p className="text-sm text-white/50">Nessun servizio disponibile</p>
-                  ) : (
-                    serviceTemplates.map((service) => {
-                      const label = service.service_name ?? "Servizio";
-                      const checked = formData.selectedServices.includes(label);
-                      return (
-                        <label
-                          key={service.id ?? label}
-                          className="flex cursor-pointer items-center gap-2 text-sm text-white/90"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleService(label)}
-                            className="h-4 w-4 rounded border-[#48484a] bg-[#3a3a3c] accent-[#0a84ff]"
-                          />
-                          <span>{label}</span>
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                  <div>
+                    <p className="mb-2 block text-sm font-medium text-white">Servizi</p>
+                    <div className="max-h-44 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                      {serviceTemplates.length === 0 ? (
+                        <p className="text-sm text-white/50">Nessun servizio disponibile</p>
+                      ) : (
+                        serviceTemplates.map((service) => {
+                          const label = service.service_name ?? "Servizio";
+                          const checked = formData.selectedServices.includes(label);
+                          return (
+                            <label
+                              key={service.id ?? label}
+                              className="flex cursor-pointer items-center gap-2 text-sm text-white/90"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleService(label)}
+                                className="h-4 w-4 rounded border-[#48484a] bg-[#3a3a3c] accent-[#0a84ff]"
+                              />
+                              <span>{label}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
 
-              <div>
-                <p className="mb-2 block text-sm font-medium text-white">Membri del team</p>
-                <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  {teamMembers.length === 0 ? (
-                    <p className="text-sm text-white/50">Nessun membro disponibile</p>
-                  ) : (
-                    teamMembers.map((m) => {
-                      const isMe = m.id === teamMember?.id;
-                      const checked = formData.selectedMembers.includes(m.id);
-                      return (
-                        <label key={m.id} className={`flex cursor-pointer items-center gap-2 text-sm text-white/90 ${isMe ? "opacity-60" : ""}`}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={isMe}
-                            onChange={() => toggleMember(m.id)}
-                            className="h-4 w-4 accent-[#0a84ff]"
-                          />
-                          <span
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                            style={{ backgroundColor: avatarColor(m) }}
-                          >
-                            {getInitials(m.user_name || m.user_email)}
-                          </span>
-                          <span>{m.user_name || m.user_email}{isMe ? " (tu)" : ""}</span>
-                        </label>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">Commessa collegata</label>
-                <select
-                  value={formData.selectedCommessaId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, selectedCommessaId: e.target.value }))}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                >
-                  <option value="">Nessuna</option>
-                  {commesseList.map((c) => (
-                    <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>
-                  ))}
-                </select>
-              </div>
-
-              <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/90 hover:border-[#0a84ff]">
-                <input
-                  type="checkbox"
-                  checked={formData.createCommessa}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, createCommessa: e.target.checked }))}
-                  className="h-4 w-4 accent-[#0a84ff]"
-                />
-                Crea commessa allegata al progetto
-              </label>
+                  <div>
+                    <p className="mb-2 block text-sm font-medium text-white">Membri del team</p>
+                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
+                      {teamMembers.length === 0 ? (
+                        <p className="text-sm text-white/50">Nessun membro disponibile</p>
+                      ) : (
+                        teamMembers.map((m) => {
+                          const isMe = m.id === teamMember?.id;
+                          const checked = formData.selectedMembers.includes(m.id);
+                          return (
+                            <label key={m.id} className={`flex cursor-pointer items-center gap-2 text-sm text-white/90 ${isMe ? "opacity-60" : ""}`}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={isMe}
+                                onChange={() => toggleMember(m.id)}
+                                className="h-4 w-4 accent-[#0a84ff]"
+                              />
+                              <span
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                                style={{ backgroundColor: avatarColor(m) }}
+                              >
+                                {getInitials(m.user_name || m.user_email)}
+                              </span>
+                              <span>{m.user_name || m.user_email}{isMe ? " (tu)" : ""}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {formError ? <p className="text-sm text-red-300">{formError}</p> : null}
 
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  disabled={saveLoading}
-                  className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saveLoading ? "Salvataggio..." : "Salva"}
-                </button>
-              </div>
+              {/* Step 1 fields */}
+              {modalStep === 1 && (
+                <div className="mt-6 flex justify-end gap-3">
+                  <button type="button" onClick={closeModal} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10">Annulla</button>
+                  <button type="submit" className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110">Avanti →</button>
+                </div>
+              )}
+
+              {/* Step 2 */}
+              {modalStep === 2 && (
+                <div className="space-y-4">
+                  <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2.5 text-sm text-white/90 hover:border-[#0a84ff]">
+                    <input
+                      type="checkbox"
+                      checked={formData.createInlineCommessa}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, createInlineCommessa: e.target.checked }))}
+                      className="h-4 w-4 accent-[#0a84ff]"
+                    />
+                    Crea anche la commessa per questo progetto
+                  </label>
+
+                  {formData.createInlineCommessa && (
+                    <>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-white">Numero offerta *</label>
+                        <input
+                          type="text"
+                          value={formData.numero_offerta}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, numero_offerta: e.target.value }))}
+                          className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                          placeholder="Es. 01/2026"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-white">Importo offerta base *</label>
+                        <input
+                          type="number"
+                          value={formData.importo_offerta_base}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, importo_offerta_base: e.target.value }))}
+                          className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
+                          placeholder="0"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-6 flex justify-between gap-3">
+                    <button type="button" onClick={() => { setModalStep(1); setFormError(""); }} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10">← Indietro</button>
+                    <div className="flex gap-3">
+                      <button type="button" onClick={closeModal} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10">Annulla</button>
+                      <button type="submit" disabled={saveLoading} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">
+                        {saveLoading ? "Salvataggio..." : "Salva"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
         </div>
