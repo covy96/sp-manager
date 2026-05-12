@@ -51,7 +51,7 @@ export default function GestioneUtentiPage() {
 
     const { data, error: fetchError } = await supabase
       .from("team_members")
-      .select("id, user_name, user_email, color, is_owner, role")
+      .select("id, user_name, user_email, color, role, role_internal")
       .eq("studio", studioId)
       .order("user_name", { ascending: true });
 
@@ -144,9 +144,9 @@ export default function GestioneUtentiPage() {
                   {isMe && <span className="ml-2 text-xs text-white/50">(tu)</span>}
                 </p>
                 <p className="truncate text-sm text-white/50">{member.user_email}</p>
-                {member.role && (
+                {(member.role_internal || member.role) && (
                   <span className="mt-1 inline-block rounded bg-[#48484a] px-2 py-0.5 text-xs text-white/70">
-                    {member.role}
+                    {member.role_internal || member.role}
                   </span>
                 )}
               </div>
