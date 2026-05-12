@@ -26,10 +26,16 @@ export { messaging };
 export async function richiediFCMToken(vapidKey) {
   if (!messaging) return null;
   try {
-    const token = await getToken(messaging, { vapidKey });
+    // Registra esplicitamente il service worker
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: registration
+    });
     return token;
   } catch (error) {
-    console.warn("Errore FCM token:", error);
+    console.warn('Errore FCM token:', error);
     return null;
   }
 }
