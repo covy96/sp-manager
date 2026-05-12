@@ -339,8 +339,9 @@ function TaskRow({
 
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id: projectId } = useParams();
   const { studioId } = useStudio();
+  const id = projectId;
   const inputRefs = useRef({});
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -369,18 +370,27 @@ export default function ProjectDetailPage() {
   const [editError, setEditError] = useState("");
 
   useEffect(() => {
+    if (!projectId || projectId === "null" || projectId === "undefined") {
+      navigate("/progetti");
+      return;
+    }
+
     const loadData = async () => {
       setLoading(true);
       setError("");
 
+      const membersQuery = studioId
+        ? supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true })
+        : Promise.resolve({ data: [], error: null });
+
       const [projectResult, tasksResult, membersResult, templatesResult] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", id).maybeSingle(),
+        supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
         supabase
           .from("tasks")
           .select("*")
-          .eq("project_id", id)
+          .eq("project_id", projectId)
           .order("created_at", { ascending: true }),
-        supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true }),
+        membersQuery,
         supabase.from("service_task_templates").select("*").order("order", { ascending: true }),
       ]);
 
@@ -418,7 +428,7 @@ export default function ProjectDetailPage() {
     };
 
     loadData();
-  }, [id]);
+  }, [projectId, studioId]);
 
   const selectedServices = useMemo(
     () => (Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : []),
@@ -710,15 +720,15 @@ export default function ProjectDetailPage() {
     const { data, error: insertError } = await supabase
       .from("tasks")
       .insert({
-        project_id: id,
-        parent_task_id: parentTask.id,
+        project_id: projectId || null,
+        parent_task_id: parentTask.id || null,
         title,
-        categoria: parentTask.categoria,
+        categoria: parentTask.categoria || null,
         status: "todo",
-        assigned_member: assignedMemberId,
-        assigned_to_name: assignedToName,
-        data_pianificata: plannedDate,
-        studio: studioId,
+        assigned_member: assignedMemberId || null,
+        assigned_to_name: assignedToName || null,
+        data_pianificata: plannedDate || null,
+        studio: studioId || null,
       })
       .select("*")
       .single();
@@ -778,15 +788,15 @@ export default function ProjectDetailPage() {
     const { data, error: insertError } = await supabase
       .from("tasks")
       .insert({
-        project_id: id,
+        project_id: projectId || null,
         title,
-        categoria: category,
+        categoria: category || null,
         status: "todo",
-        assigned_member: assignedMemberId,
-        assigned_to_name: assignedToName,
-        data_pianificata: plannedDate,
+        assigned_member: assignedMemberId || null,
+        assigned_to_name: assignedToName || null,
+        data_pianificata: plannedDate || null,
         order: 0,
-        studio: studioId,
+        studio: studioId || null,
       })
       .select("*")
       .single();
