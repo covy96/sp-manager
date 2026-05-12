@@ -75,6 +75,8 @@ export default function CalendarioPage() {
   const todayISO = toISODate(new Date());
 
   useEffect(() => {
+    if (!studioId || studioId === "null" || studioId === "undefined") return;
+
     const loadData = async () => {
       setLoading(true);
       setError("");
@@ -92,6 +94,12 @@ export default function CalendarioPage() {
         teamMember = await getOrCreateTeamMember(authData.user);
       } catch (teamMemberError) {
         setError(teamMemberError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!teamMember?.id || teamMember.id === "null" || teamMember.id === "undefined") {
+        setError("Impossibile identificare il membro del team.");
         setLoading(false);
         return;
       }
@@ -151,7 +159,8 @@ export default function CalendarioPage() {
   const calendarDays = useMemo(() => getCalendarDays(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
 
   const visibleTasks = useMemo(() => {
-    const filtered = onlyMine ? tasks.filter((task) => task.assigned_member === currentMemberId) : tasks;
+    const validCurrentMemberId = currentMemberId && currentMemberId !== "null" && currentMemberId !== "undefined" ? currentMemberId : null;
+    const filtered = onlyMine && validCurrentMemberId ? tasks.filter((task) => task.assigned_member === validCurrentMemberId) : tasks;
     return [...filtered].sort((a, b) => {
       if (a.status === b.status) {
         return (a.title || "").localeCompare(b.title || "", "it");
