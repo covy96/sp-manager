@@ -29,6 +29,7 @@ import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
 import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
+import NotifichePage from "./pages/settings/NotifichePage";
 
 import { supabase } from "./lib/supabase";
 
@@ -262,6 +263,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><SettingsCommesseArchiviatePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/notifiche"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><NotifichePage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
