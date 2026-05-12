@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
+import { messaging, VAPID_KEY, getToken } from "../../lib/firebase";
 
 export default function ProfiloPage() {
   usePageTitleOnMount("Profilo");
@@ -21,6 +22,14 @@ export default function ProfiloPage() {
   const [message, setMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifError, setNotifError] = useState("");
+
+  useEffect(() => {
+    setNotifEnabled(Notification.permission === "granted");
+  }, []);
 
   useEffect(() => {
     if (teamMember) {
@@ -132,6 +141,78 @@ export default function ProfiloPage() {
           </button>
         </div>
       </form>
+
+      {/* Notifiche Push */}
+      <div className="mt-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
+        <h3 className="mb-1 text-lg font-medium text-white">Notifiche push</h3>
+        <p className="mb-5 text-sm text-white/60">
+          Ricevi notifiche anche quando l&apos;app è in background.
+        </p>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${
+                notifEnabled ? "bg-[#30d158]" : "bg-[#48484a]"
+              }`}
+            />
+            <span className="text-sm text-white/80">
+              {notifEnabled ? "Notifiche attive" : "Notifiche non attive"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            disabled={notifLoading || notifEnabled}
+            onClick={async () => {
+              setNotifLoading(true);
+              setNotifError("");
+              try {
+                const permission = await Notification.requestPermission();
+                if (permission !== "granted") {
+                  setNotifError("Permesso notifiche negato. Abilitalo nelle impostazioni del browser.");
+                  setNotifLoading(false);
+                  return;
+                }
+                const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+                if (!token) {
+                  setNotifError("Impossibile ottenere il token FCM. Riprova.");
+                  setNotifLoading(false);
+                  return;
+                }
+                const { data: authData } = await supabase.auth.getUser();
+                const userId = authData?.user?.id;
+                if (!userId) {
+                  setNotifError("Utente non autenticato.");
+                  setNotifLoading(false);
+                  return;
+                }
+                const { error: updateError } = await supabase
+                  .from("team_members")
+                  .update({ fcm_token: token })
+                  .eq("user_account", userId);
+                if (updateError) {
+                  setNotifError("Errore salvataggio token: " + updateError.message);
+                } else {
+                  setNotifEnabled(true);
+                }
+              } catch (err) {
+                setNotifError("Errore: " + (err.message ?? "Sconosciuto"));
+              }
+              setNotifLoading(false);
+            }}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              notifEnabled
+                ? "cursor-default border border-[#30d158]/40 bg-[#30d158]/10 text-[#30d158]"
+                : "bg-[#0a84ff] text-white hover:brightness-110 disabled:opacity-60"
+            }`}
+          >
+            {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita notifiche"}
+          </button>
+        </div>
+
+        {notifError && <p className="mt-3 text-sm text-red-300">{notifError}</p>}
+      </div>
 
       {/* Cambia Password */}
       <form onSubmit={handleChangePassword} className="mt-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
