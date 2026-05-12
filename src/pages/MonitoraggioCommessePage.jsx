@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -65,6 +66,7 @@ function getDaysOpen(referenceDate) {
 }
 
 export default function MonitoraggioCommessePage() {
+  const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
   const [commesse, setCommesse] = useState([]);
@@ -388,7 +390,8 @@ export default function MonitoraggioCommessePage() {
                 return (
                   <tr
                     key={row.id}
-                    className={`border-b border-[#48484a] ${
+                    onClick={() => navigate(`/commesse/${row.id}`)}
+                    className={`border-b border-[#48484a] cursor-pointer transition-colors hover:bg-[#3a3a3c] ${
                       isDelayedUnpaid ? "bg-[#ff453a]/10" : "bg-transparent"
                     }`}
                   >
