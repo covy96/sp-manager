@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import AsmSeal from '../components/AsmSeal';
 
 const styles = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -170,12 +171,7 @@ export default function LandingPage({ session }) {
 
       {/* NAV */}
       <nav className="nav">
-        <div className="nav-logo">
-          <div className="nav-logo-icon">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1" /><rect x="13" y="3" width="8" height="8" rx="1" /><rect x="3" y="13" width="8" height="8" rx="1" /><rect x="13" y="13" width="8" height="8" rx="1" /></svg>
-          </div>
-          <span className="nav-logo-text">ASM</span>
-        </div>
+        <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark" />
         <div className="nav-links">
           <a href="#features">Funzionalità</a>
           <a href="#pricing">Pricing</a>
@@ -190,6 +186,7 @@ export default function LandingPage({ session }) {
       {/* HERO */}
       <div className="hero">
         <div className="hero-badge"><div className="hero-badge-dot"></div>Pensato da architetti, per architetti</div>
+        <AsmSeal size="hero" theme="dark" style={{ margin: '0 auto 32px' }} />
         <h1>Il gestionale che il tuo studio <span>merita</span></h1>
         <p>Progetti, commesse, timesheet, pratiche burocratiche e agente AI. Tutto in un posto solo, con il design che ti aspetti da un'app moderna.</p>
         <div className="hero-btns">
