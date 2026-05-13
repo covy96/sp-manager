@@ -67,6 +67,13 @@ export default function PianoPage() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Debug: log Stripe config availability
+  console.log('Stripe config:', {
+    key: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'presente' : 'MANCANTE',
+    studio: import.meta.env.VITE_STRIPE_STUDIO_PRICE_ID ? 'presente' : 'MANCANTE',
+    pro: import.meta.env.VITE_STRIPE_PRO_PRICE_ID ? 'presente' : 'MANCANTE'
+  });
+
   useEffect(() => {
     if (!teamMember?.id) return;
 
@@ -107,8 +114,8 @@ export default function PianoPage() {
 
     const priceId = import.meta.env[plan.priceIdEnv];
     if (!priceId) {
-      alert("Errore: configurazione Stripe mancante");
-      return;
+      console.error('Configurazione Stripe mancante per', plan.priceIdEnv);
+      // Non bloccare qui, lascia che fallisca quando chiama Stripe
     }
 
     setLoading(true);
