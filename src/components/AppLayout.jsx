@@ -299,6 +299,18 @@ export default function AppLayout({ session, children }) {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
+                      navigate("/impostazioni/piano");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Piano
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSettingsOpen(false);
                       navigate("/impostazioni/profilo");
                     }}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-white/90 hover:bg-white/10"

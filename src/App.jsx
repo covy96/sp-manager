@@ -30,6 +30,7 @@ import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
 import NotifichePage from "./pages/settings/NotifichePage";
+import PianoPage from "./pages/settings/PianoPage";
 
 import { supabase } from "./lib/supabase";
 
@@ -215,6 +216,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><ProfiloPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/piano"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><PianoPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
