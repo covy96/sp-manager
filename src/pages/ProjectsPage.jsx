@@ -279,11 +279,11 @@ function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalCont
             background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 40,
           }}>
             {clientSuggestions.map(c => (
-              <button key={c.id} onMouseDown={() => onSelectClient(c.name)} style={{
+              <button key={c.id} onMouseDown={() => onSelectClient(c.full_name)} style={{
                 display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif",
-              }}>{c.name}</button>
+              }}>{c.full_name}</button>
             ))}
           </div>
         )}
@@ -428,8 +428,8 @@ export default function ProjectsPage() {
   useEffect(() => {
     if (!studioId) return;
     loadData(); loadCommesseList();
-    supabase.from("service_task_templates").select("*").order("order", { ascending: true }).then(({ data }) => setServiceTemplates(data ?? []));
-    supabase.from("global_contacts").select("id,name").order("name", { ascending: true }).then(({ data }) => setGlobalContacts(data ?? []));
+    supabase.from("service_task_templates").select("*").eq("studio", studioId).order("order", { ascending: true }).then(({ data }) => setServiceTemplates(data ?? []));
+    supabase.from("global_contacts").select("id,full_name").eq("studio", studioId).order("full_name", { ascending: true }).then(({ data }) => setGlobalContacts(data ?? []));
     supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId).order("user_name", { ascending: true }).then(({ data }) => setTeamMembers(data ?? []));
   }, [studioId]);
 
@@ -450,16 +450,25 @@ export default function ProjectsPage() {
       setFormData(p => ({ ...p, [field]: value }));
       if (field === "client") {
         const q = value.trim().toLowerCase();
-        setClientSuggestions(q.length >= 3 ? globalContacts.filter(c => (c.name ?? "").toLowerCase().startsWith(q)).slice(0, 8) : []);
+        setClientSuggestions(q.length >= 3 ? globalContacts.filter(c => (c.full_name ?? "").toLowerCase().startsWith(q)).slice(0, 8) : []);
       }
     }
   };
 
-  const upsertContact = async name => {
-    if (!name?.trim()) return;
-    if (!globalContacts.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
-      const { data } = await supabase.from("global_contacts").insert({ name: name.trim() }).select("id,name").single();
-      if (data) setGlobalContacts(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+  const upsertContact = async (name) => {
+    if (!name?.trim() || !studioId) return;
+    const exists = globalContacts.some(
+      c => (c.full_name || '').toLowerCase() === name.trim().toLowerCase()
+    );
+    if (!exists) {
+      const { data } = await supabase
+        .from('global_contacts')
+        .insert({ full_name: name.trim(), studio: studioId })
+        .select('id,full_name')
+        .single();
+      if (data) setGlobalContacts(prev =>
+        [...prev, data].sort((a, b) => a.full_name.localeCompare(b.full_name))
+      );
     }
   };
 
@@ -500,6 +509,18 @@ export default function ProjectsPage() {
     if (formData.createInlineCommessa && formData.numero_offerta.trim() && formData.importo_offerta_base) {
       const { data: nc, error: ce } = await supabase.from("commesse").insert({ nome_commessa: formData.name.trim(), cliente: formData.client.trim(), numero_offerta: formData.numero_offerta.trim(), importo_offerta_base: Number(formData.importo_offerta_base), project_id: newProject.id, studio: studioId }).select("*").single();
       if (!ce && nc) { await supabase.from("projects").update({ commessa_id: nc.id }).eq("id", newProject.id); showToast("Progetto e commessa creati e collegati correttamente"); }
+    }
+    // Crea task predefinite per ogni servizio selezionato
+    if (formData.selectedServices.length > 0) {
+      const taskRows = [];
+      for (const serviceName of formData.selectedServices) {
+        const template = serviceTemplates.find(t => t.service_name === serviceName);
+        const taskList = Array.isArray(template?.task_templates) ? template.task_templates : [];
+        for (const taskName of taskList) {
+          taskRows.push({ project_id: newProject.id, title: taskName, categoria: serviceName, status: "todo", studio: studioId });
+        }
+      }
+      if (taskRows.length > 0) await supabase.from("tasks").insert(taskRows);
     }
     setIsModalOpen(false); resetForm(); await loadData(); setSaveLoading(false);
   };

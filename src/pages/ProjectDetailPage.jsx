@@ -288,7 +288,7 @@ export default function ProjectDetailPage() {
         supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
         supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
         membersQ,
-        supabase.from("service_task_templates").select("*").order("order", { ascending: true }),
+        supabase.from("service_task_templates").select("*").eq("studio", studioId).order("order", { ascending: true }),
       ]);
       if (pR.error) { setError(pR.error.message); setProject(null); setTasks([]); setLoading(false); return; }
       if (tR.error) { setError(tR.error.message); setProject(pR.data ?? null); setTasks([]); setLoading(false); return; }

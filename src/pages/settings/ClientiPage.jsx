@@ -1,123 +1,274 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
+import { backfillContacts } from "../../utils/backfillContacts";
 
 const T = {
-  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c',
+  ink:'#0E0E0D', navy:'#13315C', paper:'#EEF1F6', muted:'#8a847b',
+  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', red:'#b91c1c', green:'#1a6b3c',
 };
 
-function BtnPrimary({ children, onClick, disabled, type = "button" }) {
+function currency(v) {
+  return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
+}
+function BtnPrimary({ children, onClick, disabled, type="button" }) {
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
       {children}
     </button>
   );
 }
 function BtnGhost({ children, onClick, disabled, danger }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border: `0.5px solid ${danger ? T.red : T.ink20}`, background: 'transparent', color: danger ? T.red : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.ink20}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
+}
+function FieldLabel({ children }) {
+  return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 
 export default function ClientiPage() {
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
+  const navigate = useNavigate();
 
-  const [contacts, setContacts]       = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState("");
-  const [saving, setSaving]           = useState(false);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [newContact, setNewContact]   = useState({ full_name: "", company: "" });
+  const [contacts, setContacts]           = useState([]);
+  const [projectsByClient, setProjectsByClient] = useState({});
+  const [commesseByClient, setCommesseByClient] = useState({});
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
+  const [saving, setSaving]               = useState(false);
+  const [addModalOpen, setAddModalOpen]   = useState(false);
+  const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
+  const [expandedId, setExpandedId]       = useState(null);
+  const [formError, setFormError]         = useState("");
 
-  useEffect(() => { if (studioId) loadContacts(); }, [studioId]);
+  useEffect(() => {
+    if (!studioId) return;
+    backfillContacts(studioId).then(() => loadAll());
+  }, [studioId]);
 
-  const loadContacts = async () => {
+  const loadAll = async () => {
     setLoading(true); setError("");
-    const { data, error: e } = await supabase.from("global_contacts").select("*").eq("studio", studioId).order("full_name", { ascending: true });
-    if (e) setError(e.message); else setContacts(data || []);
-    setLoading(false);
+    try {
+      const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
+        supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
+        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("archived",false),
+        supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
+      ]);
+      if (cErr) throw cErr;
+      setContacts(cts||[]);
+
+      // Raggruppa per nome cliente (case-insensitive)
+      const pMap = {};
+      (projs||[]).forEach(p => {
+        const key=(p.client||"").toLowerCase().trim();
+        if (key) { if (!pMap[key]) pMap[key]=[]; pMap[key].push(p); }
+      });
+      setProjectsByClient(pMap);
+
+      const cMap = {};
+      (comms||[]).forEach(c => {
+        const key=(c.cliente||"").toLowerCase().trim();
+        if (key) { if (!cMap[key]) cMap[key]=[]; cMap[key].push(c); }
+      });
+      setCommesseByClient(cMap);
+
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
-  const handleAddContact = async e => {
-    e.preventDefault(); if (!newContact.full_name.trim()) return; setSaving(true); setError("");
-    const { data, error: iErr } = await supabase.from("global_contacts").insert({ full_name: newContact.full_name.trim(), company: newContact.company.trim() || null, studio: studioId }).select("*").single();
-    if (iErr) setError(iErr.message);
-    else { setContacts(p => [...p, data].sort((a, b) => a.full_name.localeCompare(b.full_name))); setAddModalOpen(false); setNewContact({ full_name: "", company: "" }); }
-    setSaving(false);
+  const getProjects = (c) => projectsByClient[(c.full_name||"").toLowerCase().trim()] || [];
+  const getCommesse = (c) => commesseByClient[(c.full_name||"").toLowerCase().trim()] || [];
+
+  const handleAdd = async e => {
+    e.preventDefault(); setFormError(""); if (!newContact.full_name.trim()) return; setSaving(true);
+    const dup = contacts.some(c=>(c.full_name||"").toLowerCase()===newContact.full_name.trim().toLowerCase());
+    if (dup) { setFormError("Cliente già presente."); setSaving(false); return; }
+    const { data, error:iErr } = await supabase.from("global_contacts").insert({
+      full_name:newContact.full_name.trim(), company:newContact.company.trim()||null, studio:studioId,
+    }).select("*").single();
+    if (iErr) { setFormError(iErr.message); setSaving(false); return; }
+    setContacts(p=>[...p,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
+    setAddModalOpen(false); setNewContact({full_name:"",company:""}); setSaving(false);
   };
 
   const handleDelete = async id => {
-    if (!confirm("Sei sicuro di voler eliminare questo contatto?")) return;
-    const { error: dErr } = await supabase.from("global_contacts").delete().eq("id", id);
-    if (dErr) alert("Errore: " + dErr.message);
-    else setContacts(p => p.filter(c => c.id !== id));
+    if (!confirm("Eliminare questo cliente?")) return;
+    const { error:dErr } = await supabase.from("global_contacts").delete().eq("id",id);
+    if (dErr) alert("Errore: "+dErr.message);
+    else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
-  const inputSt = { width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.ink20}`, background:'#fff', color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
   return (
-    <div style={{ maxWidth: 600 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div style={{maxWidth:700}}>
+
+      {/* Header con bottone in alto a destra */}
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24}}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Clienti</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci i contatti clienti dello studio</div>
+          <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',marginBottom:4}}>Clienti</div>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
+            {contacts.length > 0
+              ? `${contacts.length} clienti — i clienti si aggiungono automaticamente dai progetti e commesse`
+              : "I clienti si aggiungono automaticamente quando crei progetti o commesse"
+            }
+          </div>
         </div>
-        <BtnPrimary onClick={() => setAddModalOpen(true)}>+ Nuovo</BtnPrimary>
+        <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
       </div>
 
-      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
+      {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
 
-      {contacts.length === 0 ? (
-        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '48px 0', textAlign: 'center' }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, marginBottom: 16 }}>Nessun cliente registrato.</div>
-          <BtnPrimary onClick={() => setAddModalOpen(true)}>Aggiungi il primo cliente</BtnPrimary>
+      {/* Lista vuota */}
+      {contacts.length===0 ? (
+        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'48px 0',textAlign:'center'}}>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
+            Nessun cliente ancora.<br/>
+            I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
+          </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {contacts.map(c => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '12px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.paper, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{c.company ? '🏢' : '👤'}</span>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          {contacts.map(c => {
+            const isOpen = expandedId===c.id;
+            const projs  = getProjects(c);
+            const comms  = getCommesse(c);
+            const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
+
+            return (
+              <div key={c.id} style={{background:'#fff',border:`0.5px solid ${isOpen?T.navy:T.ink10}`,transition:'border-color 0.1s'}}>
+
+                {/* Riga cliente */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
+                  <button onClick={()=>setExpandedId(isOpen?null:c.id)}
+                    style={{display:'flex',alignItems:'center',gap:12,flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+                    {/* Avatar */}
+                    <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:isOpen?T.navy:T.paper,display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.1s'}}>
+                      <span style={{fontSize:14}}>{c.company?'🏢':'👤'}</span>
+                    </div>
+                    {/* Testo */}
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {c.full_name}
+                      </div>
+                      <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:3,display:'flex',gap:10,flexWrap:'wrap'}}>
+                        {c.company && <span>{c.company}</span>}
+                        <span>{projs.length} {projs.length===1?'progetto':'progetti'}</span>
+                        <span>{comms.length} {comms.length===1?'commessa':'commesse'}</span>
+                        {totale>0 && <span style={{color:T.navy,fontWeight:500}}>{currency(totale)}</span>}
+                      </div>
+                    </div>
+                    <span style={{fontSize:10,color:T.muted,marginLeft:8,flexShrink:0}}>{isOpen?'▲':'▼'}</span>
+                  </button>
+
+                  {/* Elimina */}
+                  <button onClick={()=>handleDelete(c.id)}
+                    style={{background:'none',border:`0.5px solid ${T.red}`,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
+                    Elimina
+                  </button>
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{c.full_name}</div>
-                  {c.company && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>{c.company}</div>}
-                </div>
+
+                {/* Pannello espanso */}
+                {isOpen && (
+                  <div style={{borderTop:`0.5px solid ${T.ink10}`,padding:'14px 16px',background:T.paper}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+
+                      {/* Progetti */}
+                      <div>
+                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                          Progetti ({projs.length})
+                        </div>
+                        {projs.length===0 ? (
+                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessun progetto</div>
+                        ) : (
+                          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                            {projs.map(p=>(
+                              <button key={p.id} onClick={()=>navigate(`/progetti/${p.id}`)}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                              >
+                                <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
+                                <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Commesse */}
+                      <div>
+                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                          Commesse ({comms.length})
+                        </div>
+                        {comms.length===0 ? (
+                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessuna commessa</div>
+                        ) : (
+                          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                            {comms.map(com=>(
+                              <button key={com.id} onClick={()=>navigate(`/commesse/${com.id}`)}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                              >
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{com.nome_commessa}</div>
+                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,flexShrink:0,fontWeight:500}}>{currency(com.importo_offerta_base)}</div>
+                                </div>
+                                {com.numero_offerta && (
+                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>{com.numero_offerta}</div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
+                )}
               </div>
-              <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: `0.5px solid ${T.red}`, padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.red, letterSpacing: '0.05em' }}>Elimina</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal aggiungi cliente */}
       {addModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 400, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginBottom: 18 }}>Nuovo Cliente</div>
-            <form onSubmit={handleAddContact} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
+          <div style={{width:'100%',maxWidth:400,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28}}>
+            <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
+            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
+              I clienti si aggiungono anche automaticamente dai progetti e commesse
+            </div>
+            <form onSubmit={handleAdd} style={{display:'flex',flexDirection:'column',gap:12}}>
               <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Nome *</div>
-                <input type="text" placeholder="Nome cliente" value={newContact.full_name} onChange={e => setNewContact({ ...newContact, full_name: e.target.value })} required autoFocus style={inputSt} />
+                <FieldLabel>Nome *</FieldLabel>
+                <input type="text" placeholder="Nome cliente o azienda" value={newContact.full_name}
+                  onChange={e=>setNewContact({...newContact,full_name:e.target.value})}
+                  required autoFocus style={inputSt}/>
               </div>
               <div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Azienda</div>
-                <input type="text" placeholder="Nome azienda (opzionale)" value={newContact.company} onChange={e => setNewContact({ ...newContact, company: e.target.value })} style={inputSt} />
+                <FieldLabel>Ragione sociale / Azienda</FieldLabel>
+                <input type="text" placeholder="Opzionale" value={newContact.company}
+                  onChange={e=>setNewContact({...newContact,company:e.target.value})}
+                  style={inputSt}/>
               </div>
-              <div style={{ height: '0.5px', background: T.ink10, margin: '4px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <BtnGhost onClick={() => { setAddModalOpen(false); setNewContact({ full_name: "", company: "" }); }} disabled={saving}>Annulla</BtnGhost>
-                <BtnPrimary type="submit" disabled={saving || !newContact.full_name.trim()}>{saving ? "Salvataggio..." : "Aggiungi"}</BtnPrimary>
+              {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
+              <div style={{height:'0.5px',background:T.ink10,margin:'4px 0'}}/>
+              <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
+                <BtnGhost onClick={()=>{ setAddModalOpen(false); setNewContact({full_name:"",company:""}); setFormError(""); }} disabled={saving}>Annulla</BtnGhost>
+                <BtnPrimary type="submit" disabled={saving||!newContact.full_name.trim()}>{saving?"Salvataggio...":"Aggiungi"}</BtnPrimary>
               </div>
             </form>
           </div>
