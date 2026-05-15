@@ -2,250 +2,232 @@ import { useEffect, useMemo, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 
-function toDateOnly(value) {
-  if (!value) {
-    return null;
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
+// ── BRAND TOKENS ─────────────────────────────────────────────────
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
+  red: '#b91c1c', green: '#1a6b3c',
+};
 
+function toDateOnly(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 function isOverdue(dateValue) {
   const planned = toDateOnly(dateValue);
-  if (!planned) {
-    return false;
-  }
-  const today = toDateOnly(new Date().toISOString());
-  return planned < today;
+  if (!planned) return false;
+  return planned < toDateOnly(new Date().toISOString());
+}
+
+function Panel({ children, style = {} }) {
+  return <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px', ...style }}>{children}</div>;
+}
+
+function TaskRow({ task, projectName, onToggle, updating, done }) {
+  const [hover, setHover] = useState(false);
+  const overdue = !done && isOverdue(task.data_pianificata);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(task, done)}
+      disabled={updating}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', padding: '9px 12px', textAlign: 'left',
+        background: hover ? T.paper : 'transparent',
+        border: `0.5px solid ${hover ? T.ink20 : T.ink10}`,
+        cursor: updating ? 'not-allowed' : 'pointer',
+        opacity: updating ? 0.5 : 1, transition: 'all 0.1s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        {/* Checkbox circle */}
+        <span style={{
+          width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+          border: `1px solid ${done ? T.navy : overdue ? T.red : T.ink20}`,
+          background: done ? T.navy : 'transparent',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {done && (
+            <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+              <path d="M1 3L3 5L7 1" stroke="#EEF1F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: 12, fontWeight: 600, color: done ? T.muted : T.ink,
+            textDecoration: done ? 'line-through' : 'none',
+            fontFamily: "'Space Grotesk', sans-serif",
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{task.title || "Task senza titolo"}</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>
+            {done ? `${projectName} · ${task.categoria || 'Senza categoria'}` : (task.categoria || 'Senza categoria')}
+          </div>
+        </div>
+      </div>
+      <div style={{ flexShrink: 0, marginLeft: 12 }}>
+        {done ? (
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.green }}>Completato</span>
+        ) : (
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: overdue ? T.red : T.muted }}>
+            {task.data_pianificata || '—'}
+          </span>
+        )}
+      </div>
+    </button>
+  );
 }
 
 export default function MyTasksPage() {
   const { studioId } = useStudio();
-  const [activeTasks, setActiveTasks] = useState([]);
+
+  const [activeTasks, setActiveTasks]       = useState([]);
   const [completedToday, setCompletedToday] = useState([]);
-  const [projectsById, setProjectsById] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [projectsById, setProjectsById]     = useState({});
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState("");
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
 
   const loadData = async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     const today = new Date().toISOString().slice(0, 10);
 
     const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
-
+    if (authError) { setError(authError.message); setLoading(false); return; }
     const user = authData?.user;
-    if (!user?.id) {
-      setError("Utente non autenticato.");
-      setLoading(false);
-      return;
-    }
+    if (!user?.id) { setError("Utente non autenticato."); setLoading(false); return; }
 
     let teamMember;
-    try {
-      teamMember = await getOrCreateTeamMember(user);
-    } catch (teamMemberError) {
-      setError(teamMemberError.message);
-      setLoading(false);
-      return;
-    }
+    try { teamMember = await getOrCreateTeamMember(user); }
+    catch (e) { setError(e.message); setLoading(false); return; }
 
-    const teamMemberId = teamMember.id;
-    const tasksRes = await supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", teamMemberId);
+    const { data: tasks, error: tErr } = await supabase
+      .from("tasks").select("*").eq("studio", studioId).eq("assigned_member", teamMember.id);
+    if (tErr) { setError(tErr.message || "Errore caricamento task"); setLoading(false); return; }
 
-    if (tasksRes.error) {
-      setError(tasksRes.error.message || "Errore caricamento task");
-      setLoading(false);
-      return;
-    }
-
-    const combined = tasksRes.data ?? [];
-    const activeTasksData = combined
-      .filter((task) => task.status !== "completed")
+    const combined = tasks ?? [];
+    const active = combined
+      .filter(t => t.status !== "completed")
       .sort((a, b) => {
-        if (!a.data_pianificata && !b.data_pianificata) {
-          return 0;
-        }
-        if (!a.data_pianificata) {
-          return 1;
-        }
-        if (!b.data_pianificata) {
-          return -1;
-        }
+        if (!a.data_pianificata && !b.data_pianificata) return 0;
+        if (!a.data_pianificata) return 1;
+        if (!b.data_pianificata) return -1;
         return new Date(a.data_pianificata) - new Date(b.data_pianificata);
       });
-    const completedTodayData = combined
-      .filter(
-        (task) =>
-          task.status === "completed" &&
-          task.updated_at >= `${today}T00:00:00` &&
-          task.updated_at <= `${today}T23:59:59`,
-      )
+    const done = combined
+      .filter(t => t.status === "completed" && t.updated_at >= `${today}T00:00:00` && t.updated_at <= `${today}T23:59:59`)
       .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    const projectIds = [...new Set(combined.map((t) => t.project_id).filter(Boolean))];
 
-    let projectsMap = {};
-    if (projectIds.length > 0) {
-      const projectsRes = await supabase.from("projects").select("id,name").in("id", projectIds);
-      if (!projectsRes.error) {
-        projectsMap = (projectsRes.data ?? []).reduce((acc, project) => {
-          acc[project.id] = project.name || "Progetto";
-          return acc;
-        }, {});
-      }
+    const pIds = [...new Set(combined.map(t => t.project_id).filter(Boolean))];
+    let pMap = {};
+    if (pIds.length > 0) {
+      const { data: projs } = await supabase.from("projects").select("id,name").in("id", pIds);
+      pMap = (projs ?? []).reduce((acc, p) => { acc[p.id] = p.name || "Progetto"; return acc; }, {});
     }
 
-    setProjectsById(projectsMap);
-    setActiveTasks(activeTasksData);
-    setCompletedToday(completedTodayData);
+    setProjectsById(pMap);
+    setActiveTasks(active);
+    setCompletedToday(done);
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (studioId) loadData();
-  }, [studioId]);
+  useEffect(() => { if (studioId) loadData(); }, [studioId]);
 
-  const groupedActive = useMemo(() => {
-    return activeTasks.reduce((acc, task) => {
-      const key = task.project_id || "senza-progetto";
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(task);
-      return acc;
-    }, {});
-  }, [activeTasks]);
+  const groupedActive = useMemo(() => activeTasks.reduce((acc, t) => {
+    const key = t.project_id || "senza-progetto";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(t);
+    return acc;
+  }, {}), [activeTasks]);
 
-  const toggleTask = async (task, fromCompletedToday = false) => {
+  const toggleTask = async (task, fromDone = false) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
     setUpdatingTaskId(task.id);
-
-    if (fromCompletedToday) {
-      setCompletedToday((prev) => prev.filter((item) => item.id !== task.id));
-      if (nextStatus !== "completed") {
-        setActiveTasks((prev) => [{ ...task, status: nextStatus }, ...prev]);
-      }
+    if (fromDone) {
+      setCompletedToday(p => p.filter(i => i.id !== task.id));
+      if (nextStatus !== "completed") setActiveTasks(p => [{ ...task, status: nextStatus }, ...p]);
     } else {
-      setActiveTasks((prev) =>
-        prev.filter((item) => item.id !== task.id),
-      );
-      if (nextStatus === "completed") {
-        setCompletedToday((prev) => [{ ...task, status: "completed" }, ...prev]);
-      }
+      setActiveTasks(p => p.filter(i => i.id !== task.id));
+      if (nextStatus === "completed") setCompletedToday(p => [{ ...task, status: "completed" }, ...p]);
     }
-
-    const { error: updateError } = await supabase
-      .from("tasks")
-      .update({ status: nextStatus })
-      .eq("id", task.id);
-
-    if (updateError) {
-      await loadData();
-      setError(updateError.message);
-    } else {
-      setError("");
-    }
+    const { error: uErr } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
+    if (uErr) { await loadData(); setError(uErr.message); }
+    else setError("");
     setUpdatingTaskId(null);
   };
 
-  if (loading) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Caricamento task...
-      </section>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+      Caricamento task...
+    </div>
+  );
 
-  if (error) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-        Errore: {error}
-      </section>
-    );
-  }
+  if (error) return (
+    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>{error}</div>
+  );
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Task attivi per progetto */}
       {Object.keys(groupedActive).length === 0 ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          Nessun task attivo assegnato.
-        </section>
+        <Panel>
+          <div style={{ textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0' }}>
+            Nessun task attivo assegnato.
+          </div>
+        </Panel>
       ) : (
         Object.entries(groupedActive).map(([projectId, tasks]) => (
-          <section key={projectId} className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-            <h3 className="mb-3 text-lg font-semibold text-white">
+          <Panel key={projectId}>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 12 }}>
               {projectsById[projectId] || "Progetto non assegnato"}
-            </h3>
-            <div className="space-y-2">
-              {tasks.map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => toggleTask(task, false)}
-                  disabled={updatingTaskId === task.id}
-                  className="flex w-full items-center justify-between rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-left hover:border-[#0a84ff] disabled:opacity-50"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/60" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">{task.title || "Task senza titolo"}</p>
-                      <p className="text-xs text-white/60">{task.categoria || "Senza categoria"}</p>
-                    </div>
-                  </div>
-                  <p
-                    className={`text-xs ${
-                      task.data_pianificata && isOverdue(task.data_pianificata) ? "text-[#ff453a]" : "text-white/70"
-                    }`}
-                  >
-                    {task.data_pianificata || "Nessuna data"}
-                  </p>
-                </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {tasks.map(task => (
+                <TaskRow
+                  key={task.id} task={task}
+                  projectName={projectsById[task.project_id] || "—"}
+                  onToggle={toggleTask}
+                  updating={updatingTaskId === task.id}
+                  done={false}
+                />
               ))}
             </div>
-          </section>
+          </Panel>
         ))
       )}
 
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-        <h3 className="mb-3 text-lg font-semibold text-[#30d158]">Task completati oggi</h3>
+      {/* Task completati oggi */}
+      <Panel>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.green, marginBottom: 12 }}>
+          Task completati oggi
+        </div>
         {completedToday.length === 0 ? (
-          <p className="text-sm text-white/60">Nessun task completato oggi.</p>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 0' }}>
+            Nessun task completato oggi.
+          </div>
         ) : (
-          <div className="space-y-2">
-            {completedToday.map((task) => (
-              <button
-                key={task.id}
-                type="button"
-                onClick={() => toggleTask(task, true)}
-                disabled={updatingTaskId === task.id}
-                className="flex w-full items-center justify-between rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-left hover:border-[#0a84ff] disabled:opacity-50"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#30d158] bg-[#30d158]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#1c1c1e]" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-white/80">{task.title || "Task senza titolo"}</p>
-                    <p className="text-xs text-white/50">
-                      {projectsById[task.project_id] || "Progetto non assegnato"} - {task.categoria || "Senza categoria"}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs text-[#30d158]">Completato</span>
-              </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {completedToday.map(task => (
+              <TaskRow
+                key={task.id} task={task}
+                projectName={projectsById[task.project_id] || "—"}
+                onToggle={toggleTask}
+                updating={updatingTaskId === task.id}
+                done={true}
+              />
             ))}
           </div>
         )}
-      </section>
+      </Panel>
+
     </div>
   );
 }

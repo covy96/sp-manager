@@ -3,30 +3,35 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
-function sortTasksForColumn(tasks) {
-  const timestamp = (value) => {
-    if (!value) {
-      return Number.MAX_SAFE_INTEGER;
-    }
+// ── BRAND TOKENS ─────────────────────────────────────────────────
+const T = {
+  ink:   '#0E0E0D', navy:  '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', ink05: '#0E0E0D0D',
+  red:   '#b91c1c', green: '#1a6b3c',
+};
 
-    const parsed = new Date(value).getTime();
-    return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
-  };
-
-  return [...tasks].sort((a, b) => {
-    const aCompleted = a.status === "completed";
-    const bCompleted = b.status === "completed";
-
-    if (aCompleted !== bCompleted) {
-      return aCompleted ? 1 : -1;
-    }
-
-    return timestamp(a.created_at) - timestamp(b.created_at);
-  });
+const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
+function avatarColor(name) {
+  let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function getInitials(name = "") {
+  return name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
 }
 
 const TASK_VISIBILITY_KEY = "projectDetailTaskVisibility";
 
+function sortTasksForColumn(tasks) {
+  return [...tasks].sort((a, b) => {
+    const ac = a.status === "completed", bc = b.status === "completed";
+    if (ac !== bc) return ac ? 1 : -1;
+    const ts = v => v ? new Date(v).getTime() : Number.MAX_SAFE_INTEGER;
+    return ts(a.created_at) - ts(b.created_at);
+  });
+}
+
+// ── TASK EDIT POPUP ───────────────────────────────────────────────
 function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClose, isSubtask }) {
   const ref = useRef(null);
   const [form, setForm] = useState({
@@ -40,9 +45,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    };
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
@@ -50,1093 +53,620 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const handleSave = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const updates = {
-      title: form.title.trim(),
-      assigned_member: form.assigned_member || null,
-      data_pianificata: form.data_pianificata || null,
-      note: form.note || null,
-    };
+    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null };
     if (!isSubtask) updates.categoria = form.categoria || null;
     await onSave(task, updates);
-    setSaving(false);
-    onClose();
+    setSaving(false); onClose();
   };
 
   const handleDelete = async () => {
     if (!window.confirm("Eliminare questo task?")) return;
-    setDeleting(true);
-    await onDelete(task);
-    setDeleting(false);
-    onClose();
+    setDeleting(true); await onDelete(task); setDeleting(false); onClose();
   };
 
+  const inputSt = {
+    width: '100%', padding: '6px 10px', border: `0.5px solid ${T.ink20}`,
+    background: '#fff', color: T.ink, fontSize: 12,
+    fontFamily: "'Space Grotesk', sans-serif", outline: 'none', boxSizing: 'border-box',
+  };
+  const labelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
+
   return (
-    <div
-      ref={ref}
-      className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4 shadow-2xl"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="space-y-3">
+    <div ref={ref} onClick={e => e.stopPropagation()} style={{
+      position: 'absolute', left: 0, top: '100%', zIndex: 50, marginTop: 4,
+      width: 280, background: '#fff', border: `0.5px solid ${T.ink20}`,
+      padding: 14, boxShadow: '0 4px 16px rgba(14,14,13,0.1)',
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
-          <label className="mb-1 block text-xs font-medium text-white/60">Nome</label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-            className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-sm text-white outline-none focus:border-[#0a84ff]"
-            autoFocus
-          />
+          <label style={labelSt}>Nome</label>
+          <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inputSt} autoFocus />
         </div>
         {!isSubtask && categories.length > 0 && (
           <div>
-            <label className="mb-1 block text-xs font-medium text-white/60">Categoria</label>
-            <select
-              value={form.categoria}
-              onChange={(e) => setForm((p) => ({ ...p, categoria: e.target.value }))}
-              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-sm text-white outline-none focus:border-[#0a84ff]"
-            >
+            <label style={labelSt}>Categoria</label>
+            <select value={form.categoria} onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))} style={inputSt}>
               <option value="">Nessuna</option>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs font-medium text-white/60">Assegnato a</label>
-          <select
-            value={form.assigned_member}
-            onChange={(e) => setForm((p) => ({ ...p, assigned_member: e.target.value }))}
-            className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-sm text-white outline-none focus:border-[#0a84ff]"
-          >
+          <label style={labelSt}>Assegnato a</label>
+          <select value={form.assigned_member} onChange={e => setForm(p => ({ ...p, assigned_member: e.target.value }))} style={inputSt}>
             <option value="">Non assegnato</option>
-            {teamMembers.map((m) => (
-              <option key={m.id} value={m.id}>{m.user_name || m.user_email || "Membro"}</option>
-            ))}
+            {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email || "Membro"}</option>)}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-white/60">Data pianificata</label>
-          <input
-            type="date"
-            value={form.data_pianificata}
-            onChange={(e) => setForm((p) => ({ ...p, data_pianificata: e.target.value }))}
-            className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-sm text-white outline-none focus:border-[#0a84ff]"
-          />
+          <label style={labelSt}>Data pianificata</label>
+          <input type="date" value={form.data_pianificata} onChange={e => setForm(p => ({ ...p, data_pianificata: e.target.value }))} style={inputSt} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-white/60">Note</label>
-          <textarea
-            rows={2}
-            value={form.note}
-            onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))}
-            className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-sm text-white outline-none focus:border-[#0a84ff]"
-          />
+          <label style={labelSt}>Note</label>
+          <textarea rows={2} value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} style={{ ...inputSt, resize: 'vertical' }} />
         </div>
-        <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !form.title.trim()}
-            className="flex-1 rounded-lg bg-[#0a84ff] py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
-          >
-            {saving ? "Salvo..." : "Salva"}
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="rounded-lg bg-[#ff453a] px-3 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
-          >
-            {deleting ? "..." : "Elimina"}
-          </button>
+        <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+          <button onClick={handleSave} disabled={saving || !form.title.trim()} style={{
+            flex: 1, padding: '7px 0', background: T.navy, color: '#EEF1F6',
+            border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 11,
+            fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em', opacity: saving ? 0.6 : 1,
+          }}>{saving ? "Salvo..." : "Salva"}</button>
+          <button onClick={handleDelete} disabled={deleting} style={{
+            padding: '7px 12px', background: T.red, color: '#fff',
+            border: 'none', cursor: 'pointer', fontSize: 11,
+            fontFamily: "'IBM Plex Mono', monospace",
+          }}>{deleting ? "..." : "Elimina"}</button>
         </div>
       </div>
     </div>
   );
 }
 
+// ── SUBTASK ROW ───────────────────────────────────────────────────
 function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onDeleteTask, isUpdating }) {
-  const completed = task.status === "completed";
+  const done = task.status === "completed";
+  const [popupOpen, setPopupOpen] = useState(false);
+  return (
+    <div style={{
+      position: 'relative', marginLeft: 20,
+      display: 'flex', alignItems: 'flex-start', gap: 8,
+      padding: '5px 8px', background: T.paper,
+      border: `0.5px solid ${T.ink10}`,
+      opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
+    }}>
+      <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
+        marginTop: 2, width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
+        border: `1px solid ${done ? T.navy : T.ink20}`,
+        background: done ? T.navy : 'transparent',
+        cursor: 'pointer', padding: 0,
+      }} />
+      <button onClick={() => setPopupOpen(v => !v)} style={{
+        flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
+        fontSize: 11, color: done ? T.muted : T.ink,
+        textDecoration: done ? 'line-through' : 'none',
+        fontFamily: "'Space Grotesk', sans-serif",
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>{task.title ?? task.name ?? "Subtask"}</button>
+      {popupOpen && <TaskEditPopup task={task} teamMembers={teamMembers} categories={categories} onSave={onUpdateTask} onDelete={onDeleteTask} onClose={() => setPopupOpen(false)} isSubtask />}
+    </div>
+  );
+}
+
+// ── TASK ROW ──────────────────────────────────────────────────────
+function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtaskAssignment, subtaskDate, onToggle, onUpdateTask, onDeleteTask, onSubtaskInputChange, onSubtaskAssignmentChange, onSubtaskDateChange, onCreateSubtask, isUpdating, isCreatingSubtask }) {
+  const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
 
+  const assignedName = task.assigned_member ? (teamMembers.find(m => m.id === task.assigned_member)?.user_name || teamMembers.find(m => m.id === task.assigned_member)?.user_email) : null;
+
+  const inputSt = {
+    padding: '6px 10px', border: `0.5px solid ${T.ink10}`, background: '#fff',
+    color: T.ink, fontSize: 11, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
+  };
+  const miniBtn = {
+    width: 28, height: 28, flexShrink: 0, border: `0.5px solid ${T.ink10}`,
+    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', position: 'relative', overflow: 'hidden',
+  };
+
   return (
-    <div
-      className={`relative ml-6 flex items-start gap-2 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-2 py-1.5 ${
-        completed ? "opacity-40" : ""
-      } ${isUpdating ? "opacity-50" : ""}`}
-    >
-      <button
-        type="button"
-        onClick={() => onToggle(task)}
-        disabled={isUpdating}
-        className={`mt-0.5 inline-block h-3.5 w-3.5 shrink-0 rounded-full border ${
-          completed ? "border-[#0a84ff] bg-[#0a84ff]" : "border-[#8e8e93] bg-transparent"
-        }`}
-      />
-      <button
-        type="button"
-        onClick={() => setPopupOpen((v) => !v)}
-        className={`min-w-0 flex-1 truncate text-left text-xs ${
-          completed ? "text-white/45 line-through" : "text-white/85 hover:text-white"
-        }`}
-      >
-        {task.title ?? task.name ?? "Subtask senza titolo"}
-      </button>
-      {popupOpen && (
-        <TaskEditPopup
-          task={task}
-          teamMembers={teamMembers}
-          categories={categories}
-          onSave={onUpdateTask}
-          onDelete={onDeleteTask}
-          onClose={() => setPopupOpen(false)}
-          isSubtask
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{
+        position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8,
+        padding: '8px 10px', background: '#fff', border: `0.5px solid ${T.ink10}`,
+        opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
+        cursor: isUpdating ? 'not-allowed' : 'default',
+      }}>
+        <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
+          marginTop: 2, width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+          border: `1px solid ${done ? T.navy : T.ink20}`,
+          background: done ? T.navy : 'transparent',
+          cursor: 'pointer', padding: 0,
+        }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => setPopupOpen(v => !v)} style={{
+              flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, color: done ? T.muted : T.ink,
+              textDecoration: done ? 'line-through' : 'none',
+              fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{task.title ?? task.name ?? "Task"}</button>
+            {assignedName && (
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em', border: `0.5px solid ${T.ink10}`, padding: '1px 6px', flexShrink: 0 }}>
+                {assignedName}
+              </span>
+            )}
+            {task.data_pianificata && (
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, flexShrink: 0 }}>
+                {task.data_pianificata}
+              </span>
+            )}
+          </div>
+        </div>
+        {popupOpen && <TaskEditPopup task={task} teamMembers={teamMembers} categories={categories} onSave={onUpdateTask} onDelete={onDeleteTask} onClose={() => setPopupOpen(false)} isSubtask={false} />}
+      </div>
+
+      {!done && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {subtasks.map(st => (
+            <SubtaskRow key={st.id} task={st} teamMembers={teamMembers} categories={categories}
+              onToggle={onToggle} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} isUpdating={isUpdating} />
+          ))}
+          <div style={{ marginLeft: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="text" value={subtaskInput ?? ""} onChange={e => onSubtaskInputChange(task.id, e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onCreateSubtask(task); } }}
+              placeholder="Aggiungi subtask..." style={{ ...inputSt, flex: 1, minWidth: 0 }} />
+            <div style={miniBtn} aria-label="Assegna membro subtask">
+              <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
+              <select value={subtaskAssignment ?? ""} onChange={e => onSubtaskAssignmentChange(task.id, e.target.value)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
+                <option value="">Non assegnato</option>
+                {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
+              </select>
+            </div>
+            <div style={miniBtn}>
+              <span style={{ pointerEvents: 'none', fontSize: 12 }}>📅</span>
+              <input type="date" value={subtaskDate ?? ""} onChange={e => onSubtaskDateChange(task.id, e.target.value)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+            </div>
+            <button onClick={() => onCreateSubtask(task)} disabled={isCreatingSubtask} style={{
+              width: 28, height: 28, background: T.navy, color: '#EEF1F6',
+              border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 600,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>+</button>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function TaskRow({
-  task,
-  teamMembers,
-  categories,
-  subtasks,
-  subtaskInput,
-  subtaskAssignment,
-  subtaskDate,
-  onToggle,
-  onUpdateTask,
-  onDeleteTask,
-  onSubtaskInputChange,
-  onSubtaskAssignmentChange,
-  onSubtaskDateChange,
-  onCreateSubtask,
-  isUpdating,
-  isCreatingSubtask,
-}) {
-  const completed = task.status === "completed";
-  const [popupOpen, setPopupOpen] = useState(false);
-
-  return (
-    <div className="space-y-2">
-      <div
-        className={`relative flex w-full items-start gap-2 rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-left transition hover:border-[#0a84ff] ${
-          completed ? "opacity-40" : ""
-        } ${isUpdating ? "cursor-not-allowed opacity-50" : ""}`}
-      >
-        <button
-          type="button"
-          onClick={() => onToggle(task)}
-          disabled={isUpdating}
-          className={`mt-0.5 inline-block h-4 w-4 shrink-0 rounded-full border ${
-            completed ? "border-[#0a84ff] bg-[#0a84ff]" : "border-[#8e8e93] bg-transparent"
-          }`}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPopupOpen((v) => !v)}
-              className={`min-w-0 flex-1 truncate text-left text-sm ${
-                completed ? "text-white/45 line-through" : "text-white/90 hover:text-white"
-              }`}
-            >
-              {task.title ?? task.name ?? "Task senza titolo"}
-            </button>
-            {task.assigned_member ? (
-              <span className="rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/50">
-                {teamMembers.find((m) => m.id === task.assigned_member)?.user_name ||
-                  teamMembers.find((m) => m.id === task.assigned_member)?.user_email ||
-                  ""}
-              </span>
-            ) : null}
-            {task.data_pianificata ? (
-              <span className="text-xs text-white/40">{task.data_pianificata}</span>
-            ) : null}
-          </div>
-        </div>
-        {popupOpen && (
-          <TaskEditPopup
-            task={task}
-            teamMembers={teamMembers}
-            categories={categories}
-            onSave={onUpdateTask}
-            onDelete={onDeleteTask}
-            onClose={() => setPopupOpen(false)}
-            isSubtask={false}
-          />
-        )}
-      </div>
-
-      {!completed ? (
-        <div className="space-y-1.5">
-          {subtasks.map((subtask) => (
-            <SubtaskRow
-              key={subtask.id}
-              task={subtask}
-              teamMembers={teamMembers}
-              categories={categories}
-              onToggle={onToggle}
-              onUpdateTask={onUpdateTask}
-              onDeleteTask={onDeleteTask}
-              isUpdating={isUpdating}
-            />
-          ))}
-          <div className="ml-6 flex items-center gap-2">
-            <input
-              type="text"
-              value={subtaskInput ?? ""}
-              onChange={(event) => onSubtaskInputChange(task.id, event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  onCreateSubtask(task);
-                }
-              }}
-              placeholder="Aggiungi subtask..."
-              className="min-w-0 flex-1 rounded-md border border-[#48484a] bg-[#3a3a3c] px-2 py-1.5 text-xs text-white outline-none ring-[#0a84ff]/60 focus:ring"
-            />
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[#48484a] bg-[#3a3a3c] hover:border-[#0a84ff]">
-              <span className="pointer-events-none text-xs">👤</span>
-              <select
-                value={subtaskAssignment ?? ""}
-                onChange={(event) => onSubtaskAssignmentChange(task.id, event.target.value)}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                aria-label="Assegna membro subtask"
-              >
-                <option value="">Non assegnato</option>
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.user_name || member.user_email || "Membro"}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[#48484a] bg-[#3a3a3c] hover:border-[#0a84ff]">
-              <span className="pointer-events-none text-xs">📅</span>
-              <input
-                type="date"
-                value={subtaskDate ?? ""}
-                onChange={(event) => onSubtaskDateChange(task.id, event.target.value)}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                aria-label="Data pianificata subtask"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => onCreateSubtask(task)}
-              disabled={isCreatingSubtask}
-              className="h-7 w-7 shrink-0 rounded-md bg-[#0a84ff] text-xs font-semibold text-white hover:brightness-110 disabled:opacity-60"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
+// ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id: projectId } = useParams();
   const { studioId } = useStudio();
   const id = projectId;
   const inputRefs = useRef({});
-  const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
+
+  const [project, setProject]         = useState(null);
+  const [tasks, setTasks]             = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [completedCategories, setCompletedCategories] = useState({});
   const [hideCompletedTasks, setHideCompletedTasks] = useState(
-    () => localStorage.getItem(TASK_VISIBILITY_KEY) === "hide-completed",
+    () => localStorage.getItem(TASK_VISIBILITY_KEY) === "hide-completed"
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
-  const [newTaskInputs, setNewTaskInputs] = useState({});
+  const [newTaskInputs, setNewTaskInputs]   = useState({});
   const [newTaskAssignments, setNewTaskAssignments] = useState({});
-  const [newTaskDates, setNewTaskDates] = useState({});
-  const [subtaskInputs, setSubtaskInputs] = useState({});
+  const [newTaskDates, setNewTaskDates]     = useState({});
+  const [subtaskInputs, setSubtaskInputs]   = useState({});
   const [subtaskAssignments, setSubtaskAssignments] = useState({});
-  const [subtaskDates, setSubtaskDates] = useState({});
+  const [subtaskDates, setSubtaskDates]     = useState({});
   const [creatingSubtaskId, setCreatingSubtaskId] = useState(null);
-  const [creatingCategory, setCreatingCategory] = useState("");
-  const [serviceTemplates, setServiceTemplates] = useState([]);
-  const [editOpen, setEditOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [archiving, setArchiving] = useState(false);
-  const [editForm, setEditForm] = useState({});
-  const [editSaving, setEditSaving] = useState(false);
-  const [editError, setEditError] = useState("");
+  const [creatingCategory, setCreatingCategory]   = useState("");
+  const [serviceTemplates, setServiceTemplates]   = useState([]);
+  const [editOpen, setEditOpen]       = useState(false);
+  const [menuOpen, setMenuOpen]       = useState(false);
+  const [archiving, setArchiving]     = useState(false);
+  const [editForm, setEditForm]       = useState({});
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editError, setEditError]     = useState("");
 
   useEffect(() => {
-    if (!projectId || projectId === "null" || projectId === "undefined") {
-      navigate("/progetti");
-      return;
-    }
-
+    if (!projectId || projectId === "null" || projectId === "undefined") { navigate("/progetti"); return; }
     const loadData = async () => {
-      setLoading(true);
-      setError("");
-
-      const membersQuery = studioId
+      setLoading(true); setError("");
+      const membersQ = studioId
         ? supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true })
         : Promise.resolve({ data: [], error: null });
-
-      const [projectResult, tasksResult, membersResult, templatesResult] = await Promise.all([
+      const [pR, tR, mR, sR] = await Promise.all([
         supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
-        supabase
-          .from("tasks")
-          .select("*")
-          .eq("project_id", projectId)
-          .order("created_at", { ascending: true }),
-        membersQuery,
+        supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
+        membersQ,
         supabase.from("service_task_templates").select("*").order("order", { ascending: true }),
       ]);
-
-      if (projectResult.error) {
-        setError(projectResult.error.message);
-        setProject(null);
-        setTasks([]);
-        setLoading(false);
-        return;
-      }
-
-      if (tasksResult.error) {
-        setError(tasksResult.error.message);
-        setProject(projectResult.data ?? null);
-        setTasks([]);
-        setLoading(false);
-        return;
-      }
-
-      if (membersResult.error) {
-        setError(membersResult.error.message);
-        setProject(projectResult.data ?? null);
-        setTasks(tasksResult.data ?? []);
-        setTeamMembers([]);
-        setLoading(false);
-        return;
-      }
-
-      setProject(projectResult.data ?? null);
-      setTasks(tasksResult.data ?? []);
-      setTeamMembers(membersResult.data ?? []);
-      setServiceTemplates(templatesResult.data ?? []);
-      setCompletedCategories(projectResult.data?.completed_categories ?? {});
+      if (pR.error) { setError(pR.error.message); setProject(null); setTasks([]); setLoading(false); return; }
+      if (tR.error) { setError(tR.error.message); setProject(pR.data ?? null); setTasks([]); setLoading(false); return; }
+      setProject(pR.data ?? null);
+      setTasks(tR.data ?? []);
+      setTeamMembers(mR.data ?? []);
+      setServiceTemplates(sR.data ?? []);
+      setCompletedCategories(pR.data?.completed_categories ?? {});
       setLoading(false);
     };
-
     loadData();
   }, [projectId, studioId]);
 
-  const selectedServices = useMemo(
-    () => (Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : []),
-    [project],
-  );
+  const selectedServices = useMemo(() => Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : [], [project]);
 
-  const groupedTasks = useMemo(
-    () =>
-      selectedServices.map((category) => {
-        const categoryTasks = tasks.filter((task) => (task.categoria ?? "") === category);
-        const visibleTasks = categoryTasks.filter(
-          (task) => !hideCompletedTasks || task.status !== "completed",
-        );
-        const totalCount = categoryTasks.length;
-        const completedCount = categoryTasks.filter((task) => task.status === "completed").length;
+  const groupedTasks = useMemo(() => selectedServices.map(category => {
+    const catTasks = tasks.filter(t => (t.categoria ?? "") === category);
+    const visible = catTasks.filter(t => !hideCompletedTasks || t.status !== "completed");
+    return {
+      category,
+      completedCount: catTasks.filter(t => t.status === "completed").length,
+      totalCount: catTasks.length,
+      tasks: sortTasksForColumn(visible.filter(t => !t.parent_task_id)),
+    };
+  }), [hideCompletedTasks, selectedServices, tasks]);
 
-        return {
-          category,
-          completedCount,
-          totalCount,
-          tasks: sortTasksForColumn(
-            visibleTasks.filter((task) => !task.parent_task_id),
-          ),
-        };
-      }),
-    [hideCompletedTasks, selectedServices, tasks],
-  );
-
-  const subtasksByParent = useMemo(() => {
-    return tasks.reduce((acc, task) => {
-      if (!task.parent_task_id) {
-        return acc;
-      }
-      if (!acc[task.parent_task_id]) {
-        acc[task.parent_task_id] = [];
-      }
-      if (!hideCompletedTasks || task.status !== "completed") {
-        acc[task.parent_task_id].push(task);
-      }
-      return acc;
-    }, {});
-  }, [hideCompletedTasks, tasks]);
+  const subtasksByParent = useMemo(() => tasks.reduce((acc, t) => {
+    if (!t.parent_task_id) return acc;
+    if (!acc[t.parent_task_id]) acc[t.parent_task_id] = [];
+    if (!hideCompletedTasks || t.status !== "completed") acc[t.parent_task_id].push(t);
+    return acc;
+  }, {}), [hideCompletedTasks, tasks]);
 
   useEffect(() => {
     localStorage.setItem(TASK_VISIBILITY_KEY, hideCompletedTasks ? "hide-completed" : "show-all");
   }, [hideCompletedTasks]);
 
-  const handleToggleTask = async (task) => {
-    if (!task?.id) {
-      return;
-    }
-
+  const handleToggleTask = async task => {
+    if (!task?.id) return;
     const nextStatus = task.status === "completed" ? "todo" : "completed";
-    const previousTasks = tasks;
-
-    let optimisticTasks = tasks.map((item) => (item.id === task.id ? { ...item, status: nextStatus } : item));
-    const taskIsSubtask = Boolean(task.parent_task_id);
-
-    if (taskIsSubtask) {
-      const siblingSubtasks = optimisticTasks.filter((item) => item.parent_task_id === task.parent_task_id);
-      const allSiblingsCompleted =
-        siblingSubtasks.length > 0 && siblingSubtasks.every((item) => item.status === "completed");
-      optimisticTasks = optimisticTasks.map((item) =>
-        item.id === task.parent_task_id
-          ? { ...item, status: allSiblingsCompleted ? "completed" : "todo" }
-          : item,
-      );
+    const prev = tasks;
+    let optimistic = tasks.map(i => i.id === task.id ? { ...i, status: nextStatus } : i);
+    if (task.parent_task_id) {
+      const siblings = optimistic.filter(i => i.parent_task_id === task.parent_task_id);
+      const allDone = siblings.length > 0 && siblings.every(i => i.status === "completed");
+      optimistic = optimistic.map(i => i.id === task.parent_task_id ? { ...i, status: allDone ? "completed" : "todo" } : i);
     }
-
-    setUpdatingTaskId(task.id);
-    setTasks(optimisticTasks);
-
-    const { error: updateError } = await supabase
-      .from("tasks")
-      .update({ status: nextStatus })
-      .eq("id", task.id);
-
-    if (updateError) {
-      setTasks(previousTasks);
-      setError(updateError.message);
-    } else {
-      if (taskIsSubtask) {
-        const parent = optimisticTasks.find((item) => item.id === task.parent_task_id);
-        const { error: parentUpdateError } = await supabase
-          .from("tasks")
-          .update({ status: parent?.status ?? "todo" })
-          .eq("id", task.parent_task_id);
-
-        if (parentUpdateError) {
-          setTasks(previousTasks);
-          setError(parentUpdateError.message);
-        } else {
-          setError("");
-        }
-      } else {
-        setError("");
-      }
-    }
-
+    setUpdatingTaskId(task.id); setTasks(optimistic);
+    const { error: uErr } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
+    if (uErr) { setTasks(prev); setError(uErr.message); }
+    else if (task.parent_task_id) {
+      const parent = optimistic.find(i => i.id === task.parent_task_id);
+      const { error: pErr } = await supabase.from("tasks").update({ status: parent?.status ?? "todo" }).eq("id", task.parent_task_id);
+      if (pErr) { setTasks(prev); setError(pErr.message); } else setError("");
+    } else setError("");
     setUpdatingTaskId(null);
   };
 
   const handleUpdateTask = async (task, updates) => {
-    if (!task?.id || String(task.id).startsWith("tmp-")) {
-      return;
-    }
-
-    const previousTasks = tasks;
-    setUpdatingTaskId(task.id);
-    setTasks((prev) =>
-      prev.map((item) => (item.id === task.id ? { ...item, ...updates } : item)),
-    );
-
-    const { error: updateError } = await supabase.from("tasks").update(updates).eq("id", task.id);
-
-    if (updateError) {
-      setTasks(previousTasks);
-      setError(updateError.message);
-    } else {
-      setError("");
-    }
-
+    if (!task?.id || String(task.id).startsWith("tmp-")) return;
+    const prev = tasks; setUpdatingTaskId(task.id);
+    setTasks(p => p.map(i => i.id === task.id ? { ...i, ...updates } : i));
+    const { error: uErr } = await supabase.from("tasks").update(updates).eq("id", task.id);
+    if (uErr) { setTasks(prev); setError(uErr.message); } else setError("");
     setUpdatingTaskId(null);
   };
 
+  const handleDeleteTask = async task => {
+    if (!task?.id) return;
+    const { error: dErr } = await supabase.from("tasks").delete().eq("id", task.id);
+    if (dErr) setError(dErr.message);
+    else { setTasks(p => p.filter(t => t.id !== task.id)); setError(""); }
+  };
+
   const handleArchiveProject = async () => {
-    if (!window.confirm("Archiviare questo progetto? Non sarà più visibile nella lista attiva.")) return;
+    if (!window.confirm("Archiviare questo progetto?")) return;
     setArchiving(true);
-    console.log("Archiving project id:", id);
-    const { error: archiveError } = await supabase
-      .from("projects")
-      .update({ archived: true })
-      .eq("id", id);
-    if (archiveError) {
-      console.error("Archive error:", archiveError);
-      alert("Errore archiviazione: " + archiveError.message);
-      setArchiving(false);
-      return;
-    }
+    const { error: aErr } = await supabase.from("projects").update({ archived: true }).eq("id", id);
+    if (aErr) { alert("Errore: " + aErr.message); setArchiving(false); return; }
     navigate("/progetti");
   };
 
-  const handleDeleteTask = async (task) => {
-    if (!task?.id) return;
-    const { error: delError } = await supabase.from("tasks").delete().eq("id", task.id);
-    if (delError) {
-      setError(delError.message);
-    } else {
-      setTasks((prev) => prev.filter((t) => t.id !== task.id));
-      setError("");
-    }
-  };
-
   const openEdit = () => {
-    setEditForm({
-      name: project?.name ?? "",
-      client: project?.client ?? "",
-      address: project?.address ?? "",
-      start_date: project?.start_date ?? "",
-      selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [],
-      selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [],
-    });
-    setEditError("");
-    setEditOpen(true);
-    setMenuOpen(false);
+    setEditForm({ name: project?.name ?? "", client: project?.client ?? "", address: project?.address ?? "", start_date: project?.start_date ?? "", selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [], selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [] });
+    setEditError(""); setEditOpen(true); setMenuOpen(false);
   };
 
-  const handleSaveEdit = async (event) => {
-    event.preventDefault();
-    if (!editForm.name.trim() || !editForm.client.trim()) {
-      setEditError("Nome e cliente sono obbligatori.");
-      return;
-    }
-    setEditSaving(true);
-    setEditError("");
-    const payload = {
-      name: editForm.name.trim(),
-      client: editForm.client.trim(),
-      address: editForm.address.trim() || null,
-      start_date: editForm.start_date || null,
-      servizi_selezionati: editForm.selectedServices,
-      assigned_users: editForm.selectedMembers ?? [],
-    };
-    const { error: updateError } = await supabase.from("projects").update(payload).eq("id", id);
-    if (updateError) {
-      setEditError(updateError.message);
-      setEditSaving(false);
-      return;
-    }
-    setProject((prev) => (prev ? { ...prev, ...payload } : prev));
-    setEditSaving(false);
-    setEditOpen(false);
+  const handleSaveEdit = async e => {
+    e.preventDefault();
+    if (!editForm.name.trim() || !editForm.client.trim()) { setEditError("Nome e cliente sono obbligatori."); return; }
+    setEditSaving(true); setEditError("");
+    const payload = { name: editForm.name.trim(), client: editForm.client.trim(), address: editForm.address?.trim() || null, start_date: editForm.start_date || null, servizi_selezionati: editForm.selectedServices, assigned_users: editForm.selectedMembers ?? [] };
+    const { error: uErr } = await supabase.from("projects").update(payload).eq("id", id);
+    if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
+    setProject(p => p ? { ...p, ...payload } : p); setEditSaving(false); setEditOpen(false);
   };
 
-  const toggleEditService = (serviceName) => {
-    setEditForm((prev) => {
-      const has = prev.selectedServices.includes(serviceName);
-      return {
-        ...prev,
-        selectedServices: has
-          ? prev.selectedServices.filter((s) => s !== serviceName)
-          : [...prev.selectedServices, serviceName],
-      };
-    });
+  const handleToggleCategory = async category => {
+    const next = { ...completedCategories, [category]: !completedCategories[category] };
+    const prev = completedCategories;
+    setCompletedCategories(next); setProject(p => p ? { ...p, completed_categories: next } : p);
+    const { error: uErr } = await supabase.from("projects").update({ completed_categories: next }).eq("id", id);
+    if (uErr) { setCompletedCategories(prev); setProject(p => p ? { ...p, completed_categories: prev } : p); setError(uErr.message); } else setError("");
   };
 
-  const handleToggleCategory = async (category) => {
-    const nextCompletedCategories = {
-      ...completedCategories,
-      [category]: !completedCategories[category],
-    };
-    const previousCompletedCategories = completedCategories;
-
-    setCompletedCategories(nextCompletedCategories);
-    setProject((prev) => (prev ? { ...prev, completed_categories: nextCompletedCategories } : prev));
-
-    const { error: updateError } = await supabase
-      .from("projects")
-      .update({ completed_categories: nextCompletedCategories })
-      .eq("id", id);
-
-    if (updateError) {
-      setCompletedCategories(previousCompletedCategories);
-      setProject((prev) => (prev ? { ...prev, completed_categories: previousCompletedCategories } : prev));
-      setError(updateError.message);
-    } else {
-      setError("");
-    }
-  };
-
-  const handleTaskInputChange = (category, value) => {
-    setNewTaskInputs((prev) => ({ ...prev, [category]: value }));
-  };
-
-  const handleNewTaskAssignmentChange = (category, value) => {
-    setNewTaskAssignments((prev) => ({ ...prev, [category]: value }));
-  };
-
-  const handleNewTaskDateChange = (category, value) => {
-    setNewTaskDates((prev) => ({ ...prev, [category]: value }));
-  };
-
-  const handleSubtaskInputChange = (taskId, value) => {
-    setSubtaskInputs((prev) => ({ ...prev, [taskId]: value }));
-  };
-
-  const handleSubtaskAssignmentChange = (taskId, value) => {
-    setSubtaskAssignments((prev) => ({ ...prev, [taskId]: value }));
-  };
-
-  const handleSubtaskDateChange = (taskId, value) => {
-    setSubtaskDates((prev) => ({ ...prev, [taskId]: value }));
-  };
-
-  const createSubtask = async (parentTask) => {
-    const title = (subtaskInputs[parentTask.id] ?? "").trim();
-    if (!title || creatingSubtaskId) {
-      return;
-    }
-
-    setCreatingSubtaskId(parentTask.id);
-    const assignedMemberId = subtaskAssignments[parentTask.id] || null;
-    const assignedMember = teamMembers.find((m) => m.id === assignedMemberId);
-    const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
-    const plannedDate = subtaskDates[parentTask.id] || null;
-    const optimisticId = `tmp-subtask-${Date.now()}`;
-    const optimisticSubtask = {
-      id: optimisticId,
-      project_id: id,
-      parent_task_id: parentTask.id,
-      title,
-      categoria: parentTask.categoria,
-      status: "todo",
-      assigned_member: assignedMemberId,
-      assigned_to_name: assignedToName,
-      data_pianificata: plannedDate,
-      created_at: new Date().toISOString(),
-    };
-
-    setTasks((prev) =>
-      prev
-        .map((task) => (task.id === parentTask.id ? { ...task, status: "todo" } : task))
-        .concat(optimisticSubtask),
-    );
-    setSubtaskInputs((prev) => ({ ...prev, [parentTask.id]: "" }));
-    setSubtaskAssignments((prev) => ({ ...prev, [parentTask.id]: "" }));
-    setSubtaskDates((prev) => ({ ...prev, [parentTask.id]: "" }));
-
-    const { data, error: insertError } = await supabase
-      .from("tasks")
-      .insert({
-        project_id: projectId || null,
-        parent_task_id: parentTask.id || null,
-        title,
-        categoria: parentTask.categoria || null,
-        status: "todo",
-        assigned_member: assignedMemberId || null,
-        assigned_to_name: assignedToName || null,
-        data_pianificata: plannedDate || null,
-        studio: studioId || null,
-      })
-      .select("*")
-      .single();
-
-    if (insertError) {
-      setTasks((prev) => prev.filter((task) => task.id !== optimisticId));
-      setError(insertError.message);
-    } else {
-      const { error: parentUpdateError } = await supabase
-        .from("tasks")
-        .update({ status: "todo" })
-        .eq("id", parentTask.id);
-
-      if (parentUpdateError) {
-        setError(parentUpdateError.message);
-      } else {
-        setTasks((prev) =>
-          prev.map((task) => (task.id === optimisticId ? { ...task, ...data } : task)),
-        );
-        setError("");
-      }
-    }
-
-    setCreatingSubtaskId(null);
-  };
-
-  const createTaskForCategory = async (category) => {
+  const createTaskForCategory = async category => {
     const title = (newTaskInputs[category] ?? "").trim();
-    if (!title || creatingCategory) {
-      return;
-    }
-
+    if (!title || creatingCategory) return;
     setCreatingCategory(category);
-    const optimisticId = `tmp-${Date.now()}`;
-    const assignedMemberId = newTaskAssignments[category] || null;
-    const assignedMember = teamMembers.find((member) => member.id === assignedMemberId);
-    const assignedToName = assignedMember ? assignedMember.user_name || assignedMember.user_email || null : null;
+    const memberId = newTaskAssignments[category] || null;
+    const member = teamMembers.find(m => m.id === memberId);
     const plannedDate = newTaskDates[category] || null;
-    const optimisticTask = {
-      id: optimisticId,
-      project_id: id,
-      title,
-      categoria: category,
-      status: "todo",
-      assigned_member: assignedMemberId,
-      assigned_to_name: assignedToName,
-      data_pianificata: plannedDate,
-      order: 0,
-      created_at: new Date().toISOString(),
-    };
-
-    setTasks((prev) => [...prev, optimisticTask]);
-    setNewTaskInputs((prev) => ({ ...prev, [category]: "" }));
-    setNewTaskAssignments((prev) => ({ ...prev, [category]: "" }));
-    setNewTaskDates((prev) => ({ ...prev, [category]: "" }));
-
-    const { data, error: insertError } = await supabase
-      .from("tasks")
-      .insert({
-        project_id: projectId || null,
-        title,
-        categoria: category || null,
-        status: "todo",
-        assigned_member: assignedMemberId || null,
-        assigned_to_name: assignedToName || null,
-        data_pianificata: plannedDate || null,
-        order: 0,
-        studio: studioId || null,
-      })
-      .select("*")
-      .single();
-
-    if (insertError) {
-      setTasks((prev) => prev.filter((task) => task.id !== optimisticId));
-      setError(insertError.message);
-    } else {
-      setTasks((prev) =>
-        prev.map((task) => (task.id === optimisticId ? { ...task, ...data } : task)),
-      );
-      setError("");
-      inputRefs.current[category]?.focus();
-    }
-
+    const optimisticId = `tmp-${Date.now()}`;
+    setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: category, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, order: 0, created_at: new Date().toISOString() }]);
+    setNewTaskInputs(p => ({ ...p, [category]: "" })); setNewTaskAssignments(p => ({ ...p, [category]: "" })); setNewTaskDates(p => ({ ...p, [category]: "" }));
+    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: category || null, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
+    if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
+    else { setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus(); }
     setCreatingCategory("");
   };
 
-  if (loading) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Caricamento progetto...
-      </section>
-    );
-  }
+  const createSubtask = async parentTask => {
+    const title = (subtaskInputs[parentTask.id] ?? "").trim();
+    if (!title || creatingSubtaskId) return;
+    setCreatingSubtaskId(parentTask.id);
+    const memberId = subtaskAssignments[parentTask.id] || null;
+    const member = teamMembers.find(m => m.id === memberId);
+    const plannedDate = subtaskDates[parentTask.id] || null;
+    const optimisticId = `tmp-subtask-${Date.now()}`;
+    setTasks(p => p.map(t => t.id === parentTask.id ? { ...t, status: "todo" } : t).concat({ id: optimisticId, project_id: id, parent_task_id: parentTask.id, title, categoria: parentTask.categoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, created_at: new Date().toISOString() }));
+    setSubtaskInputs(p => ({ ...p, [parentTask.id]: "" })); setSubtaskAssignments(p => ({ ...p, [parentTask.id]: "" })); setSubtaskDates(p => ({ ...p, [parentTask.id]: "" }));
+    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, parent_task_id: parentTask.id || null, title, categoria: parentTask.categoria || null, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, studio: studioId || null }).select("*").single();
+    if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
+    else {
+      await supabase.from("tasks").update({ status: "todo" }).eq("id", parentTask.id);
+      setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError("");
+    }
+    setCreatingSubtaskId(null);
+  };
 
-  if (error && !project) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-        Errore: {error}
-      </section>
-    );
-  }
+  const inputSt = {
+    padding: '7px 10px', border: `0.5px solid ${T.ink10}`, background: '#fff',
+    color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', flex: 1, minWidth: 0,
+  };
+  const miniBtn = {
+    width: 32, height: 32, flexShrink: 0, border: `0.5px solid ${T.ink10}`, background: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', position: 'relative', overflow: 'hidden',
+  };
+  const editInputSt = {
+    width: '100%', padding: '8px 12px', border: `0.5px solid ${T.ink20}`,
+    background: '#fff', color: T.ink, fontSize: 13,
+    fontFamily: "'Space Grotesk', sans-serif", outline: 'none', boxSizing: 'border-box',
+  };
+  const editLabelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 };
 
-  if (!project) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-        Progetto non trovato.
-      </section>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+      Caricamento progetto...
+    </div>
+  );
+  if (error && !project) return <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>;
+  if (!project) return <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Progetto non trovato.</div>;
 
   return (
     <div>
-      <section className="mb-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-bold text-white">{project.name ?? "Progetto"}</h2>
-            <select
-              value={hideCompletedTasks ? "hide-completed" : "show-all"}
-              onChange={(event) => setHideCompletedTasks(event.target.value === "hide-completed")}
-              className="rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-            >
-              <option value="show-all">Mostra tutte le task</option>
+      {/* PROJECT HEADER */}
+      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 22px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: T.ink }}>{project.name ?? "Progetto"}</div>
+            <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
+              onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
+              style={{ padding: '5px 10px', border: `0.5px solid ${T.ink20}`, background: T.paper, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+              <option value="show-all">Tutte le task</option>
               <option value="hide-completed">Nascondi completate</option>
             </select>
           </div>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {project?.commessa_id && (
-              <button
-                type="button"
-                onClick={() => navigate(`/commesse/${project.commessa_id}`)}
-                className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:border-[#0a84ff] hover:bg-white/10"
-              >
-                € Commessa
-              </button>
+              <button onClick={() => navigate(`/commesse/${project.commessa_id}`)} style={{
+                border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.navy,
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em',
+                padding: '7px 14px', cursor: 'pointer',
+              }}>€ Commessa</button>
             )}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#48484a] text-lg text-white hover:border-[#0a84ff] hover:bg-white/10"
-                aria-label="Opzioni progetto"
-              >
-                ···
-              </button>
-              {menuOpen ? (
-                <div className="absolute right-0 top-full z-30 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e] shadow-xl">
-                  <button
-                    type="button"
-                    onClick={openEdit}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-white hover:bg-white/10"
-                  >
-                    ✏️ Modifica
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setMenuOpen(p => !p)} style={{
+                border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.ink,
+                width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>···</button>
+              {menuOpen && (
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 160, background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 30 }}>
+                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
+                    Modifica
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleArchiveProject}
-                    disabled={archiving}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[#ff453a] hover:bg-white/10 disabled:opacity-50"
-                  >
-                    📦 Archivia progetto
+                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
+                    {archiving ? "Archiviazione..." : "Archivia progetto"}
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
-        <p className="mt-2 text-sm text-white/70">
-          <span className="text-white/50">Cliente:</span> {project.client ?? "N/D"}
-        </p>
-        <p className="mt-1 text-sm text-white/70">
-          <span className="text-white/50">Indirizzo:</span> {project.address ?? "N/D"}
-        </p>
+
+        {/* Meta */}
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <span style={{ marginRight: 6 }}>Cliente:</span>{project.client ?? "N/D"}
+          </div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <span style={{ marginRight: 6 }}>Indirizzo:</span>{project.address ?? "N/D"}
+          </div>
+        </div>
+
+        {/* Team avatars */}
         {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-white/40">Team:</span>
-            {project.assigned_users.map((uid) => {
-              const m = teamMembers.find((tm) => tm.id === uid);
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.15em' }}>TEAM</span>
+            {project.assigned_users.map((uid, i) => {
+              const m = teamMembers.find(tm => tm.id === uid);
               if (!m) return null;
               const name = m.user_name || m.user_email || "?";
-              const colors = ["#0a84ff","#64d2ff","#5e5ce6","#30d158","#bf5af2","#ff9f0a"];
-              let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-              const bg = colors[Math.abs(h) % colors.length];
-              const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map((w)=>w[0].toUpperCase()).join("");
+              const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
               return (
-                <span key={uid} title={name} className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: bg }}>
-                  {initials}
-                </span>
+                <span key={uid} title={name} style={{
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: avatarColor(name), border: '1.5px solid #fff', marginLeft: i > 0 ? -8 : 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 600, color: '#fff',
+                }}>{initials}</span>
               );
             })}
           </div>
         )}
-      </section>
+      </div>
 
-      {error ? <p className="mb-3 text-sm text-red-300">{error}</p> : null}
+      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 12 }}>{error}</div>}
 
-      {editOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => { if (!editSaving) setEditOpen(false); }}>
-          <div className="w-full max-w-xl rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Modifica Progetto</h3>
-              <button type="button" onClick={() => setEditOpen(false)} className="text-white/50 hover:text-white">✕</button>
+      {/* EDIT MODAL */}
+      {editOpen && (
+        <div onClick={() => { if (!editSaving) setEditOpen(false); }} style={{
+          position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(14,14,13,0.5)', padding: 16,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Modifica Progetto</div>
+              <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>×</button>
             </div>
-            <form className="space-y-4" onSubmit={handleSaveEdit}>
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[['name', 'Nome progetto *', 'text'], ['client', 'Cliente *', 'text'], ['address', 'Indirizzo', 'text'], ['start_date', 'Data inizio', 'date']].map(([f, l, t]) => (
+                <div key={f}>
+                  <label style={editLabelSt}>{l}</label>
+                  <input type={t} value={editForm[f] ?? ""} onChange={e => setEditForm(p => ({ ...p, [f]: e.target.value }))} required={l.includes('*')} style={editInputSt} />
+                </div>
+              ))}
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Nome progetto *</label>
-                <input type="text" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" required />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Cliente *</label>
-                <input type="text" value={editForm.client} onChange={(e) => setEditForm((p) => ({ ...p, client: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" required />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Indirizzo</label>
-                <input type="text" value={editForm.address} onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Data inizio</label>
-                <input type="date" value={editForm.start_date} onChange={(e) => setEditForm((p) => ({ ...p, start_date: e.target.value }))} className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring" />
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-white/80">Servizi</p>
-                <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  {serviceTemplates.length === 0 ? (
-                    <p className="text-sm text-white/50">Nessun servizio disponibile</p>
-                  ) : (
-                    serviceTemplates.map((svc) => {
-                      const label = svc.service_name ?? "Servizio";
-                      return (
-                        <label key={svc.id ?? label} className="flex cursor-pointer items-center gap-2 text-sm text-white/90">
-                          <input type="checkbox" checked={editForm.selectedServices.includes(label)} onChange={() => toggleEditService(label)} className="h-4 w-4 accent-[#0a84ff]" />
-                          <span>{label}</span>
-                        </label>
-                      );
-                    })
-                  )}
+                <label style={editLabelSt}>Servizi</label>
+                <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 140, overflowY: 'auto' }}>
+                  {serviceTemplates.map(svc => {
+                    const label = svc.service_name ?? "Servizio";
+                    return (
+                      <label key={svc.id ?? label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={editForm.selectedServices?.includes(label)} onChange={() => setEditForm(p => { const h = p.selectedServices?.includes(label); return { ...p, selectedServices: h ? p.selectedServices.filter(s => s !== label) : [...(p.selectedServices || []), label] }; })} style={{ accentColor: T.navy, width: 13, height: 13 }} />
+                        <span style={{ fontSize: 12, color: T.ink }}>{label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <div>
-                <p className="mb-2 text-sm font-medium text-white/80">Membri del team</p>
-                <div className="max-h-36 space-y-2 overflow-y-auto rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  {teamMembers.length === 0 ? (
-                    <p className="text-sm text-white/50">Nessun membro disponibile</p>
-                  ) : (
-                    teamMembers.map((m) => {
-                      const checked = (editForm.selectedMembers ?? []).includes(m.id);
-                      return (
-                        <label key={m.id} className="flex cursor-pointer items-center gap-2 text-sm text-white/90">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => setEditForm((prev) => ({
-                              ...prev,
-                              selectedMembers: checked
-                                ? (prev.selectedMembers ?? []).filter((id) => id !== m.id)
-                                : [...(prev.selectedMembers ?? []), m.id],
-                            }))}
-                            className="h-4 w-4 accent-[#0a84ff]"
-                          />
-                          <span>{m.user_name || m.user_email}</span>
-                        </label>
-                      );
-                    })
-                  )}
+                <label style={editLabelSt}>Membri del team</label>
+                <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 130, overflowY: 'auto' }}>
+                  {teamMembers.map(m => {
+                    const checked = (editForm.selectedMembers ?? []).includes(m.id);
+                    return (
+                      <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={checked} onChange={() => setEditForm(p => ({ ...p, selectedMembers: checked ? (p.selectedMembers ?? []).filter(id => id !== m.id) : [...(p.selectedMembers ?? []), m.id] }))} style={{ accentColor: T.navy, width: 13, height: 13 }} />
+                        <span style={{ fontSize: 12, color: T.ink }}>{m.user_name || m.user_email}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
-              {editError ? <p className="text-sm text-red-300">{editError}</p> : null}
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
-                <button type="submit" disabled={editSaving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{editSaving ? "Salvataggio..." : "Salva"}</button>
+              {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.ink10}` }}>
+                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
+                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: '#EEF1F6', padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
               </div>
             </form>
           </div>
         </div>
-      ) : null}
+      )}
 
+      {/* KANBAN COLUMNS */}
       {selectedServices.length === 0 ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
+        <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
           Nessun servizio selezionato per questo progetto.
-        </section>
-      ) : groupedTasks.length === 0 ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          Nessun task per questo progetto.
-        </section>
+        </div>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            overflowX: "auto",
-            overflowY: "hidden",
-            width: "calc(100vw - 220px)",
-            height: "calc(100vh - 160px)",
-            gap: "16px",
-            padding: "16px",
-          }}
-        >
-          {groupedTasks.map((group) => {
-            const categoryCompleted = Boolean(completedCategories[group.category]);
-
+        <div style={{
+          display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden',
+          width: 'calc(100vw - 220px)', height: 'calc(100vh - 180px)',
+          gap: 10, paddingBottom: 8,
+        }}>
+          {groupedTasks.map(group => {
+            const catDone = Boolean(completedCategories[group.category]);
             return (
-            <div
-              key={group.category}
-              style={{
-                flex: "0 0 calc((100vw - 220px - 64px) / 3)",
-                minWidth: "calc((100vw - 220px - 64px) / 3)",
-                maxWidth: "calc((100vw - 220px - 64px) / 3)",
-                display: "flex",
-                flexDirection: "column",
-                background: "#2c2c2e",
-                borderRadius: "12px",
-                border: "1px solid #48484a",
-                overflow: "hidden",
-                height: "100%",
-                opacity: categoryCompleted ? 0.5 : 1,
-              }}
-            >
-              {/* Header colonna — fisso */}
-              <div style={{ flexShrink: 0, padding: "12px", borderBottom: "1px solid #48484a" }}>
-                <div className="mb-2 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={categoryCompleted}
-                    onChange={() => handleToggleCategory(group.category)}
-                    className="h-4 w-4 accent-[#30d158]"
-                  />
-                  <h3 className="text-base font-semibold text-white">{group.category}</h3>
-                  <span className="ml-auto rounded-md border border-[#48484a] px-2 py-0.5 text-xs text-white/70">
-                    {group.completedCount}/{group.totalCount}
-                  </span>
-                  {categoryCompleted ? <span className="text-sm font-semibold text-[#30d158]">✓</span> : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={(node) => { inputRefs.current[group.category] = node; }}
-                    type="text"
-                    value={newTaskInputs[group.category] ?? ""}
-                    onChange={(event) => handleTaskInputChange(group.category, event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        createTaskForCategory(group.category);
-                      }
-                    }}
-                    placeholder="Aggiungi task..."
-                    className="min-w-0 flex-1 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  />
-                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
-                    <span className="pointer-events-none text-base">👤</span>
-                    <select
-                      value={newTaskAssignments[group.category] ?? ""}
-                      onChange={(event) => handleNewTaskAssignmentChange(group.category, event.target.value)}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      aria-label="Assegna membro"
-                    >
-                      <option value="">Non assegnato</option>
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.user_name || member.user_email || "Membro"}
-                        </option>
-                      ))}
-                    </select>
+              <div key={group.category} style={{
+                flex: '0 0 calc((100vw - 220px - 50px) / 3)',
+                minWidth: 'calc((100vw - 220px - 50px) / 3)',
+                maxWidth: 'calc((100vw - 220px - 50px) / 3)',
+                display: 'flex', flexDirection: 'column',
+                background: '#fff', border: `0.5px solid ${T.ink10}`,
+                overflow: 'hidden', height: '100%',
+                opacity: catDone ? 0.5 : 1,
+              }}>
+                {/* Column header */}
+                <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.ink10}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
+                      style={{ accentColor: T.navy, width: 13, height: 13 }} />
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
+                      {group.category}
+                    </span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `0.5px solid ${T.ink10}`, padding: '1px 6px' }}>
+                      {group.completedCount}/{group.totalCount}
+                    </span>
+                    {catDone && <span style={{ fontSize: 11, color: T.navy, fontWeight: 600 }}>✓</span>}
                   </div>
-                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#48484a] bg-[#3a3a3c] text-white hover:border-[#0a84ff]">
-                    <span className="pointer-events-none text-base">📅</span>
-                    <input
-                      type="date"
-                      value={newTaskDates[group.category] ?? ""}
-                      onChange={(event) => handleNewTaskDateChange(group.category, event.target.value)}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      aria-label="Data pianificata"
-                    />
+                  {/* Add task input */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input ref={node => { inputRefs.current[group.category] = node; }}
+                      type="text" value={newTaskInputs[group.category] ?? ""}
+                      onChange={e => setNewTaskInputs(p => ({ ...p, [group.category]: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); createTaskForCategory(group.category); } }}
+                      placeholder="Aggiungi task..."
+                      style={{ ...inputSt, fontSize: 11 }} />
+                    <div style={miniBtn}>
+                      <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
+                      <select value={newTaskAssignments[group.category] ?? ""} onChange={e => setNewTaskAssignments(p => ({ ...p, [group.category]: e.target.value }))}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
+                        <option value="">Non assegnato</option>
+                        {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
+                      </select>
+                    </div>
+                    <div style={miniBtn}>
+                      <span style={{ pointerEvents: 'none', fontSize: 12 }}>📅</span>
+                      <input type="date" value={newTaskDates[group.category] ?? ""} onChange={e => setNewTaskDates(p => ({ ...p, [group.category]: e.target.value }))}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                    <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
+                      style={{ width: 32, height: 32, background: T.navy, color: '#EEF1F6', border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      +
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => createTaskForCategory(group.category)}
-                    disabled={creatingCategory === group.category}
-                    className="h-9 w-9 shrink-0 rounded-lg bg-[#0a84ff] text-sm font-semibold text-white hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    +
-                  </button>
                 </div>
-              </div>
 
-              {/* Lista task — scrollabile */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "12px", minHeight: 0 }} className="space-y-2">
-                {group.tasks.map((task) => (
-                  <TaskRow
-                    key={task.id ?? `${group.category}-${task.title}`}
-                    task={task}
-                    teamMembers={teamMembers}
-                    categories={selectedServices}
-                    subtasks={sortTasksForColumn(subtasksByParent[task.id] ?? [])}
-                    subtaskInput={subtaskInputs[task.id]}
-                    subtaskAssignment={subtaskAssignments[task.id]}
-                    subtaskDate={subtaskDates[task.id]}
-                    onToggle={handleToggleTask}
-                    onUpdateTask={handleUpdateTask}
-                    onDeleteTask={handleDeleteTask}
-                    onSubtaskInputChange={handleSubtaskInputChange}
-                    onSubtaskAssignmentChange={handleSubtaskAssignmentChange}
-                    onSubtaskDateChange={handleSubtaskDateChange}
-                    onCreateSubtask={createSubtask}
-                    isUpdating={updatingTaskId === task.id}
-                    isCreatingSubtask={creatingSubtaskId === task.id}
-                  />
-                ))}
+                {/* Task list */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: 10, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {group.tasks.map(task => (
+                    <TaskRow
+                      key={task.id ?? `${group.category}-${task.title}`}
+                      task={task} teamMembers={teamMembers} categories={selectedServices}
+                      subtasks={sortTasksForColumn(subtasksByParent[task.id] ?? [])}
+                      subtaskInput={subtaskInputs[task.id]} subtaskAssignment={subtaskAssignments[task.id]} subtaskDate={subtaskDates[task.id]}
+                      onToggle={handleToggleTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask}
+                      onSubtaskInputChange={(id, v) => setSubtaskInputs(p => ({ ...p, [id]: v }))}
+                      onSubtaskAssignmentChange={(id, v) => setSubtaskAssignments(p => ({ ...p, [id]: v }))}
+                      onSubtaskDateChange={(id, v) => setSubtaskDates(p => ({ ...p, [id]: v }))}
+                      onCreateSubtask={createSubtask}
+                      isUpdating={updatingTaskId === task.id}
+                      isCreatingSubtask={creatingSubtaskId === task.id}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
             );
           })}
         </div>

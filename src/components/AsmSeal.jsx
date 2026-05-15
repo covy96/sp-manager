@@ -108,6 +108,7 @@ export default function AsmSeal({
 
       {/* Wordmark ASM con S sottolineata */}
       <div style={{
+        fontFamily: "'Space Grotesk', sans-serif",
         fontWeight: 600,
         fontSize: s.word,
         letterSpacing: '-0.05em',

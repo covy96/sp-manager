@@ -5,415 +5,303 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
-const MONTHS = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
+// ── BRAND TOKENS ─────────────────────────────────────────────────
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
+  red: '#b91c1c', green: '#1a6b3c',
+};
 
-function currency(value) {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+const MONTHS = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+
+function currency(v) {
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
+}
+function formatNumber(v) {
+  return new Intl.NumberFormat("it-IT", { maximumFractionDigits: 0 }).format(Number(v) || 0);
+}
+function parseOffertaSortValue(n) {
+  if (!n) return Number.NEGATIVE_INFINITY;
+  const m = String(n).match(/(\d+)\D+(\d{2,4})/);
+  if (!m) return Number.NEGATIVE_INFINITY;
+  const prog = Number(m[1]) || 0;
+  const rawY = Number(m[2]) || 0;
+  const year = rawY < 100 ? 2000 + rawY : rawY;
+  return year * 10000 + prog;
+}
+function getReferenceDate(item) { return item.data_commessa || item.created_at || null; }
+function getDaysOpen(d) {
+  if (!d) return 0;
+  const start = new Date(d);
+  if (isNaN(start.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - start.getTime()) / 86400000));
 }
 
-function formatNumber(value) {
-  return new Intl.NumberFormat("it-IT", {
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
+// ── SHARED UI ────────────────────────────────────────────────────
+function KpiCard({ label, value, color }) {
+  return (
+    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.04em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
+    </div>
+  );
 }
 
-function parseOffertaSortValue(numeroOfferta) {
-  if (!numeroOfferta) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  const match = String(numeroOfferta).match(/(\d+)\D+(\d{2,4})/);
-  if (!match) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  const progressive = Number(match[1]) || 0;
-  const rawYear = Number(match[2]) || 0;
-  const year = rawYear < 100 ? 2000 + rawYear : rawYear;
-  return year * 10000 + progressive;
+function SortButton({ label, col, sortBy, sortDir, onSort }) {
+  const active = sortBy === col;
+  return (
+    <button onClick={() => onSort(col)} style={{
+      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+      fontFamily: "'IBM Plex Mono', monospace", fontSize: 8,
+      letterSpacing: '0.2em', textTransform: 'uppercase',
+      color: active ? T.navy : T.muted,
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+    }}>
+      {label}
+      <span style={{ fontSize: 9 }}>{active ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}</span>
+    </button>
+  );
 }
 
-function getReferenceDate(item) {
-  return item.data_commessa || item.created_at || null;
-}
-
-function getDaysOpen(referenceDate) {
-  if (!referenceDate) {
-    return 0;
-  }
-
-  const start = new Date(referenceDate);
-  if (Number.isNaN(start.getTime())) {
-    return 0;
-  }
-
-  const now = new Date();
-  const diffMs = now.getTime() - start.getTime();
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-}
-
+// ── MAIN ─────────────────────────────────────────────────────────
 export default function MonitoraggioCommessePage() {
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
-  const [commesse, setCommesse] = useState([]);
+
+  const [commesse, setCommesse]                   = useState([]);
   const [pagamentiByCommessa, setPagamentiByCommessa] = useState({});
   const [incassatoPerCommessa, setIncassatoPerCommessa] = useState({});
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [sortBy, setSortBy] = useState("offerta");
-  const [sortDirection, setSortDirection] = useState("desc");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [selectedYear, setSelectedYear]           = useState(new Date().getFullYear());
+  const [sortBy, setSortBy]                       = useState("offerta");
+  const [sortDirection, setSortDirection]         = useState("desc");
+  const [loading, setLoading]                     = useState(true);
+  const [error, setError]                         = useState("");
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
     const loadData = async () => {
-      setLoading(true);
-      setError("");
-
-      const [commesseResult, pagamentiResult] = await Promise.all([
+      setLoading(true); setError("");
+      const [cR, pR] = await Promise.all([
         supabase.from("commesse").select("*").eq("studio", studioId),
         supabase.from("pagamenti").select("commessa_id,importo"),
       ]);
+      if (cR.error) { setError(cR.error.message); setLoading(false); return; }
+      if (pR.error) { setError(pR.error.message); setLoading(false); return; }
 
-      if (commesseResult.error) {
-        setError(commesseResult.error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (pagamentiResult.error) {
-        setError(pagamentiResult.error.message);
-        setLoading(false);
-        return;
-      }
-
-      const groupedPayments = (pagamentiResult.data ?? []).reduce((acc, pagamento) => {
-        const key = pagamento.commessa_id;
-        acc[key] = (acc[key] || 0) + (Number(pagamento.importo) || 0);
+      const grouped = (pR.data ?? []).reduce((acc, p) => {
+        acc[p.commessa_id] = (acc[p.commessa_id] || 0) + (Number(p.importo) || 0);
         return acc;
       }, {});
 
-      const loadedCommesse = commesseResult.data ?? [];
-      setPagamentiByCommessa(groupedPayments);
-      setCommesse(loadedCommesse);
+      const loaded = cR.data ?? [];
+      setPagamentiByCommessa(grouped);
+      setCommesse(loaded);
 
-      // Calcola incassato reale dalle proforma pagate
-      const incassatoMap = await calcolaIncassato(
-        loadedCommesse.map((c) => c.id),
-        studioId,
-        supabase
-      );
+      const incassatoMap = await calcolaIncassato(loaded.map(c => c.id), studioId, supabase);
       setIncassatoPerCommessa(incassatoMap);
 
-      const years = loadedCommesse
-        .map((item) => {
-          const refDate = getReferenceDate(item);
-          if (!refDate) {
-            return null;
-          }
-          const year = new Date(refDate).getFullYear();
-          return Number.isNaN(year) ? null : year;
-        })
-        .filter(Boolean);
-
-      if (years.length > 0) {
-        const maxYear = Math.max(...years);
-        setSelectedYear(maxYear);
-      }
-
+      const years = loaded.map(c => {
+        const d = getReferenceDate(c);
+        if (!d) return null;
+        const y = new Date(d).getFullYear();
+        return isNaN(y) ? null : y;
+      }).filter(Boolean);
+      if (years.length > 0) setSelectedYear(Math.max(...years));
       setLoading(false);
     };
-
     loadData();
   }, [studioId, studioLoading]);
 
-  const rows = useMemo(() => {
-    return commesse.map((item) => {
-      const valoreContratto = Number(item.importo_offerta_base) || 0;
-      const incassato = permissions.canViewFinancials
-        ? (incassatoPerCommessa[item.id] || 0)
-        : (Number(pagamentiByCommessa[item.id]) || 0);
-      const residuo = valoreContratto - incassato;
-      const giorniApertura = getDaysOpen(getReferenceDate(item));
+  const rows = useMemo(() => commesse.map(item => {
+    const valoreContratto = Number(item.importo_offerta_base) || 0;
+    const incassato = permissions.canViewFinancials
+      ? (incassatoPerCommessa[item.id] || 0)
+      : (Number(pagamentiByCommessa[item.id]) || 0);
+    return {
+      ...item,
+      valoreContratto,
+      incassato,
+      residuo: valoreContratto - incassato,
+      giorniApertura: getDaysOpen(getReferenceDate(item)),
+      offertaSortValue: parseOffertaSortValue(item.numero_offerta),
+      nomeOfferta: `${item.numero_offerta || "-"} — ${item.nome_commessa || ""}`.trim(),
+    };
+  }), [commesse, pagamentiByCommessa, incassatoPerCommessa, permissions.canViewFinancials]);
 
-      return {
-        ...item,
-        valoreContratto,
-        incassato,
-        residuo,
-        giorniApertura,
-        offertaSortValue: parseOffertaSortValue(item.numero_offerta),
-        nomeOfferta: `${item.numero_offerta || "-"} - ${item.nome_commessa || ""}`.trim(),
-      };
-    });
-  }, [commesse, pagamentiByCommessa, incassatoPerCommessa, permissions.canViewFinancials]);
-
-  const totals = useMemo(() => {
-    return rows.reduce(
-      (acc, row) => {
-        acc.valoreContratti += row.valoreContratto;
-        acc.incassato += row.incassato;
-        return acc;
-      },
-      { valoreContratti: 0, incassato: 0 },
-    );
-  }, [rows]);
+  const totals = useMemo(() => rows.reduce((acc, r) => {
+    acc.valoreContratti += r.valoreContratto;
+    acc.incassato += r.incassato;
+    return acc;
+  }, { valoreContratti: 0, incassato: 0 }), [rows]);
 
   const daIncassare = totals.valoreContratti - totals.incassato;
 
   const availableYears = useMemo(() => {
-    const years = rows
-      .map((row) => {
-        const refDate = getReferenceDate(row);
-        if (!refDate) {
-          return null;
-        }
-        const parsedYear = new Date(refDate).getFullYear();
-        return Number.isNaN(parsedYear) ? null : parsedYear;
-      })
-      .filter(Boolean);
-
-    if (years.length === 0) {
-      return [new Date().getFullYear()];
-    }
-
-    return [...new Set(years)].sort((a, b) => b - a);
+    const years = rows.map(r => {
+      const d = getReferenceDate(r);
+      if (!d) return null;
+      const y = new Date(d).getFullYear();
+      return isNaN(y) ? null : y;
+    }).filter(Boolean);
+    return years.length === 0 ? [new Date().getFullYear()] : [...new Set(years)].sort((a, b) => b - a);
   }, [rows]);
 
   const chartData = useMemo(() => {
-    const monthlyValues = Array.from({ length: 12 }, (_, index) => ({
-      month: MONTHS[index],
-      valore: 0,
-    }));
-
-    rows.forEach((row) => {
-      const refDate = getReferenceDate(row);
-      if (!refDate) {
-        return;
-      }
-      const date = new Date(refDate);
-      if (Number.isNaN(date.getTime()) || date.getFullYear() !== selectedYear) {
-        return;
-      }
-      const monthIndex = date.getMonth();
-      monthlyValues[monthIndex].valore += row.valoreContratto;
+    const monthly = Array.from({ length: 12 }, (_, i) => ({ month: MONTHS[i], valore: 0 }));
+    rows.forEach(r => {
+      const d = getReferenceDate(r);
+      if (!d) return;
+      const date = new Date(d);
+      if (isNaN(date.getTime()) || date.getFullYear() !== selectedYear) return;
+      monthly[date.getMonth()].valore += r.valoreContratto;
     });
-
-    return monthlyValues;
+    return monthly;
   }, [rows, selectedYear]);
 
   const sortedRows = useMemo(() => {
-    const multiplier = sortDirection === "asc" ? 1 : -1;
-    const nextRows = [...rows];
-
-    nextRows.sort((a, b) => {
-      if (sortBy === "offerta") {
-        return (a.offertaSortValue - b.offertaSortValue) * multiplier;
-      }
-      if (sortBy === "cliente") {
-        return (
-          (a.cliente || "").localeCompare(b.cliente || "", "it", { sensitivity: "base" }) *
-          multiplier
-        );
-      }
-      if (sortBy === "valore") {
-        return (a.valoreContratto - b.valoreContratto) * multiplier;
-      }
-      if (sortBy === "incassato") {
-        return (a.incassato - b.incassato) * multiplier;
-      }
-      if (sortBy === "residuo") {
-        return (a.residuo - b.residuo) * multiplier;
-      }
-      if (sortBy === "giorni") {
-        return (a.giorniApertura - b.giorniApertura) * multiplier;
-      }
+    const mult = sortDirection === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      if (sortBy === "offerta") return (a.offertaSortValue - b.offertaSortValue) * mult;
+      if (sortBy === "cliente") return (a.cliente || "").localeCompare(b.cliente || "", "it", { sensitivity: "base" }) * mult;
+      if (sortBy === "valore")    return (a.valoreContratto - b.valoreContratto) * mult;
+      if (sortBy === "incassato") return (a.incassato - b.incassato) * mult;
+      if (sortBy === "residuo")   return (a.residuo - b.residuo) * mult;
+      if (sortBy === "giorni")    return (a.giorniApertura - b.giorniApertura) * mult;
       return 0;
     });
-
-    return nextRows;
   }, [rows, sortBy, sortDirection]);
 
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setSortBy(column);
-    setSortDirection(column === "offerta" ? "desc" : "asc");
+  const handleSort = col => {
+    if (sortBy === col) { setSortDirection(p => p === "asc" ? "desc" : "asc"); return; }
+    setSortBy(col); setSortDirection(col === "offerta" ? "desc" : "asc");
   };
 
-  if (loading) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Caricamento monitoraggio commesse...
-      </section>
-    );
-  }
+  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 14px', borderBottom: `0.5px solid ${T.ink10}`, textAlign: 'left', whiteSpace: 'nowrap' };
+  const tdSt = { padding: '10px 14px', borderBottom: `0.5px solid ${T.ink10}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
+  const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
-  if (!studioLoading && !permissions.canViewMonitoraggio) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Non hai i permessi per accedere a questa sezione.
-      </section>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+      Caricamento monitoraggio...
+    </div>
+  );
 
-  if (error) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-[#ff453a]">
-        Errore: {error}
-      </section>
-    );
-  }
+  if (!studioLoading && !permissions.canViewMonitoraggio) return (
+    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+      Non hai i permessi per accedere a questa sezione.
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+  );
 
   return (
-    <div className="space-y-6 bg-[#1c1c1e] text-white">
-      <section className={`grid grid-cols-1 gap-4 ${permissions.canViewFinancials ? "md:grid-cols-3" : "md:grid-cols-1"}`}>
-        <article className="rounded-xl border border-[#0a84ff]/60 bg-[#2c2c2e] p-5">
-          <p className="text-sm text-white/70">Valore Contratti totale</p>
-          <p className="mt-2 text-2xl font-bold text-[#0a84ff]">{currency(totals.valoreContratti)}</p>
-        </article>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* KPI */}
+      <div style={{ display: 'grid', gridTemplateColumns: permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
+        <KpiCard label="Valore contratti totale" value={currency(totals.valoreContratti)} color={T.navy} />
         {permissions.canViewFinancials && (
           <>
-            <article className="rounded-xl border border-[#30d158]/60 bg-[#2c2c2e] p-5">
-              <p className="text-sm text-white/70">Incassato totale</p>
-              <p className="mt-2 text-2xl font-bold text-[#30d158]">{currency(totals.incassato)}</p>
-            </article>
-            <article className="rounded-xl border border-[#ff453a]/60 bg-[#2c2c2e] p-5">
-              <p className="text-sm text-white/70">Da Incassare totale</p>
-              <p className="mt-2 text-2xl font-bold text-[#ff453a]">{currency(daIncassare)}</p>
-            </article>
+            <KpiCard label="Incassato totale"    value={currency(totals.incassato)} color={T.green} />
+            <KpiCard label="Da incassare totale" value={currency(daIncassare)}      color={T.red} />
           </>
         )}
-      </section>
+      </div>
 
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-white">Andamento valore commesse</h2>
-          <select
-            value={selectedYear}
-            onChange={(event) => setSelectedYear(Number(event.target.value))}
-            className="rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-          >
-            {availableYears.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
+      {/* GRAFICO */}
+      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>
+            Andamento valore commesse
+          </div>
+          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
+            style={{ padding: '5px 10px', border: `0.5px solid ${T.ink20}`, background: T.paper, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
-        <div className="h-72 w-full">
+        <div style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid stroke="#48484a" strokeDasharray="3 3" />
-              <XAxis dataKey="month" stroke="#f5f5f7" tick={{ fill: "#f5f5f7", fontSize: 12 }} />
-              <YAxis
-                stroke="#f5f5f7"
-                tick={{ fill: "#f5f5f7", fontSize: 12 }}
-                tickFormatter={(value) => `${formatNumber(value)}€`}
-              />
+              <CartesianGrid stroke={T.ink10} strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.ink10 }} tickLine={false} />
+              <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${formatNumber(v)}€`} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1c1c1e",
-                  borderColor: "#48484a",
-                  borderRadius: 8,
-                  color: "#f5f5f7",
-                }}
-                formatter={(value) => currency(value)}
+                contentStyle={{ background: '#fff', border: `0.5px solid ${T.ink20}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}
+                formatter={v => currency(v)}
+                labelStyle={{ color: T.muted, fontSize: 10, letterSpacing: '0.1em' }}
               />
-              <Line type="monotone" dataKey="valore" stroke="#0a84ff" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="valore" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </section>
+      </div>
 
-      <section className="overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e]">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-white">
-            <thead className="bg-[#1c1c1e] text-left text-xs uppercase tracking-wide text-white/70">
-              <tr>
-                {[
-                  ["offerta", "Nome Offerta"],
-                  ["cliente", "Cliente"],
-                  ["valore", "Valore Contratto"],
-                  ...(permissions.canViewFinancials ? [["incassato", "Incassato"], ["residuo", "Residuo"]] : []),
-                  ["giorni", "Giorni Apertura"],
-                ].map(([key, label]) => (
-                  <th key={key} className="border-b border-[#48484a] px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => handleSort(key)}
-                      className="inline-flex items-center gap-1 text-left text-white/80 hover:text-white"
-                    >
-                      {label}
-                      <span className="text-[10px] text-white/50">
-                        {sortBy === key ? (sortDirection === "asc" ? "▲" : "▼") : "⇅"}
-                      </span>
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-[#48484a] bg-[#1c1c1e] font-bold">
-                <td className="px-4 py-3">TOTALE COMPLESSIVO</td>
-                <td className="px-4 py-3">-</td>
-                <td className="px-4 py-3 text-[#0a84ff]">{currency(totals.valoreContratti)}</td>
-                {permissions.canViewFinancials && (
-                  <>
-                    <td className="px-4 py-3 text-[#30d158]">{currency(totals.incassato)}</td>
-                    <td className={`px-4 py-3 ${daIncassare > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
-                      {currency(daIncassare)}
-                    </td>
-                  </>
-                )}
-                <td className="px-4 py-3">-</td>
-              </tr>
+      {/* TABELLA */}
+      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+          <thead>
+            <tr>
+              {[
+                ['offerta', 'Nome Offerta'],
+                ['cliente', 'Cliente'],
+                ['valore', 'Valore Contratto'],
+                ...(permissions.canViewFinancials ? [['incassato', 'Incassato'], ['residuo', 'Residuo']] : []),
+                ['giorni', 'Giorni Apertura'],
+              ].map(([col, label]) => (
+                <th key={col} style={thSt}>
+                  <SortButton label={label} col={col} sortBy={sortBy} sortDir={sortDirection} onSort={handleSort} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {/* Totali */}
+            <tr style={{ background: T.paper }}>
+              <td style={{ ...tdSt, fontWeight: 600, ...monoSt }}>TOTALE COMPLESSIVO</td>
+              <td style={tdSt}>—</td>
+              <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.navy }}>{currency(totals.valoreContratti)}</td>
+              {permissions.canViewFinancials && (
+                <>
+                  <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.green }}>{currency(totals.incassato)}</td>
+                  <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: daIncassare > 0 ? T.red : T.green }}>{currency(daIncassare)}</td>
+                </>
+              )}
+              <td style={tdSt}>—</td>
+            </tr>
 
-              {sortedRows.map((row) => {
-                const isDelayedUnpaid = row.residuo > 0 && row.giorniApertura > 60;
-                return (
-                  <tr
-                    key={row.id}
-                    onClick={() => navigate(`/commesse/${row.id}`)}
-                    className={`border-b border-[#48484a] cursor-pointer transition-colors hover:bg-[#3a3a3c] ${
-                      isDelayedUnpaid ? "bg-[#ff453a]/10" : "bg-transparent"
-                    }`}
-                  >
-                    <td className="px-4 py-3">{row.nomeOfferta}</td>
-                    <td className="px-4 py-3 text-white/85">{row.cliente || "-"}</td>
-                    <td className="px-4 py-3">{currency(row.valoreContratto)}</td>
-                    {permissions.canViewFinancials && (
-                      <>
-                        <td className="px-4 py-3 text-[#30d158]">{currency(row.incassato)}</td>
-                        <td className={`px-4 py-3 ${row.residuo > 0 ? "text-[#ff453a]" : "text-[#30d158]"}`}>
-                          {currency(row.residuo)}
-                        </td>
-                      </>
-                    )}
-                    <td className="px-4 py-3">{row.giorniApertura}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            {/* Righe */}
+            {sortedRows.map(row => {
+              const delayed = row.residuo > 0 && row.giorniApertura > 60;
+              return (
+                <tr key={row.id} onClick={() => navigate(`/commesse/${row.id}`)}
+                  style={{ cursor: 'pointer', background: delayed ? '#fef2f2' : 'transparent', transition: 'background 0.1s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = delayed ? '#fee2e2' : T.paper}
+                  onMouseLeave={e => e.currentTarget.style.background = delayed ? '#fef2f2' : 'transparent'}
+                >
+                  <td style={{ ...tdSt, fontWeight: 600 }}>{row.nomeOfferta}</td>
+                  <td style={{ ...tdSt, color: T.muted }}>{row.cliente || '—'}</td>
+                  <td style={{ ...tdSt, ...monoSt }}>{currency(row.valoreContratto)}</td>
+                  {permissions.canViewFinancials && (
+                    <>
+                      <td style={{ ...tdSt, ...monoSt, color: T.green }}>{currency(row.incassato)}</td>
+                      <td style={{ ...tdSt, ...monoSt, color: row.residuo > 0 ? T.red : T.green }}>{currency(row.residuo)}</td>
+                    </>
+                  )}
+                  <td style={{ ...tdSt, ...monoSt, color: row.giorniApertura > 60 ? T.red : T.muted }}>{row.giorniApertura}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
     </div>
   );
 }

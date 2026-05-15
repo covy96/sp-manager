@@ -81,9 +81,21 @@ function OnboardingGuard({ session, children }) {
 }
 
 export default function App({ session }) {
+  const navigate = useNavigate();
+
   return (
     <Routes>
-      <Route path="/" element={<LandingPage session={session} />} />
+      <Route
+        path="/"
+        element={
+          session
+            ? <Navigate to="/dashboard" replace />
+            : <LandingPage
+                onLogin={() => navigate("/login")}
+                onRegister={() => navigate("/register")}
+              />
+        }
+      />
       <Route path="/login" element={<LoginPage session={session} />} />
       <Route path="/register" element={<RegisterPage session={session} />} />
       <Route
