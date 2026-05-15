@@ -2,331 +2,256 @@ import { useEffect, useMemo, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 
-const MONTHS = [
-  "Gennaio",
-  "Febbraio",
-  "Marzo",
-  "Aprile",
-  "Maggio",
-  "Giugno",
-  "Luglio",
-  "Agosto",
-  "Settembre",
-  "Ottobre",
-  "Novembre",
-  "Dicembre",
-];
+// ── BRAND TOKENS ─────────────────────────────────────────────────
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
+  red: '#b91c1c', green: '#1a6b3c',
+};
 
-const WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+const MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 function toISODate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,"0"), d = String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
 }
-
-function getMonthRange(year, monthIndex) {
-  const start = new Date(year, monthIndex, 1);
-  const end = new Date(year, monthIndex + 1, 0);
-  return { start: toISODate(start), end: toISODate(end) };
+function getMonthRange(year, month) {
+  return { start: toISODate(new Date(year, month, 1)), end: toISODate(new Date(year, month+1, 0)) };
 }
-
-function getCalendarDays(year, monthIndex) {
-  const firstDay = new Date(year, monthIndex, 1);
-  const lastDay = new Date(year, monthIndex + 1, 0);
-  const firstWeekday = (firstDay.getDay() + 6) % 7;
+function getCalendarDays(year, month) {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const firstWeekday = (firstDay.getDay()+6) % 7;
   const totalCells = Math.ceil((firstWeekday + lastDay.getDate()) / 7) * 7;
-
-  return Array.from({ length: totalCells }, (_, index) => {
-    const date = new Date(year, monthIndex, index - firstWeekday + 1);
-    return {
-      date,
-      iso: toISODate(date),
-      isCurrentMonth: date.getMonth() === monthIndex,
-    };
+  return Array.from({ length: totalCells }, (_, i) => {
+    const date = new Date(year, month, i - firstWeekday + 1);
+    return { date, iso: toISODate(date), isCurrentMonth: date.getMonth() === month };
   });
 }
 
-function getTaskColor(task, todayISO) {
-  if (task.status === "completed") {
-    return "bg-[#636366] text-white/80";
-  }
-  if (task.data_pianificata < todayISO) {
-    return "bg-[#ff453a] text-white";
-  }
-  return "bg-[#0a84ff] text-white";
+function getTaskDot(task, today) {
+  if (task.status === "completed") return T.muted;
+  if (task.data_pianificata < today) return T.red;
+  return T.navy;
+}
+function getTaskBg(task, today) {
+  if (task.status === "completed") return { bg: '#f3f4f6', color: T.muted };
+  if (task.data_pianificata < today) return { bg: '#fef2f2', color: T.red };
+  return { bg: '#EEF3FA', color: T.navy };
 }
 
 export default function CalendarioPage() {
   const { studioId } = useStudio();
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  const [selectedYear, setSelectedYear]   = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [tasks, setTasks] = useState([]);
-  const [projectsById, setProjectsById] = useState({});
-  const [membersById, setMembersById] = useState({});
+  const [tasks, setTasks]                 = useState([]);
+  const [projectsById, setProjectsById]   = useState({});
+  const [membersById, setMembersById]     = useState({});
   const [currentMemberId, setCurrentMemberId] = useState(null);
-  const [onlyMine, setOnlyMine] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [onlyMine, setOnlyMine]           = useState(false);
+  const [selectedDay, setSelectedDay]     = useState(null);
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
 
   const todayISO = toISODate(new Date());
 
   useEffect(() => {
     if (!studioId || studioId === "null" || studioId === "undefined") return;
-
     const loadData = async () => {
-      setLoading(true);
-      setError("");
+      setLoading(true); setError("");
       const range = getMonthRange(selectedYear, selectedMonth);
-
       const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData?.user?.id) {
-        setError(authError?.message || "Utente non autenticato.");
-        setLoading(false);
-        return;
-      }
-
+      if (authError || !authData?.user?.id) { setError(authError?.message || "Utente non autenticato."); setLoading(false); return; }
       let teamMember;
-      try {
-        teamMember = await getOrCreateTeamMember(authData.user);
-      } catch (teamMemberError) {
-        setError(teamMemberError.message);
-        setLoading(false);
-        return;
-      }
+      try { teamMember = await getOrCreateTeamMember(authData.user); }
+      catch (e) { setError(e.message); setLoading(false); return; }
+      if (!teamMember?.id || teamMember.id === "null") { setError("Impossibile identificare il membro del team."); setLoading(false); return; }
 
-      if (!teamMember?.id || teamMember.id === "null" || teamMember.id === "undefined") {
-        setError("Impossibile identificare il membro del team.");
-        setLoading(false);
-        return;
-      }
+      const tasksRes = await supabase.from("tasks").select("*").eq("studio", studioId).gte("data_pianificata", range.start).lte("data_pianificata", range.end);
+      if (tasksRes.error) { setError(tasksRes.error.message); setLoading(false); return; }
 
-      const tasksRes = await supabase
-        .from("tasks")
-        .select("*")
-        .eq("studio", studioId)
-        .gte("data_pianificata", range.start)
-        .lte("data_pianificata", range.end);
-
-      if (tasksRes.error) {
-        setError(tasksRes.error.message);
-        setLoading(false);
-        return;
-      }
-
-      const loadedTasks = tasksRes.data ?? [];
-      const projectIds = [...new Set(loadedTasks.map((task) => task.project_id).filter(Boolean))];
-      const memberIds = [...new Set(loadedTasks.map((task) => task.assigned_member).filter(Boolean))];
-      const [projectsRes, membersRes] = await Promise.all([
-        projectIds.length > 0
-          ? supabase.from("projects").select("id,name").in("id", projectIds)
-          : Promise.resolve({ data: [], error: null }),
-        memberIds.length > 0
-          ? supabase.from("team_members").select("id,user_name,user_email").in("id", memberIds)
-          : Promise.resolve({ data: [], error: null }),
+      const loaded = tasksRes.data ?? [];
+      const pIds = [...new Set(loaded.map(t => t.project_id).filter(Boolean))];
+      const mIds = [...new Set(loaded.map(t => t.assigned_member).filter(Boolean))];
+      const [pRes, mRes] = await Promise.all([
+        pIds.length > 0 ? supabase.from("projects").select("id,name").in("id", pIds) : Promise.resolve({ data: [] }),
+        mIds.length > 0 ? supabase.from("team_members").select("id,user_name,user_email").in("id", mIds) : Promise.resolve({ data: [] }),
       ]);
 
-      if (projectsRes.error || membersRes.error) {
-        setError(projectsRes.error?.message || membersRes.error?.message || "Errore caricamento calendario");
-        setLoading(false);
-        return;
-      }
-
-      setTasks(loadedTasks);
-      setProjectsById(
-        (projectsRes.data ?? []).reduce((acc, project) => {
-          acc[project.id] = project.name || "Progetto";
-          return acc;
-        }, {}),
-      );
-      setMembersById(
-        (membersRes.data ?? []).reduce((acc, member) => {
-          acc[member.id] = member.user_name || member.user_email || "Membro";
-          return acc;
-        }, {}),
-      );
+      setTasks(loaded);
+      setProjectsById((pRes.data ?? []).reduce((acc, p) => { acc[p.id] = p.name || "Progetto"; return acc; }, {}));
+      setMembersById((mRes.data ?? []).reduce((acc, m) => { acc[m.id] = m.user_name || m.user_email || "Membro"; return acc; }, {}));
       setCurrentMemberId(teamMember.id);
       setSelectedDay(null);
       setLoading(false);
     };
-
     loadData();
   }, [selectedYear, selectedMonth, studioId]);
 
   const calendarDays = useMemo(() => getCalendarDays(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
 
   const visibleTasks = useMemo(() => {
-    const validCurrentMemberId = currentMemberId && currentMemberId !== "null" && currentMemberId !== "undefined" ? currentMemberId : null;
-    const filtered = onlyMine && validCurrentMemberId ? tasks.filter((task) => task.assigned_member === validCurrentMemberId) : tasks;
+    const validId = currentMemberId && currentMemberId !== "null" ? currentMemberId : null;
+    const filtered = onlyMine && validId ? tasks.filter(t => t.assigned_member === validId) : tasks;
     return [...filtered].sort((a, b) => {
-      if (a.status === b.status) {
-        return (a.title || "").localeCompare(b.title || "", "it");
-      }
+      if (a.status === b.status) return (a.title || "").localeCompare(b.title || "", "it");
       return a.status === "completed" ? 1 : -1;
     });
   }, [currentMemberId, onlyMine, tasks]);
 
-  const tasksByDay = useMemo(() => {
-    return visibleTasks.reduce((acc, task) => {
-      if (!task.data_pianificata) {
-        return acc;
-      }
-      if (!acc[task.data_pianificata]) {
-        acc[task.data_pianificata] = [];
-      }
-      acc[task.data_pianificata].push(task);
-      return acc;
-    }, {});
-  }, [visibleTasks]);
+  const tasksByDay = useMemo(() => visibleTasks.reduce((acc, t) => {
+    if (!t.data_pianificata) return acc;
+    if (!acc[t.data_pianificata]) acc[t.data_pianificata] = [];
+    acc[t.data_pianificata].push(t);
+    return acc;
+  }, {}), [visibleTasks]);
 
   const selectedDayTasks = selectedDay ? tasksByDay[selectedDay] ?? [] : [];
 
-  const changeMonth = (delta) => {
+  const changeMonth = delta => {
     const next = new Date(selectedYear, selectedMonth + delta, 1);
-    setSelectedYear(next.getFullYear());
-    setSelectedMonth(next.getMonth());
+    setSelectedYear(next.getFullYear()); setSelectedMonth(next.getMonth());
   };
+  const goToday = () => { const t = new Date(); setSelectedYear(t.getFullYear()); setSelectedMonth(t.getMonth()); };
 
-  const goToday = () => {
-    const today = new Date();
-    setSelectedYear(today.getFullYear());
-    setSelectedMonth(today.getMonth());
-  };
-
-  if (loading) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Caricamento calendario...
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-        Errore: {error}
-      </section>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento calendario...</div>
+  );
+  if (error) return (
+    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+  );
 
   return (
-    <div className="space-y-5 bg-[#1c1c1e] text-white">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => changeMonth(-1)} className="rounded-md border border-[#48484a] px-3 py-1 text-sm hover:bg-white/10">
-            ←
-          </button>
-          <h2 className="min-w-56 text-center text-xl font-semibold">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Header controls */}
+      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => changeMonth(-1)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', color: T.ink, padding: '5px 12px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>←</button>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', minWidth: 180, textAlign: 'center' }}>
             {MONTHS[selectedMonth]} {selectedYear}
-          </h2>
-          <button type="button" onClick={() => changeMonth(1)} className="rounded-md border border-[#48484a] px-3 py-1 text-sm hover:bg-white/10">
-            →
-          </button>
-          <button type="button" onClick={goToday} className="ml-2 rounded-md bg-[#0a84ff] px-3 py-1 text-sm font-medium text-white hover:brightness-110">
-            Oggi
-          </button>
+          </div>
+          <button onClick={() => changeMonth(1)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', color: T.ink, padding: '5px 12px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>→</button>
+          <button onClick={goToday} style={{ background: T.navy, border: 'none', cursor: 'pointer', color: '#EEF1F6', padding: '5px 14px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Oggi</button>
         </div>
 
-        <div className="flex rounded-lg border border-[#48484a] bg-[#1c1c1e] p-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setOnlyMine(false)}
-            className={`rounded-md px-3 py-1 ${!onlyMine ? "bg-[#0a84ff] text-white" : "text-white/70 hover:text-white"}`}
-          >
-            Tutti
-          </button>
-          <button
-            type="button"
-            onClick={() => setOnlyMine(true)}
-            className={`rounded-md px-3 py-1 ${onlyMine ? "bg-[#0a84ff] text-white" : "text-white/70 hover:text-white"}`}
-          >
-            Solo i miei
-          </button>
+        {/* Toggle mine/all */}
+        <div style={{ display: 'flex', border: `0.5px solid ${T.ink20}`, overflow: 'hidden' }}>
+          {[false, true].map(v => (
+            <button key={String(v)} onClick={() => setOnlyMine(v)} style={{
+              padding: '6px 16px', border: 'none', cursor: 'pointer',
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
+              background: onlyMine === v ? T.navy : 'transparent',
+              color: onlyMine === v ? '#EEF1F6' : T.muted,
+            }}>{v ? "Solo i miei" : "Tutti"}</button>
+          ))}
         </div>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
-        <section className="overflow-hidden rounded-xl border border-[#48484a] bg-[#2c2c2e]">
-          <div className="grid grid-cols-7 border-b border-[#48484a] bg-[#1c1c1e] text-center text-xs font-medium uppercase tracking-wide text-white/60">
-            {WEEKDAYS.map((day) => (
-              <div key={day} className="px-2 py-3">
-                {day}
-              </div>
+      {/* Calendar + sidebar */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 10, alignItems: 'start' }}>
+
+        {/* Calendar grid */}
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, overflow: 'hidden' }}>
+          {/* Weekdays header */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: `0.5px solid ${T.ink10}`, background: T.paper }}>
+            {WEEKDAYS.map(d => (
+              <div key={d} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 0', textAlign: 'center' }}>{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7">
-            {calendarDays.map((day) => {
+          {/* Days */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {calendarDays.map(day => {
               const dayTasks = tasksByDay[day.iso] ?? [];
-              const visibleDayTasks = dayTasks.slice(0, 2);
-              const hiddenCount = Math.max(dayTasks.length - 2, 0);
+              const visible = dayTasks.slice(0, 2);
+              const hidden = Math.max(dayTasks.length - 2, 0);
+              const isToday = day.iso === todayISO;
+              const isSelected = day.iso === selectedDay;
               return (
-                <button
-                  key={day.iso}
-                  type="button"
-                  onClick={() => setSelectedDay(day.iso)}
-                  className={`min-h-32 border-b border-r border-[#48484a] p-2 text-left transition hover:bg-white/5 ${
-                    day.isCurrentMonth ? "bg-[#2c2c2e]" : "bg-[#242426] text-white/35"
-                  } ${day.iso === todayISO ? "ring-1 ring-inset ring-[#0a84ff]" : ""}`}
+                <button key={day.iso} type="button" onClick={() => setSelectedDay(day.iso)}
+                  style={{
+                    minHeight: 100, borderBottom: `0.5px solid ${T.ink10}`, borderRight: `0.5px solid ${T.ink10}`,
+                    padding: '6px 8px', textAlign: 'left', cursor: 'pointer',
+                    background: isSelected ? '#EEF3FA' : day.isCurrentMonth ? '#fff' : T.paper,
+                    outline: isToday ? `1.5px solid ${T.navy}` : 'none',
+                    outlineOffset: -1,
+                  }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.paper; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isSelected ? '#EEF3FA' : day.isCurrentMonth ? '#fff' : T.paper; }}
                 >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium">{day.date.getDate()}</span>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: day.isCurrentMonth ? (isToday ? T.navy : T.ink) : T.muted, fontWeight: isToday ? 600 : 400, marginBottom: 4 }}>
+                    {day.date.getDate()}
                   </div>
-                  <div className="space-y-1">
-                    {visibleDayTasks.map((task) => (
-                      <div key={task.id} className={`truncate rounded px-2 py-1 text-xs ${getTaskColor(task, todayISO)}`}>
-                        {task.title || "Task senza titolo"}
-                      </div>
-                    ))}
-                    {hiddenCount > 0 ? (
-                      <span className="inline-flex rounded bg-white/10 px-2 py-1 text-xs text-white/80">+{hiddenCount} altri</span>
-                    ) : null}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {visible.map(task => {
+                      const { bg, color } = getTaskBg(task, todayISO);
+                      return (
+                        <div key={task.id} style={{ background: bg, color, fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, padding: '2px 5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>
+                          {task.title || "Task"}
+                        </div>
+                      );
+                    })}
+                    {hidden > 0 && (
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, padding: '1px 4px' }}>+{hidden} altri</div>
+                    )}
                   </div>
                 </button>
               );
             })}
           </div>
-        </section>
+        </div>
 
-        <aside className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
+        {/* Sidebar */}
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '16px 18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <div>
-              <h3 className="text-lg font-semibold">Task del giorno</h3>
-              <p className="text-sm text-white/60">{selectedDay || "Seleziona un giorno"}</p>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Task del giorno</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em' }}>
+                {selectedDay || "Seleziona un giorno"}
+              </div>
             </div>
-            {selectedDay ? (
-              <button type="button" onClick={() => setSelectedDay(null)} className="rounded-md border border-[#48484a] px-2 py-1 text-xs text-white/70 hover:bg-white/10">
-                Chiudi
-              </button>
-            ) : null}
+            {selectedDay && (
+              <button onClick={() => setSelectedDay(null)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, padding: '3px 8px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Chiudi</button>
+            )}
           </div>
 
-          {selectedDay && selectedDayTasks.length === 0 ? (
-            <p className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-4 text-sm text-white/60">Nessun task pianificato.</p>
-          ) : null}
+          {!selectedDay && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>
+              Clicca su un giorno per vedere i task.
+            </div>
+          )}
 
-          {!selectedDay ? (
-            <p className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-4 text-sm text-white/60">Clicca su un giorno del calendario per vedere il dettaglio.</p>
-          ) : null}
+          {selectedDay && selectedDayTasks.length === 0 && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>
+              Nessun task pianificato.
+            </div>
+          )}
 
-          <div className="space-y-3">
-            {selectedDayTasks.map((task) => (
-              <article key={task.id} className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-4">
-                <div className="mb-2 flex items-start gap-2">
-                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${getTaskColor(task, todayISO).split(" ")[0]}`} />
-                  <h4 className="text-sm font-semibold text-white">{task.title || "Task senza titolo"}</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {selectedDayTasks.map(task => {
+              const dot = getTaskDot(task, todayISO);
+              const { bg, color } = getTaskBg(task, todayISO);
+              return (
+                <div key={task.id} style={{ background: bg, border: `0.5px solid ${color}22`, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0, marginTop: 3 }} />
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, lineHeight: 1.3 }}>{task.title || "Task senza titolo"}</div>
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 16 }}>
+                    <div>Categoria: <span style={{ color: T.ink }}>{task.categoria || "Senza categoria"}</span></div>
+                    <div>Progetto: <span style={{ color: T.ink }}>{projectsById[task.project_id] || "—"}</span></div>
+                    <div>Membro: <span style={{ color: T.ink }}>{membersById[task.assigned_member] || "—"}</span></div>
+                  </div>
                 </div>
-                <div className="space-y-1 text-xs text-white/60">
-                  <p>Categoria: <span className="text-white/85">{task.categoria || "Senza categoria"}</span></p>
-                  <p>Progetto: <span className="text-white/85">{projectsById[task.project_id] || "Progetto non assegnato"}</span></p>
-                  <p>Membro: <span className="text-white/85">{membersById[task.assigned_member] || "Membro non assegnato"}</span></p>
-                </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
-        </aside>
+        </div>
+
       </div>
     </div>
   );

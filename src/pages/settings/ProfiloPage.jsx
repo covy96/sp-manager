@@ -4,250 +4,153 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { richiediFCMToken } from "../../lib/firebase";
 
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c', green: '#1a6b3c',
+};
+
+function FieldLabel({ children }) {
+  return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+}
+function Input({ value, onChange, type = "text", placeholder, disabled }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
+      onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.ink20}`, background: disabled ? T.paper : '#fff', color: disabled ? T.muted : T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
+  );
+}
+function BtnPrimary({ children, type = "button", onClick, disabled }) {
+  return (
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+      {children}
+    </button>
+  );
+}
+function Panel({ title, subtitle, children }) {
+  return (
+    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px', marginBottom: 14 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>{title}</div>
+      {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 18 }}>{subtitle}</div>}
+      {children}
+    </div>
+  );
+}
+
 export default function ProfiloPage() {
   usePageTitleOnMount("Profilo");
-  const { teamMember, studioId } = useStudio();
+  const { teamMember } = useStudio();
 
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-  });
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState("");
-
+  const [formData, setFormData]       = useState({ nome: "", email: "" });
+  const [pwData, setPwData]           = useState({ newPassword: "", confirmPassword: "" });
+  const [loading, setLoading]         = useState(false);
+  const [pwLoading, setPwLoading]     = useState(false);
+  const [message, setMessage]         = useState("");
+  const [pwError, setPwError]         = useState("");
+  const [pwSuccess, setPwSuccess]     = useState("");
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [notifError, setNotifError] = useState("");
+  const [notifError, setNotifError]   = useState("");
 
-  useEffect(() => {
-    setNotifEnabled(Notification.permission === "granted");
-  }, []);
+  useEffect(() => { setNotifEnabled(Notification.permission === "granted"); }, []);
+  useEffect(() => { if (teamMember) setFormData({ nome: teamMember.user_name || "", email: teamMember.user_email || "" }); }, [teamMember]);
 
-  useEffect(() => {
-    if (teamMember) {
-      setFormData({
-        nome: teamMember.user_name || "",
-        email: teamMember.user_email || "",
-      });
-    }
-  }, [teamMember]);
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("team_members")
-      .update({ user_name: formData.nome })
-      .eq("id", teamMember?.id);
-
-    if (error) {
-      setMessage("Errore: " + error.message);
-    } else {
-      setMessage("Profilo aggiornato con successo!");
-    }
-
+  const handleSaveProfile = async e => {
+    e.preventDefault(); setLoading(true); setMessage("");
+    const { error } = await supabase.from("team_members").update({ user_name: formData.nome }).eq("id", teamMember?.id);
+    setMessage(error ? "Errore: " + error.message : "Profilo aggiornato con successo!");
     setLoading(false);
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setPasswordError("");
-    setPasswordSuccess("");
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError("Le password non coincidono");
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError("La password deve essere di almeno 6 caratteri");
-      return;
-    }
-
-    setPasswordLoading(true);
-
-    const { error } = await supabase.auth.updateUser({
-      password: passwordData.newPassword,
-    });
-
-    if (error) {
-      setPasswordError("Errore: " + error.message);
-    } else {
-      setPasswordSuccess("Password aggiornata con successo!");
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    }
-
-    setPasswordLoading(false);
+  const handleChangePw = async e => {
+    e.preventDefault(); setPwError(""); setPwSuccess("");
+    if (pwData.newPassword !== pwData.confirmPassword) { setPwError("Le password non coincidono"); return; }
+    if (pwData.newPassword.length < 6) { setPwError("La password deve essere di almeno 6 caratteri"); return; }
+    setPwLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: pwData.newPassword });
+    if (error) setPwError("Errore: " + error.message);
+    else { setPwSuccess("Password aggiornata con successo!"); setPwData({ newPassword: "", confirmPassword: "" }); }
+    setPwLoading(false);
   };
 
+  const msgColor = message.includes("Errore") ? T.red : T.green;
+
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Profilo</h2>
-        <p className="text-sm text-white/60">Gestisci le informazioni del tuo account</p>
+    <div style={{ maxWidth: 560 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Profilo</div>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci le informazioni del tuo account</div>
       </div>
 
-      {/* Info Profilo */}
-      <form onSubmit={handleSaveProfile} className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-        <h3 className="mb-4 text-lg font-medium text-white">Informazioni personali</h3>
-
-        <div className="space-y-4">
+      {/* Info personali */}
+      <Panel title="Informazioni personali">
+        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="mb-1 block text-sm font-medium text-white/80">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              disabled
-              className="w-full cursor-not-allowed rounded-lg border border-[#48484a] bg-[#1c1c1e] px-3 py-2 text-sm text-white/50"
-            />
-            <p className="mt-1 text-xs text-white/40">L&apos;email non può essere modificata</p>
+            <FieldLabel>Email</FieldLabel>
+            <Input type="email" value={formData.email} disabled />
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 4 }}>L'email non può essere modificata</div>
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium text-white/80">Nome visualizzato</label>
-            <input
-              type="text"
-              value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-              placeholder="Il tuo nome"
-            />
+            <FieldLabel>Nome visualizzato</FieldLabel>
+            <Input value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} placeholder="Il tuo nome" />
           </div>
-        </div>
-
-        {message && (
-          <p className={`mt-4 text-sm ${message.includes("Errore") ? "text-red-300" : "text-green-300"}`}>
-            {message}
-          </p>
-        )}
-
-        <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-          >
-            {loading ? "Salvataggio..." : "Salva modifiche"}
-          </button>
-        </div>
-      </form>
-
-      {/* Notifiche Push */}
-      <div className="mt-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-        <h3 className="mb-1 text-lg font-medium text-white">Notifiche push</h3>
-        <p className="mb-5 text-sm text-white/60">
-          Ricevi notifiche anche quando l&apos;app è in background.
-        </p>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={`h-2.5 w-2.5 rounded-full ${
-                notifEnabled ? "bg-[#30d158]" : "bg-[#48484a]"
-              }`}
-            />
-            <span className="text-sm text-white/80">
-              {notifEnabled ? "Notifiche attive" : "Notifiche non attive"}
-            </span>
+          {message && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: msgColor }}>{message}</div>}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <BtnPrimary type="submit" disabled={loading}>{loading ? "Salvataggio..." : "Salva modifiche"}</BtnPrimary>
           </div>
+        </form>
+      </Panel>
 
-          <button
-            type="button"
-            disabled={notifLoading || notifEnabled}
+      {/* Notifiche push */}
+      <Panel title="Notifiche push" subtitle="Ricevi notifiche anche quando l'app è in background.">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: notifEnabled ? T.green : T.muted, display: 'inline-block' }} />
+            <span style={{ fontSize: 13, color: T.ink }}>{notifEnabled ? "Notifiche attive" : "Notifiche non attive"}</span>
+          </div>
+          <button type="button" disabled={notifLoading || notifEnabled}
             onClick={async () => {
-              setNotifLoading(true);
-              setNotifError("");
+              setNotifLoading(true); setNotifError("");
               try {
-                const permission = await Notification.requestPermission();
-                if (permission !== "granted") {
-                  setNotifError("Permesso notifiche negato. Abilitalo nelle impostazioni del browser.");
-                  setNotifLoading(false);
-                  return;
-                }
+                const perm = await Notification.requestPermission();
+                if (perm !== "granted") { setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser."); setNotifLoading(false); return; }
                 const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-                if (!token) {
-                  setNotifError("Impossibile ottenere il token FCM. Riprova.");
-                  setNotifLoading(false);
-                  return;
-                }
-                const { error: updateError } = await supabase
-                  .from("team_members")
-                  .update({ fcm_token: token })
-                  .eq("id", teamMember?.id);
-                if (updateError) {
-                  setNotifError("Errore salvataggio token: " + updateError.message);
-                } else {
-                  setNotifEnabled(true);
-                }
-              } catch (err) {
-                setNotifError("Errore: " + (err.message ?? "Sconosciuto"));
-              }
+                if (!token) { setNotifError("Impossibile ottenere il token FCM."); setNotifLoading(false); return; }
+                const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember?.id);
+                if (error) setNotifError("Errore: " + error.message); else setNotifEnabled(true);
+              } catch (e) { setNotifError("Errore: " + (e.message ?? "Sconosciuto")); }
               setNotifLoading(false);
             }}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              notifEnabled
-                ? "cursor-default border border-[#30d158]/40 bg-[#30d158]/10 text-[#30d158]"
-                : "bg-[#0a84ff] text-white hover:brightness-110 disabled:opacity-60"
-            }`}
-          >
-            {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita notifiche"}
+            style={{
+              background: notifEnabled ? '#f0fdf4' : T.navy, color: notifEnabled ? T.green : '#EEF1F6',
+              border: `0.5px solid ${notifEnabled ? T.green : T.navy}`,
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+              padding: '7px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,
+            }}>
+            {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita"}
           </button>
         </div>
+        {notifError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{notifError}</div>}
+      </Panel>
 
-        {notifError && <p className="mt-3 text-sm text-red-300">{notifError}</p>}
-      </div>
-
-      {/* Cambia Password */}
-      <form onSubmit={handleChangePassword} className="mt-6 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-        <h3 className="mb-4 text-lg font-medium text-white">Cambia password</h3>
-
-        <div className="space-y-4">
+      {/* Cambia password */}
+      <Panel title="Cambia password">
+        <form onSubmit={handleChangePw} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="mb-1 block text-sm font-medium text-white/80">Nuova password</label>
-            <input
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-              placeholder="••••••••"
-            />
+            <FieldLabel>Nuova password</FieldLabel>
+            <Input type="password" value={pwData.newPassword} onChange={e => setPwData({ ...pwData, newPassword: e.target.value })} placeholder="••••••••" />
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium text-white/80">Conferma password</label>
-            <input
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-              placeholder="••••••••"
-            />
+            <FieldLabel>Conferma password</FieldLabel>
+            <Input type="password" value={pwData.confirmPassword} onChange={e => setPwData({ ...pwData, confirmPassword: e.target.value })} placeholder="••••••••" />
           </div>
-        </div>
-
-        {passwordError && <p className="mt-4 text-sm text-red-300">{passwordError}</p>}
-        {passwordSuccess && <p className="mt-4 text-sm text-green-300">{passwordSuccess}</p>}
-
-        <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
-            disabled={passwordLoading}
-            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-          >
-            {passwordLoading ? "Aggiornamento..." : "Cambia password"}
-          </button>
-        </div>
-      </form>
+          {pwError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{pwError}</div>}
+          {pwSuccess && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.green }}>{pwSuccess}</div>}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <BtnPrimary type="submit" disabled={pwLoading}>{pwLoading ? "Aggiornamento..." : "Cambia password"}</BtnPrimary>
+          </div>
+        </form>
+      </Panel>
     </div>
   );
 }

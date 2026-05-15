@@ -3,401 +3,222 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
+import { ROLE_OPTIONS, ROLE_LABELS } from "../hooks/usePermissions";
 
-const ROLE_OPTIONS = ["Architetto", "Collaboratore", "Titolare", "Stagista"];
+// ── BRAND TOKENS ─────────────────────────────────────────────────
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
+  red: '#b91c1c', green: '#1a6b3c',
+};
 
 function getInitials(name) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return "?";
-  }
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-function getAvatarColor(seed = "") {
-  const colors = ["#0a84ff", "#64d2ff", "#5e5ce6", "#30d158", "#bf5af2", "#ff9f0a"];
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
+const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
+function avatarColor(seed = "") {
+  let h = 0; for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
 function getMondayISODate() {
-  const now = new Date();
-  const day = now.getDay();
+  const now = new Date(); const day = now.getDay();
   const diff = day === 0 ? -6 : 1 - day;
-  now.setDate(now.getDate() + diff);
-  now.setHours(0, 0, 0, 0);
+  now.setDate(now.getDate() + diff); now.setHours(0,0,0,0);
   return now.toISOString().slice(0, 10);
+}
+
+function FieldLabel({ children }) {
+  return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+}
+function Input({ value, onChange, type = "text", required }) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <input type={type} value={value} onChange={onChange} required={required}
+      onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.ink20}`, background: '#fff', color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }} />
+  );
+}
+function BtnPrimary({ children, onClick, disabled, type = "button" }) {
+  return (
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+      {children}
+    </button>
+  );
+}
+function BtnGhost({ children, onClick, disabled }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} style={{ background: 'transparent', border: `0.5px solid ${T.ink20}`, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+      {children}
+    </button>
+  );
 }
 
 export default function TeamPage() {
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
-  const [members, setMembers] = useState([]);
+
+  const [members, setMembers]             = useState([]);
   const [statsByMember, setStatsByMember] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [formData, setFormData] = useState({
-    user_name: "",
-    user_email: "",
-    role_internal: ROLE_OPTIONS[0],
-  });
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
+  const [modalOpen, setModalOpen]         = useState(false);
+  const [saving, setSaving]               = useState(false);
+  const [formError, setFormError]         = useState("");
+  const [formData, setFormData]           = useState({ user_name: "", user_email: "", role_internal: "Architetto" });
 
   const loadData = async () => {
     if (!studioId) return;
-    setLoading(true);
-    setError("");
-
-    const mondayISO = getMondayISODate();
-    const [{ data: authData, error: authError }, membersResult, timesheetResult, tasksResult] = await Promise.all([
+    setLoading(true); setError("");
+    const monday = getMondayISODate();
+    const [{ data: authData, error: authError }, membersR, tsR, tasksR] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from("team_members").select("*").eq("studio", studioId).order("user_name", { ascending: true }),
-      supabase.from("timesheet").select("team_member,date,hours").gte("date", mondayISO),
+      supabase.from("timesheet").select("team_member,date,hours").gte("date", monday),
       supabase.from("tasks").select("assigned_member,status,project_id"),
     ]);
+    if (authError || !authData?.user?.id) { setError(authError?.message || "Utente non autenticato."); setLoading(false); return; }
+    if (membersR.error) { setError(membersR.error.message); setLoading(false); return; }
 
-    if (authError || !authData?.user?.id) {
-      setError(authError?.message || "Utente non autenticato.");
-      setLoading(false);
-      return;
-    }
-
-    if (membersResult.error) {
-      setError(membersResult.error.message);
-      setLoading(false);
-      return;
-    }
-    if (timesheetResult.error) {
-      setError(timesheetResult.error.message);
-      setLoading(false);
-      return;
-    }
-    if (tasksResult.error) {
-      setError(tasksResult.error.message);
-      setLoading(false);
-      return;
-    }
-
-    const loadedMembers = membersResult.data ?? [];
-    const timesheetRows = timesheetResult.data ?? [];
-    const taskRows = tasksResult.data ?? [];
-
+    const loadedMembers = membersR.data ?? [];
     const stats = {};
-    loadedMembers.forEach((member) => {
-      stats[member.id] = {
-        weeklyHours: 0,
-        activeTasks: 0,
-        totalTasks: 0,
-        completedTasks: 0,
-        projectsSet: new Set(),
-      };
+    loadedMembers.forEach(m => { stats[m.id] = { weeklyHours: 0, activeTasks: 0, totalTasks: 0, completedTasks: 0, projectsSet: new Set() }; });
+    (tsR.data ?? []).forEach(e => { if (stats[e.team_member]) stats[e.team_member].weeklyHours += Number(e.hours) || 0; });
+    (tasksR.data ?? []).forEach(t => {
+      if (!stats[t.assigned_member]) return;
+      stats[t.assigned_member].totalTasks += 1;
+      if (t.status === "completed") stats[t.assigned_member].completedTasks += 1;
+      else stats[t.assigned_member].activeTasks += 1;
+      if (t.project_id) stats[t.assigned_member].projectsSet.add(t.project_id);
     });
+    const normalized = {};
+    Object.entries(stats).forEach(([id, v]) => { normalized[id] = { weeklyHours: v.weeklyHours, activeTasks: v.activeTasks, totalTasks: v.totalTasks, completedTasks: v.completedTasks, projects: v.projectsSet.size }; });
 
-    timesheetRows.forEach((entry) => {
-      const key = entry.team_member;
-      if (!stats[key]) {
-        return;
-      }
-      stats[key].weeklyHours += Number(entry.hours) || 0;
-    });
-
-    taskRows.forEach((task) => {
-      const key = task.assigned_member;
-      if (!stats[key]) {
-        return;
-      }
-
-      stats[key].totalTasks += 1;
-      if (task.status === "completed") {
-        stats[key].completedTasks += 1;
-      } else {
-        stats[key].activeTasks += 1;
-      }
-      if (task.project_id) {
-        stats[key].projectsSet.add(task.project_id);
-      }
-    });
-
-    const normalizedStats = {};
-    Object.entries(stats).forEach(([memberId, value]) => {
-      normalizedStats[memberId] = {
-        weeklyHours: value.weeklyHours,
-        activeTasks: value.activeTasks,
-        totalTasks: value.totalTasks,
-        completedTasks: value.completedTasks,
-        projects: value.projectsSet.size,
-      };
-    });
-
-    let currentMember = loadedMembers.find((member) => member.user_account === authData.user.id);
-    if (!currentMember) {
-      try {
-        currentMember = await getOrCreateTeamMember(authData.user);
-        loadedMembers.push(currentMember);
-      } catch (memberError) {
-        setError(memberError.message);
-        setLoading(false);
-        return;
-      }
+    let current = loadedMembers.find(m => m.user_account === authData.user.id);
+    if (!current) {
+      try { current = await getOrCreateTeamMember(authData.user); loadedMembers.push(current); }
+      catch (e) { setError(e.message); setLoading(false); return; }
     }
-    setMembers(loadedMembers);
-    setStatsByMember(normalizedStats);
-    setLoading(false);
+    setMembers(loadedMembers); setStatsByMember(normalized); setLoading(false);
   };
 
-  useEffect(() => {
-    if (studioId) loadData();
-  }, [studioId]);
+  useEffect(() => { if (studioId) loadData(); }, [studioId]);
 
-  const cards = useMemo(() => {
-    return members.map((member) => {
-      const memberStats = statsByMember[member.id] ?? {
-        weeklyHours: 0,
-        activeTasks: 0,
-        projects: 0,
-        completedTasks: 0,
-        totalTasks: 0,
-      };
+  const cards = useMemo(() => members.map(m => {
+    const s = statsByMember[m.id] ?? { weeklyHours: 0, activeTasks: 0, projects: 0, completedTasks: 0, totalTasks: 0 };
+    const progress = s.totalTasks > 0 ? Math.round((s.completedTasks / s.totalTasks) * 100) : 0;
+    return { member: m, stats: s, progress };
+  }), [members, statsByMember]);
 
-      const progress =
-        memberStats.totalTasks > 0
-          ? Math.round((memberStats.completedTasks / memberStats.totalTasks) * 100)
-          : 0;
-
-      return { member, stats: memberStats, progress };
-    });
-  }, [members, statsByMember]);
-
-  const openModal = () => {
-    setFormError("");
-    setFormData({
-      user_name: "",
-      user_email: "",
-      role_internal: ROLE_OPTIONS[0],
-    });
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    if (saving) {
-      return;
-    }
-    setIsModalOpen(false);
-  };
-
-  const handleSaveMember = async (event) => {
-    event.preventDefault();
-    setFormError("");
-
-    if (!formData.user_name.trim() || !formData.user_email.trim() || !formData.role_internal) {
-      setFormError("Compila tutti i campi.");
-      return;
-    }
-
+  const handleSaveMember = async e => {
+    e.preventDefault(); setFormError("");
+    if (!formData.user_name.trim() || !formData.user_email.trim() || !formData.role_internal) { setFormError("Compila tutti i campi."); return; }
     setSaving(true);
-    const payload = {
-      user_name: formData.user_name.trim(),
-      user_email: formData.user_email.trim(),
-      role_internal: formData.role_internal,
-      studio: studioId,
-    };
-
-    const { data, error: insertError } = await supabase
-      .from("team_members")
-      .insert(payload)
-      .select("*")
-      .single();
-
-    if (insertError) {
-      setFormError(insertError.message);
-      setSaving(false);
-      return;
-    }
-
-    setMembers((prev) => [...prev, data].sort((a, b) => a.user_name.localeCompare(b.user_name, "it")));
-    setStatsByMember((prev) => ({
-      ...prev,
-      [data.id]: {
-        weeklyHours: 0,
-        activeTasks: 0,
-        totalTasks: 0,
-        completedTasks: 0,
-        projects: 0,
-      },
-    }));
-    setSaving(false);
-    setIsModalOpen(false);
+    const { data, error: iErr } = await supabase.from("team_members").insert({ user_name: formData.user_name.trim(), user_email: formData.user_email.trim(), role_internal: formData.role_internal, studio: studioId }).select("*").single();
+    if (iErr) { setFormError(iErr.message); setSaving(false); return; }
+    setMembers(p => [...p, data].sort((a, b) => a.user_name.localeCompare(b.user_name, "it")));
+    setStatsByMember(p => ({ ...p, [data.id]: { weeklyHours: 0, activeTasks: 0, totalTasks: 0, completedTasks: 0, projects: 0 } }));
+    setSaving(false); setModalOpen(false);
   };
 
-  if (studioLoading || !studioId || loading) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-        Caricamento team...
-      </section>
-    );
-  }
+  if (studioLoading || !studioId || loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento team...</div>
+  );
+  if (error) return (
+    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+  );
 
-  if (error) {
-    return (
-      <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-        Errore: {error}
-      </section>
-    );
-  }
+  const statSt = { background: T.paper, border: `0.5px solid ${T.ink10}`, padding: '12px 14px' };
+  const statLabel = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 };
+  const statValue = { fontSize: 20, fontWeight: 600, color: T.ink, letterSpacing: '-0.03em', fontFamily: "'Space Grotesk', sans-serif" };
 
   return (
-    <div className="space-y-5 bg-[#1c1c1e] text-white">
-      <header className="flex items-center justify-between gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2 className="text-2xl font-semibold text-white">Team</h2>
-          <p className="text-sm text-white/60">Panoramica membri e produttivita settimanale</p>
+          <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Team</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Panoramica membri e produttività settimanale</div>
         </div>
-        {permissions.canManageUsers ? (
-          <button
-            type="button"
-            onClick={openModal}
-            className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-          >
-            Aggiungi Membro
-          </button>
-        ) : null}
-      </header>
+        {permissions.canManageUsers && (
+          <BtnPrimary onClick={() => { setFormError(""); setFormData({ user_name: "", user_email: "", role_internal: "Architetto" }); setModalOpen(true); }}>
+            + Aggiungi membro
+          </BtnPrimary>
+        )}
+      </div>
 
       {cards.length === 0 ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          Nessun membro presente.
-        </section>
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun membro presente.</div>
       ) : (
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {cards.map(({ member, stats, progress }) => (
-            <article key={member.id} className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ backgroundColor: getAvatarColor(member.user_name || member.user_email || "") }}
-                >
-                  {getInitials(member.user_name || member.user_email)}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          {cards.map(({ member: m, stats: s, progress }) => (
+            <div key={m.id} style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                  {getInitials(m.user_name || m.user_email)}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="truncate text-lg font-semibold text-white">{member.user_name || "-"}</h3>
-                  <p className="truncate text-sm text-white/70">{member.user_email || "-"}</p>
-                  <p className="mt-1 inline-block rounded-md border border-[#48484a] px-2 py-1 text-xs text-white/80">
-                    {member.role_internal || "-"}
-                  </p>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.user_name || "—"}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.user_email || "—"}</div>
+                  <div style={{ display: 'inline-block', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `0.5px solid ${T.navy}`, padding: '2px 6px', marginTop: 4 }}>
+                    {ROLE_LABELS[m.role_internal] || m.role_internal || "—"}
+                  </div>
                 </div>
               </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  <p className="text-xs text-white/60">Ore settimana</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{formatOre(stats.weeklyHours)}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+                <div style={statSt}><div style={statLabel}>Ore sett.</div><div style={statValue}>{formatOre(s.weeklyHours)}</div></div>
+                <div style={statSt}><div style={statLabel}>Task attivi</div><div style={statValue}>{s.activeTasks}</div></div>
+                <div style={statSt}><div style={statLabel}>Progetti</div><div style={statValue}>{s.projects}</div></div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 6 }}>
+                  <span>Task completati</span><span>{s.completedTasks}/{s.totalTasks}</span>
                 </div>
-                <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  <p className="text-xs text-white/60">Task attivi</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{stats.activeTasks}</p>
-                </div>
-                <div className="rounded-lg border border-[#48484a] bg-[#1c1c1e] p-3">
-                  <p className="text-xs text-white/60">Progetti</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{stats.projects}</p>
+                <div style={{ height: 2, background: T.ink10 }}>
+                  <div style={{ height: 2, background: T.navy, width: `${progress}%`, transition: 'width 0.3s' }} />
                 </div>
               </div>
-
-              <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-xs text-white/70">
-                  <span>Task completati</span>
-                  <span>
-                    {stats.completedTasks}/{stats.totalTasks}
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#48484a]">
-                  <div
-                    className="h-full rounded-full bg-[#30d158] transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            </article>
+            </div>
           ))}
-        </section>
+        </div>
       )}
 
-      {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-xl rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-xl font-semibold text-white">Aggiungi Membro</h3>
-            <form className="mt-5 space-y-4" onSubmit={handleSaveMember}>
+      {/* Modal aggiungi membro */}
+      {modalOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 480, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Aggiungi Membro</div>
+              <button onClick={() => { if (!saving) setModalOpen(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <form onSubmit={handleSaveMember} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div><FieldLabel>Nome *</FieldLabel><Input value={formData.user_name} onChange={e => setFormData(p => ({ ...p, user_name: e.target.value }))} required /></div>
+              <div><FieldLabel>Email *</FieldLabel><Input type="email" value={formData.user_email} onChange={e => setFormData(p => ({ ...p, user_email: e.target.value }))} required /></div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-white">Nome</label>
-                <input
-                  type="text"
-                  value={formData.user_name}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, user_name: event.target.value }))}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">Email</label>
-                <input
-                  type="email"
-                  value={formData.user_email}
-                  onChange={(event) =>
-                    setFormData((prev) => ({ ...prev, user_email: event.target.value }))
-                  }
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-white">Ruolo interno</label>
-                <select
-                  value={formData.role_internal}
-                  onChange={(event) =>
-                    setFormData((prev) => ({ ...prev, role_internal: event.target.value }))
-                  }
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                  required
-                >
-                  {ROLE_OPTIONS.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
+                <FieldLabel>Ruolo *</FieldLabel>
+                <select value={formData.role_internal} onChange={e => setFormData(p => ({ ...p, role_internal: e.target.value }))} required
+                  style={{ width: '100%', padding: '8px 12px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+                  {/* Owner non assegnabile manualmente — solo chi fonda lo studio */}
+                  {ROLE_OPTIONS.filter(r => r !== "Owner").map(r => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}
                 </select>
               </div>
-
-              {formError ? <p className="text-sm text-red-300">{formError}</p> : null}
-
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-                >
-                  {saving ? "Salvataggio..." : "Salva"}
-                </button>
+              {formError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{formError}</div>}
+              <div style={{ height: '0.5px', background: T.ink10, margin: '4px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <BtnGhost onClick={() => setModalOpen(false)} disabled={saving}>Annulla</BtnGhost>
+                <BtnPrimary type="submit" disabled={saving}>{saving ? "Salvataggio..." : "Salva"}</BtnPrimary>
               </div>
             </form>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

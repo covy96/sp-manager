@@ -3,39 +3,23 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 
-// Plus icon
-function PlusIcon({ className }) {
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c',
+};
+
+function BtnPrimary({ children, onClick, disabled, type = "button" }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-    </svg>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+      {children}
+    </button>
   );
 }
-
-// Trash icon
-function TrashIcon({ className }) {
+function BtnGhost({ children, onClick, disabled, danger }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-  );
-}
-
-// Building icon
-function BuildingIcon({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-    </svg>
-  );
-}
-
-// User icon
-function UserIcon({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border: `0.5px solid ${danger ? T.red : T.ink20}`, background: 'transparent', color: danger ? T.red : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}>
+      {children}
+    </button>
   );
 }
 
@@ -43,202 +27,97 @@ export default function ClientiPage() {
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
 
-  const [contacts, setContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // Add contact modal state
+  const [contacts, setContacts]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
+  const [saving, setSaving]           = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [newContact, setNewContact] = useState({ full_name: "", company: "" });
+  const [newContact, setNewContact]   = useState({ full_name: "", company: "" });
 
-  useEffect(() => {
-    if (!studioId) return;
-    loadContacts();
-  }, [studioId]);
+  useEffect(() => { if (studioId) loadContacts(); }, [studioId]);
 
   const loadContacts = async () => {
-    setLoading(true);
-    setError("");
-
-    const { data, error: fetchError } = await supabase
-      .from("global_contacts")
-      .select("*")
-      .eq("studio", studioId)
-      .order("full_name", { ascending: true });
-
-    if (fetchError) {
-      setError(fetchError.message);
-    } else {
-      setContacts(data || []);
-    }
-
+    setLoading(true); setError("");
+    const { data, error: e } = await supabase.from("global_contacts").select("*").eq("studio", studioId).order("full_name", { ascending: true });
+    if (e) setError(e.message); else setContacts(data || []);
     setLoading(false);
   };
 
-  const handleAddContact = async (e) => {
-    e.preventDefault();
-    if (!newContact.full_name.trim()) return;
-
-    setSaving(true);
-    setError("");
-
-    const { data, error: insertError } = await supabase
-      .from("global_contacts")
-      .insert({
-        full_name: newContact.full_name.trim(),
-        company: newContact.company.trim() || null,
-        studio: studioId,
-      })
-      .select("*")
-      .single();
-
-    if (insertError) {
-      setError(insertError.message);
-    } else {
-      setContacts((prev) => [...prev, data].sort((a, b) => a.full_name.localeCompare(b.full_name)));
-      setAddModalOpen(false);
-      setNewContact({ full_name: "", company: "" });
-    }
-
+  const handleAddContact = async e => {
+    e.preventDefault(); if (!newContact.full_name.trim()) return; setSaving(true); setError("");
+    const { data, error: iErr } = await supabase.from("global_contacts").insert({ full_name: newContact.full_name.trim(), company: newContact.company.trim() || null, studio: studioId }).select("*").single();
+    if (iErr) setError(iErr.message);
+    else { setContacts(p => [...p, data].sort((a, b) => a.full_name.localeCompare(b.full_name))); setAddModalOpen(false); setNewContact({ full_name: "", company: "" }); }
     setSaving(false);
   };
 
-  const handleDeleteContact = async (contactId) => {
+  const handleDelete = async id => {
     if (!confirm("Sei sicuro di voler eliminare questo contatto?")) return;
-
-    const { error: deleteError } = await supabase.from("global_contacts").delete().eq("id", contactId);
-
-    if (deleteError) {
-      alert("Errore: " + deleteError.message);
-    } else {
-      setContacts((prev) => prev.filter((c) => c.id !== contactId));
-    }
+    const { error: dErr } = await supabase.from("global_contacts").delete().eq("id", id);
+    if (dErr) alert("Errore: " + dErr.message);
+    else setContacts(p => p.filter(c => c.id !== id));
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
-      </div>
-    );
-  }
+  const inputSt = { width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' };
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+  );
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6 flex items-center justify-between">
+    <div style={{ maxWidth: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 className="text-xl font-semibold text-white">Clienti</h2>
-          <p className="text-sm text-white/60">Gestisci i contatti clienti dello studio</p>
+          <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Clienti</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci i contatti clienti dello studio</div>
         </div>
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Nuovo Cliente
-        </button>
+        <BtnPrimary onClick={() => setAddModalOpen(true)}>+ Nuovo</BtnPrimary>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
 
       {contacts.length === 0 ? (
-        <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          <p>Nessun cliente registrato.</p>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="mt-4 rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-          >
-            Aggiungi il primo cliente
-          </button>
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '48px 0', textAlign: 'center' }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, marginBottom: 16 }}>Nessun cliente registrato.</div>
+          <BtnPrimary onClick={() => setAddModalOpen(true)}>Aggiungi il primo cliente</BtnPrimary>
         </div>
       ) : (
-        <div className="space-y-2">
-          {contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="flex items-center justify-between rounded-lg border border-[#48484a] bg-[#2c2c2e] p-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#48484a]">
-                  {contact.company ? (
-                    <BuildingIcon className="h-5 w-5 text-white/60" />
-                  ) : (
-                    <UserIcon className="h-5 w-5 text-white/60" />
-                  )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {contacts.map(c => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '12px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.paper, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{c.company ? '🏢' : '👤'}</span>
                 </div>
                 <div>
-                  <p className="font-medium text-white">{contact.full_name}</p>
-                  {contact.company && <p className="text-sm text-white/50">{contact.company}</p>}
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{c.full_name}</div>
+                  {c.company && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>{c.company}</div>}
                 </div>
               </div>
-
-              <button
-                onClick={() => handleDeleteContact(contact.id)}
-                className="rounded-md border border-[#48484a] p-2 text-[#ff453a] hover:bg-[#ff453a]/10"
-                title="Elimina"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
+              <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: `0.5px solid ${T.red}`, padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.red, letterSpacing: '0.05em' }}>Elimina</button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Contact Modal */}
+      {/* Modal */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-lg font-semibold text-white">Nuovo Cliente</h3>
-            <p className="mt-1 text-sm text-white/60">Aggiungi un nuovo contatto cliente</p>
-
-            <form onSubmit={handleAddContact} className="mt-4 space-y-4">
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginBottom: 18 }}>Nuovo Cliente</div>
+            <form onSubmit={handleAddContact} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Nome *</label>
-                <input
-                  type="text"
-                  placeholder="Nome cliente"
-                  value={newContact.full_name}
-                  onChange={(e) => setNewContact({ ...newContact, full_name: e.target.value })}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-                  required
-                  autoFocus
-                />
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Nome *</div>
+                <input type="text" placeholder="Nome cliente" value={newContact.full_name} onChange={e => setNewContact({ ...newContact, full_name: e.target.value })} required autoFocus style={inputSt} />
               </div>
-
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Azienda</label>
-                <input
-                  type="text"
-                  placeholder="Nome azienda (opzionale)"
-                  value={newContact.company}
-                  onChange={(e) => setNewContact({ ...newContact, company: e.target.value })}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-                />
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Azienda</div>
+                <input type="text" placeholder="Nome azienda (opzionale)" value={newContact.company} onChange={e => setNewContact({ ...newContact, company: e.target.value })} style={inputSt} />
               </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddModalOpen(false);
-                    setNewContact({ full_name: "", company: "" });
-                  }}
-                  className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !newContact.full_name.trim()}
-                  className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-                >
-                  {saving ? "Salvataggio..." : "Aggiungi"}
-                </button>
+              <div style={{ height: '0.5px', background: T.ink10, margin: '4px 0' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <BtnGhost onClick={() => { setAddModalOpen(false); setNewContact({ full_name: "", company: "" }); }} disabled={saving}>Annulla</BtnGhost>
+                <BtnPrimary type="submit" disabled={saving || !newContact.full_name.trim()}>{saving ? "Salvataggio..." : "Aggiungi"}</BtnPrimary>
               </div>
             </form>
           </div>

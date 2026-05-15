@@ -143,7 +143,7 @@ export default function OnboardingPage() {
         user_email: user.email,
         user_name: user.email,
         studio: studio.id,
-        role_internal: "Architetto",
+        role_internal: "Collaboratore Interno",
         active: true,
       });
       if (memberError) {

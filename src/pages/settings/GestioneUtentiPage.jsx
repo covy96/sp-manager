@@ -2,243 +2,254 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
+import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../hooks/usePermissions";
 
-// Predefined colors for avatars
-const PREDEFINED_COLORS = [
-  "#0a84ff", // Blue
-  "#30d158", // Green
-  "#ff9f0a", // Orange
-  "#ff453a", // Red
-  "#bf5af2", // Purple
-  "#ff375f", // Pink
-  "#64d2ff", // Light Blue
-  "#ffd60a", // Yellow
-  "#8e8e93", // Gray
-  "#32ade6", // Cyan
-  "#a2845e", // Brown
-  "#00c7be", // Teal
-];
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
+  paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c', green: '#1a6b3c',
+};
 
-// Get initials from name or email
+const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
+
+const PERM_SUMMARY = {
+  "Owner":                 ["Tutto — gestione completa"],
+  "Partner":               ["Tutto — stesso del Titolare"],
+  "Project Manager":       ["Progetti e commesse", "Finanziari e report", "Timesheet team"],
+  "Architetto":            ["Progetti (lettura)", "Task e timesheet propri"],
+  "Ingegnere":             ["Progetti (lettura)", "Task e timesheet propri"],
+  "Collaboratore Interno": ["Task assegnate", "Timesheet proprio"],
+  "Collaboratore Esterno": ["Task assegnate", "Timesheet proprio"],
+};
+
 function getInitials(text) {
   if (!text) return "?";
   const parts = text.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return text.slice(0, 2).toUpperCase();
+  return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : text.slice(0,2).toUpperCase();
+}
+
+function RoleBadge({ role }) {
+  const isTop = role === "Owner" || role === "Partner";
+  const isPM = role === "Project Manager";
+  const c = isTop ? T.navy : isPM ? '#7c3aed' : T.muted;
+  return (
+    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', color: c, border: `0.5px solid ${c}`, display: 'inline-block' }}>
+      {ROLE_LABELS[role] || role}
+    </span>
+  );
 }
 
 export default function GestioneUtentiPage() {
   usePageTitleOnMount("Gestione Utenti");
   const { studioId, teamMember: currentMember } = useStudio();
 
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [editingMember, setEditingMember] = useState(null);
-  const [selectedColor, setSelectedColor] = useState("");
+  const [members, setMembers]               = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState("");
+  const [saving, setSaving]                 = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [editRole, setEditRole]             = useState("");
+  const [editColor, setEditColor]           = useState("");
+  const [activeTab, setActiveTab]           = useState("role");
 
-  useEffect(() => {
-    if (!studioId) return;
-    loadMembers();
-  }, [studioId]);
+  useEffect(() => { if (studioId) loadMembers(); }, [studioId]);
 
   const loadMembers = async () => {
-    setLoading(true);
-    setError("");
-
-    const { data, error: fetchError } = await supabase
+    setLoading(true); setError("");
+    const { data, error: e } = await supabase
       .from("team_members")
-      .select("id, user_name, user_email, color, role, role_internal")
+      .select("id,user_name,user_email,color,role_internal")
       .eq("studio", studioId)
       .order("user_name", { ascending: true });
-
-    if (fetchError) {
-      setError(fetchError.message);
-    } else {
-      setMembers(data || []);
-    }
-
+    if (e) setError(e.message); else setMembers(data || []);
     setLoading(false);
   };
 
-  const openColorPicker = (member) => {
-    setEditingMember(member);
-    setSelectedColor(member.color || PREDEFINED_COLORS[0]);
+  const openMember = m => {
+    setSelectedMember(m);
+    setEditRole(m.role_internal || "Architetto");
+    setEditColor(m.color || PREDEFINED_COLORS[0]);
+    setActiveTab("role");
   };
 
-  const closeColorPicker = () => {
-    setEditingMember(null);
-    setSelectedColor("");
-  };
-
-  const saveColor = async () => {
-    if (!editingMember) return;
-
+  const handleSaveRole = async () => {
+    if (!selectedMember || selectedMember.id === currentMember?.id) return;
     setSaving(true);
-
-    const { error: updateError } = await supabase
-      .from("team_members")
-      .update({ color: selectedColor })
-      .eq("id", editingMember.id);
-
-    if (updateError) {
-      alert("Errore durante il salvataggio: " + updateError.message);
-    } else {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === editingMember.id ? { ...m, color: selectedColor } : m))
-      );
-      closeColorPicker();
-    }
-
+    const { error: e } = await supabase.from("team_members").update({ role_internal: editRole }).eq("id", selectedMember.id);
+    if (e) { alert("Errore: " + e.message); setSaving(false); return; }
+    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, role_internal: editRole } : m));
+    setSelectedMember(p => ({ ...p, role_internal: editRole }));
     setSaving(false);
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
-      </div>
-    );
-  }
+  const handleSaveColor = async () => {
+    if (!selectedMember) return; setSaving(true);
+    const { error: e } = await supabase.from("team_members").update({ color: editColor }).eq("id", selectedMember.id);
+    if (e) { alert("Errore: " + e.message); setSaving(false); return; }
+    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, color: editColor } : m));
+    setSelectedMember(p => ({ ...p, color: editColor }));
+    setSaving(false);
+  };
+
+  const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
+  const isOwnProfile = selectedMember?.id === currentMember?.id;
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+  );
+
+  const btnSt = (active) => ({
+    padding: '7px 14px', border: 'none', background: 'transparent', cursor: 'pointer',
+    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase',
+    color: active ? T.navy : T.muted,
+    borderBottom: `1.5px solid ${active ? T.navy : 'transparent'}`,
+    marginBottom: -0.5,
+  });
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Gestione Utenti</h2>
-        <p className="text-sm text-white/60">
-          Personalizza i colori degli avatar per ogni membro del team
-        </p>
+    <div style={{ maxWidth: 820 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Gestione Utenti</div>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+          Seleziona un membro per modificarne ruolo e colore avatar
+        </div>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {members.map((member) => {
-          const isMe = member.id === currentMember?.id;
-          const color = member.color || "#0a84ff";
+      <div style={{ display: 'grid', gridTemplateColumns: selectedMember ? '320px 1fr' : '1fr', gap: 10, alignItems: 'start' }}>
 
-          return (
-            <div
-              key={member.id}
-              className="flex items-center gap-4 rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4"
-            >
-              {/* Avatar */}
-              <div
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
-                style={{ backgroundColor: color }}
+        {/* Lista membri */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {members.map(m => {
+            const isMe = m.id === currentMember?.id;
+            const isSel = selectedMember?.id === m.id;
+            const color = m.color || T.navy;
+            return (
+              <button key={m.id} onClick={() => isSel ? setSelectedMember(null) : openMember(m)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, background: isSel ? '#EEF3FA' : '#fff', border: `0.5px solid ${isSel ? T.navy : T.ink10}`, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.1s' }}
+                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = T.paper; }}
+                onMouseLeave={e => { e.currentTarget.style.background = isSel ? '#EEF3FA' : '#fff'; }}
               >
-                {getInitials(member.user_name || member.user_email)}
-              </div>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#fff' }}>
+                  {getInitials(m.user_name || m.user_email)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.user_name || "Utente"}{isMe && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: T.muted, marginLeft: 6 }}>(tu)</span>}
+                  </div>
+                  <div style={{ marginTop: 4 }}><RoleBadge role={m.role_internal} /></div>
+                </div>
+                <span style={{ color: T.muted, fontSize: 16 }}>{isSel ? '×' : '›'}</span>
+              </button>
+            );
+          })}
+        </div>
 
-              {/* Info */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-white">
-                  {member.user_name || "Utente"}
-                  {isMe && <span className="ml-2 text-xs text-white/50">(tu)</span>}
-                </p>
-                <p className="truncate text-sm text-white/50">{member.user_email}</p>
-                {(member.role_internal || member.role) && (
-                  <span className="mt-1 inline-block rounded bg-[#48484a] px-2 py-0.5 text-xs text-white/70">
-                    {member.role_internal || member.role}
-                  </span>
+        {/* Pannello dettaglio */}
+        {selectedMember && (
+          <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: `0.5px solid ${T.ink10}` }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#fff', flexShrink: 0 }}>
+                {getInitials(selectedMember.user_name || selectedMember.user_email)}
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>{selectedMember.user_name || "Utente"}</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{selectedMember.user_email}</div>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: `0.5px solid ${T.ink10}`, marginBottom: 18 }}>
+              <button onClick={() => setActiveTab("role")} style={btnSt(activeTab === "role")}>Ruolo & Permessi</button>
+              <button onClick={() => setActiveTab("color")} style={btnSt(activeTab === "color")}>Colore Avatar</button>
+            </div>
+
+            {/* TAB: Ruolo */}
+            {activeTab === "role" && (
+              <div>
+                {/* Avvisi */}
+                {!canEditRoles && (
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                    Solo il Titolare o un Partner possono modificare i ruoli.
+                  </div>
+                )}
+                {isOwnProfile && (
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                    Non puoi modificare il tuo stesso ruolo.
+                  </div>
+                )}
+
+                {/* Lista ruoli */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {ROLE_OPTIONS.map(role => {
+                    const isSel = editRole === role;
+                    const canClick = canEditRoles && !isOwnProfile;
+                    const perms = PERM_SUMMARY[role] || [];
+                    return (
+                      <button key={role} onClick={() => canClick && setEditRole(role)}
+                        style={{ padding: '11px 14px', border: `0.5px solid ${isSel ? T.navy : T.ink10}`, background: isSel ? '#EEF3FA' : '#fff', cursor: canClick ? 'pointer' : 'not-allowed', textAlign: 'left', opacity: canEditRoles ? 1 : 0.6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: isSel ? T.navy : T.ink }}>{ROLE_LABELS[role]}</span>
+                          {isSel && <span style={{ color: T.navy, fontSize: 12 }}>✓</span>}
+                        </div>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 6 }}>{ROLE_DESCRIPTIONS[role]}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {perms.map(p => (
+                            <span key={p} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: isSel ? T.navy : T.muted, background: isSel ? '#dbeafe' : T.paper, padding: '1px 5px' }}>{p}</span>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {canEditRoles && !isOwnProfile && (
+                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
+                      style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity: saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
+                      {saving ? "Salvataggio..." : "Salva ruolo"}
+                    </button>
+                  </div>
                 )}
               </div>
+            )}
 
-              {/* Color picker button */}
-              <button
-                onClick={() => openColorPicker(member)}
-                className="flex shrink-0 items-center gap-2 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white/80 hover:bg-[#48484a]"
-              >
-                <div className="h-4 w-4 rounded-full" style={{ backgroundColor: color }} />
-                Colore
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Color Picker Modal */}
-      {editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-lg font-semibold text-white">Scegli colore avatar</h3>
-            <p className="mt-1 text-sm text-white/60">
-              Per: {editingMember.user_name || editingMember.user_email}
-            </p>
-
-            {/* Color grid */}
-            <div className="mt-4 grid grid-cols-6 gap-3">
-              {PREDEFINED_COLORS.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`h-10 w-10 rounded-full transition hover:scale-110 ${
-                    selectedColor === color
-                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#2c2c2e]"
-                      : ""
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-
-            {/* Custom color input */}
-            <div className="mt-4">
-              <label className="mb-1 block text-sm font-medium text-white">Colore personalizzato</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
-                  className="h-10 w-20 cursor-pointer rounded-lg border border-[#48484a] bg-transparent"
-                />
-                <input
-                  type="text"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
-                  className="flex-1 rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-                  placeholder="#0a84ff"
-                />
+            {/* TAB: Colore */}
+            {activeTab === "color" && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 16 }}>
+                  {PREDEFINED_COLORS.map(c => (
+                    <button key={c} onClick={() => setEditColor(c)} style={{ width: 34, height: 34, borderRadius: '50%', background: c, border: 'none', outline: editColor === c ? `2px solid ${T.ink}` : 'none', outlineOffset: 2, cursor: 'pointer' }} />
+                  ))}
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Personalizzato</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width: 38, height: 34, border: `0.5px solid ${T.ink20}`, cursor: 'pointer', padding: 2 }} />
+                    <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)}
+                      style={{ flex: 1, padding: '6px 10px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>Anteprima</span>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                    {getInitials(selectedMember.user_name || selectedMember.user_email)}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={handleSaveColor} disabled={saving || editColor === selectedMember.color}
+                    style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity: saving || editColor === selectedMember.color ? 0.5 : 1 }}>
+                    {saving ? "Salvataggio..." : "Salva colore"}
+                  </button>
+                </div>
               </div>
-            </div>
-
-            {/* Preview */}
-            <div className="mt-4 flex items-center justify-center gap-3 rounded-lg border border-[#48484a] bg-[#1c1c1e] p-4">
-              <span className="text-sm text-white/60">Anteprima:</span>
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-full text-base font-bold text-white"
-                style={{ backgroundColor: selectedColor }}
-              >
-                {getInitials(editingMember.user_name || editingMember.user_email)}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={closeColorPicker}
-                className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={saveColor}
-                disabled={saving}
-                className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-              >
-                {saving ? "Salvataggio..." : "Salva"}
-              </button>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

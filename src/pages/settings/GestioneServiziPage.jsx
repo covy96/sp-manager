@@ -3,48 +3,23 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 
-// Plus icon
-function PlusIcon({ className }) {
+const T = {
+  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
+  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c',
+};
+
+function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-    </svg>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style }}>
+      {children}
+    </button>
   );
 }
-
-// Trash icon
-function TrashIcon({ className }) {
+function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-  );
-}
-
-// Edit icon
-function EditIcon({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-    </svg>
-  );
-}
-
-// Check icon
-function CheckIcon({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-// X icon
-function XIcon({ className }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border: `0.5px solid ${danger ? T.red : T.ink20}`, background: 'transparent', color: danger ? T.red : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style }}>
+      {children}
+    </button>
   );
 }
 
@@ -52,219 +27,91 @@ export default function GestioneServiziPage() {
   usePageTitleOnMount("Gestione Servizi");
   const { studioId } = useStudio();
 
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // Add service modal state
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [services, setServices]             = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState("");
+  const [saving, setSaving]                 = useState(false);
+  const [addModalOpen, setAddModalOpen]     = useState(false);
   const [newServiceName, setNewServiceName] = useState("");
-
-  // Edit service state
   const [editingService, setEditingService] = useState(null);
-  const [editName, setEditName] = useState("");
+  const [editName, setEditName]             = useState("");
 
-  useEffect(() => {
-    if (!studioId) return;
-    loadServices();
-  }, [studioId]);
+  useEffect(() => { if (studioId) loadServices(); }, [studioId]);
 
   const loadServices = async () => {
-    setLoading(true);
-    setError("");
-
-    const { data, error: fetchError } = await supabase
-      .from("service_task_templates")
-      .select("*")
-      .eq("studio", studioId)
-      .order("order", { ascending: true });
-
-    if (fetchError) {
-      setError(fetchError.message);
-    } else {
-      setServices(data || []);
-    }
-
+    setLoading(true); setError("");
+    const { data, error: e } = await supabase.from("service_task_templates").select("*").eq("studio", studioId).order("order", { ascending: true });
+    if (e) setError(e.message); else setServices(data || []);
     setLoading(false);
   };
 
-  const handleAddService = async (e) => {
-    e.preventDefault();
-    if (!newServiceName.trim()) return;
-
-    setSaving(true);
-    setError("");
-
-    const maxOrder = services.length > 0 ? Math.max(...services.map((s) => s.order || 0)) : 0;
-
-    const { data, error: insertError } = await supabase
-      .from("service_task_templates")
-      .insert({
-        service_name: newServiceName.trim(),
-        order: maxOrder + 1,
-        studio: studioId,
-      })
-      .select("*")
-      .single();
-
-    if (insertError) {
-      setError(insertError.message);
-    } else {
-      setServices((prev) => [...prev, data].sort((a, b) => (a.order || 0) - (b.order || 0)));
-      setAddModalOpen(false);
-      setNewServiceName("");
-    }
-
+  const handleAddService = async e => {
+    e.preventDefault(); if (!newServiceName.trim()) return; setSaving(true); setError("");
+    const maxOrder = services.length > 0 ? Math.max(...services.map(s => s.order || 0)) : 0;
+    const { data, error: iErr } = await supabase.from("service_task_templates").insert({ service_name: newServiceName.trim(), order: maxOrder + 1, studio: studioId }).select("*").single();
+    if (iErr) setError(iErr.message);
+    else { setServices(p => [...p, data].sort((a, b) => (a.order||0) - (b.order||0))); setAddModalOpen(false); setNewServiceName(""); }
     setSaving(false);
   };
 
-  const handleUpdateService = async (e) => {
-    e.preventDefault();
-    if (!editingService || !editName.trim()) return;
-
-    setSaving(true);
-    setError("");
-
-    const { data, error: updateError } = await supabase
-      .from("service_task_templates")
-      .update({ service_name: editName.trim() })
-      .eq("id", editingService.id)
-      .select("*")
-      .single();
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      setServices((prev) =>
-        prev.map((s) => (s.id === editingService.id ? { ...s, service_name: data.service_name } : s))
-      );
-      setEditingService(null);
-      setEditName("");
-    }
-
+  const handleUpdateService = async e => {
+    e.preventDefault(); if (!editingService || !editName.trim()) return; setSaving(true); setError("");
+    const { data, error: uErr } = await supabase.from("service_task_templates").update({ service_name: editName.trim() }).eq("id", editingService.id).select("*").single();
+    if (uErr) setError(uErr.message);
+    else { setServices(p => p.map(s => s.id === editingService.id ? { ...s, service_name: data.service_name } : s)); setEditingService(null); setEditName(""); }
     setSaving(false);
   };
 
-  const handleDeleteService = async (serviceId) => {
+  const handleDeleteService = async id => {
     if (!confirm("Sei sicuro di voler eliminare questo servizio?")) return;
-
-    const { error: deleteError } = await supabase.from("service_task_templates").delete().eq("id", serviceId);
-
-    if (deleteError) {
-      alert("Errore: " + deleteError.message);
-    } else {
-      setServices((prev) => prev.filter((s) => s.id !== serviceId));
-    }
+    const { error: dErr } = await supabase.from("service_task_templates").delete().eq("id", id);
+    if (dErr) alert("Errore: " + dErr.message);
+    else setServices(p => p.filter(s => s.id !== id));
   };
 
-  const startEdit = (service) => {
-    setEditingService(service);
-    setEditName(service.service_name || "");
-  };
+  const inputSt = { width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' };
 
-  const cancelEdit = () => {
-    setEditingService(null);
-    setEditName("");
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+  );
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6 flex items-center justify-between">
+    <div style={{ maxWidth: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 className="text-xl font-semibold text-white">Gestione Servizi</h2>
-          <p className="text-sm text-white/60">Gestisci i servizi disponibili per i progetti</p>
+          <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Gestione Servizi</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci i servizi disponibili per i progetti</div>
         </div>
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Nuovo Servizio
-        </button>
+        <BtnPrimary onClick={() => setAddModalOpen(true)}>+ Nuovo</BtnPrimary>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
 
       {services.length === 0 ? (
-        <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          <p>Nessun servizio configurato.</p>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="mt-4 rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-          >
-            Aggiungi il primo servizio
-          </button>
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+          Nessun servizio configurato.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {services.map((service, index) => (
-            <div
-              key={service.id}
-              className="flex items-center justify-between rounded-lg border border-[#48484a] bg-[#2c2c2e] p-4"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-6 w-6 items-center justify-center rounded bg-[#48484a] text-xs font-medium text-white/70">
-                  {index + 1}
-                </span>
-
+            <div key={service.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '12px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, width: 20, textAlign: 'right' }}>{String(index+1).padStart(2,'0')}</span>
                 {editingService?.id === service.id ? (
-                  <form onSubmit={handleUpdateService} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="rounded-md border border-[#48484a] bg-[#3a3a3c] px-2 py-1 text-sm text-white outline-none focus:border-[#0a84ff]"
-                      autoFocus
-                    />
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="rounded-md bg-[#0a84ff] p-1 text-white hover:brightness-110 disabled:opacity-60"
-                    >
-                      <CheckIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={cancelEdit}
-                      className="rounded-md border border-[#48484a] p-1 text-white/70 hover:bg-white/10"
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </button>
+                  <form onSubmit={handleUpdateService} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} autoFocus
+                      style={{ ...inputSt, width: 220, padding: '5px 8px' }} />
+                    <button type="submit" disabled={saving} style={{ background: T.navy, color: '#EEF1F6', border: 'none', padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }}>✓</button>
+                    <button type="button" onClick={() => { setEditingService(null); setEditName(""); }} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>✕</button>
                   </form>
                 ) : (
-                  <span className="text-sm font-medium text-white">{service.service_name}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{service.service_name}</span>
                 )}
               </div>
-
               {editingService?.id !== service.id && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => startEdit(service)}
-                    className="rounded-md border border-[#48484a] p-2 text-white/70 hover:bg-white/10"
-                    title="Modifica"
-                  >
-                    <EditIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteService(service.id)}
-                    className="rounded-md border border-[#48484a] p-2 text-[#ff453a] hover:bg-[#ff453a]/10"
-                    title="Elimina"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setEditingService(service); setEditName(service.service_name || ""); }} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Modifica</button>
+                  <button onClick={() => handleDeleteService(service.id)} style={{ background: 'none', border: `0.5px solid ${T.red}`, padding: '5px 10px', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.red }}>Elimina</button>
                 </div>
               )}
             </div>
@@ -272,42 +119,17 @@ export default function GestioneServiziPage() {
         </div>
       )}
 
-      {/* Add Service Modal */}
+      {/* Modal nuovo servizio */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-            <h3 className="text-lg font-semibold text-white">Nuovo Servizio</h3>
-            <p className="mt-1 text-sm text-white/60">Aggiungi un nuovo servizio alla lista</p>
-
-            <form onSubmit={handleAddService} className="mt-4">
-              <input
-                type="text"
-                placeholder="Nome del servizio"
-                value={newServiceName}
-                onChange={(e) => setNewServiceName(e.target.value)}
-                className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none focus:border-[#0a84ff]"
-                required
-                autoFocus
-              />
-
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddModalOpen(false);
-                    setNewServiceName("");
-                  }}
-                  className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10"
-                >
-                  Annulla
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !newServiceName.trim()}
-                  className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
-                >
-                  {saving ? "Salvataggio..." : "Aggiungi"}
-                </button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginBottom: 18 }}>Nuovo Servizio</div>
+            <form onSubmit={handleAddService} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <input type="text" placeholder="Nome del servizio" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} required autoFocus style={inputSt} />
+              <div style={{ height: '0.5px', background: T.ink10 }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <BtnGhost onClick={() => { setAddModalOpen(false); setNewServiceName(""); }} disabled={saving}>Annulla</BtnGhost>
+                <BtnPrimary type="submit" disabled={saving || !newServiceName.trim()}>{saving ? "Salvataggio..." : "Aggiungi"}</BtnPrimary>
               </div>
             </form>
           </div>
