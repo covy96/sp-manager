@@ -228,10 +228,10 @@ export default function LandingPage({ onLogin, onRegister }) {
             <MockScreen>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.muted, marginBottom:4 }}>Progetti attivi</div>
-                <MockProjectCard name="MMH Malnati" client="MMH" progress={65} color="#13315C"/>
-                <MockProjectCard name="TDM Olmetto" client="Rubicon" progress={100} color="#1a6b3c"/>
-                <MockProjectCard name="K-WAY Milano" client="K-WAY" progress={30} color="#7c3aed"/>
-                <MockProjectCard name="ABACO HQ" client="Abaco Group" progress={10} color="#b45309"/>
+                <MockProjectCard name="Casa Vacanze Cortina" client="Famiglia Bianchi" progress={65} color="#13315C"/>
+                <MockProjectCard name="Uffici IF Group" client="IF Group Srl" progress={100} color="#1a6b3c"/>
+                <MockProjectCard name="Residenza Lago Como" client="Studio Ferretti" progress={30} color="#7c3aed"/>
+                <MockProjectCard name="Showroom Milano" client="Arredo Italia" progress={10} color="#b45309"/>
               </div>
             </MockScreen>
           </div>
@@ -246,7 +246,7 @@ export default function LandingPage({ onLogin, onRegister }) {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:48 }}>
             <MockScreen dark>
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(238,241,246,0.4)', marginBottom:4 }}>Commessa — TDM Olmetto</div>
+                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(238,241,246,0.4)', marginBottom:4 }}>Commessa — Uffici IF Group</div>
                 {/* KPI mini */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                   {[['Offerta','2.000 €','rgba(238,241,246,0.9)'],['Pagato','600 €','#4ade80'],['Residuo','1.400 €','#f87171']].map(([l,v,c])=>(
@@ -358,7 +358,7 @@ export default function LandingPage({ onLogin, onRegister }) {
                 {/* Content */}
                 <div style={{ padding:'12px 10px', display:'flex', flexDirection:'column', gap:8 }}>
                   <div style={{ ...mono, fontSize:7, letterSpacing:'0.15em', textTransform:'uppercase', color:C.muted }}>Scrivania</div>
-                  {['MMH Malnati — task scaduta','TDM Olmetto — revisione DL','ABACO — invio pratiche'].map((t,i)=>(
+                  {['Casa Vacanze — verifica strutturale','Uffici IF — consegna tavole','Showroom — sopralluogo'].map((t,i)=>(
                     <div key={i} style={{ background:'#fff', padding:'8px 10px', borderLeft:`3px solid ${i===0?'#b91c1c':C.navy}` }}>
                       <div style={{ fontSize:9, fontWeight:600, color:C.ink }}>{t}</div>
                     </div>
