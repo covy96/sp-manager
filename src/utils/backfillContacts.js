@@ -18,7 +18,7 @@ export async function backfillContacts(studioId) {
       const key = name.trim().toLowerCase();
       if (!existingNames.has(key) && !seen.has(key)) {
         seen.add(key);
-        toInsert.push({ full_name: name.trim(), studio: studioId });
+        toInsert.push({ full_name: name.trim(), studio: studioId, company: '' });
       }
     });
 

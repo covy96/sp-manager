@@ -4,9 +4,9 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { seedServiceTaskTemplates, supabase } from "./lib/supabase";
+import { initTheme } from "./pages/settings/AspettoPage";
 
-const savedTheme = localStorage.getItem("theme") || "dark";
-document.body.classList.toggle("light-mode", savedTheme === "light");
+initTheme();
 
 function Root() {
   const [session, setSession] = useState(null);

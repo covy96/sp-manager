@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { richiediFCMToken } from "../../lib/firebase";
 
 const T = {
   ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
@@ -42,6 +41,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 }
 
 export default function NotifichePage() {
+  console.log('NotifichePage rendering');
   usePageTitleOnMount("Notifiche");
   const { teamMember } = useStudio();
 
@@ -53,7 +53,11 @@ export default function NotifichePage() {
   const [prefsLoading, setPrefsLoading] = useState(true);
   const [savingKey, setSavingKey]       = useState(null);
 
-  useEffect(() => { setPushEnabled(Notification.permission === "granted"); }, []);
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setPushEnabled(Notification.permission === "granted");
+    }
+  }, []);
 
   useEffect(() => {
     if (!teamMember?.id) return;
@@ -71,13 +75,26 @@ export default function NotifichePage() {
   }, [teamMember?.id]);
 
   const handleEnablePush = async () => {
+    if (typeof Notification === 'undefined') {
+      setPushError('Le notifiche push non sono supportate su questo browser.');
+      return;
+    }
     try {
       setPushLoading(true); setPushError("");
       let perm = Notification.permission;
       if (perm === "default") perm = await Notification.requestPermission();
       if (perm !== "granted") { alert("Abilita le notifiche nelle impostazioni del browser."); setPushLoading(false); return; }
       await Promise.race([navigator.serviceWorker.register("/firebase-messaging-sw.js"), new Promise((_,r) => setTimeout(() => r(new Error("SW timeout")), 5000))]);
-      const token = await Promise.race([richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY), new Promise((_,r) => setTimeout(() => r(new Error("Token timeout")), 10000))]);
+      let richiediFCMToken;
+      try {
+        const fb = await import('../../lib/firebase');
+        richiediFCMToken = fb.richiediFCMToken;
+      } catch(e) {
+        console.warn('Firebase non disponibile:', e);
+      }
+      const token = richiediFCMToken
+        ? await Promise.race([richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY), new Promise((_,r) => setTimeout(() => r(new Error("Token timeout")), 10000))])
+        : null;
       if (!teamMember?.id) { setPushError("Utente non trovato."); setPushLoading(false); return; }
       if (token) {
         const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember.id);
@@ -107,6 +124,8 @@ export default function NotifichePage() {
     await supabase.from("team_members").update({ notification_preferences: newPrefs }).eq("id", teamMember.id);
   };
 
+  const supportsNotifications = 'Notification' in window && 'serviceWorker' in navigator;
+
   return (
     <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -114,6 +133,17 @@ export default function NotifichePage() {
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci le notifiche push per questo dispositivo</div>
       </div>
 
+      {!supportsNotifications && (
+        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>
+            Le notifiche push non sono supportate su questo browser.<br/>
+            Su iPhone, aggiungi l'app alla schermata home e aprila da lì.
+          </div>
+        </div>
+      )}
+
+      {supportsNotifications && (
+      <>
       {/* Toggle principale */}
       <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -157,6 +187,8 @@ export default function NotifichePage() {
           </div>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }

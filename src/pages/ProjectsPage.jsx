@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
@@ -263,7 +264,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 }
 
 // ── FORM PROGETTO (riutilizzato per nuovo e modifica) ─────────────
-function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalContacts, currentMemberId, isEdit = false, onToggleMember, onToggleService, clientSuggestions, onSelectClient }) {
+export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalContacts, currentMemberId, isEdit = false, onToggleMember, onToggleService, clientSuggestions, onSelectClient, onGanttChange }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -314,6 +315,14 @@ function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalCont
               })
           }
         </ScrollBox>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
+          <input type="checkbox" id="gantt_enabled" checked={!!data.gantt_enabled}
+            onChange={onGanttChange}
+            style={{ accentColor:'#13315C', width:14, height:14 }}/>
+          <label htmlFor="gantt_enabled" style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#0E0E0D', cursor:'pointer' }}>
+            Abilita Gantt per questo progetto
+          </label>
+        </div>
       </div>
       <div>
         <FieldLabel>Membri del team</FieldLabel>
@@ -347,6 +356,7 @@ export default function ProjectsPage() {
   const navigate = useNavigate();
   const { teamMember, studioId, studioLoading } = useStudio();
   const permissions = usePermissions();
+  const { plan, canAddProject } = usePlan();
 
   const [projects, setProjects]                 = useState([]);
   const [teamMembers, setTeamMembers]           = useState([]);
@@ -370,7 +380,7 @@ export default function ProjectsPage() {
     name: "", client: "", address: "", startDate: "",
     selectedServices: [], selectedMembers: [],
     createInlineCommessa: false, numero_offerta: "", importo_offerta_base: "",
-    selectedCommessaId: "",
+    selectedCommessaId: "", gantt_enabled: false,
   });
 
   const [editModalOpen, setEditModalOpen]       = useState(false);
@@ -463,7 +473,7 @@ export default function ProjectsPage() {
     if (!exists) {
       const { data } = await supabase
         .from('global_contacts')
-        .insert({ full_name: name.trim(), studio: studioId })
+        .insert({ full_name: name.trim(), studio: studioId, company: '' })
         .select('id,full_name')
         .single();
       if (data) setGlobalContacts(prev =>
@@ -497,8 +507,13 @@ export default function ProjectsPage() {
 
   const handleSaveProject = async e => {
     e.preventDefault(); setFormError(""); setSaveLoading(true);
+    if (!canAddProject(projects.length)) {
+      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxProjects} progetti. Fai l'upgrade per crearne altri.`);
+      setSaveLoading(false);
+      return;
+    }
     const assignedUsers = formData.selectedMembers.length > 0 ? formData.selectedMembers : (teamMember?.id ? [teamMember.id] : []);
-    const payload = { name: formData.name.trim(), client: formData.client.trim(), address: formData.address.trim() || null, start_date: formData.startDate || null, status: "planning", total_hours: 0, servizi_selezionati: formData.selectedServices, assigned_users: assignedUsers, studio: studioId };
+    const payload = { name: formData.name.trim(), client: formData.client.trim(), address: formData.address.trim() || null, start_date: formData.startDate || null, status: "planning", total_hours: 0, servizi_selezionati: formData.selectedServices, assigned_users: assignedUsers, studio: studioId, gantt_enabled: !!formData.gantt_enabled };
     await upsertContact(formData.client);
     const { data: newProject, error: insertError } = await supabase.from("projects").insert(payload).select("*").single();
     if (insertError) { setFormError(insertError.message); setSaveLoading(false); return; }
@@ -527,13 +542,13 @@ export default function ProjectsPage() {
 
   const openEditModal = project => {
     setEditProject(project);
-    setEditFormData({ name: project.name || "", client: project.client || "", address: project.address || "", start_date: project.start_date || "", selectedServices: project.servizi_selezionati || [], selectedMembers: project.assigned_users || [], selectedCommessaId: project.commessa_id || "" });
+    setEditFormData({ name: project.name || "", client: project.client || "", address: project.address || "", start_date: project.start_date || "", selectedServices: project.servizi_selezionati || [], selectedMembers: project.assigned_users || [], selectedCommessaId: project.commessa_id || "", gantt_enabled: !!project.gantt_enabled });
     loadCommesseList(); setEditModalOpen(true);
   };
 
   const handleEditProject = async e => {
     e.preventDefault(); if (!editProject) return; setEditLoading(true);
-    const payload = { name: editFormData.name.trim(), client: editFormData.client.trim(), address: editFormData.address?.trim() || null, start_date: editFormData.start_date || null, servizi_selezionati: editFormData.selectedServices, assigned_users: editFormData.selectedMembers };
+    const payload = { name: editFormData.name.trim(), client: editFormData.client.trim(), address: editFormData.address?.trim() || null, start_date: editFormData.start_date || null, servizi_selezionati: editFormData.selectedServices, assigned_users: editFormData.selectedMembers, gantt_enabled: !!editFormData.gantt_enabled };
     await upsertContact(editFormData.client);
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", editProject.id);
     if (!uErr) {
@@ -598,7 +613,14 @@ export default function ProjectsPage() {
             )}
           </div>
           {permissions.canCreateProjects && (
-            <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
+            <div>
+              <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
+              {!canAddProject(projects.length) && (
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:'#b91c1c', marginTop:6 }}>
+                  Limite {plan.maxProjects} progetti raggiunto — <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color:'#13315C', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>Upgrade</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -613,7 +635,7 @@ export default function ProjectsPage() {
           {selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
           {filteredProjects.map(project => (
             <ProjectCard
               key={project.id} project={project}
@@ -649,6 +671,7 @@ export default function ProjectsPage() {
               onToggleService={name => toggleService(name, false)}
               clientSuggestions={clientSuggestions}
               onSelectClient={name => { setFormData(p => ({ ...p, client: name })); setClientSuggestions([]); }}
+              onGanttChange={e => setFormData(p => ({ ...p, gantt_enabled: e.target.checked }))}
             />
           )}
 
@@ -698,6 +721,7 @@ export default function ProjectsPage() {
             globalContacts={globalContacts} currentMemberId={null}
             onToggleMember={id => toggleMember(id, true)}
             onToggleService={name => toggleService(name, true)}
+            onGanttChange={e => setEditFormData(p => ({ ...p, gantt_enabled: e.target.checked }))}
             isEdit
           />
           <div style={{ marginTop: 14 }}>

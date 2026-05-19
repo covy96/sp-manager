@@ -157,7 +157,7 @@ export default function CommessaDetailPage() {
   const [editCollabSaving, setEditCollabSaving] = useState(false);
 
   const [proformaModal, setProformaModal] = useState(false);
-  const [proformaForm, setProformaForm]   = useState({ numero_proforma: "", data_creazione: "", note: "" });
+  const [proformaForm, setProformaForm]   = useState({ numero_proforma: "", data_creazione: "", data_scadenza: "", note: "" });
   const [proformaSaving, setProformaSaving] = useState(false);
   const [proformaError, setProformaError] = useState("");
   const [proformaRateIds, setProformaRateIds] = useState([]);
@@ -182,7 +182,7 @@ export default function CommessaDetailPage() {
     const [cR, costiR, suddR, profR, collabR] = await Promise.all([
       supabase.from("commesse").select("*").eq("id", commessaId).maybeSingle(),
       supabase.from("costi_extra").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
-      supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
+      supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).order("numero_rata", { ascending: true }).order("created_at", { ascending: true }),
       supabase.from("proforma").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
       supabase.from("collaboratori_esterni").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
     ]);
@@ -201,10 +201,13 @@ export default function CommessaDetailPage() {
   const importoBase = Number(commessa?.importo_offerta_base) || 0;
 
   const importoPagato = useMemo(() =>
-    proforma
-      .filter(p => p.pagato && (p.suddivisione_pagamento_ids?.length > 0))
-      .reduce((s, p) => s + (Number(p.importo_totale) || 0), 0)
-  , [proforma]);
+    suddivisione
+      .filter(s => s.pagato)
+      .reduce((sum, s) => {
+        const importoRata = (importoBase * (Number(s.percentuale) || 0)) / 100;
+        return sum + importoRata;
+      }, 0)
+  , [suddivisione, importoBase]);
 
   const residuo = importoBase - importoPagato;
   const totCostiExtra = costiExtra.reduce((s, c) => s + (Number(c.importo) || 0), 0);
@@ -237,7 +240,9 @@ export default function CommessaDetailPage() {
   }, [proformaRateIds, proformaCostiIds, suddivisione, costiExtra, importoBase]);
 
   const ricalcolaIncassato = async () => {
-    const totale = proforma.filter(p => p.pagato).reduce((s, p) => s + (Number(p.importo_totale) || 0), 0);
+    const totale = proforma
+      .filter(p => p.pagato && (p.suddivisione_pagamento_ids?.length > 0))
+      .reduce((s, p) => s + (Number(p.importo_totale) || 0), 0);
     await supabase.from("commesse").update({ importo_incassato: totale }).eq("id", commessaId);
   };
 
@@ -257,7 +262,7 @@ export default function CommessaDetailPage() {
 
   const handleSaveCosto = async e => {
     e.preventDefault(); setCostoError(""); setCostoSaving(true);
-    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo: costoForm.tipo || "Altro", descrizione: costoForm.descrizione || null, importo: Number(costoForm.importo) || 0, data: costoForm.data || null, studio: studioId });
+    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: costoForm.tipo_costo || "Altro", description: costoForm.description || null, importo: Number(costoForm.importo) || 0, data: costoForm.data || null, studio: studioId });
     if (iErr) { setCostoError(iErr.message); setCostoSaving(false); return; }
     setCostoModal(false); setCostoForm({}); await loadData(); setCostoSaving(false);
   };
@@ -271,8 +276,9 @@ export default function CommessaDetailPage() {
   };
   const handleSaveRate = async e => {
     e.preventDefault(); setRataSaving(true); setRataError("");
-    const payload = rateRows.map(r => ({
+    const payload = rateRows.map((r, i) => ({
       commessa_id: commessaId, studio: studioId,
+      numero_rata: suddivisione.length + i + 1,
       percentuale: rataMode === "percentuale" ? Number(r.value) : null,
       importo_fisso: rataMode === "importo" ? Number(r.value) : null,
       pagato: false,
@@ -300,12 +306,12 @@ export default function CommessaDetailPage() {
 
   const openEditCosto = costo => {
     setEditCostoData(costo);
-    setEditCostoForm({ tipo: costo.tipo || "", descrizione: costo.descrizione || "", importo: costo.importo || "", data: costo.data || "" });
+    setEditCostoForm({ tipo_costo: costo.tipo_costo || "", description: costo.description || "", importo: costo.importo || "", data: costo.data || "" });
     setEditCostoModal(true); setOpenMenuId(null);
   };
   const handleSaveCostoEdit = async e => {
     e.preventDefault(); setEditCostoSaving(true);
-    await supabase.from("costi_extra").update({ tipo: editCostoForm.tipo, descrizione: editCostoForm.descrizione || null, importo: Number(editCostoForm.importo), data: editCostoForm.data || null }).eq("id", editCostoData.id);
+    await supabase.from("costi_extra").update({ tipo_costo: editCostoForm.tipo_costo, description: editCostoForm.description || null, importo: Number(editCostoForm.importo), data: editCostoForm.data || null }).eq("id", editCostoData.id);
     setEditCostoModal(false); await loadData(); setEditCostoSaving(false);
   };
   const handleDeleteCosto = async id => {
@@ -335,9 +341,11 @@ export default function CommessaDetailPage() {
   const handleSaveProforma = async e => {
     e.preventDefault(); setProformaError(""); setProformaSaving(true);
     if (!proformaForm.numero_proforma?.trim()) { setProformaError("Numero proforma obbligatorio."); setProformaSaving(false); return; }
+    if (!proformaForm.data_scadenza) { setProformaError("Inserisci la data di scadenza."); setProformaSaving(false); return; }
     const { error: iErr } = await supabase.from("proforma").insert({
       commessa_id: commessaId, numero_proforma: proformaForm.numero_proforma.trim(),
       data_creazione: proformaForm.data_creazione || null,
+      data_scadenza: proformaForm.data_scadenza,
       importo_totale: importoProformaSelezionata,
       note: proformaForm.note || null, pagato: false,
       suddivisione_pagamento_ids: proformaRateIds,
@@ -345,7 +353,7 @@ export default function CommessaDetailPage() {
       studio: studioId,
     });
     if (iErr) { setProformaError(iErr.message); setProformaSaving(false); return; }
-    setProformaModal(false); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" });
+    setProformaModal(false); setProformaForm({ numero_proforma: "", data_creazione: "", data_scadenza: "", note: "" });
     setProformaRateIds([]); setProformaCostiIds([]);
     await loadData(); setProformaSaving(false);
   };
@@ -356,9 +364,19 @@ export default function CommessaDetailPage() {
     await supabase.from("proforma").update({ numero_proforma: editProformaForm.numero_proforma, data_creazione: editProformaForm.data_creazione || null, note: editProformaForm.note || null }).eq("id", editProformaData.id);
     setEditProformaModal(false); await loadData(); setEditProformaSaving(false);
   };
-  const handleDeleteProforma = async id => {
+  const handleDeleteProforma = async (proformaToDelete) => {
     if (!window.confirm("Eliminare questa proforma?")) return;
-    await supabase.from("proforma").delete().eq("id", id);
+    if (proformaToDelete.suddivisione_pagamento_ids?.length > 0) {
+      await supabase.from("suddivisione_pagamenti")
+        .update({ pagato: false, data_pagamento: null })
+        .in("id", proformaToDelete.suddivisione_pagamento_ids);
+    }
+    if (proformaToDelete.costo_extra_ids?.length > 0) {
+      await supabase.from("costi_extra")
+        .update({ pagato: false })
+        .in("id", proformaToDelete.costo_extra_ids);
+    }
+    await supabase.from("proforma").delete().eq("id", proformaToDelete.id);
     setOpenMenuId(null); await loadData();
   };
 
@@ -465,7 +483,7 @@ export default function CommessaDetailPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
                         <BtnPrimary onClick={() => openPagamentoProforma(p)} style={{ fontSize: 10, padding: '5px 10px' }}>Segna pagata</BtnPrimary>
                         <RowMenu open={openMenuId === p.id} onOpen={() => setOpenMenuId(p.id)} onClose={() => setOpenMenuId(null)}
-                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p.id) }]} />
+                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) }]} />
                       </div>
                     </td>
                   </tr>
@@ -491,7 +509,7 @@ export default function CommessaDetailPage() {
                         <button onClick={() => { setSelectedProforma(p); setRimuoviModal(true); }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>annulla pag.</button>
                         <RowMenu open={openMenuId === `paid-${p.id}`} onOpen={() => setOpenMenuId(`paid-${p.id}`)} onClose={() => setOpenMenuId(null)}
-                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p.id) }]} />
+                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) }]} />
                       </div>
                     </td>
                   </tr>
@@ -510,16 +528,23 @@ export default function CommessaDetailPage() {
           {costiExtra.length === 0
             ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessun costo extra</div>
             : <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>{['Tipo','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
+                <thead><tr>{['Tipo','Importo','Stato',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
                 <tbody>
                   {costiExtra.map(c => (
                     <tr key={c.id}>
                       <td style={tdSt}>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{c.tipo || 'Altro'}</div>
-                        {c.descrizione && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{c.descrizione}</div>}
+                        <div style={{ fontSize: 12, fontWeight: 600 }}>{c.tipo_costo || 'Altro'}</div>
+                        {c.description && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{c.description}</div>}
                         {proformaPerCosto[c.id] && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy }}>pf {proformaPerCosto[c.id].numero_proforma}</div>}
                       </td>
                       <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(c.importo)}</td>
+                      <td style={{ padding:'8px 14px', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>
+                        {c.pagato ? (
+                          <span style={{ color:'#1a6b3c', fontSize:9, letterSpacing:'0.1em' }}>✓ PAGATO</span>
+                        ) : (
+                          <span style={{ color:'#8a847b', fontSize:9, letterSpacing:'0.1em' }}>IN ATTESA</span>
+                        )}
+                      </td>
                       <td style={tdSt}><RowMenu open={openMenuId === `costo-${c.id}`} onOpen={() => setOpenMenuId(`costo-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCosto(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCosto(c.id) }]} /></td>
                     </tr>
                   ))}
@@ -542,7 +567,7 @@ export default function CommessaDetailPage() {
                     return (
                       <tr key={r.id}>
                         <td style={tdSt}>
-                          <div style={{ fontSize: 12, fontWeight: 600 }}>Rata {i + 1}</div>
+                          <div style={{ fontSize: 12, fontWeight: 600 }}>Rata {r.numero_rata || i + 1}</div>
                           {r.percentuale && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{pct(r.percentuale)}</div>}
                           {pf && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy }}>pf {pf.numero_proforma}</div>}
                         </td>
@@ -612,12 +637,12 @@ export default function CommessaDetailPage() {
       <Modal open={costoModal} onClose={() => setCostoModal(false)} title="Nuovo Costo Extra" width={420}>
         <form onSubmit={handleSaveCosto} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>Tipo</FieldLabel>
-            <select value={costoForm.tipo ?? "Altro"} onChange={e => setCostoForm(p => ({ ...p, tipo: e.target.value }))}
+            <select value={costoForm.tipo_costo ?? "Altro"} onChange={e => setCostoForm(p => ({ ...p, tipo_costo: e.target.value }))}
               style={{ width: '100%', padding: '7px 10px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
               {['Diritti','Trasferte','Stampe','Altro'].map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
-          <div><FieldLabel>Descrizione</FieldLabel><Input value={costoForm.descrizione ?? ""} onChange={e => setCostoForm(p => ({ ...p, descrizione: e.target.value }))} /></div>
+          <div><FieldLabel>Descrizione</FieldLabel><Input value={costoForm.description ?? ""} onChange={e => setCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
           <div><FieldLabel>Importo *</FieldLabel><Input type="number" value={costoForm.importo ?? ""} onChange={e => setCostoForm(p => ({ ...p, importo: e.target.value }))} required /></div>
           <div><FieldLabel>Data</FieldLabel><Input type="date" value={costoForm.data ?? ""} onChange={e => setCostoForm(p => ({ ...p, data: e.target.value }))} /></div>
           {costoError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{costoError}</div>}
@@ -630,6 +655,7 @@ export default function CommessaDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><FieldLabel>N° Proforma *</FieldLabel><Input value={proformaForm.numero_proforma} onChange={e => setProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} required /></div>
             <div><FieldLabel>Data creazione</FieldLabel><Input type="date" value={proformaForm.data_creazione} onChange={e => setProformaForm(p => ({ ...p, data_creazione: e.target.value }))} /></div>
+            <div><FieldLabel>Data scadenza *</FieldLabel><Input type="date" value={proformaForm.data_scadenza} onChange={e => setProformaForm(p => ({ ...p, data_scadenza: e.target.value }))} required /></div>
           </div>
           {suddivisione.length > 0 && (
             <div><FieldLabel>Rate da includere</FieldLabel>
@@ -640,7 +666,7 @@ export default function CommessaDetailPage() {
                   return (
                     <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaRateIds.includes(r.id)} disabled={used} onChange={() => setProformaRateIds(p => p.includes(r.id) ? p.filter(x => x !== r.id) : [...p, r.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                      <span style={{ fontSize: 12, color: T.ink }}>Rata {i + 1}{r.percentuale ? ` — ${pct(r.percentuale)}` : ''}</span>
+                      <span style={{ fontSize: 12, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? ` — ${pct(r.percentuale)}` : ''}</span>
                       <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(imp)}</span>
                     </label>
                   );
@@ -656,7 +682,7 @@ export default function CommessaDetailPage() {
                   return (
                     <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaCostiIds.includes(c.id)} disabled={used} onChange={() => setProformaCostiIds(p => p.includes(c.id) ? p.filter(x => x !== c.id) : [...p, c.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                      <span style={{ fontSize: 12, color: T.ink }}>{c.tipo}{c.descrizione ? ` — ${c.descrizione}` : ''}</span>
+                      <span style={{ fontSize: 12, color: T.ink }}>{c.tipo_costo || '—'}{c.description ? ` — ${c.description}` : ''}</span>
                       <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(c.importo)}</span>
                     </label>
                   );
@@ -737,8 +763,8 @@ export default function CommessaDetailPage() {
 
       <Modal open={editCostoModal} onClose={() => setEditCostoModal(false)} title="Modifica Costo Extra" width={420}>
         <form onSubmit={handleSaveCostoEdit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><FieldLabel>Tipo</FieldLabel><Input value={editCostoForm.tipo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, tipo: e.target.value }))} /></div>
-          <div><FieldLabel>Descrizione</FieldLabel><Input value={editCostoForm.descrizione ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, descrizione: e.target.value }))} /></div>
+          <div><FieldLabel>Tipo</FieldLabel><Input value={editCostoForm.tipo_costo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, tipo_costo: e.target.value }))} /></div>
+          <div><FieldLabel>Descrizione</FieldLabel><Input value={editCostoForm.description ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
           <div><FieldLabel>Importo</FieldLabel><Input type="number" value={editCostoForm.importo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, importo: e.target.value }))} /></div>
           <div><FieldLabel>Data</FieldLabel><Input type="date" value={editCostoForm.data ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, data: e.target.value }))} /></div>
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditCostoModal(false)} disabled={editCostoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editCostoSaving}>{editCostoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>

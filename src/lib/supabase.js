@@ -32,7 +32,7 @@ const DEFAULT_SERVICE_TEMPLATES = [
 export async function seedServiceTaskTemplates() {
   const { error } = await supabase
     .from("service_task_templates")
-    .upsert(DEFAULT_SERVICE_TEMPLATES, { onConflict: "service_name" });
+    .upsert(DEFAULT_SERVICE_TEMPLATES, { onConflict: "studio,service_name" });
 
   if (error) {
     console.error("Errore seed service_task_templates:", error.message);
@@ -40,40 +40,40 @@ export async function seedServiceTaskTemplates() {
 }
 
 export async function getOrCreateTeamMember(user) {
-  if (!user?.id) {
-    throw new Error("User non valido: impossibile risolvere il team member.");
-  }
+  if (!user?.id) throw new Error("User non valido.");
 
-  const { data: existingMember, error: findError } = await supabase
+  const { data: members, error: findError } = await supabase
     .from("team_members")
     .select("*")
     .eq("user_account", user.id)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
-  if (findError) {
-    throw new Error(findError.message);
+  if (findError) throw new Error(findError.message);
+
+  if (members && members.length > 0) {
+    const savedStudioId = localStorage.getItem("asm-active-studio");
+    if (savedStudioId) {
+      const match = members.find(m => m.studio === savedStudioId);
+      if (match) return match;
+    }
+    return members[0];
   }
 
-  if (existingMember) {
-    return existingMember;
-  }
-
-  const payload = {
-    user_account: user.id,
-    user_email: user.email ?? null,
-    user_name: user.email ?? "Utente",
-    active: true,
-  };
-
-  const { data: createdMember, error: createError } = await supabase
+  const { data: created, error: createError } = await supabase
     .from("team_members")
-    .insert(payload)
+    .insert({ user_account: user.id, user_email: user.email ?? null, user_name: user.email ?? "Utente", active: true })
     .select("*")
     .single();
 
-  if (createError) {
-    throw new Error(createError.message);
-  }
+  if (createError) throw new Error(createError.message);
+  return created;
+}
 
-  return createdMember;
+export async function getUserStudios(userId) {
+  const { data: members } = await supabase
+    .from("team_members")
+    .select("id, studio, role_internal, studios(id, name)")
+    .eq("user_account", userId)
+    .not("studio", "is", null);
+  return members ?? [];
 }

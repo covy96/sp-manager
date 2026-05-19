@@ -208,61 +208,85 @@ export default function TimesheetPage() {
       </div>
 
       {/* Add entry form */}
-      <form onSubmit={handleAddEntry} style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '16px 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 140px 2fr auto', gap: 10, alignItems: 'end' }}>
-          {/* Project search */}
-          <div ref={searchRef} style={{ position: 'relative' }}>
-            <FieldLabel>Progetto</FieldLabel>
-            <div style={{ position: 'relative' }}>
-              <input type="text" value={projectSearch}
-                onChange={e => { setProjectSearch(e.target.value); setShowDrop(true); if (selectedProject && e.target.value !== selectedProject.name) setSelectedProject(null); }}
-                onFocus={() => setShowDrop(true)}
-                placeholder="Cerca progetto..."
-                style={{ ...selectSt, paddingLeft: 12, paddingRight: selectedProject ? 32 : 12 }}
-              />
-              {selectedProject && (
-                <button type="button" onClick={handleClearProject}
-                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16 }}>×</button>
+      {(() => {
+        const isMobile = window.innerWidth < 768;
+        return (
+          <form onSubmit={handleAddEntry} style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '2fr 140px 2fr auto', gap: 10, alignItems: 'end' }}>
+              {/* Project search */}
+              <div ref={searchRef} style={{ position: 'relative' }}>
+                <FieldLabel>Progetto</FieldLabel>
+                <div style={{ position: 'relative' }}>
+                  <input type="text" value={projectSearch}
+                    onChange={e => { setProjectSearch(e.target.value); setShowDrop(true); if (selectedProject && e.target.value !== selectedProject.name) setSelectedProject(null); }}
+                    onFocus={() => setShowDrop(true)}
+                    placeholder="Cerca progetto..."
+                    style={{ ...selectSt, paddingLeft: 12, paddingRight: selectedProject ? 32 : 12 }}
+                  />
+                  {selectedProject && (
+                    <button type="button" onClick={handleClearProject}
+                      style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16 }}>×</button>
+                  )}
+                </div>
+                {showDrop && filteredProjects.length > 0 && (
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: '#fff', border: `0.5px solid ${T.ink20}`, maxHeight: 200, overflowY: 'auto', marginTop: 2 }}>
+                    {filteredProjects.map(p => (
+                      <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
+                        style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.paper}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{p.name}</div>
+                        {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ore */}
+              <div>
+                <FieldLabel>Ore</FieldLabel>
+                <select value={hours} onChange={e => setHours(Number(e.target.value))} style={selectSt}>
+                  {HOURS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+
+              {/* Note — solo desktop nella griglia */}
+              {!isMobile && (
+                <div>
+                  <FieldLabel>Note (opzionale)</FieldLabel>
+                  <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Descrizione attività..."
+                    style={{ ...selectSt }} />
+                </div>
+              )}
+
+              {/* Add button — solo desktop nella griglia */}
+              {!isMobile && (
+                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}>
+                  +
+                </BtnPrimary>
               )}
             </div>
-            {showDrop && filteredProjects.length > 0 && (
-              <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: '#fff', border: `0.5px solid ${T.ink20}`, maxHeight: 200, overflowY: 'auto', marginTop: 2 }}>
-                {filteredProjects.map(p => (
-                  <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
-                    style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
-                    onMouseEnter={e => e.currentTarget.style.background = T.paper}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{p.name}</div>
-                    {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
-                  </button>
-                ))}
+
+            {/* Note + submit su mobile — seconda riga */}
+            {isMobile && (
+              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <FieldLabel>Note (opzionale)</FieldLabel>
+                  <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Descrizione attività..."
+                    style={{ ...selectSt }} />
+                </div>
+                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '8px 16px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  +
+                </BtnPrimary>
               </div>
             )}
-          </div>
 
-          {/* Ore */}
-          <div>
-            <FieldLabel>Ore</FieldLabel>
-            <select value={hours} onChange={e => setHours(Number(e.target.value))} style={selectSt}>
-              {HOURS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-
-          {/* Note */}
-          <div>
-            <FieldLabel>Note (opzionale)</FieldLabel>
-            <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Descrizione attività..."
-              style={{ ...selectSt }} />
-          </div>
-
-          {/* Add button */}
-          <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}>
-            +
-          </BtnPrimary>
-        </div>
-        {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{error}</div>}
-      </form>
+            {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{error}</div>}
+          </form>
+        );
+      })()}
 
       {/* Entries */}
       {loading ? (

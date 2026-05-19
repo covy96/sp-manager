@@ -10,6 +10,8 @@ import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import MonitoraggioCommessePage from "./pages/MonitoraggioCommessePage";
 import MyTasksPage from "./pages/MyTasksPage";
+import GanttPage from "./pages/GanttPage";
+import ScrivaniaPage from "./pages/ScrivaniaPage";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
@@ -17,6 +19,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ReportPage from "./pages/ReportPage";
 import ProformaPage from "./pages/ProformaPage";
+import FatturePage from "./pages/FatturePage";
 import SectionPage from "./pages/SectionPage";
 import TeamPage from "./pages/TeamPage";
 import TimesheetPage from "./pages/TimesheetPage";
@@ -31,6 +34,7 @@ import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiP
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
 import NotifichePage from "./pages/settings/NotifichePage";
 import PianoPage from "./pages/settings/PianoPage";
+import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
 
 import { supabase } from "./lib/supabase";
 
@@ -174,7 +178,7 @@ export default function App({ session }) {
         path="/gantt-progetti"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><SectionPage title="Gantt Progetti" /></OnboardingGuard>
+            <OnboardingGuard session={session}><GanttPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
@@ -211,10 +215,19 @@ export default function App({ session }) {
         }
       />
       <Route
-        path="/le-mie-task"
+        path="/fatture"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><MyTasksPage /></OnboardingGuard>
+            <OnboardingGuard session={session}><FatturePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route path="/le-mie-task" element={<Navigate to="/scrivania" replace />} />
+      <Route
+        path="/scrivania"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><ScrivaniaPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
@@ -292,6 +305,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><NotifichePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/profilo-studio"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><ProfiloStudioPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

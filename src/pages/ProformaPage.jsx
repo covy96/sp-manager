@@ -128,7 +128,7 @@ export default function ProformaPage() {
       </div>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
         <KpiCard label="Totale proforma"  value={currency(stats.totale)}       note={`${proformaList.length} proforma`}                             color={T.navy} />
         <KpiCard label="Pagate"           value={currency(stats.pagato)}        note={`${proformaList.filter(p=>p.pagato).length} pagate`}            color={T.green} />
         <KpiCard label="Da incassare"     value={currency(stats.daIncassare)}   note={`${proformaList.filter(p=>!p.pagato).length} aperte`}           color={T.red} />

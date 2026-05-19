@@ -205,7 +205,7 @@ export default function MonitoraggioCommessePage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
         <KpiCard label="Valore contratti totale" value={currency(totals.valoreContratti)} color={T.navy} />
         {permissions.canViewFinancials && (
           <>
@@ -216,7 +216,7 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* GRAFICO */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>
             Andamento valore commesse

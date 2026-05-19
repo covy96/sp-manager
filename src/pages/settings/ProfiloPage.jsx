@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { richiediFCMToken } from "../../lib/firebase";
 
 const T = {
   ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
@@ -38,6 +37,7 @@ function Panel({ title, subtitle, children }) {
 }
 
 export default function ProfiloPage() {
+  console.log('ProfiloPage rendering');
   usePageTitleOnMount("Profilo");
   const { teamMember } = useStudio();
 
@@ -52,7 +52,11 @@ export default function ProfiloPage() {
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifError, setNotifError]   = useState("");
 
-  useEffect(() => { setNotifEnabled(Notification.permission === "granted"); }, []);
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setNotifEnabled(Notification.permission === "granted");
+    }
+  }, []);
   useEffect(() => { if (teamMember) setFormData({ nome: teamMember.user_name || "", email: teamMember.user_email || "" }); }, [teamMember]);
 
   const handleSaveProfile = async e => {
@@ -102,36 +106,44 @@ export default function ProfiloPage() {
       </Panel>
 
       {/* Notifiche push */}
-      <Panel title="Notifiche push" subtitle="Ricevi notifiche anche quando l'app è in background.">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: notifEnabled ? T.green : T.muted, display: 'inline-block' }} />
-            <span style={{ fontSize: 13, color: T.ink }}>{notifEnabled ? "Notifiche attive" : "Notifiche non attive"}</span>
+      {('Notification' in window && 'serviceWorker' in navigator) && (
+        <Panel title="Notifiche push" subtitle="Ricevi notifiche anche quando l'app è in background.">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: notifEnabled ? T.green : T.muted, display: 'inline-block' }} />
+              <span style={{ fontSize: 13, color: T.ink }}>{notifEnabled ? "Notifiche attive" : "Notifiche non attive"}</span>
+            </div>
+            <button type="button" disabled={notifLoading || notifEnabled}
+              onClick={async () => {
+                setNotifLoading(true); setNotifError("");
+                try {
+                  const perm = await Notification.requestPermission();
+                  if (perm !== "granted") { setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser."); setNotifLoading(false); return; }
+                  let token = null;
+                  try {
+                    const fb = await import('../../lib/firebase');
+                    token = await fb.richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
+                  } catch(e) {
+                    console.warn('Firebase non disponibile:', e);
+                  }
+                  if (!token) { setNotifError("Impossibile ottenere il token FCM."); setNotifLoading(false); return; }
+                  const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember?.id);
+                  if (error) setNotifError("Errore: " + error.message); else setNotifEnabled(true);
+                } catch (e) { setNotifError("Errore: " + (e.message ?? "Sconosciuto")); }
+                setNotifLoading(false);
+              }}
+              style={{
+                background: notifEnabled ? '#f0fdf4' : T.navy, color: notifEnabled ? T.green : '#EEF1F6',
+                border: `0.5px solid ${notifEnabled ? T.green : T.navy}`,
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+                padding: '7px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,
+              }}>
+              {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita"}
+            </button>
           </div>
-          <button type="button" disabled={notifLoading || notifEnabled}
-            onClick={async () => {
-              setNotifLoading(true); setNotifError("");
-              try {
-                const perm = await Notification.requestPermission();
-                if (perm !== "granted") { setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser."); setNotifLoading(false); return; }
-                const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-                if (!token) { setNotifError("Impossibile ottenere il token FCM."); setNotifLoading(false); return; }
-                const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember?.id);
-                if (error) setNotifError("Errore: " + error.message); else setNotifEnabled(true);
-              } catch (e) { setNotifError("Errore: " + (e.message ?? "Sconosciuto")); }
-              setNotifLoading(false);
-            }}
-            style={{
-              background: notifEnabled ? '#f0fdf4' : T.navy, color: notifEnabled ? T.green : '#EEF1F6',
-              border: `0.5px solid ${notifEnabled ? T.green : T.navy}`,
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-              padding: '7px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,
-            }}>
-            {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita"}
-          </button>
-        </div>
-        {notifError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{notifError}</div>}
-      </Panel>
+          {notifError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{notifError}</div>}
+        </Panel>
+      )}
 
       {/* Cambia password */}
       <Panel title="Cambia password">

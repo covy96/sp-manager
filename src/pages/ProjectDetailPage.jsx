@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
+import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
+import { ProjectForm } from './ProjectsPage';
 
 // ── BRAND TOKENS ─────────────────────────────────────────────────
 const T = {
@@ -247,7 +249,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id: projectId } = useParams();
-  const { studioId } = useStudio();
+  const { studioId, teamMember } = useStudio();
   const id = projectId;
   const inputRefs = useRef({});
 
@@ -270,6 +272,7 @@ export default function ProjectDetailPage() {
   const [creatingSubtaskId, setCreatingSubtaskId] = useState(null);
   const [creatingCategory, setCreatingCategory]   = useState("");
   const [serviceTemplates, setServiceTemplates]   = useState([]);
+  const [globalContacts, setGlobalContacts]       = useState([]);
   const [editOpen, setEditOpen]       = useState(false);
   const [menuOpen, setMenuOpen]       = useState(false);
   const [archiving, setArchiving]     = useState(false);
@@ -284,11 +287,15 @@ export default function ProjectDetailPage() {
       const membersQ = studioId
         ? supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true })
         : Promise.resolve({ data: [], error: null });
-      const [pR, tR, mR, sR] = await Promise.all([
+      const gcQ = studioId
+        ? supabase.from("global_contacts").select("id,full_name").eq("studio", studioId).order("full_name", { ascending: true })
+        : Promise.resolve({ data: [], error: null });
+      const [pR, tR, mR, sR, gcR] = await Promise.all([
         supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
         supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
         membersQ,
         supabase.from("service_task_templates").select("*").eq("studio", studioId).order("order", { ascending: true }),
+        gcQ,
       ]);
       if (pR.error) { setError(pR.error.message); setProject(null); setTasks([]); setLoading(false); return; }
       if (tR.error) { setError(tR.error.message); setProject(pR.data ?? null); setTasks([]); setLoading(false); return; }
@@ -296,6 +303,7 @@ export default function ProjectDetailPage() {
       setTasks(tR.data ?? []);
       setTeamMembers(mR.data ?? []);
       setServiceTemplates(sR.data ?? []);
+      setGlobalContacts(gcR.data ?? []);
       setCompletedCategories(pR.data?.completed_categories ?? {});
       setLoading(false);
     };
@@ -372,7 +380,15 @@ export default function ProjectDetailPage() {
   };
 
   const openEdit = () => {
-    setEditForm({ name: project?.name ?? "", client: project?.client ?? "", address: project?.address ?? "", start_date: project?.start_date ?? "", selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [], selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [] });
+    setEditForm({
+      name: project?.name ?? "",
+      client: project?.client ?? "",
+      address: project?.address ?? "",
+      start_date: project?.start_date ?? "",
+      gantt_enabled: project?.gantt_enabled ?? false,
+      selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [],
+      selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [],
+    });
     setEditError(""); setEditOpen(true); setMenuOpen(false);
   };
 
@@ -380,10 +396,19 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     if (!editForm.name.trim() || !editForm.client.trim()) { setEditError("Nome e cliente sono obbligatori."); return; }
     setEditSaving(true); setEditError("");
-    const payload = { name: editForm.name.trim(), client: editForm.client.trim(), address: editForm.address?.trim() || null, start_date: editForm.start_date || null, servizi_selezionati: editForm.selectedServices, assigned_users: editForm.selectedMembers ?? [] };
+    const payload = {
+      name: editForm.name.trim(),
+      client: editForm.client.trim(),
+      address: editForm.address?.trim() || null,
+      start_date: editForm.start_date || null,
+      gantt_enabled: !!editForm.gantt_enabled,
+      servizi_selezionati: editForm.selectedServices,
+      assigned_users: editForm.selectedMembers ?? [],
+    };
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", id);
     if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
-    setProject(p => p ? { ...p, ...payload } : p); setEditSaving(false); setEditOpen(false);
+    setProject(p => p ? { ...p, ...payload } : p);
+    setEditSaving(false); setEditOpen(false);
   };
 
   const handleToggleCategory = async category => {
@@ -438,13 +463,6 @@ export default function ProjectDetailPage() {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
-  const editInputSt = {
-    width: '100%', padding: '8px 12px', border: `0.5px solid ${T.ink20}`,
-    background: '#fff', color: T.ink, fontSize: 13,
-    fontFamily: "'Space Grotesk', sans-serif", outline: 'none', boxSizing: 'border-box',
-  };
-  const editLabelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 };
-
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
       Caricamento progetto...
@@ -468,6 +486,9 @@ export default function ProjectDetailPage() {
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
+              <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
+            )}
             {project?.commessa_id && (
               <button onClick={() => navigate(`/commesse/${project.commessa_id}`)} style={{
                 border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.navy,
@@ -530,50 +551,27 @@ export default function ProjectDetailPage() {
 
       {/* EDIT MODAL */}
       {editOpen && (
-        <div onClick={() => { if (!editSaving) setEditOpen(false); }} style={{
-          position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(14,14,13,0.5)', padding: 16,
-        }}>
+        <div onClick={() => { if (!editSaving) setEditOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Modifica Progetto</div>
               <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>×</button>
             </div>
             <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[['name', 'Nome progetto *', 'text'], ['client', 'Cliente *', 'text'], ['address', 'Indirizzo', 'text'], ['start_date', 'Data inizio', 'date']].map(([f, l, t]) => (
-                <div key={f}>
-                  <label style={editLabelSt}>{l}</label>
-                  <input type={t} value={editForm[f] ?? ""} onChange={e => setEditForm(p => ({ ...p, [f]: e.target.value }))} required={l.includes('*')} style={editInputSt} />
-                </div>
-              ))}
-              <div>
-                <label style={editLabelSt}>Servizi</label>
-                <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 140, overflowY: 'auto' }}>
-                  {serviceTemplates.map(svc => {
-                    const label = svc.service_name ?? "Servizio";
-                    return (
-                      <label key={svc.id ?? label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={editForm.selectedServices?.includes(label)} onChange={() => setEditForm(p => { const h = p.selectedServices?.includes(label); return { ...p, selectedServices: h ? p.selectedServices.filter(s => s !== label) : [...(p.selectedServices || []), label] }; })} style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                        <span style={{ fontSize: 12, color: T.ink }}>{label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label style={editLabelSt}>Membri del team</label>
-                <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 130, overflowY: 'auto' }}>
-                  {teamMembers.map(m => {
-                    const checked = (editForm.selectedMembers ?? []).includes(m.id);
-                    return (
-                      <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={checked} onChange={() => setEditForm(p => ({ ...p, selectedMembers: checked ? (p.selectedMembers ?? []).filter(id => id !== m.id) : [...(p.selectedMembers ?? []), m.id] }))} style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                        <span style={{ fontSize: 12, color: T.ink }}>{m.user_name || m.user_email}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+              <ProjectForm
+                data={{ ...editForm, selectedServices: editForm.selectedServices, selectedMembers: editForm.selectedMembers }}
+                onChange={field => e => setEditForm(p => ({ ...p, [field]: e.target.value }))}
+                teamMembers={teamMembers}
+                serviceTemplates={serviceTemplates}
+                globalContacts={globalContacts}
+                currentMemberId={teamMember?.id ?? null}
+                isEdit={true}
+                onToggleMember={id => setEditForm(p => ({ ...p, selectedMembers: (p.selectedMembers ?? []).includes(id) ? (p.selectedMembers ?? []).filter(x => x !== id) : [...(p.selectedMembers ?? []), id] }))}
+                onToggleService={label => setEditForm(p => ({ ...p, selectedServices: (p.selectedServices ?? []).includes(label) ? (p.selectedServices ?? []).filter(s => s !== label) : [...(p.selectedServices ?? []), label] }))}
+                clientSuggestions={[]}
+                onSelectClient={name => setEditForm(p => ({ ...p, client: name }))}
+                onGanttChange={e => setEditForm(p => ({ ...p, gantt_enabled: e.target.checked }))}
+              />
               {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.ink10}` }}>
                 <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>

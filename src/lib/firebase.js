@@ -1,5 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 let messaging = null;
 
@@ -12,27 +12,22 @@ try {
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
   };
-
-  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+  // Solo se service worker è supportato
+  if (firebaseConfig.apiKey && firebaseConfig.projectId && 'serviceWorker' in navigator) {
     const app = initializeApp(firebaseConfig);
     messaging = getMessaging(app);
   }
 } catch (error) {
-  console.warn("Firebase non configurato:", error);
+  console.warn('Firebase non configurato:', error);
 }
 
 export { messaging };
 
 export async function richiediFCMToken(vapidKey) {
-  if (!messaging) return null;
+  if (!messaging || !('serviceWorker' in navigator)) return null;
   try {
-    // Registra esplicitamente il service worker
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-    const token = await getToken(messaging, {
-      vapidKey,
-      serviceWorkerRegistration: registration
-    });
+    const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
     return token;
   } catch (error) {
     console.warn('Errore FCM token:', error);

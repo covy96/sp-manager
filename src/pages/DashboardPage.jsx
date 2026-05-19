@@ -340,7 +340,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
         <KpiCard label="Progetti Attivi"      value={activeProjects}          note="in corso"                          valueColor={T.ink} />
         <KpiCard label="Task da Completare"   value={openTasks}               note="aperti"                            valueColor={T.red} />
         <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana"         valueColor={T.navy} />
@@ -350,7 +350,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap: 10 }}>
 
         {/* Task di oggi */}
         <Panel title="I miei task di oggi">

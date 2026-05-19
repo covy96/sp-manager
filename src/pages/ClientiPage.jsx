@@ -1,182 +1,275 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
+import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 
+const T = {
+  ink:'#0E0E0D', navy:'#13315C', paper:'#EEF1F6', muted:'#8a847b',
+  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', red:'#b91c1c', green:'#1a6b3c',
+};
+
+function currency(v) {
+  return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
+}
+function BtnPrimary({ children, onClick, disabled, type="button" }) {
+  return (
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
+      {children}
+    </button>
+  );
+}
+function BtnGhost({ children, onClick, disabled, danger }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.ink20}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+      {children}
+    </button>
+  );
+}
+function FieldLabel({ children }) {
+  return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
+}
+
 export default function ClientiPage() {
-  const [contacts, setContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", note: "" });
+  usePageTitleOnMount("Clienti");
+  const { studioId } = useStudio();
+  const navigate = useNavigate();
 
-  const loadContacts = async () => {
-    setLoading(true);
-    setError("");
-    const { data, error: queryError } = await supabase
-      .from("global_contacts")
-      .select("*")
-      .order("name", { ascending: true });
-    if (queryError) {
-      setError(queryError.message);
-      setContacts([]);
-    } else {
-      setContacts(data ?? []);
-    }
-    setLoading(false);
+  const [contacts, setContacts]           = useState([]);
+  const [projectsByClient, setProjectsByClient] = useState({});
+  const [commesseByClient, setCommesseByClient] = useState({});
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
+  const [saving, setSaving]               = useState(false);
+  const [addModalOpen, setAddModalOpen]   = useState(false);
+  const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
+  const [expandedId, setExpandedId]       = useState(null);
+  const [formError, setFormError]         = useState("");
+
+  useEffect(() => { if (studioId) loadAll(); }, [studioId]);
+
+  const loadAll = async () => {
+    setLoading(true); setError("");
+    try {
+      const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
+        supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
+        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("archived",false),
+        supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
+      ]);
+      if (cErr) throw cErr;
+      setContacts(cts||[]);
+
+      // Raggruppa per nome cliente (case-insensitive)
+      const pMap = {};
+      (projs||[]).forEach(p => {
+        const key=(p.client||"").toLowerCase().trim();
+        if (key) { if (!pMap[key]) pMap[key]=[]; pMap[key].push(p); }
+      });
+      setProjectsByClient(pMap);
+
+      const cMap = {};
+      (comms||[]).forEach(c => {
+        const key=(c.cliente||"").toLowerCase().trim();
+        if (key) { if (!cMap[key]) cMap[key]=[]; cMap[key].push(c); }
+      });
+      setCommesseByClient(cMap);
+
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    loadContacts();
-  }, []);
+  const getProjects = (c) => projectsByClient[(c.full_name||"").toLowerCase().trim()] || [];
+  const getCommesse = (c) => commesseByClient[(c.full_name||"").toLowerCase().trim()] || [];
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) =>
-      (c.name ?? "").toLowerCase().includes(q) ||
-      (c.email ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").toLowerCase().includes(q),
-    );
-  }, [contacts, search]);
-
-  const openModal = () => {
-    setFormData({ name: "", email: "", phone: "", address: "", note: "" });
-    setFormError("");
-    setIsModalOpen(true);
+  const handleAdd = async e => {
+    e.preventDefault(); setFormError(""); if (!newContact.full_name.trim()) return; setSaving(true);
+    const dup = contacts.some(c=>(c.full_name||"").toLowerCase()===newContact.full_name.trim().toLowerCase());
+    if (dup) { setFormError("Cliente già presente."); setSaving(false); return; }
+    const { data, error:iErr } = await supabase.from("global_contacts").insert({
+      full_name:newContact.full_name.trim(), company:newContact.company.trim()||null, studio:studioId,
+    }).select("*").single();
+    if (iErr) { setFormError(iErr.message); setSaving(false); return; }
+    setContacts(p=>[...p,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
+    setAddModalOpen(false); setNewContact({full_name:"",company:""}); setSaving(false);
   };
 
-  const closeModal = () => {
-    if (saving) return;
-    setIsModalOpen(false);
+  const handleDelete = async id => {
+    if (!confirm("Eliminare questo cliente?")) return;
+    const { error:dErr } = await supabase.from("global_contacts").delete().eq("id",id);
+    if (dErr) alert("Errore: "+dErr.message);
+    else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
-  const handleSave = async (event) => {
-    event.preventDefault();
-    setFormError("");
-    if (!formData.name.trim()) {
-      setFormError("Il nome è obbligatorio.");
-      return;
-    }
-    setSaving(true);
-    const { data, error: insertError } = await supabase
-      .from("global_contacts")
-      .insert({
-        name: formData.name.trim(),
-        email: formData.email.trim() || null,
-        phone: formData.phone.trim() || null,
-        address: formData.address.trim() || null,
-        note: formData.note.trim() || null,
-      })
-      .select("*")
-      .single();
-    if (insertError) {
-      setFormError(insertError.message);
-      setSaving(false);
-      return;
-    }
-    setContacts((prev) => [...prev, data].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
-    setIsModalOpen(false);
-    setSaving(false);
-  };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.ink20}`, background:'#fff', color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+
+  if (loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
+  );
 
   return (
-    <div>
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div className="w-full max-w-xl">
-          <label className="mb-2 block text-sm text-white/80">Cerca cliente</label>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filtra per nome, email o telefono..."
-            className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-          />
+    <div style={{maxWidth:700}}>
+
+      {/* Header con bottone in alto a destra */}
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',marginBottom:4}}>Clienti</div>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
+            {contacts.length > 0
+              ? `${contacts.length} clienti — i clienti si aggiungono automaticamente dai progetti e commesse`
+              : "I clienti si aggiungono automaticamente quando crei progetti o commesse"
+            }
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={openModal}
-          className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-        >
-          Nuovo Cliente
-        </button>
+        <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
       </div>
 
-      {loading ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/70">
-          Caricamento clienti...
-        </section>
-      ) : error ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-red-300">
-          Errore: {error}
-        </section>
-      ) : filtered.length === 0 ? (
-        <section className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-8 text-center text-white/60">
-          Nessun cliente trovato.
-        </section>
+      {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
+
+      {/* Lista vuota */}
+      {contacts.length===0 ? (
+        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'48px 0',textAlign:'center'}}>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
+            Nessun cliente ancora.<br/>
+            I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
+          </div>
+        </div>
       ) : (
-        <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-4"
-            >
-              <p className="text-base font-semibold text-white">{c.name}</p>
-              <div className="mt-2 space-y-0.5 text-sm text-white/60">
-                {c.email ? <p>✉️ {c.email}</p> : null}
-                {c.phone ? <p>📞 {c.phone}</p> : null}
-                {c.address ? <p>📍 {c.address}</p> : null}
-                {c.note ? <p className="mt-1 text-xs text-white/45">{c.note}</p> : null}
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          {contacts.map(c => {
+            const isOpen = expandedId===c.id;
+            const projs  = getProjects(c);
+            const comms  = getCommesse(c);
+            const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
+
+            return (
+              <div key={c.id} style={{background:'#fff',border:`0.5px solid ${isOpen?T.navy:T.ink10}`,transition:'border-color 0.1s'}}>
+
+                {/* Riga cliente */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
+                  <button onClick={()=>setExpandedId(isOpen?null:c.id)}
+                    style={{display:'flex',alignItems:'center',gap:12,flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+                    {/* Avatar */}
+                    <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:isOpen?T.navy:T.paper,display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.1s'}}>
+                      <span style={{fontSize:14}}>{c.company?'🏢':'👤'}</span>
+                    </div>
+                    {/* Testo */}
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {c.full_name}
+                      </div>
+                      <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:3,display:'flex',gap:10,flexWrap:'wrap'}}>
+                        {c.company && <span>{c.company}</span>}
+                        <span>{projs.length} {projs.length===1?'progetto':'progetti'}</span>
+                        <span>{comms.length} {comms.length===1?'commessa':'commesse'}</span>
+                        {totale>0 && <span style={{color:T.navy,fontWeight:500}}>{currency(totale)}</span>}
+                      </div>
+                    </div>
+                    <span style={{fontSize:10,color:T.muted,marginLeft:8,flexShrink:0}}>{isOpen?'▲':'▼'}</span>
+                  </button>
+
+                  {/* Elimina */}
+                  <button onClick={()=>handleDelete(c.id)}
+                    style={{background:'none',border:`0.5px solid ${T.red}`,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
+                    Elimina
+                  </button>
+                </div>
+
+                {/* Pannello espanso */}
+                {isOpen && (
+                  <div style={{borderTop:`0.5px solid ${T.ink10}`,padding:'14px 16px',background:T.paper}}>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+
+                      {/* Progetti */}
+                      <div>
+                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                          Progetti ({projs.length})
+                        </div>
+                        {projs.length===0 ? (
+                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessun progetto</div>
+                        ) : (
+                          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                            {projs.map(p=>(
+                              <button key={p.id} onClick={()=>navigate(`/progetti/${p.id}`)}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                              >
+                                <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
+                                <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Commesse */}
+                      <div>
+                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                          Commesse ({comms.length})
+                        </div>
+                        {comms.length===0 ? (
+                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessuna commessa</div>
+                        ) : (
+                          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                            {comms.map(com=>(
+                              <button key={com.id} onClick={()=>navigate(`/commesse/${com.id}`)}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                              >
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{com.nome_commessa}</div>
+                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,flexShrink:0,fontWeight:500}}>{currency(com.importo_offerta_base)}</div>
+                                </div>
+                                {com.numero_offerta && (
+                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>{com.numero_offerta}</div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
-        </section>
+            );
+          })}
+        </div>
       )}
 
-      {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-[#48484a] bg-[#2c2c2e] p-6 shadow-2xl">
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Nuovo Cliente</h3>
-              <button type="button" onClick={closeModal} className="text-white/50 hover:text-white">✕</button>
+      {/* Modal aggiungi cliente */}
+      {addModalOpen && (
+        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
+          <div style={{width:'100%',maxWidth:400,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28}}>
+            <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
+            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
+              I clienti si aggiungono anche automaticamente dai progetti e commesse
             </div>
-            <form className="space-y-4" onSubmit={handleSave}>
-              {[
-                ["name", "Nome *", "text"],
-                ["email", "Email", "email"],
-                ["phone", "Telefono", "text"],
-                ["address", "Indirizzo", "text"],
-              ].map(([key, label, type]) => (
-                <div key={key}>
-                  <label className="mb-1 block text-sm font-medium text-white/80">{label}</label>
-                  <input
-                    type={type}
-                    value={formData[key]}
-                    onChange={(e) => setFormData((p) => ({ ...p, [key]: e.target.value }))}
-                    className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                    required={label.includes("*")}
-                  />
-                </div>
-              ))}
+            <form onSubmit={handleAdd} style={{display:'flex',flexDirection:'column',gap:12}}>
               <div>
-                <label className="mb-1 block text-sm font-medium text-white/80">Note</label>
-                <textarea
-                  rows={3}
-                  value={formData.note}
-                  onChange={(e) => setFormData((p) => ({ ...p, note: e.target.value }))}
-                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2 text-sm text-white outline-none ring-[#0a84ff]/60 focus:ring"
-                />
+                <FieldLabel>Nome *</FieldLabel>
+                <input type="text" placeholder="Nome cliente o azienda" value={newContact.full_name}
+                  onChange={e=>setNewContact({...newContact,full_name:e.target.value})}
+                  required autoFocus style={inputSt}/>
               </div>
-              {formError ? <p className="text-sm text-red-300">{formError}</p> : null}
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="button" onClick={closeModal} disabled={saving} className="rounded-lg border border-[#48484a] px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-50">Annulla</button>
-                <button type="submit" disabled={saving} className="rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60">{saving ? "Salvataggio..." : "Salva"}</button>
+              <div>
+                <FieldLabel>Ragione sociale / Azienda</FieldLabel>
+                <input type="text" placeholder="Opzionale" value={newContact.company}
+                  onChange={e=>setNewContact({...newContact,company:e.target.value})}
+                  style={inputSt}/>
+              </div>
+              {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
+              <div style={{height:'0.5px',background:T.ink10,margin:'4px 0'}}/>
+              <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
+                <BtnGhost onClick={()=>{ setAddModalOpen(false); setNewContact({full_name:"",company:""}); setFormError(""); }} disabled={saving}>Annulla</BtnGhost>
+                <BtnPrimary type="submit" disabled={saving||!newContact.full_name.trim()}>{saving?"Salvataggio...":"Aggiungi"}</BtnPrimary>
               </div>
             </form>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

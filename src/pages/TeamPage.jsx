@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
@@ -62,6 +63,7 @@ function BtnGhost({ children, onClick, disabled }) {
 export default function TeamPage() {
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
+  const { plan, canAddUser } = usePlan();
 
   const [members, setMembers]             = useState([]);
   const [statsByMember, setStatsByMember] = useState({});
@@ -118,6 +120,11 @@ export default function TeamPage() {
   const handleSaveMember = async e => {
     e.preventDefault(); setFormError("");
     if (!formData.user_name.trim() || !formData.user_email.trim() || !formData.role_internal) { setFormError("Compila tutti i campi."); return; }
+    if (!canAddUser(members.length)) {
+      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxUsers} utenti. Fai l'upgrade per aggiungerne altri.`);
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     const { data, error: iErr } = await supabase.from("team_members").insert({ user_name: formData.user_name.trim(), user_email: formData.user_email.trim(), role_internal: formData.role_internal, studio: studioId }).select("*").single();
     if (iErr) { setFormError(iErr.message); setSaving(false); return; }

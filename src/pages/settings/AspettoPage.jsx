@@ -17,43 +17,68 @@ function MonitorIcon() {
 }
 
 const THEMES = [
-  { id: "light", label: "Chiaro", Icon: SunIcon },
-  { id: "dark", label: "Scuro", Icon: MoonIcon },
-  { id: "system", label: "Sistema", Icon: MonitorIcon },
+  { id: "light",  label: "Chiaro",  Icon: SunIcon,     desc: "Sempre tema chiaro" },
+  { id: "dark",   label: "Scuro",   Icon: MoonIcon,    desc: "Sempre tema scuro" },
+  { id: "system", label: "Sistema", Icon: MonitorIcon, desc: "Segue le impostazioni del dispositivo" },
 ];
+
+// ── Applica il tema su <html> ─────────────────────────────────────
+export function applyTheme(t) {
+  const html = document.documentElement;
+  html.classList.remove("dark", "light");
+
+  if (t === "dark") {
+    html.classList.add("dark");
+  } else if (t === "light") {
+    html.classList.add("light");
+  } else {
+    // system
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (prefersDark) html.classList.add("dark");
+    else html.classList.add("light");
+  }
+}
+
+// ── Inizializza tema al caricamento (chiamata da main.jsx) ────────
+export function initTheme() {
+  const saved = localStorage.getItem("asm-theme") || "system";
+  applyTheme(saved);
+}
 
 export default function AspettoPage() {
   usePageTitleOnMount("Aspetto");
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("asm-theme") || "system");
 
+  // Ascolta cambiamenti di sistema quando in modalità "system"
   useEffect(() => {
-    const saved = localStorage.getItem("theme") || "dark";
-    setTheme(saved); applyTheme(saved);
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      if (localStorage.getItem("asm-theme") === "system") applyTheme("system");
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const applyTheme = t => {
-    const root = document.documentElement;
-    if (t === "dark") { root.classList.add("dark"); root.classList.remove("light"); }
-    else if (t === "light") { root.classList.add("light"); root.classList.remove("dark"); }
-    else {
-      const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.classList.toggle("dark", dark); root.classList.toggle("light", !dark);
-    }
+  const handleChange = (t) => {
+    setTheme(t);
+    localStorage.setItem("asm-theme", t);
+    applyTheme(t);
   };
-
-  const handleChange = t => { setTheme(t); localStorage.setItem("theme", t); applyTheme(t); };
 
   return (
     <div style={{ maxWidth: 560 }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Aspetto</div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em' }}>Personalizza l'aspetto dell'applicazione</div>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em' }}>
+          Personalizza l'aspetto dell'applicazione
+        </div>
       </div>
 
       <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>Tema</div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          {THEMES.map(({ id, label, Icon }) => {
+          {THEMES.map(({ id, label, Icon, desc }) => {
             const active = theme === id;
             return (
               <button key={id} onClick={() => handleChange(id)} style={{
@@ -62,13 +87,41 @@ export default function AspettoPage() {
                 background: active ? '#EEF3FA' : '#fff', cursor: 'pointer', transition: 'all 0.1s',
               }}>
                 <span style={{ color: active ? T.navy : T.muted }}><Icon /></span>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.05em', color: active ? T.navy : T.muted, textTransform: 'uppercase' }}>{label}</span>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.05em', color: active ? T.navy : T.muted, textTransform: 'uppercase' }}>
+                    {label}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 4, lineHeight: 1.4 }}>
+                    {desc}
+                  </div>
+                </div>
+                {active && (
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.navy }} />
+                )}
               </button>
             );
           })}
         </div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 16, lineHeight: 1.6 }}>
-          Il tema scuro è attualmente l'unico tema completamente supportato. Il tema chiaro è in sviluppo.
+      </div>
+
+      {/* Preview del tema corrente */}
+      <div style={{ marginTop: 14, background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '14px 18px' }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+          Anteprima tema corrente
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[
+            { label: 'Sfondo', color: 'var(--asm-bg)' },
+            { label: 'Card', color: 'var(--asm-surface)' },
+            { label: 'Testo', color: 'var(--asm-ink)' },
+            { label: 'Navy', color: 'var(--asm-navy)' },
+            { label: 'Brass', color: 'var(--asm-brass)' },
+          ].map(({ label, color }) => (
+            <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 32, height: 32, background: color, border: `0.5px solid ${T.ink10}` }} />
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: T.muted }}>{label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

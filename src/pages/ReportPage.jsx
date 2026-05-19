@@ -5,210 +5,390 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 
-// ── BRAND TOKENS ─────────────────────────────────────────────────
 const T = {
-  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
-  red: '#b91c1c', green: '#1a6b3c',
+  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A',
+  paper:'#EEF1F6', muted:'#8a847b',
+  ink10:'#0E0E0D1A', ink20:'#0E0E0D33',
+  red:'#b91c1c', green:'#1a6b3c',
 };
 
 const MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const DAYS   = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 
-function toISODate(d) { return d.toISOString().slice(0, 10); }
+// ── HELPERS DATE ─────────────────────────────────────────────────
+function toISO(d) { return d.toISOString().slice(0,10); }
+
 function getMonthRange(year, month) {
-  return { start: toISODate(new Date(year, month, 1)), end: toISODate(new Date(year, month+1, 0)) };
+  return { start: toISO(new Date(year,month,1)), end: toISO(new Date(year,month+1,0)) };
 }
+
+function getWeekRange(refDate) {
+  const d = new Date(refDate);
+  const day = d.getDay(); // 0=dom
+  const diff = day === 0 ? -6 : 1 - day; // lunedì
+  const mon = new Date(d); mon.setDate(d.getDate()+diff);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return { start: toISO(mon), end: toISO(sun), monday: mon };
+}
+
+function addWeeks(date, n) {
+  const d = new Date(date); d.setDate(d.getDate()+n*7); return d;
+}
+
+function formatWeekLabel(monday) {
+  const sun = new Date(monday); sun.setDate(monday.getDate()+6);
+  const fmtShort = d => d.toLocaleDateString('it-IT',{day:'numeric',month:'short'});
+  return `${fmtShort(monday)} – ${fmtShort(sun)}`;
+}
+
 function csvEscape(v) {
-  const s = String(v ?? "");
-  return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
+  const s = String(v??"");
+  return s.includes(",")||s.includes('"')||s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
 }
 
-// ── SHARED UI ────────────────────────────────────────────────────
-function KpiCard({ label, value, color }) {
+// ── UI ────────────────────────────────────────────────────────────
+function KpiCard({ label, value, color, sub }) {
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.04em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
+    <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 18px' }}>
+      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
+      <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{value}</div>
+      {sub && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>{sub}</div>}
     </div>
   );
 }
 
-function ChartPanel({ title, children }) {
+function TabBtn({ active, onClick, children }) {
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>{title}</div>
-      {children}
-    </div>
+    <button onClick={onClick} style={{
+      padding:'7px 16px', border:'none', background:'transparent', cursor:'pointer',
+      fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
+      color: active ? T.navy : T.muted,
+      borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`,
+    }}>{children}</button>
   );
 }
+
+const thSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 14px', borderBottom:`0.5px solid ${T.ink10}`, textAlign:'left', whiteSpace:'nowrap' };
+const tdSt = { padding:'9px 14px', borderBottom:`0.5px solid ${T.ink10}`, fontSize:12, color:T.ink };
+const monoSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:11 };
+const tooltipSt = { contentStyle:{ background:'#fff', border:`0.5px solid ${T.ink20}`, borderRadius:0, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink }, formatter: v => formatOre(v) };
+const axisSt = { tick:{ fill:T.muted, fontSize:9, fontFamily:"'IBM Plex Mono', monospace" }, axisLine:false, tickLine:false };
 
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function ReportPage() {
-  const { studioId, loading: studioLoading } = useStudio();
+  const { studioId, loading:studioLoading } = useStudio();
   const permissions = usePermissions();
   const now = new Date();
 
-  const [selectedYear, setSelectedYear]     = useState(now.getFullYear());
-  const [selectedMonth, setSelectedMonth]   = useState(now.getMonth());
-  const [timesheetRows, setTimesheetRows]   = useState([]);
-  const [yearRows, setYearRows]             = useState([]);
-  const [projects, setProjects]             = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [error, setError]                   = useState("");
+  // Periodo
+  const [mode, setMode]                 = useState("month"); // "month" | "week"
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [weekRef, setWeekRef]           = useState(now); // data di riferimento per la settimana
 
-  const loadData = async (year, month) => {
-    if (!studioId) return;
-    setLoading(true); setError("");
-    const range = getMonthRange(year, month);
-    const [tsRes, pRes, yrRes] = await Promise.all([
-      supabase.from("timesheet").select("*").eq("studio", studioId).gte("date", range.start).lte("date", range.end).order("date", { ascending: true }),
-      supabase.from("projects").select("id,client,archived").eq("studio", studioId).eq("archived", false),
-      supabase.from("timesheet").select("*").eq("studio", studioId).gte("date", `${year}-01-01`).lte("date", `${year}-12-31`),
-    ]);
-    if (tsRes.error || pRes.error || yrRes.error) { setError(tsRes.error?.message || pRes.error?.message || yrRes.error?.message || "Errore"); setLoading(false); return; }
-    setTimesheetRows(tsRes.data ?? []);
-    setYearRows(yrRes.data ?? []);
-    setProjects(pRes.data ?? []);
-    setLoading(false);
+  // Vista
+  const [view, setView] = useState("progetto"); // "progetto" | "cliente" | "utente"
+
+  // Dati
+  const [rows, setRows]         = useState([]);
+  const [allRows, setAllRows]   = useState([]); // per confronto anno/totale
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState("");
+
+  // Range corrente
+  const range = useMemo(() => {
+    if (mode === "month") return getMonthRange(selectedYear, selectedMonth);
+    return getWeekRange(weekRef);
+  }, [mode, selectedYear, selectedMonth, weekRef]);
+
+  const periodLabel = useMemo(() => {
+    if (mode === "month") return `${MONTHS[selectedMonth]} ${selectedYear}`;
+    return formatWeekLabel(getWeekRange(weekRef).monday);
+  }, [mode, selectedYear, selectedMonth, weekRef]);
+
+  // Navigazione
+  const goBack = () => {
+    if (mode === "month") {
+      const d = new Date(selectedYear, selectedMonth-1, 1);
+      setSelectedYear(d.getFullYear()); setSelectedMonth(d.getMonth());
+    } else setWeekRef(w => addWeeks(w, -1));
+  };
+  const goNext = () => {
+    if (mode === "month") {
+      const d = new Date(selectedYear, selectedMonth+1, 1);
+      setSelectedYear(d.getFullYear()); setSelectedMonth(d.getMonth());
+    } else setWeekRef(w => addWeeks(w, 1));
+  };
+  const goToday = () => {
+    setSelectedYear(now.getFullYear()); setSelectedMonth(now.getMonth());
+    setWeekRef(now);
   };
 
-  useEffect(() => { if (studioId) loadData(selectedYear, selectedMonth); }, [selectedYear, selectedMonth, studioId]);
+  const loadData = async () => {
+    if (!studioId) return;
+    setLoading(true); setError("");
+    try {
+      const [tsRes, pRes, allRes] = await Promise.all([
+        supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",range.start).lte("date",range.end).order("date",{ascending:true}),
+        supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false),
+        supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",`${selectedYear}-01-01`).lte("date",`${selectedYear}-12-31`),
+      ]);
+      if (tsRes.error) throw tsRes.error;
+      setRows(tsRes.data??[]);
+      setProjects(pRes.data??[]);
+      setAllRows(allRes.data??[]);
+    } catch(e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
 
-  const summary = useMemo(() => ({
-    oreTotali: timesheetRows.reduce((s, r) => s + (Number(r.hours)||0), 0),
-    progettiAttivi: projects.length,
-    clienti: new Set(projects.map(p => p.client).filter(Boolean)).size,
-  }), [projects, timesheetRows]);
+  useEffect(() => { if (studioId) loadData(); }, [studioId, range]);
 
-  const hoursByClient = useMemo(() => {
-    const g = {};
-    timesheetRows.forEach(r => { const n = r.project_name || "Progetto non assegnato"; g[n] = (g[n]||0) + (Number(r.hours)||0); });
-    return Object.entries(g).map(([name, hours]) => ({ name, hours })).sort((a, b) => b.hours - a.hours);
-  }, [timesheetRows]);
+  // ── KPI ──────────────────────────────────────────────────────
+  const oreTotali = useMemo(() => rows.reduce((s,r)=>s+(Number(r.hours)||0),0), [rows]);
+  const oreAnno   = useMemo(() => allRows.reduce((s,r)=>s+(Number(r.hours)||0),0), [allRows]);
 
-  const hoursByMember = useMemo(() => {
-    const g = {};
-    timesheetRows.forEach(r => { const n = r.user_name || "Membro non assegnato"; g[n] = (g[n]||0) + (Number(r.hours)||0); });
-    return Object.entries(g).map(([name, hours]) => ({ name, hours })).sort((a, b) => b.hours - a.hours);
-  }, [timesheetRows]);
+  // ── DATI GRAFICO / TABELLA per vista ─────────────────────────
+  const byProgetto = useMemo(() => {
+    const g={};
+    rows.forEach(r => { const n=r.project_name||"Senza progetto"; g[n]=(g[n]||0)+(Number(r.hours)||0); });
+    return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
+  }, [rows]);
 
-  const tableRows = useMemo(() => {
-    const g = {};
-    timesheetRows.forEach(r => { const n = r.user_name || "Membro non assegnato"; if (!g[n]) g[n] = { name: n, monthHours: 0, yearHours: 0 }; g[n].monthHours += Number(r.hours)||0; });
-    yearRows.forEach(r => { const n = r.user_name || "Membro non assegnato"; if (!g[n]) g[n] = { name: n, monthHours: 0, yearHours: 0 }; g[n].yearHours += Number(r.hours)||0; });
-    return Object.values(g).sort((a, b) => b.monthHours - a.monthHours);
-  }, [timesheetRows, yearRows]);
+  const byCliente = useMemo(() => {
+    // Mappa project_name → client
+    const clientMap={};
+    projects.forEach(p=>{ clientMap[p.name]=p.client||"—"; });
+    const g={};
+    rows.forEach(r => {
+      const c = clientMap[r.project_name] || r.project_name || "—";
+      g[c]=(g[c]||0)+(Number(r.hours)||0);
+    });
+    return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
+  }, [rows,projects]);
 
-  const changeMonth = delta => { const next = new Date(selectedYear, selectedMonth + delta, 1); setSelectedYear(next.getFullYear()); setSelectedMonth(next.getMonth()); };
+  const byUtente = useMemo(() => {
+    const g={};
+    rows.forEach(r => { const n=r.user_name||"—"; g[n]=(g[n]||0)+(Number(r.hours)||0); });
+    return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
+  }, [rows]);
 
+  // Dati tabella dettaglio per utente (con confronto anno)
+  const tableByUtente = useMemo(() => {
+    const g={};
+    rows.forEach(r=>{ const n=r.user_name||"—"; if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].period+=Number(r.hours)||0; });
+    allRows.forEach(r=>{ const n=r.user_name||"—"; if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].year+=Number(r.hours)||0; });
+    return Object.values(g).sort((a,b)=>b.period-a.period);
+  }, [rows,allRows]);
+
+  // Dati grafico corrente
+  const chartData = view==="progetto" ? byProgetto : view==="cliente" ? byCliente : byUtente;
+  const chartLayout = "vertical"; // sempre orizzontale per leggibilità nomi
+
+  // Dati per grafico temporale (andamento settimana/mese)
+  const trendData = useMemo(() => {
+    if (mode === "week") {
+      // 7 giorni
+      const days = Array.from({length:7},(_,i)=>{
+        const d = new Date(getWeekRange(weekRef).monday);
+        d.setDate(d.getDate()+i);
+        return { date: toISO(d), label: `${DAYS[d.getDay()]} ${d.getDate()}`, hours:0 };
+      });
+      rows.forEach(r=>{ const d=days.find(x=>x.date===r.date); if(d) d.hours+=Number(r.hours)||0; });
+      return days;
+    } else {
+      // Raggruppato per settimana del mese
+      const weeks={};
+      rows.forEach(r=>{
+        const d=new Date(r.date);
+        const wk=Math.ceil(d.getDate()/7);
+        const key=`Sett. ${wk}`;
+        if(!weeks[key]) weeks[key]={label:key,hours:0};
+        weeks[key].hours+=Number(r.hours)||0;
+      });
+      return Object.values(weeks);
+    }
+  }, [rows, mode, weekRef]);
+
+  // ── EXPORT CSV ───────────────────────────────────────────────
   const exportCsv = () => {
-    const headers = ["data","progetto","membro","ore","note"];
-    const lines = [headers.join(","), ...timesheetRows.map(r => [csvEscape(r.date), csvEscape(r.project_name), csvEscape(r.user_name), csvEscape(r.hours), csvEscape(r.notes||r.note)].join(","))];
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `report-timesheet-${selectedYear}-${String(selectedMonth+1).padStart(2,"0")}.csv`; a.click();
+    const headers=["data","progetto","utente","ore","note"];
+    const lines=[headers.join(","),...rows.map(r=>[csvEscape(r.date),csvEscape(r.project_name),csvEscape(r.user_name),csvEscape(r.hours),csvEscape(r.notes||r.note)].join(","))];
+    const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=`report-${range.start}-${range.end}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
-  const tooltipStyle = { contentStyle: { background: '#fff', border: `0.5px solid ${T.ink20}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }, formatter: v => formatOre(v) };
-  const axisStyle = { tick: { fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }, axisLine: false, tickLine: false };
-
   if (!studioLoading && !permissions.canViewReport) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`0.5px solid ${T.ink10}`, background:'#fff', padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento report...</div>
-  );
-  if (error) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
-  );
-
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 14px', borderBottom: `0.5px solid ${T.ink10}`, textAlign: 'left' };
-  const tdSt = { padding: '9px 14px', borderBottom: `0.5px solid ${T.ink10}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" };
-  const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-      {/* Navigazione mese */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={() => changeMonth(-1)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', color: T.ink, padding: '5px 12px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>←</button>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', minWidth: 180, textAlign: 'center' }}>
-            {MONTHS[selectedMonth]} {selectedYear}
-          </div>
-          <button onClick={() => changeMonth(1)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', color: T.ink, padding: '5px 12px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>→</button>
+      {/* ── TOOLBAR ── */}
+      <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+
+        {/* Toggle mese/settimana */}
+        <div style={{ display:'flex', border:`0.5px solid ${T.ink20}`, overflow:'hidden' }}>
+          {[["month","Mensile"],["week","Settimanale"]].map(([m,label])=>(
+            <button key={m} onClick={()=>setMode(m)} style={{
+              padding:'6px 14px', border:'none', background: mode===m ? T.navy : 'transparent',
+              color: mode===m ? '#EEF1F6' : T.muted,
+              fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
+              cursor:'pointer',
+            }}>{label}</button>
+          ))}
         </div>
-        <button onClick={exportCsv} style={{ background: T.navy, border: 'none', cursor: 'pointer', color: '#EEF1F6', padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+
+        {/* Navigazione periodo */}
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
+          <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', minWidth:220, textAlign:'center' }}>
+            {periodLabel}
+          </div>
+          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
+          <button onClick={goToday} style={{ background:T.paper, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+        </div>
+
+        {/* Esporta */}
+        <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:'#EEF1F6', padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
           Esporta CSV
         </button>
       </div>
 
-      {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        <KpiCard label="Ore totali del mese" value={formatOre(summary.oreTotali)} color={T.navy} />
-        <KpiCard label="Progetti attivi"     value={summary.progettiAttivi}       color={T.green} />
-        <KpiCard label="Clienti"             value={summary.clienti}              color={T.ink} />
+      {/* ── KPI ── */}
+      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
+        <KpiCard label={mode==="week"?"Ore settimana":"Ore del mese"} value={formatOre(oreTotali)} color={T.navy}/>
+        <KpiCard label="Ore anno in corso" value={formatOre(oreAnno)} color={T.muted}/>
+        <KpiCard label="Progetti nel periodo" value={new Set(rows.map(r=>r.project_name).filter(Boolean)).size} color={T.green}/>
+        <KpiCard label="Membri attivi" value={new Set(rows.map(r=>r.user_name).filter(Boolean)).size} color={T.ink}/>
       </div>
 
-      {/* Grafici */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <ChartPanel title="Ore per progetto">
-          <div style={{ height: 280 }}>
+      {/* ── GRAFICI ── */}
+      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10 }}>
+
+        {/* Andamento temporale */}
+        <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 18px' }}>
+          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
+            Andamento ore — {mode==="week"?"per giorno":"per settimana"}
+          </div>
+          <div style={{ height:220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hoursByClient} layout="vertical">
-                <CartesianGrid stroke={T.ink10} strokeDasharray="3 3" />
-                <XAxis type="number" {...axisStyle} stroke="transparent" />
-                <YAxis type="category" dataKey="name" width={150} {...axisStyle} stroke="transparent" tick={{ ...axisStyle.tick, fontSize: 9 }} />
-                <Tooltip {...tooltipStyle} />
-                <Bar dataKey="hours" fill={T.navy} radius={[0, 2, 2, 0]} />
+              <BarChart data={trendData}>
+                <CartesianGrid stroke={T.ink10} strokeDasharray="3 3"/>
+                <XAxis dataKey="label" {...axisSt} stroke="transparent"/>
+                <YAxis {...axisSt} stroke="transparent" tickFormatter={v=>formatOre(v)}/>
+                <Tooltip {...tooltipSt}/>
+                <Bar dataKey="hours" fill={T.navy} radius={[2,2,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </ChartPanel>
-
-        <ChartPanel title="Ore per membro del team">
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hoursByMember}>
-                <CartesianGrid stroke={T.ink10} strokeDasharray="3 3" />
-                <XAxis dataKey="name" {...axisStyle} stroke="transparent" tick={{ ...axisStyle.tick, fontSize: 9 }} />
-                <YAxis {...axisStyle} stroke="transparent" />
-                <Tooltip {...tooltipStyle} />
-                <Bar dataKey="hours" fill={T.navy} radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartPanel>
-      </div>
-
-      {/* Tabella dettaglio */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, overflowX: 'auto' }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, padding: '12px 14px', borderBottom: `0.5px solid ${T.ink10}` }}>
-          Dettaglio ore per membro
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={thSt}>Nome membro</th>
-              <th style={thSt}>Ore del mese</th>
-              <th style={thSt}>Ore totali anno</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.length === 0 ? (
-              <tr><td colSpan={3} style={{ ...tdSt, color: T.muted, textAlign: 'center', padding: '32px 0' }}>Nessun dato disponibile per il periodo selezionato.</td></tr>
-            ) : tableRows.map(row => (
-              <tr key={row.name}>
-                <td style={{ ...tdSt, fontWeight: 600 }}>{row.name}</td>
-                <td style={{ ...tdSt, ...monoSt }}>{formatOre(row.monthHours)}</td>
-                <td style={{ ...tdSt, ...monoSt, color: T.muted }}>{formatOre(row.yearHours)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        {/* Grafico per vista selezionata */}
+        <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 18px' }}>
+          {/* Tab vista */}
+          <div style={{ display:'flex', borderBottom:`0.5px solid ${T.ink10}`, marginBottom:14 }}>
+            <TabBtn active={view==="progetto"} onClick={()=>setView("progetto")}>Per progetto</TabBtn>
+            <TabBtn active={view==="cliente"}  onClick={()=>setView("cliente")}>Per cliente</TabBtn>
+            <TabBtn active={view==="utente"}   onClick={()=>setView("utente")}>Per utente</TabBtn>
+          </div>
+          <div style={{ height:200 }}>
+            {chartData.length === 0 ? (
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+                Nessun dato nel periodo
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical">
+                  <CartesianGrid stroke={T.ink10} strokeDasharray="3 3"/>
+                  <XAxis type="number" {...axisSt} stroke="transparent" tickFormatter={v=>formatOre(v)}/>
+                  <YAxis type="category" dataKey="name" width={120} {...axisSt} stroke="transparent" tick={{...axisSt.tick,fontSize:9}}/>
+                  <Tooltip {...tooltipSt}/>
+                  <Bar dataKey="hours" fill={T.navy} radius={[0,2,2,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* ── TABELLE DETTAGLIO ── */}
+      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10 }}>
+
+        {/* Tabella ore per utente */}
+        <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, overflowX:'auto' }}>
+          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.ink10}` }}>
+            Dettaglio per utente
+          </div>
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr>
+                <th style={thSt}>Membro</th>
+                <th style={thSt}>{mode==="week"?"Sett.":"Mese"}</th>
+                <th style={thSt}>Anno</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableByUtente.length===0 ? (
+                <tr><td colSpan={3} style={{...tdSt,color:T.muted,textAlign:'center',padding:'24px 0'}}>Nessun dato</td></tr>
+              ) : tableByUtente.map(r=>(
+                <tr key={r.name}>
+                  <td style={{...tdSt,fontWeight:600}}>{r.name}</td>
+                  <td style={{...tdSt,...monoSt,color:T.navy}}>{formatOre(r.period)}</td>
+                  <td style={{...tdSt,...monoSt,color:T.muted}}>{formatOre(r.year)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Tabella ore per progetto */}
+        <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, overflowX:'auto' }}>
+          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.ink10}` }}>
+            Dettaglio per progetto
+          </div>
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr>
+                <th style={thSt}>Progetto</th>
+                <th style={thSt}>Cliente</th>
+                <th style={thSt}>Ore</th>
+              </tr>
+            </thead>
+            <tbody>
+              {byProgetto.length===0 ? (
+                <tr><td colSpan={3} style={{...tdSt,color:T.muted,textAlign:'center',padding:'24px 0'}}>Nessun dato</td></tr>
+              ) : byProgetto.map(r=>{
+                const proj=projects.find(p=>p.name===r.name);
+                return (
+                  <tr key={r.name}>
+                    <td style={{...tdSt,fontWeight:600}}>{r.name}</td>
+                    <td style={{...tdSt,color:T.muted}}>{proj?.client||"—"}</td>
+                    <td style={{...tdSt,...monoSt,color:T.navy}}>{formatOre(r.hours)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div style={{ position:'fixed', bottom:24, right:24, background:T.navy, color:'#EEF1F6', padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.05em' }}>
+          Caricamento...
+        </div>
+      )}
+
+      {error && (
+        <div style={{ border:`0.5px solid ${T.ink10}`, background:'#fff', padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
+          {error}
+        </div>
+      )}
 
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
@@ -102,6 +103,7 @@ export default function CommessePage() {
   const navigate = useNavigate();
   const { studioId, studioLoading, teamMember } = useStudio();
   const permissions = usePermissions();
+  const { plan, canAddCommessa } = usePlan();
 
   const [commesse, setCommesse]         = useState([]);
   const [incassatoMap, setIncassatoMap] = useState({});
@@ -187,7 +189,7 @@ export default function CommessePage() {
     if (!fullName?.trim()) return;
     const exists=globalContacts.some(c=>(c.full_name||"").toLowerCase()===fullName.trim().toLowerCase());
     if (!exists) {
-      const { data } = await supabase.from("global_contacts").insert({full_name:fullName.trim(),studio:studioId}).select("id,full_name").single();
+      const { data } = await supabase.from("global_contacts").insert({full_name:fullName.trim(),studio:studioId,company:''}).select("id,full_name").single();
       if (data) setGlobalContacts(prev=>[...prev,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
     }
   };
@@ -201,6 +203,11 @@ export default function CommessePage() {
 
   const handleSave = async e => {
     e.preventDefault(); setFormError(""); setSaving(true);
+    if (!canAddCommessa(commesse.length)) {
+      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxCommesse} commesse. Fai l'upgrade per crearne altre.`);
+      setSaving(false);
+      return;
+    }
     const cliente=clientInput.trim();
 
     // 1. Crea commessa
@@ -309,7 +316,7 @@ export default function CommessePage() {
       ) : commesse.length===0 ? (
         <div style={{border:`0.5px solid ${T.ink10}`,background:'#fff',padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa disponibile.</div>
       ) : (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:10}}>
+        <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesse.map(c=>(
             <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)}/>
           ))}
