@@ -96,8 +96,8 @@ const FAQ_DATA = [
     a: 'Sì, è pensato per studi da 1 a 20 persone. Scala con te.',
   },
   {
-    q: 'Posso importare i miei dati esistenti?',
-    a: 'Supportiamo import da Excel e CSV per progetti, clienti e timesheet.',
+    q: 'I miei dati sono al sicuro?',
+    a: 'Sì. I dati sono archiviati su infrastruttura cloud europea con backup automatici. Puoi esportare tutto in qualsiasi momento in formato Excel o CSV — i tuoi dati sono sempre tuoi.',
   },
   {
     q: 'È necessario installare qualcosa?',
