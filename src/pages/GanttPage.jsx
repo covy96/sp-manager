@@ -10,7 +10,7 @@ const T = {
 };
 
 const ROW_H       = 44;
-const LEFT_W      = 480; // più largo per aggiungere data inizio
+const LEFT_W      = 420;
 const DAY_W_WEEK  = 28;
 const DAY_W_MONTH = 12;
 
@@ -174,6 +174,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     dipendenza_id: '',
   });
   const [savingNew, setSavingNew] = useState(false);
+  const [onlyChart, setOnlyChart] = useState(false);
   const chartRef = useRef(null);
   const leftRef  = useRef(null);
 
@@ -193,9 +194,7 @@ function ProjectGantt({ project, studioId, onBack }) {
         const parent = lavorazioni.find(l => l.id === value);
         if (parent?.data_fine) {
           next.data_inizio = nextWorkingDay(parent.data_fine);
-          if (next.durata_giorni) {
-            next.data_fine = toISO(addDays(parseDate(next.data_inizio), Number(next.durata_giorni)-1));
-          }
+          next.data_fine = toISO(addDays(parseDate(next.data_inizio), Number(next.durata_giorni)-1));
         }
       }
       if (field === 'data_inizio' && next.durata_giorni) {
@@ -242,12 +241,19 @@ function ProjectGantt({ project, studioId, onBack }) {
     setSavingNew(true);
     const map = {...impresaColorMap};
     const colore = newRow.operatore ? colorForImpresa(newRow.operatore, map) : T.navy;
+    let dataInizio = newRow.data_inizio;
+    if (newRow.dipendenza_id) {
+      const parent = lavorazioni.find(l => l.id === newRow.dipendenza_id);
+      if (parent?.data_fine) {
+        dataInizio = nextWorkingDay(parent.data_fine);
+      }
+    }
     const payload = {
       studio: studioId,
       project_id: project.id,
       descrizione: newRow.descrizione.trim(),
       operatore: newRow.operatore || null,
-      data_inizio: newRow.data_inizio || null,
+      data_inizio: dataInizio || null,
       data_fine: newRow.data_fine || null,
       durata_giorni: Number(newRow.durata_giorni) || 7,
       colore,
@@ -267,6 +273,13 @@ function ProjectGantt({ project, studioId, onBack }) {
 
   // ── INLINE EDIT ───────────────────────────────────────────────────
   const handleInlineEdit = async (lav, field, value) => {
+    // Validazione: se si cambia data_inizio e c'è una dipendenza, non può essere <= fine del parent
+    if (field === 'data_inizio' && lav.dipendenza_id) {
+      const parent = lavorazioni.find(l => l.id === lav.dipendenza_id);
+      if (parent?.data_fine && value <= parent.data_fine) {
+        value = nextWorkingDay(parent.data_fine);
+      }
+    }
     const updated = {...lav, [field]: value};
     if (field==='durata_giorni') updated.data_fine = toISO(addDays(parseDate(lav.data_inizio), Number(value)-1));
     if (field==='data_inizio')   updated.data_fine = toISO(addDays(parseDate(value), Number(lav.durata_giorni)-1));
@@ -279,18 +292,25 @@ function ProjectGantt({ project, studioId, onBack }) {
     setLavorazioni(prev => prev.map(l => l.id === lav.id ? updated : l));
     await supabase.from("lavorazioni_gantt").update(updated).eq("id", lav.id);
 
-    // Ricalcola dipendenti se la data è cambiata
-    if (field === 'data_inizio' || field === 'durata_giorni') {
-      const allLav = lavorazioni.map(l => l.id === lav.id ? updated : l);
-      const updates = ricalcolaDipendenti(lav.id, allLav);
-      if (Object.keys(updates).length > 0) {
-        setLavorazioni(prev => prev.map(l => updates[l.id] ? {...l, ...updates[l.id]} : l));
-        await Promise.all(Object.values(updates).map(u =>
-          supabase.from("lavorazioni_gantt").update({
-            data_inizio: u.data_inizio,
-            data_fine: u.data_fine,
-          }).eq("id", u.id)
-        ));
+    // Propagazione delta-based sui dipendenti
+    if (['data_inizio','data_fine','durata_giorni'].includes(field)) {
+      let deltaDays = 0;
+      if (field === 'data_inizio') deltaDays = diffDays(parseDate(lav.data_inizio), parseDate(value));
+      else if (field === 'data_fine') deltaDays = diffDays(parseDate(lav.data_fine), parseDate(value));
+      else if (field === 'durata_giorni') deltaDays = Number(value) - Number(lav.durata_giorni);
+      if (deltaDays !== 0) {
+        const allLav = lavorazioni.map(l => l.id === lav.id ? updated : l);
+        const propagate = (parentId) => {
+          const deps = allLav.filter(l => l.dipendenza_id === parentId);
+          deps.forEach(async dep => {
+            const newStart = toISO(addDays(parseDate(dep.data_inizio), deltaDays));
+            const newEnd   = toISO(addDays(parseDate(dep.data_fine),   deltaDays));
+            setLavorazioni(prev => prev.map(l => l.id === dep.id ? {...l, data_inizio:newStart, data_fine:newEnd} : l));
+            await supabase.from('lavorazioni_gantt').update({data_inizio:newStart, data_fine:newEnd}).eq('id', dep.id);
+            propagate(dep.id);
+          });
+        };
+        propagate(lav.id);
       }
     }
   };
@@ -370,7 +390,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     document.addEventListener("mouseup",onUp);
   }, [dayW, loadData]);
 
-  const inputSt = {padding:'4px 8px', border:'none', background:'transparent', color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono', monospace", outline:'none', width:'100%', boxSizing:'border-box'};
+  const inputSt = {padding:'2px 4px', border:'none', background:'transparent', color:T.ink, fontSize:10, fontFamily:"'IBM Plex Mono', monospace", outline:'none', width:'100%', boxSizing:'border-box'};
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
@@ -396,6 +416,10 @@ function ProjectGantt({ project, studioId, onBack }) {
           <button onClick={()=>exportPDF(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.ink20}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
+          {/* Solo grafico */}
+          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.ink20}`,color:onlyChart?'#EEF1F6':T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+            {onlyChart ? '⊞ Tabella' : '▦ Solo grafico'}
+          </button>
           {/* Vista */}
           <div style={{display:'flex',border:`0.5px solid ${T.ink20}`,overflow:'hidden'}}>
             {[['week','Settimane'],['month','Mesi']].map(([m,label])=>(
@@ -409,9 +433,10 @@ function ProjectGantt({ project, studioId, onBack }) {
       <div style={{flex:1,display:'flex',overflow:'hidden',border:`0.5px solid ${T.ink10}`,borderTop:'none',background:'#fff'}}>
 
         {/* LEFT */}
+        {!onlyChart && (
         <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.ink10}`,display:'flex',flexDirection:'column'}}>
           {/* Header colonne */}
-          <div style={{height:52,borderBottom:`0.5px solid ${T.ink10}`,display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 90px 60px 32px',background:T.paper,flexShrink:0}}>
+          <div style={{height:52,borderBottom:`0.5px solid ${T.ink10}`,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',background:T.paper,flexShrink:0}}>
             {['Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
               <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<6?`0.5px solid ${T.ink10}`:'none'}}>{h}</div>
             ))}
@@ -421,7 +446,7 @@ function ProjectGantt({ project, studioId, onBack }) {
             {lavorazioni.map((lav,i)=>{
               const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}) : T.navy);
               return (
-                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 90px 60px 32px',borderBottom:`0.5px solid ${T.ink10}`,background:i%2===0?'#fff':'#fafafa'}}>
+                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',borderBottom:`0.5px solid ${T.ink10}`,background:i%2===0?'#fff':'#fafafa'}}>
                   {/* Nome */}
                   <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
                     <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
@@ -479,7 +504,7 @@ function ProjectGantt({ project, studioId, onBack }) {
             })}
 
             {/* Riga nuova lavorazione */}
-            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:'1fr 90px 90px 90px 90px 90px 32px',borderBottom:`0.5px solid ${T.ink10}`,background:'#f0f4ff'}}>
+            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',borderBottom:`0.5px solid ${T.ink10}`,background:'#f0f4ff'}}>
               {/* Descrizione */}
               <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
@@ -535,6 +560,7 @@ function ProjectGantt({ project, studioId, onBack }) {
             </div>
           </div>
         </div>
+        )}
 
         {/* RIGHT — chart */}
         <div ref={chartRef}
