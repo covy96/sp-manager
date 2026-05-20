@@ -291,8 +291,7 @@ function ProjectGantt({ project, studioId, onBack }) {
       updated.colore = value ? colorForImpresa(value, map) : T.navy;
     }
 
-    // Aggiorna stato locale e DB per la lavorazione corrente
-    setLavorazioni(prev => prev.map(l => l.id === lav.id ? updated : l));
+    // Aggiorna DB per la lavorazione corrente
     await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
 
     // Propaga in cascata a tutte le dipendenti se le date sono cambiate
@@ -302,31 +301,26 @@ function ProjectGantt({ project, studioId, onBack }) {
       const deltaGiorni = diffDays(oldFine, newFine);
 
       if (deltaGiorni !== 0) {
-        const propagate = async (parentId, delta, parentNewFine) => {
-          const deps = lavorazioni.filter(l => l.dipendenza_id === parentId);
+        const propagate = async (parentId, parentNewFine) => {
+          const current = await supabase.from('lavorazioni_gantt').select('*')
+            .eq('studio', studioId).eq('project_id', project.id);
+          const allLav = current.data ?? [];
+          const deps = allLav.filter(l => l.dipendenza_id === parentId);
           for (const dep of deps) {
-            let newStart, newEnd;
-            if (parentNewFine) {
-              newStart = nextWorkingDay(parentNewFine);
-              newEnd   = toISO(addDays(parseDate(newStart), Number(dep.durata_giorni) - 1));
-            } else {
-              newStart = toISO(addDays(parseDate(dep.data_inizio), delta));
-              newEnd   = toISO(addDays(parseDate(dep.data_fine),   delta));
-            }
-            setLavorazioni(prev => prev.map(l =>
-              l.id === dep.id ? {...l, data_inizio: newStart, data_fine: newEnd} : l
-            ));
+            const newStart = nextWorkingDay(parentNewFine);
+            const newEnd   = toISO(addDays(parseDate(newStart), Number(dep.durata_giorni) - 1));
             await supabase.from('lavorazioni_gantt').update({
-              data_inizio: newStart,
-              data_fine:   newEnd,
+              data_inizio:   newStart,
+              data_fine:     newEnd,
               durata_giorni: dep.durata_giorni,
             }).eq('id', dep.id);
-            await propagate(dep.id, delta, newEnd);
+            await propagate(dep.id, newEnd);
           }
         };
-        await propagate(lav.id, deltaGiorni, updated.data_fine);
+        await propagate(lav.id, updated.data_fine);
       }
     }
+    await loadData();
   };
 
   const handleDelete = async (id) => {
