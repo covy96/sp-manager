@@ -37,6 +37,7 @@ import PianoPage from "./pages/settings/PianoPage";
 import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
 
 import { supabase } from "./lib/supabase";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 function ProtectedLayout({ session, children }) {
   if (!session) {
@@ -88,6 +89,7 @@ export default function App({ session }) {
   const navigate = useNavigate();
 
   return (
+    <ThemeProvider>
     <Routes>
       <Route
         path="/"
@@ -318,5 +320,6 @@ export default function App({ session }) {
       />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </ThemeProvider>
   );
 }

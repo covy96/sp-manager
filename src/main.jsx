@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { seedServiceTaskTemplates, supabase } from "./lib/supabase";
-import { initTheme } from "./pages/settings/AspettoPage";
+import { initTheme } from "./contexts/ThemeContext";
 
 initTheme();
 

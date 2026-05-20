@@ -3,103 +3,203 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── ASM DESIGN TOKENS ───────────────────────────────────────────
-   Default = LIGHT (il brand system ASM è chiaro)
-   Le variabili vengono sovrascritte in dark mode
-─────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   ASM DESIGN SYSTEM — CSS VARIABLES
+   Light mode è il default (brand ASM).
+   Dark mode si attiva con classe .dark su <html>.
+═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --asm-bg:        #EEF1F6;
-  --asm-surface:   #ffffff;
-  --asm-ink:       #0E0E0D;
-  --asm-navy:      #13315C;
-  --asm-brass:     #D9C98A;
-  --asm-muted:     #8a847b;
-  --asm-border:    rgba(14,14,13,0.12);
-  --asm-border-md: rgba(14,14,13,0.2);
-  --asm-red:       #b91c1c;
-  --asm-green:     #1a6b3c;
-  --asm-paper:     #EEF1F6;
+  /* ── Superfici ── */
+  --bg:          #EEF1F6;      /* sfondo pagina */
+  --surface:     #ffffff;      /* card, panel */
+  --surface-2:   #f5f7fa;      /* superfici secondarie, righe alternate */
+  --surface-3:   #EEF1F6;      /* paper, input bg */
 
-  /* Sidebar */
-  --asm-sidebar-bg:   #0E0E0D;
-  --asm-sidebar-text: #EEF1F6cc;
-  --asm-sidebar-active-bg: rgba(255,255,255,0.1);
+  /* ── Testo ── */
+  --ink:         #0E0E0D;      /* testo primario */
+  --ink-60:      rgba(14,14,13,0.6);
+  --ink-40:      rgba(14,14,13,0.4);
+  --muted:       #8a847b;      /* testo secondario */
 
-  /* Scrollbar */
+  /* ── Brand ── */
+  --navy:        #13315C;      /* colore primario */
+  --navy-light:  #EEF3FA;      /* navy chiaro, hover, selected */
+  --brass:       #D9C98A;      /* accento gold */
+
+  /* ── Bordi ── */
+  --border:      rgba(14,14,13,0.12);
+  --border-md:   rgba(14,14,13,0.2);
+  --border-heavy:rgba(14,14,13,0.35);
+
+  /* ── Semantici ── */
+  --red:         #b91c1c;
+  --red-light:   #fef2f2;
+  --green:       #1a6b3c;
+  --green-light: #f0fdf4;
+  --yellow:      #854d0e;
+  --yellow-light:#fefce8;
+
+  /* ── Sidebar ── */
+  --sidebar-bg:       #0E0E0D;
+  --sidebar-text:     rgba(238,241,246,0.8);
+  --sidebar-active:   rgba(255,255,255,0.10);
+  --sidebar-border:   rgba(255,255,255,0.08);
+  --sidebar-num:      rgba(217,201,138,0.7);
+
+  /* ── Header ── */
+  --header-bg:    #EEF1F6;
+  --header-border:rgba(14,14,13,0.1);
+
+  /* ── Input ── */
+  --input-bg:     #ffffff;
+  --input-border: rgba(14,14,13,0.2);
+  --input-text:   #0E0E0D;
+
+  /* ── Scrollbar ── */
   scrollbar-color: rgba(14,14,13,0.2) transparent;
+  scrollbar-width: thin;
 }
 
-/* ── DARK MODE ───────────────────────────────────────────────────
-   Applicato quando <html> ha classe .dark
-─────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE
+═══════════════════════════════════════════════════════════════ */
 html.dark {
-  --asm-bg:        #111110;
-  --asm-surface:   #1c1c1a;
-  --asm-ink:       #EEF1F6;
-  --asm-navy:      #6ea8d8;
-  --asm-brass:     #D9C98A;
-  --asm-muted:     #8a847b;
-  --asm-border:    rgba(238,241,246,0.1);
-  --asm-border-md: rgba(238,241,246,0.2);
-  --asm-red:       #f87171;
-  --asm-green:     #4ade80;
-  --asm-paper:     #1c1c1a;
+  /* ── Superfici ── */
+  --bg:          #111110;
+  --surface:     #1c1c1a;
+  --surface-2:   #242422;
+  --surface-3:   #1c1c1a;
 
-  --asm-sidebar-bg:   #0a0a09;
-  --asm-sidebar-text: #EEF1F6cc;
-  --asm-sidebar-active-bg: rgba(255,255,255,0.1);
+  /* ── Testo ── */
+  --ink:         #EEF1F6;
+  --ink-60:      rgba(238,241,246,0.6);
+  --ink-40:      rgba(238,241,246,0.4);
+  --muted:       #8a847b;
 
-  scrollbar-color: rgba(238,241,246,0.2) transparent;
+  /* ── Brand ── */
+  --navy:        #5b9bd5;
+  --navy-light:  rgba(91,155,213,0.12);
+  --brass:       #D9C98A;
+
+  /* ── Bordi ── */
+  --border:      rgba(238,241,246,0.1);
+  --border-md:   rgba(238,241,246,0.18);
+  --border-heavy:rgba(238,241,246,0.3);
+
+  /* ── Semantici ── */
+  --red:         #f87171;
+  --red-light:   rgba(248,113,113,0.1);
+  --green:       #4ade80;
+  --green-light: rgba(74,222,128,0.1);
+  --yellow:      #fbbf24;
+  --yellow-light:rgba(251,191,36,0.1);
+
+  /* ── Sidebar — rimane scura anche in light ── */
+  --sidebar-bg:       #0a0a09;
+  --sidebar-text:     rgba(238,241,246,0.8);
+  --sidebar-active:   rgba(255,255,255,0.10);
+  --sidebar-border:   rgba(255,255,255,0.06);
+  --sidebar-num:      rgba(217,201,138,0.7);
+
+  /* ── Header ── */
+  --header-bg:    #1c1c1a;
+  --header-border:rgba(238,241,246,0.08);
+
+  /* ── Input ── */
+  --input-bg:     #242422;
+  --input-border: rgba(238,241,246,0.15);
+  --input-text:   #EEF1F6;
+
+  /* ── Scrollbar ── */
+  scrollbar-color: rgba(238,241,246,0.15) transparent;
+
   color-scheme: dark;
 }
 
-/* ── BASE ────────────────────────────────────────────────────────*/
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESET
+═══════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   min-height: 100vh;
-  background-color: var(--asm-bg);
-  color: var(--asm-ink);
+  background-color: var(--bg);
+  color: var(--ink);
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* ── SCROLLBAR ───────────────────────────────────────────────────*/
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--asm-border-md); border-radius: 3px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-md);
+  border-radius: 3px;
+}
 
-/* ── INPUT / TEXTAREA / SELECT ───────────────────────────────────
-   Override globale per dark mode — i componenti usano inline styles
-   quindi override con !important solo per dark
-─────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   INPUT / SELECT / TEXTAREA — dark mode override
+   I componenti usano inline styles ma questi fanno da fallback
+═══════════════════════════════════════════════════════════════ */
 html.dark input,
 html.dark textarea,
 html.dark select {
   color-scheme: dark;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
 }
 
-/* ── DATE INPUT ──────────────────────────────────────────────────*/
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--muted);
+}
+
+/* ── Date picker icon ── */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0.5;
-  cursor: pointer;
-  filter: var(--date-icon-filter, none);
+  opacity: 0.5; cursor: pointer;
 }
 html.dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
-/* ── FOCUS VISIBLE ───────────────────────────────────────────────*/
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS
+═══════════════════════════════════════════════════════════════ */
 :focus-visible {
-  outline: 1.5px solid var(--asm-navy);
+  outline: 1.5px solid var(--navy);
   outline-offset: 2px;
 }
 
-/* Mobile safe area */
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════════════════════════ */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .mobile-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
 * { -webkit-tap-highlight-color: transparent; }
 input, textarea, select, button { touch-action: manipulation; }
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES — usabili nei componenti
+═══════════════════════════════════════════════════════════════ */
+.asm-bg       { background-color: var(--bg); }
+.asm-surface  { background-color: var(--surface); }
+.asm-surface2 { background-color: var(--surface-2); }
+.asm-border   { border: 0.5px solid var(--border); }
+.asm-text     { color: var(--ink); }
+.asm-muted    { color: var(--muted); }
+.asm-navy     { color: var(--navy); }
+
+/* ── Transizione tema ── */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease !important;
+}
