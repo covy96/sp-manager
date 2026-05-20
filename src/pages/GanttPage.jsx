@@ -49,23 +49,26 @@ function addDays(date, n) {
   const d = new Date(date); d.setDate(d.getDate()+n); return d;
 }
 function diffDays(a, b) {
-  return Math.round((new Date(b)-new Date(a))/86400000);
+  const da = a instanceof Date ? a : parseDate(a);
+  const db = b instanceof Date ? b : parseDate(b);
+  return Math.round((db - da) / 86400000);
 }
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short'});
 }
 function getMondayOf(d) {
-  const date = new Date(d);
+  const date = d instanceof Date ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : new Date(d);
   const day = date.getDay();
-  date.setDate(date.getDate()+(day===0?-6:1-day));
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
   return date;
 }
 
-// Prossimo giorno lavorativo dopo una data (salta sabato e domenica)
+// Prossimo giorno lavorativo dopo una data (salta solo domenica)
 function nextWorkingDay(dateStr) {
   let d = addDays(parseDate(dateStr), 1);
-  while (d.getDay() === 0 || d.getDay() === 6) d = addDays(d, 1);
+  while (d.getDay() === 0) d = addDays(d, 1);
   return toISO(d);
 }
 
