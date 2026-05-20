@@ -274,45 +274,51 @@ function ProjectGantt({ project, studioId, onBack }) {
 
   // ── INLINE EDIT ───────────────────────────────────────────────────
   const handleInlineEdit = async (lav, field, value) => {
-    // Validazione: se si cambia data_inizio e c'è una dipendenza, non può essere <= fine del parent
-    if (field === 'data_inizio' && lav.dipendenza_id) {
-      const parent = lavorazioni.find(l => l.id === lav.dipendenza_id);
-      if (parent?.data_fine && value <= parent.data_fine) {
-        value = nextWorkingDay(parent.data_fine);
-      }
-    }
     const updated = {...lav, [field]: value};
-    if (field==='durata_giorni') updated.data_fine     = toISO(addDays(parseDate(lav.data_inizio), Number(value)-1));
-    if (field==='data_inizio')   updated.data_fine     = toISO(addDays(parseDate(value), Number(lav.durata_giorni)-1));
-    if (field==='data_fine')     updated.durata_giorni = diffDays(parseDate(lav.data_inizio), parseDate(value)) + 1;
-    if (field==='operatore') {
+
+    // Ricalcola data_fine o durata_giorni in base al campo modificato
+    if (field === 'durata_giorni') {
+      updated.data_fine = toISO(addDays(parseDate(lav.data_inizio), Number(value) - 1));
+    }
+    if (field === 'data_inizio') {
+      updated.data_fine = toISO(addDays(parseDate(value), Number(lav.durata_giorni) - 1));
+    }
+    if (field === 'data_fine') {
+      updated.durata_giorni = diffDays(lav.data_inizio, value) + 1;
+    }
+    if (field === 'operatore') {
       const map = {...impresaColorMap};
       updated.colore = value ? colorForImpresa(value, map) : T.navy;
     }
 
-    // Aggiorna stato locale
+    // Aggiorna stato locale e DB per la lavorazione corrente
     setLavorazioni(prev => prev.map(l => l.id === lav.id ? updated : l));
-    await supabase.from("lavorazioni_gantt").update(updated).eq("id", lav.id);
+    await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
 
-    // Propagazione delta-based sui dipendenti
-    if (['data_inizio','data_fine','durata_giorni'].includes(field)) {
-      let deltaDays = 0;
-      if (field === 'data_inizio') deltaDays = diffDays(parseDate(lav.data_inizio), parseDate(value));
-      else if (field === 'data_fine') deltaDays = diffDays(parseDate(lav.data_fine), parseDate(value));
-      else if (field === 'durata_giorni') deltaDays = Number(value) - Number(lav.durata_giorni);
-      if (deltaDays !== 0) {
-        const allLav = lavorazioni.map(l => l.id === lav.id ? updated : l);
-        const propagate = (parentId) => {
-          const deps = allLav.filter(l => l.dipendenza_id === parentId);
-          deps.forEach(async dep => {
-            const newStart = toISO(addDays(parseDate(dep.data_inizio), deltaDays));
-            const newEnd   = toISO(addDays(parseDate(dep.data_fine),   deltaDays));
-            setLavorazioni(prev => prev.map(l => l.id === dep.id ? {...l, data_inizio:newStart, data_fine:newEnd} : l));
-            await supabase.from('lavorazioni_gantt').update({data_inizio:newStart, data_fine:newEnd}).eq('id', dep.id);
-            propagate(dep.id);
-          });
+    // Propaga in cascata a tutte le dipendenti se le date sono cambiate
+    if (['data_inizio', 'data_fine', 'durata_giorni'].includes(field)) {
+      const oldFine = lav.data_fine;
+      const newFine = updated.data_fine;
+      const deltaGiorni = diffDays(oldFine, newFine);
+
+      if (deltaGiorni !== 0) {
+        const propagate = async (parentId, delta) => {
+          const deps = lavorazioni.filter(l => l.dipendenza_id === parentId);
+          for (const dep of deps) {
+            const newStart  = toISO(addDays(parseDate(dep.data_inizio), delta));
+            const newEnd    = toISO(addDays(parseDate(dep.data_fine),   delta));
+            setLavorazioni(prev => prev.map(l =>
+              l.id === dep.id ? {...l, data_inizio: newStart, data_fine: newEnd} : l
+            ));
+            await supabase.from('lavorazioni_gantt').update({
+              data_inizio: newStart,
+              data_fine:   newEnd,
+              durata_giorni: dep.durata_giorni,
+            }).eq('id', dep.id);
+            await propagate(dep.id, delta);
+          }
         };
-        propagate(lav.id);
+        await propagate(lav.id, deltaGiorni);
       }
     }
   };
@@ -335,30 +341,32 @@ function ProjectGantt({ project, studioId, onBack }) {
       setLavorazioni(prev=>prev.map(l=>l.id===lav.id?{...l,data_inizio:newStart,data_fine:toISO(addDays(parseDate(newStart),Number(l.durata_giorni)-1))}:l));
     };
     const onUp = async (ev) => {
-      document.removeEventListener("mousemove",onMove);
-      document.removeEventListener("mouseup",onUp);
-      const delta = Math.round((ev.clientX-startX)/dayW);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const delta = Math.round((ev.clientX - startX) / dayW);
       if (delta) {
         const newStart = toISO(addDays(parseDate(origDate), delta));
-        const newEnd   = toISO(addDays(parseDate(newStart), Number(lav.durata_giorni)-1));
-        await supabase.from("lavorazioni_gantt").update({data_inizio:newStart, data_fine:newEnd}).eq("id", lav.id);
+        const newEnd   = toISO(addDays(parseDate(newStart), Number(lav.durata_giorni) - 1));
+        await supabase.from('lavorazioni_gantt').update({data_inizio: newStart, data_fine: newEnd}).eq('id', lav.id);
 
-        // Ricalcola dipendenti
-        const updatedLav = {...lav, data_inizio:newStart, data_fine:newEnd};
-        const allLav = lavorazioni.map(l => l.id===lav.id ? updatedLav : l);
-        const updates = ricalcolaDipendenti(lav.id, allLav);
-        if (Object.keys(updates).length > 0) {
-          setLavorazioni(prev => prev.map(l => updates[l.id] ? {...l,...updates[l.id]} : l));
-          await Promise.all(Object.values(updates).map(u =>
-            supabase.from("lavorazioni_gantt").update({data_inizio:u.data_inizio, data_fine:u.data_fine}).eq("id", u.id)
-          ));
-        }
+        // Propaga alle dipendenti
+        const propagate = async (parentId, deltaGiorni) => {
+          const res = await supabase.from('lavorazioni_gantt').select('*').eq('studio', studioId).eq('project_id', project.id);
+          const deps = (res.data ?? []).filter(l => l.dipendenza_id === parentId);
+          for (const dep of deps) {
+            const ns = toISO(addDays(parseDate(dep.data_inizio), deltaGiorni));
+            const ne = toISO(addDays(parseDate(dep.data_fine),   deltaGiorni));
+            await supabase.from('lavorazioni_gantt').update({data_inizio: ns, data_fine: ne}).eq('id', dep.id);
+            await propagate(dep.id, deltaGiorni);
+          }
+        };
+        await propagate(lav.id, delta);
         loadData();
       }
     };
     document.addEventListener("mousemove",onMove);
     document.addEventListener("mouseup",onUp);
-  }, [dayW, loadData]);
+  }, [dayW, loadData, studioId, project]);
 
   // ── RESIZE BAR ────────────────────────────────────────────────────
   const onResizeMouseDown = useCallback((e, lav) => {
