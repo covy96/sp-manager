@@ -282,8 +282,9 @@ function ProjectGantt({ project, studioId, onBack }) {
       }
     }
     const updated = {...lav, [field]: value};
-    if (field==='durata_giorni') updated.data_fine = toISO(addDays(parseDate(lav.data_inizio), Number(value)-1));
-    if (field==='data_inizio')   updated.data_fine = toISO(addDays(parseDate(value), Number(lav.durata_giorni)-1));
+    if (field==='durata_giorni') updated.data_fine     = toISO(addDays(parseDate(lav.data_inizio), Number(value)-1));
+    if (field==='data_inizio')   updated.data_fine     = toISO(addDays(parseDate(value), Number(lav.durata_giorni)-1));
+    if (field==='data_fine')     updated.durata_giorni = diffDays(parseDate(lav.data_inizio), parseDate(value)) + 1;
     if (field==='operatore') {
       const map = {...impresaColorMap};
       updated.colore = value ? colorForImpresa(value, map) : T.navy;
