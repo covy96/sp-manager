@@ -34,12 +34,16 @@ function colorForImpresa(impresa, map) {
 function toISO(d) {
   if (!d) return '';
   const date = d instanceof Date ? d : new Date(d);
-  return date.toISOString().slice(0,10);
+  const y   = date.getFullYear();
+  const m   = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 function parseDate(s) {
   if (!s) return null;
-  const d = new Date(s+'T00:00:00');
-  return isNaN(d.getTime()) ? null : d;
+  const [y, m, d] = s.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d); // ora locale, non UTC
 }
 function addDays(date, n) {
   const d = new Date(date); d.setDate(d.getDate()+n); return d;
