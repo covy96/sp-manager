@@ -302,11 +302,17 @@ function ProjectGantt({ project, studioId, onBack }) {
       const deltaGiorni = diffDays(oldFine, newFine);
 
       if (deltaGiorni !== 0) {
-        const propagate = async (parentId, delta) => {
+        const propagate = async (parentId, delta, parentNewFine) => {
           const deps = lavorazioni.filter(l => l.dipendenza_id === parentId);
           for (const dep of deps) {
-            const newStart  = toISO(addDays(parseDate(dep.data_inizio), delta));
-            const newEnd    = toISO(addDays(parseDate(dep.data_fine),   delta));
+            let newStart, newEnd;
+            if (parentNewFine) {
+              newStart = nextWorkingDay(parentNewFine);
+              newEnd   = toISO(addDays(parseDate(newStart), Number(dep.durata_giorni) - 1));
+            } else {
+              newStart = toISO(addDays(parseDate(dep.data_inizio), delta));
+              newEnd   = toISO(addDays(parseDate(dep.data_fine),   delta));
+            }
             setLavorazioni(prev => prev.map(l =>
               l.id === dep.id ? {...l, data_inizio: newStart, data_fine: newEnd} : l
             ));
@@ -315,10 +321,10 @@ function ProjectGantt({ project, studioId, onBack }) {
               data_fine:   newEnd,
               durata_giorni: dep.durata_giorni,
             }).eq('id', dep.id);
-            await propagate(dep.id, delta);
+            await propagate(dep.id, delta, newEnd);
           }
         };
-        await propagate(lav.id, deltaGiorni);
+        await propagate(lav.id, deltaGiorni, updated.data_fine);
       }
     }
   };
