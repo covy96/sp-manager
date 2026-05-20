@@ -80,6 +80,10 @@ const SECTIONS = [
   { id:'commesse' },
   { id:'timesheet' },
   { id:'mobile' },
+  { id:'report' },
+  { id:'team' },
+  { id:'monitoraggio' },
+  { id:'fatture' },
   { id:'pricing' },
   { id:'faq' },
   { id:'cta' },
@@ -124,7 +128,7 @@ export default function LandingPage({ onLogin, onRegister }) {
       }}>
         <AsmSeal size="sm" showBorder={false} showBottom={false} theme={activeSection===0?'dark':'light'}/>
         <div style={{ display:'flex', gap:28 }}>
-          {[['Funzionalità',1],['Pricing',5],['FAQ',6]].map(([label,idx])=>(
+          {[['Funzionalità',1],['Pricing',9],['FAQ',10]].map(([label,idx])=>(
             <button key={label} onClick={()=>scrollTo(idx)} style={{ ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', background:'none', border:'none', cursor:'pointer', color: activeSection===0?'rgba(238,241,246,0.8)':C.muted }}>
               {label}
             </button>
@@ -378,7 +382,202 @@ export default function LandingPage({ onLogin, onRegister }) {
           </div>
         </section>
 
-        {/* ── 5. PRICING ── */}
+        {/* ── 5. REPORT ── */}
+        <section style={{ height:'100vh', scrollSnapAlign:'start', background:'#13315C', display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+          <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 64px' }}>
+            <div style={{ ...eyebrow, color:C.brass, marginBottom:20 }}>05 — Report</div>
+            <h2 style={{ fontSize:48, fontWeight:600, letterSpacing:'-0.03em', color:'#EEF1F6', lineHeight:1.1, marginBottom:20 }}>
+              Dati chiari,<br/>decisioni migliori.
+            </h2>
+            <p style={{ ...mono, fontSize:12, lineHeight:1.8, color:'rgba(238,241,246,0.5)', marginBottom:32 }}>
+              Report settimanali e mensili per progetto, cliente e membro del team. Esporta in CSV con un click.
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {['Vista settimanale e mensile','Ore per progetto, cliente e utente','Andamento temporale con grafici','Export Excel e CSV'].map(f=>(
+                <div key={f} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+                  <span style={{ color:C.brass, fontSize:14, marginTop:1, flexShrink:0 }}>→</span>
+                  <span style={{ ...mono, fontSize:11, color:'rgba(238,241,246,0.6)', lineHeight:1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:48 }}>
+            <MockScreen dark>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(238,241,246,0.4)' }}>Report — Maggio 2026</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {[['Ore totali','124:30','#4ade80'],['Progetti attivi','6','rgba(238,241,246,0.9)'],['Membri attivi','4','rgba(238,241,246,0.9)'],['Ore anno','487:00','#D9C98A']].map(([l,v,c])=>(
+                    <div key={l} style={{ background:'rgba(255,255,255,0.05)', padding:'10px 12px', borderRadius:2 }}>
+                      <div style={{ ...mono, fontSize:8, color:'rgba(238,241,246,0.3)', marginBottom:4 }}>{l}</div>
+                      <div style={{ fontSize:16, fontWeight:600, color:c }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ ...mono, fontSize:8, color:'rgba(238,241,246,0.3)', marginTop:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Ore per progetto</div>
+                {[['Casa Vacanze Cortina',52,'#13315C'],['Uffici IF Group',38,'#1a6b3c'],['Showroom Milano',22,'#7c3aed'],['Residenza Lago Como',12,'#b45309']].map(([name,ore,color])=>(
+                  <div key={name} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ ...mono, fontSize:9, color:'rgba(238,241,246,0.6)', width:130, flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
+                    <div style={{ flex:1, height:6, background:'rgba(255,255,255,0.06)', borderRadius:3 }}>
+                      <div style={{ height:6, background:color, borderRadius:3, width:`${(ore/52)*100}%` }}/>
+                    </div>
+                    <div style={{ ...mono, fontSize:9, color:'rgba(238,241,246,0.5)', width:32, textAlign:'right' }}>{ore}h</div>
+                  </div>
+                ))}
+              </div>
+            </MockScreen>
+          </div>
+        </section>
+
+        {/* ── 6. TEAM ── */}
+        <section style={{ height:'100vh', scrollSnapAlign:'start', background:C.paper, display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:48, background:'rgba(19,49,92,0.04)' }}>
+            <MockScreen>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.muted, marginBottom:4 }}>Team — Studio Architettura</div>
+                {[
+                  { name:'Marco Rossi', role:'Project Manager', ore:'42h', color:'#13315C', initials:'MR' },
+                  { name:'Giulia Ferrari', role:'Architetto', ore:'38h', color:'#1a6b3c', initials:'GF' },
+                  { name:'Luca Bianchi', role:'Ingegnere', ore:'29h', color:'#7c3aed', initials:'LB' },
+                  { name:'Sara Conti', role:'Collaboratore', ore:'18h', color:'#b45309', initials:'SC' },
+                ].map(m=>(
+                  <div key={m.name} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'0.5px solid rgba(14,14,13,0.06)' }}>
+                    <div style={{ width:32, height:32, borderRadius:'50%', background:m.color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#fff', flexShrink:0 }}>{m.initials}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{m.name}</div>
+                      <div style={{ ...mono, fontSize:9, color:C.muted }}>{m.role}</div>
+                    </div>
+                    <div style={{ ...mono, fontSize:11, color:C.navy, fontWeight:600 }}>{m.ore}</div>
+                  </div>
+                ))}
+                <div style={{ marginTop:4, padding:'10px 12px', background:'rgba(19,49,92,0.05)', display:'flex', justifyContent:'space-between' }}>
+                  <span style={{ ...mono, fontSize:9, color:C.muted }}>Ore totali mese</span>
+                  <span style={{ ...mono, fontSize:11, color:C.navy, fontWeight:600 }}>127h</span>
+                </div>
+              </div>
+            </MockScreen>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 64px' }}>
+            <div style={{ ...eyebrow, color:C.navy, marginBottom:20 }}>06 — Team</div>
+            <h2 style={{ fontSize:48, fontWeight:600, letterSpacing:'-0.03em', color:C.ink, lineHeight:1.1, marginBottom:20 }}>
+              Il team sempre<br/>allineato.
+            </h2>
+            <p style={{ ...mono, fontSize:12, lineHeight:1.8, color:'rgba(14,14,13,0.6)', marginBottom:32 }}>
+              Gestisci ruoli e permessi, assegna task, monitora le ore per membro. Invita collaboratori con un codice.
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {['7 ruoli: da Titolare a Collaboratore esterno','Invito via codice senza registrazione complessa','Permessi granulari per sezione','Ore e task per ogni membro del team'].map(f=>(
+                <div key={f} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+                  <span style={{ color:C.navy, fontSize:14, marginTop:1, flexShrink:0 }}>→</span>
+                  <span style={{ ...mono, fontSize:11, color:'rgba(14,14,13,0.7)', lineHeight:1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 7. MONITORAGGIO ── */}
+        <section style={{ height:'100vh', scrollSnapAlign:'start', background:C.ink, display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+          <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 64px' }}>
+            <div style={{ ...eyebrow, color:C.brass, marginBottom:20 }}>07 — Monitoraggio</div>
+            <h2 style={{ fontSize:48, fontWeight:600, letterSpacing:'-0.03em', color:'#EEF1F6', lineHeight:1.1, marginBottom:20 }}>
+              Tutte le commesse,<br/>una vista.
+            </h2>
+            <p style={{ ...mono, fontSize:12, lineHeight:1.8, color:'rgba(238,241,246,0.5)', marginBottom:32 }}>
+              Monitora credito da incassare, residui e scadenze su tutte le commesse attive in un colpo d&apos;occhio.
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {['Credito totale da incassare','Commesse con residuo da oltre 60 giorni','Grafico valore commesse per mese','Tabella ordinabile per cliente o valore'].map(f=>(
+                <div key={f} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+                  <span style={{ color:C.brass, fontSize:14, marginTop:1, flexShrink:0 }}>→</span>
+                  <span style={{ ...mono, fontSize:11, color:'rgba(238,241,246,0.6)', lineHeight:1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:48 }}>
+            <MockScreen dark>
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(238,241,246,0.4)' }}>Monitoraggio commesse</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
+                  {[['Contratti','€128.500','rgba(238,241,246,0.9)'],['Incassato','€47.200','#4ade80'],['Da incassare','€81.300','#f87171']].map(([l,v,c])=>(
+                    <div key={l} style={{ background:'rgba(255,255,255,0.05)', padding:'8px 8px', borderRadius:2 }}>
+                      <div style={{ ...mono, fontSize:7, color:'rgba(238,241,246,0.3)', marginBottom:4 }}>{l}</div>
+                      <div style={{ fontSize:12, fontWeight:600, color:c }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ ...mono, fontSize:8, color:'rgba(238,241,246,0.3)', marginTop:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Commesse attive</div>
+                {[['Casa Vacanze Cortina','Famiglia Bianchi','€32.000','€18.000'],['Uffici IF Group','IF Group Srl','€45.000','€12.000'],['Showroom Milano','Arredo Italia','€28.500','€28.500'],['Residenza Lago Como','Studio Ferretti','€23.000','€22.800']].map(([nome,cliente,valore,residuo])=>(
+                  <div key={nome} style={{ padding:'7px 8px', background:'rgba(255,255,255,0.03)', borderRadius:2 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:'rgba(238,241,246,0.85)', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{nome}</div>
+                      <div style={{ ...mono, fontSize:9, color:'#4ade80' }}>{valore}</div>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <div style={{ ...mono, fontSize:8, color:'rgba(238,241,246,0.3)' }}>{cliente}</div>
+                      <div style={{ ...mono, fontSize:8, color:'#f87171' }}>res. {residuo}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </MockScreen>
+          </div>
+        </section>
+
+        {/* ── 8. FATTURE ── */}
+        <section style={{ height:'100vh', scrollSnapAlign:'start', background:C.paper, display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:48, background:'rgba(19,49,92,0.04)' }}>
+            <MockScreen>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <div style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:C.muted, marginBottom:4 }}>Fatture — 2026</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
+                  {[['Emesse','€47.200',C.ink],['Pagate','€31.400','#1a6b3c'],['In attesa','€15.800','#b91c1c']].map(([l,v,c])=>(
+                    <div key={l} style={{ background:C.paper, padding:'8px 8px' }}>
+                      <div style={{ ...mono, fontSize:7, color:C.muted, marginBottom:3 }}>{l}</div>
+                      <div style={{ fontSize:12, fontWeight:600, color:c }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                {[
+                  { n:'FT 2026/001', comm:'Uffici IF Group', data:'03/03/2026', imp:'€12.000', stato:'PAGATA', sc:'#1a6b3c' },
+                  { n:'FT 2026/002', comm:'Casa Vacanze', data:'15/03/2026', imp:'€8.500', stato:'PAGATA', sc:'#1a6b3c' },
+                  { n:'FT 2026/003', comm:'Showroom Milano', data:'02/04/2026', imp:'€10.900', stato:'IN ATTESA', sc:'#8a847b' },
+                  { n:'FT 2026/004', comm:'Residenza Lago', data:'28/04/2026', imp:'€4.900', stato:'SCADUTA', sc:'#b91c1c' },
+                ].map(f=>(
+                  <div key={f.n} style={{ padding:'7px 0', borderBottom:'0.5px solid rgba(14,14,13,0.06)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <div style={{ fontSize:11, fontWeight:600, color:C.ink }}>{f.n}</div>
+                      <div style={{ ...mono, fontSize:8, color:C.muted }}>{f.comm} · {f.data}</div>
+                    </div>
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ ...mono, fontSize:11, color:C.navy, fontWeight:600 }}>{f.imp}</div>
+                      <div style={{ ...mono, fontSize:8, color:f.sc }}>{f.stato}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </MockScreen>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 64px' }}>
+            <div style={{ ...eyebrow, color:C.navy, marginBottom:20 }}>08 — Fatture</div>
+            <h2 style={{ fontSize:48, fontWeight:600, letterSpacing:'-0.03em', color:C.ink, lineHeight:1.1, marginBottom:20 }}>
+              Fatturazione<br/>senza pensieri.
+            </h2>
+            <p style={{ ...mono, fontSize:12, lineHeight:1.8, color:'rgba(14,14,13,0.6)', marginBottom:32 }}>
+              Tieni traccia di ogni fattura emessa, pagata o in scadenza. Collega ogni fattura alla commessa di riferimento.
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {['Fatture collegate alle commesse','Stato pagamento in tempo reale','Scadenze evidenziate','Storico completo esportabile'].map(f=>(
+                <div key={f} style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+                  <span style={{ color:C.navy, fontSize:14, marginTop:1, flexShrink:0 }}>→</span>
+                  <span style={{ ...mono, fontSize:11, color:'rgba(14,14,13,0.7)', lineHeight:1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 9. PRICING ── */}
         <section style={{
           height:'100vh', scrollSnapAlign:'start',
           background:C.paper, overflow:'auto',
