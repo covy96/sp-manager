@@ -276,7 +276,6 @@ function ProjectGantt({ project, studioId, onBack }) {
   const handleInlineEdit = async (lav, field, value) => {
     const updated = {...lav, [field]: value};
 
-    // Ricalcola data_fine o durata_giorni in base al campo modificato
     if (field === 'durata_giorni') {
       updated.data_fine = toISO(addDays(parseDate(lav.data_inizio), Number(value) - 1));
     }
@@ -291,35 +290,30 @@ function ProjectGantt({ project, studioId, onBack }) {
       updated.colore = value ? colorForImpresa(value, map) : T.navy;
     }
 
-    // Aggiorna DB per la lavorazione corrente
     await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
 
-    // Propaga in cascata a tutte le dipendenti se le date sono cambiate
+    // Propaga SEMPRE a tutte le dipendenti — non solo se delta != 0
     if (['data_inizio', 'data_fine', 'durata_giorni'].includes(field)) {
-      const oldFine = lav.data_fine;
-      const newFine = updated.data_fine;
-      const deltaGiorni = diffDays(oldFine, newFine);
-
-      if (deltaGiorni !== 0) {
-        const propagate = async (parentId, parentNewFine) => {
-          const current = await supabase.from('lavorazioni_gantt').select('*')
-            .eq('studio', studioId).eq('project_id', project.id);
-          const allLav = current.data ?? [];
-          const deps = allLav.filter(l => l.dipendenza_id === parentId);
-          for (const dep of deps) {
-            const newStart = nextWorkingDay(parentNewFine);
-            const newEnd   = toISO(addDays(parseDate(newStart), Number(dep.durata_giorni) - 1));
-            await supabase.from('lavorazioni_gantt').update({
-              data_inizio:   newStart,
-              data_fine:     newEnd,
-              durata_giorni: dep.durata_giorni,
-            }).eq('id', dep.id);
-            await propagate(dep.id, newEnd);
-          }
-        };
-        await propagate(lav.id, updated.data_fine);
-      }
+      const propagate = async (parentId, parentDataFine) => {
+        const { data: allLav } = await supabase.from('lavorazioni_gantt')
+          .select('*').eq('studio', studioId).eq('project_id', project.id);
+        const deps = (allLav ?? []).filter(l => l.dipendenza_id === parentId);
+        for (const dep of deps) {
+          // Il figlio parte SEMPRE il giorno lavorativo dopo la fine del parent
+          const newStart = nextWorkingDay(parentDataFine);
+          const newEnd   = toISO(addDays(parseDate(newStart), Number(dep.durata_giorni) - 1));
+          await supabase.from('lavorazioni_gantt').update({
+            data_inizio: newStart,
+            data_fine:   newEnd,
+            durata_giorni: dep.durata_giorni,
+          }).eq('id', dep.id);
+          // Propaga ai figli del figlio
+          await propagate(dep.id, newEnd);
+        }
+      };
+      await propagate(lav.id, updated.data_fine);
     }
+
     await loadData();
   };
 
