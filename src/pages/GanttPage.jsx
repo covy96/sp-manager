@@ -10,7 +10,8 @@ const T = {
 };
 
 const ROW_H       = 44;
-const LEFT_W      = 420;
+const COL = { attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
+const LEFT_W = Object.values(COL).reduce((s,v)=>s+v, 0); // = 615
 const DAY_W_WEEK  = 28;
 const DAY_W_MONTH = 12;
 
@@ -436,7 +437,7 @@ function ProjectGantt({ project, studioId, onBack }) {
         {!onlyChart && (
         <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.ink10}`,display:'flex',flexDirection:'column'}}>
           {/* Header colonne */}
-          <div style={{height:52,borderBottom:`0.5px solid ${T.ink10}`,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',background:T.paper,flexShrink:0}}>
+          <div style={{height:52,borderBottom:`0.5px solid ${T.ink10}`,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.paper,flexShrink:0}}>
             {['Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
               <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<6?`0.5px solid ${T.ink10}`:'none'}}>{h}</div>
             ))}
@@ -446,7 +447,7 @@ function ProjectGantt({ project, studioId, onBack }) {
             {lavorazioni.map((lav,i)=>{
               const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}) : T.navy);
               return (
-                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',borderBottom:`0.5px solid ${T.ink10}`,background:i%2===0?'#fff':'#fafafa'}}>
+                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.ink10}`,background:i%2===0?'#fff':'#fafafa'}}>
                   {/* Nome */}
                   <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
                     <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
@@ -504,7 +505,7 @@ function ProjectGantt({ project, studioId, onBack }) {
             })}
 
             {/* Riga nuova lavorazione */}
-            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:'140px 80px 80px 90px 90px 50px 28px',borderBottom:`0.5px solid ${T.ink10}`,background:'#f0f4ff'}}>
+            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.ink10}`,background:'#f0f4ff'}}>
               {/* Descrizione */}
               <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
