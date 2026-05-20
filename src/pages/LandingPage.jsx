@@ -561,7 +561,7 @@ export default function LandingPage({ onLogin, onRegister }) {
           <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', padding:'0 64px' }}>
             <div style={{ ...eyebrow, color:C.navy, marginBottom:20 }}>08 — Fatture</div>
             <h2 style={{ fontSize:48, fontWeight:600, letterSpacing:'-0.03em', color:C.ink, lineHeight:1.1, marginBottom:20 }}>
-              Fatturazione<br/>senza pensieri.
+              Monitoraggio fatture,<br/>senza pensieri.
             </h2>
             <p style={{ ...mono, fontSize:12, lineHeight:1.8, color:'rgba(14,14,13,0.6)', marginBottom:32 }}>
               Tieni traccia di ogni fattura emessa, pagata o in scadenza. Collega ogni fattura alla commessa di riferimento.
