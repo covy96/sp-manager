@@ -4,6 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../hooks/usePermissions";
 import { useTheme } from '../../contexts/ThemeContext';
+import { usePlan } from '../../hooks/usePlan';
 
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
 
@@ -39,6 +40,7 @@ export default function GestioneUtentiPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Gestione Utenti");
   const { studioId, teamMember: currentMember } = useStudio();
+  const { plan } = usePlan();
 
   const [members, setMembers]               = useState([]);
   const [loading, setLoading]               = useState(true);
@@ -113,6 +115,17 @@ export default function GestioneUtentiPage() {
       </div>
 
       {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
+
+      {/* Banner limite utenti */}
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted,
+        marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <span>Membri attivi: {members.length} / {plan.maxUsers === Infinity ? '∞' : plan.maxUsers}</span>
+        {members.length >= plan.maxUsers && plan.maxUsers !== Infinity && (
+          <span style={{ color: T.red }}>Limite raggiunto — fai upgrade per aggiungere altri membri</span>
+        )}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: selectedMember ? '320px 1fr' : '1fr', gap: 10, alignItems: 'start' }}>
 

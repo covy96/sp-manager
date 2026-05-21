@@ -88,6 +88,29 @@ export default function OnboardingPage() {
     const { data: studio, error: studioError } = await supabase.from("studios").select("*").eq("invite_code", code).single();
     if (studioError || !studio) { setError("Codice non valido"); setLoading(false); return; }
 
+    // Controlla limite utenti del piano dello studio
+    const { count } = await supabase
+      .from('team_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('studio', studio.id)
+      .eq('active', true);
+
+    const { data: studioData } = await supabase
+      .from('studios')
+      .select('piano')
+      .eq('id', studio.id)
+      .single();
+
+    const piano = studioData?.piano || 'free';
+    const limiti = { free: 1, studio: 10, pro: Infinity };
+    const maxUtenti = limiti[piano] ?? 1;
+
+    if (count >= maxUtenti) {
+      setError(`Lo studio ha raggiunto il limite di ${maxUtenti} utenti per il piano ${piano}. Contatta l'amministratore dello studio per fare l'upgrade.`);
+      setLoading(false);
+      return;
+    }
+
     const { data: existing } = await supabase.from("team_members").select("*").eq("user_account", user.id).maybeSingle();
 
     if (existing) {
