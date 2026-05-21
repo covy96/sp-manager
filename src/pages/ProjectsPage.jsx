@@ -512,7 +512,7 @@ export default function ProjectsPage() {
   const handleSaveProject = async e => {
     e.preventDefault(); setFormError(""); setSaveLoading(true);
     if (!canAddProject(projects.length)) {
-      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxProjects} progetti. Fai l'upgrade per crearne altri.`);
+      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxProjects} progetti attivi. Archivia i progetti completati o fai l'upgrade.`);
       setSaveLoading(false);
       return;
     }
@@ -621,7 +621,7 @@ export default function ProjectsPage() {
               <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
               {!canAddProject(projects.length) && (
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: T.red, marginTop:6 }}>
-                  Limite {plan.maxProjects} progetti raggiunto — <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>Upgrade</button>
+                  Limite {plan.maxProjects} progetti attivi raggiunto — archivia i completati o <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>fai l'upgrade</button>
                 </div>
               )}
             </div>

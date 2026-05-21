@@ -145,7 +145,7 @@ export default function CommessePage() {
     if (!studioId) return;
     setLoading(true); setError("");
     try {
-      const { data, error:dErr } = await supabase.from("commesse").select("*").eq("studio",studioId).order("created_at",{ascending:false});
+      const { data, error:dErr } = await supabase.from("commesse").select("*").eq("studio",studioId).eq("archived",false).order("created_at",{ascending:false});
       if (dErr) throw dErr;
       setCommesse(data??[]);
       const ids=(data??[]).map(c=>c.id);
@@ -211,7 +211,7 @@ export default function CommessePage() {
   const handleSave = async e => {
     e.preventDefault(); setFormError(""); setSaving(true);
     if (!canAddCommessa(commesse.length)) {
-      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxCommesse} commesse. Fai l'upgrade per crearne altre.`);
+      setFormError(`Piano ${plan.name}: hai raggiunto il limite di ${plan.maxCommesse} commesse attive. Archivia le commesse completate o fai l'upgrade.`);
       setSaving(false);
       return;
     }
