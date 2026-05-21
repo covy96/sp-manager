@@ -24,6 +24,7 @@ const ALL_MENU_ITEMS = [
   { label:"Fatture",      path:"/fatture",               num:"10", roles:"pm",  minPlan:"studio" },
   { label:"Report",       path:"/report",                num:"11", roles:"pm",  minPlan:"studio" },
   { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm",  minPlan:"studio" },
+  { label:"Analisi",      path:"/analisi",               num:"13", roles:"owner", minPlan:"free"  },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
@@ -123,10 +124,11 @@ export default function AppLayout({ session, children }) {
   useEffect(() => { setShowMac(navigator.platform.toUpperCase().includes("MAC")); }, []);
 
   const menuItems = useMemo(() => ALL_MENU_ITEMS.filter(item => {
+    if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
     return currentPlanLevel >= required;
-  }), [permissions.isProjectManager, currentPlanLevel]);
+  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel]);
 
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || "U");
   const memberColor    = teamMember?.color || T.navy;

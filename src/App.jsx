@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import MonitoraggioCommessePage from "./pages/MonitoraggioCommessePage";
 import MyTasksPage from "./pages/MyTasksPage";
 import GanttPage from "./pages/GanttPage";
+import AnalisiPage from "./pages/AnalisiPage";
 import ScrivaniaPage from "./pages/ScrivaniaPage";
 import LandingPage from "./pages/LandingPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -181,6 +182,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><GanttPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/analisi"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><AnalisiPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

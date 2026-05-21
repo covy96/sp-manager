@@ -39,6 +39,7 @@ const ALL_MENU_ITEMS = [
   { label:'Fatture',        path:'/fatture',                      roles:'pm',  minPlan:'studio' },
   { label:'Report',         path:'/report',                       roles:'pm',  minPlan:'studio' },
   { label:'Gantt',          path:'/gantt-progetti',               roles:'pm',  minPlan:'studio' },
+  { label:'Analisi',        path:'/analisi',                      roles:'owner', minPlan:'free'  },
   { label:'Profilo Studio', path:'/impostazioni/profilo-studio',  roles:'all', minPlan:'free'   },
 ];
 
@@ -67,6 +68,7 @@ export default function MobileLayout({ session, children }) {
   const { T, theme, setTheme, isDark } = useTheme();
 
   const menuItems = ALL_MENU_ITEMS.filter(item => {
+    if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
     return currentPlanLevel >= required;
