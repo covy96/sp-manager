@@ -73,7 +73,6 @@ export default function MobileLayout({ session, children }) {
   const [searchOpen, setSearchOpen]     = useState(false);
   const [studioName, setStudioName]     = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const { query, setQuery, results, loading:searchLoading, clear } = useGlobalSearch(studioId);
   const searchRef   = useRef(null);
@@ -89,7 +88,6 @@ export default function MobileLayout({ session, children }) {
     function h(e) {
       if (settingsRef.current && !settingsRef.current.contains(e.target)) {
         setSettingsOpen(false);
-        setShowThemeMenu(false);
       }
     }
     document.addEventListener('mousedown', h);
@@ -107,7 +105,6 @@ export default function MobileLayout({ session, children }) {
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || 'U');
   const memberColor    = teamMember?.color || T.navy;
 
-  const themeLabel = theme === 'dark' ? '🌙 Scuro' : theme === 'light' ? '☀️ Chiaro' : '💻 Sistema';
 
   return (
     <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", transition:'background 0.2s, color 0.2s' }}>
@@ -153,23 +150,10 @@ export default function MobileLayout({ session, children }) {
                 <div style={{ padding:'6px 4px', borderTop:`0.5px solid ${T.border}` }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
 
-                  {/* Tema */}
-                  <div style={{ position:'relative' }}>
-                    <button onClick={()=>setShowThemeMenu(p=>!p)} style={{ display:'flex', alignItems:'center', width:'100%', padding:'9px 14px', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
-                      Aspetto
-                      <span style={{ marginLeft:'auto', fontSize:11, color:T.muted }}>{themeLabel}</span>
-                    </button>
-                    {showThemeMenu && (
-                      <div style={{ background:T.surface2, borderTop:`0.5px solid ${T.border}`, borderBottom:`0.5px solid ${T.border}` }}>
-                        {[['light','☀️ Chiaro'],['dark','🌙 Scuro'],['system','💻 Sistema']].map(([t,label])=>(
-                          <button key={t} onClick={()=>{ setTheme(t); setShowThemeMenu(false); }} style={{ display:'flex', alignItems:'center', width:'100%', padding:'8px 20px', background: theme===t?T.navyLight:'transparent', border:'none', cursor:'pointer', fontSize:12, color: theme===t?T.navy:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
-                            {label}
-                            {theme===t && <span style={{ marginLeft:'auto', color:T.navy }}>✓</span>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {/* Aspetto */}
+                  <button onClick={()=>{ navigate('/impostazioni/aspetto'); setSettingsOpen(false); }} style={{ display:'flex', alignItems:'center', width:'100%', padding:'9px 14px', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
+                    Aspetto
+                  </button>
 
                   {[
                     { label:'Gestione Utenti', path:'/impostazioni/utenti'    },

@@ -76,7 +76,6 @@ export default function AppLayout({ session, children }) {
   const [studioName, setStudioName]     = useState("");
   const [studioList, setStudioList]     = useState([]);
   const [showStudioPicker, setShowStudioPicker] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const settingsRef = useRef(null);
   const searchRef   = useRef(null);
@@ -99,7 +98,6 @@ export default function AppLayout({ session, children }) {
     function handler(e) {
       if (settingsRef.current && !settingsRef.current.contains(e.target)) {
         setSettingsOpen(false);
-        setShowThemeMenu(false);
       }
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchFocused(false);
     }
@@ -152,7 +150,6 @@ export default function AppLayout({ session, children }) {
     else if (item.projectId) navigate(`/progetti/${item.projectId}`);
   };
 
-  // Icona tema corrente
   const ThemeIcon = theme === 'dark' ? MoonIcon : theme === 'light' ? SunIcon : SystemIcon;
 
   // Mobile → MobileLayout
@@ -343,30 +340,7 @@ export default function AppLayout({ session, children }) {
                 <div style={{ padding:'6px 4px', borderTop:`0.5px solid ${T.border}` }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
 
-                  {/* Tema — con sottomenu */}
-                  <div style={{ position:'relative' }}>
-                    <button
-                      onClick={() => setShowThemeMenu(p => !p)}
-                      style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'7px 10px', background:'transparent', border:'none', cursor:'pointer', color:T.ink, fontFamily:"'Space Grotesk', sans-serif", fontSize:13, borderRadius:2 }}
-                      onMouseEnter={e => e.currentTarget.style.background=T.border}
-                      onMouseLeave={e => e.currentTarget.style.background='transparent'}
-                    >
-                      <ThemeIcon style={{ width:15, height:15, flexShrink:0, color:T.muted }}/>
-                      Aspetto
-                      <span style={{ marginLeft:'auto', fontSize:10, color:T.muted }}>{theme === 'dark' ? '🌙' : theme === 'light' ? '☀️' : '💻'}</span>
-                    </button>
-                    {showThemeMenu && (
-                      <div style={{ position:'absolute', left:'100%', top:0, width:160, background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:60, boxShadow:`0 4px 12px rgba(0,0,0,0.15)` }}>
-                        {[['light','☀️ Chiaro'],['dark','🌙 Scuro'],['system','💻 Sistema']].map(([t,label])=>(
-                          <button key={t} onClick={() => { setTheme(t); setShowThemeMenu(false); }}
-                            style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px 12px', background: theme===t ? T.navyLight : 'transparent', border:'none', cursor:'pointer', color: theme===t ? T.navy : T.ink, fontFamily:"'Space Grotesk', sans-serif", fontSize:12 }}>
-                            {label}
-                            {theme===t && <span style={{ marginLeft:'auto', color:T.navy, fontSize:12 }}>✓</span>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
                   <DropItem icon={UsersIcon}    label="Gestione Utenti"  onClick={() => goSettings("/impostazioni/utenti")}/>
                   <DropItem icon={SettingsIcon} label="Gestione Servizi" onClick={() => goSettings("/impostazioni/servizi")}/>
