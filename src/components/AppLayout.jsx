@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
+import { usePlan } from "../hooks/usePlan";
 import { usePageTitle } from "../contexts/PageTitleContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
@@ -11,19 +12,21 @@ import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
 const ALL_MENU_ITEMS = [
-  { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all" },
-  { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all" },
-  { label:"Progetti",     path:"/progetti",              num:"03", roles:"all" },
-  { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all" },
-  { label:"Calendario",   path:"/calendario",            num:"05", roles:"all" },
-  { label:"Team",         path:"/team",                  num:"06", roles:"all" },
-  { label:"Commesse",     path:"/commesse",              num:"07", roles:"pm"  },
-  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"08", roles:"pm"  },
-  { label:"Proforma",     path:"/proforma",              num:"09", roles:"pm"  },
-  { label:"Fatture",      path:"/fatture",               num:"10", roles:"pm"  },
-  { label:"Report",       path:"/report",                num:"11", roles:"pm"  },
-  { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm"  },
+  { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all", minPlan:"free"   },
+  { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all", minPlan:"free"   },
+  { label:"Progetti",     path:"/progetti",              num:"03", roles:"all", minPlan:"free"   },
+  { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all", minPlan:"free"   },
+  { label:"Calendario",   path:"/calendario",            num:"05", roles:"all", minPlan:"free"   },
+  { label:"Commesse",     path:"/commesse",              num:"06", roles:"all", minPlan:"free"   },
+  { label:"Team",         path:"/team",                  num:"07", roles:"all", minPlan:"studio" },
+  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"08", roles:"pm",  minPlan:"studio" },
+  { label:"Proforma",     path:"/proforma",              num:"09", roles:"pm",  minPlan:"studio" },
+  { label:"Fatture",      path:"/fatture",               num:"10", roles:"pm",  minPlan:"studio" },
+  { label:"Report",       path:"/report",                num:"11", roles:"pm",  minPlan:"studio" },
+  { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm",  minPlan:"studio" },
 ];
+
+const PLAN_ORDER = { free:0, studio:1, pro:2 };
 
 function getInitials(text) {
   if (!text) return "?";
@@ -69,7 +72,9 @@ export default function AppLayout({ session, children }) {
   const { teamMember, studioId } = useStudio();
   const { pageTitle } = usePageTitle();
   const { T, theme, setTheme, isDark } = useTheme();
+  const { plan } = usePlan();
   const isMobile = useIsMobile();
+  const currentPlanLevel = PLAN_ORDER[plan?.id || 'free'];
 
   const [showMacShortcut, setShowMac]   = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -118,10 +123,10 @@ export default function AppLayout({ session, children }) {
   useEffect(() => { setShowMac(navigator.platform.toUpperCase().includes("MAC")); }, []);
 
   const menuItems = useMemo(() => ALL_MENU_ITEMS.filter(item => {
-    if (item.roles === "all") return true;
-    if (item.roles === "pm")  return permissions.isProjectManager;
-    return true;
-  }), [permissions.isProjectManager]);
+    if (item.roles === 'pm' && !permissions.isProjectManager) return false;
+    const required = PLAN_ORDER[item.minPlan] ?? 0;
+    return currentPlanLevel >= required;
+  }), [permissions.isProjectManager, currentPlanLevel]);
 
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || "U");
   const memberColor    = teamMember?.color || T.navy;

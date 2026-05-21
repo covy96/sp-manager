@@ -31,16 +31,18 @@ const TAB_ITEMS = [
 ];
 
 const ALL_MENU_ITEMS = [
-  { label:'Dashboard',      path:'/dashboard',                    roles:'all' },
-  { label:'Team',           path:'/team',                         roles:'all' },
-  { label:'Commesse',       path:'/commesse',                     roles:'pm'  },
-  { label:'Monitoraggio',   path:'/monitoraggio-commesse',        roles:'pm'  },
-  { label:'Proforma',       path:'/proforma',                     roles:'pm'  },
-  { label:'Fatture',        path:'/fatture',                      roles:'pm'  },
-  { label:'Report',         path:'/report',                       roles:'pm'  },
-  { label:'Gantt',          path:'/gantt-progetti',               roles:'pm'  },
-  { label:'Profilo Studio', path:'/impostazioni/profilo-studio',  roles:'all' },
+  { label:'Dashboard',      path:'/dashboard',                    roles:'all', minPlan:'free'   },
+  { label:'Commesse',       path:'/commesse',                     roles:'all', minPlan:'free'   },
+  { label:'Team',           path:'/team',                         roles:'all', minPlan:'studio' },
+  { label:'Monitoraggio',   path:'/monitoraggio-commesse',        roles:'pm',  minPlan:'studio' },
+  { label:'Proforma',       path:'/proforma',                     roles:'pm',  minPlan:'studio' },
+  { label:'Fatture',        path:'/fatture',                      roles:'pm',  minPlan:'studio' },
+  { label:'Report',         path:'/report',                       roles:'pm',  minPlan:'studio' },
+  { label:'Gantt',          path:'/gantt-progetti',               roles:'pm',  minPlan:'studio' },
+  { label:'Profilo Studio', path:'/impostazioni/profilo-studio',  roles:'all', minPlan:'free'   },
 ];
+
+const PLAN_ORDER = { free:0, studio:1, pro:2 };
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -60,13 +62,14 @@ export default function MobileLayout({ session, children }) {
   const loc         = useLocation();
   const { teamMember, studioId } = useStudio();
   const permissions = usePermissions();
-  const { isFree }  = usePlan();
+  const { isFree, plan }  = usePlan();
+  const currentPlanLevel = PLAN_ORDER[plan?.id || 'free'];
   const { T, theme, setTheme, isDark } = useTheme();
 
   const menuItems = ALL_MENU_ITEMS.filter(item => {
-    if (item.roles === 'all') return true;
-    if (item.roles === 'pm')  return permissions.isProjectManager && !isFree;
-    return true;
+    if (item.roles === 'pm' && !permissions.isProjectManager) return false;
+    const required = PLAN_ORDER[item.minPlan] ?? 0;
+    return currentPlanLevel >= required;
   });
 
   const [menuOpen, setMenuOpen]         = useState(false);

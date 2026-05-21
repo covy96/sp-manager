@@ -19,6 +19,7 @@ export const PLANS = {
       "5 commesse",
       "Task e timesheet",
       "Calendario",
+      "Gestione commesse completa",
     ],
   },
   studio: {
