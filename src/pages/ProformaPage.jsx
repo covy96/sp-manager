@@ -2,14 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useStudio } from "../hooks/useStudio";
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
-  red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -24,15 +17,16 @@ function isScaduta(dataScadenza, pagato) {
   const scad = new Date(dataScadenza); scad.setHours(0,0,0,0);
   return scad < oggi;
 }
-function getStato(p) {
+function getStato(p, T) {
   if (p.pagato) return { label: "Pagata", color: T.green };
   if (isScaduta(p.data_scadenza, p.pagato)) return { label: "Scaduta", color: '#b45309' };
   return { label: "In attesa", color: T.muted };
 }
 
 function KpiCard({ label, value, note, color }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
+    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>{value}</div>
       {note && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{note}</div>}
@@ -41,6 +35,7 @@ function KpiCard({ label, value, note, color }) {
 }
 
 function SortBtn({ field, label, sortField, sortDesc, onSort }) {
+  const { T } = useTheme();
   const active = sortField === field;
   return (
     <button onClick={() => onSort(field)} style={{
@@ -54,6 +49,7 @@ function SortBtn({ field, label, sortField, sortDesc, onSort }) {
 }
 
 export default function ProformaPage() {
+  const { T } = useTheme();
   const navigate = useNavigate();
   const { studioId } = useStudio();
 
@@ -111,8 +107,8 @@ export default function ProformaPage() {
     setSortField(field); setSortDesc(true);
   };
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.ink10}`, textAlign: 'left', whiteSpace: 'nowrap' };
-  const tdSt = { padding: '9px 12px', borderBottom: `0.5px solid ${T.ink10}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
+  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
+  const tdSt = { padding: '9px 12px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
   const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   return (
@@ -135,7 +131,7 @@ export default function ProformaPage() {
       </div>
 
       {/* Tabella */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, overflowX: 'auto' }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, overflowX: 'auto' }}>
         {loading ? (
           <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
         ) : error ? (
@@ -161,11 +157,11 @@ export default function ProformaPage() {
               {filteredProforma.map(p => {
                 const commessa = commesseMap[p.commessa_id];
                 const scaduta = isScaduta(p.data_scadenza, p.pagato);
-                const stato = getStato(p);
+                const stato = getStato(p, T);
                 return (
                   <tr key={p.id} onClick={() => navigate(`/commesse/${p.commessa_id}`)}
                     style={{ cursor: 'pointer', transition: 'background 0.1s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = T.paper}
+                    onMouseEnter={e => e.currentTarget.style.background = T.bg}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <td style={{ ...tdSt, fontWeight: 600 }}>{p.numero_proforma}</td>

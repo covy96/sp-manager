@@ -3,13 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A',
-  paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33',
-  red:'#b91c1c', green:'#1a6b3c',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -24,8 +18,9 @@ function isOverdue(dataScadenza, pagato) {
 }
 
 function KpiCard({ label, value, color, sub }) {
+  const { T } = useTheme();
   return (
-    <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'16px 20px'}}>
+    <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'16px 20px'}}>
       <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.25em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
       <div style={{fontSize:24,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink}}>{value}</div>
       {sub&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:4}}>{sub}</div>}
@@ -34,6 +29,7 @@ function KpiCard({ label, value, color, sub }) {
 }
 
 export default function FatturePage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Fatture");
   const navigate = useNavigate();
   const { studioId, studio } = useStudio();
@@ -161,9 +157,9 @@ export default function FatturePage() {
     setForm(p=>({...p,data_scadenza:d.toISOString().slice(0,10)}));
   };
 
-  const thSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,padding:'8px 14px',borderBottom:`0.5px solid ${T.ink10}`,textAlign:'left'};
-  const tdSt = {padding:'10px 14px',borderBottom:`0.5px solid ${T.ink10}`,fontSize:12,color:T.ink};
-  const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.ink20}`,background:'#fff',color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
+  const thSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,padding:'8px 14px',borderBottom:`0.5px solid ${T.border}`,textAlign:'left'};
+  const tdSt = {padding:'10px 14px',borderBottom:`0.5px solid ${T.border}`,fontSize:12,color:T.ink};
+  const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
   const lbSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6,display:'block'};
 
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:240,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento fatture...</div>;
@@ -183,7 +179,7 @@ export default function FatturePage() {
           </div>
         </div>
         {tipoFatturazione === 'fattura' && (
-          <button onClick={openNew} style={{background:T.navy,color:'#EEF1F6',border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'9px 20px',cursor:'pointer'}}>
+          <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'9px 20px',cursor:'pointer'}}>
             + Nuova fattura
           </button>
         )}
@@ -202,8 +198,8 @@ export default function FatturePage() {
 
       {/* Tabella condizionale: proforma pagate o fatture dirette */}
       {tipoFatturazione === 'proforma' ? (
-        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`}}>
-          <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.ink10}`,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
+        <div style={{background:T.surface,border:`0.5px solid ${T.border}`}}>
+          <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
             {proformePagate.length} proforma pagate
           </div>
           <div style={{overflowX:'auto'}}>
@@ -243,7 +239,7 @@ export default function FatturePage() {
                     </td>
                     <td style={tdSt}>
                       <button onClick={()=>navigate(`/commesse/${p.commessa_id}`)}
-                        style={{background:'none',border:`0.5px solid ${T.ink20}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
+                        style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
                         Vai a commessa
                       </button>
                     </td>
@@ -254,8 +250,8 @@ export default function FatturePage() {
           </div>
         </div>
       ) : (
-        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.ink10}`}}>
+        <div style={{background:T.surface,border:`0.5px solid ${T.border}`}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`}}>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
               {visibili.length} fatture
             </div>
@@ -315,16 +311,16 @@ export default function FatturePage() {
                       <td style={{...tdSt,whiteSpace:'nowrap'}}>
                         <div style={{display:'flex',gap:6}}>
                           {!f.pagato && (
-                            <button onClick={()=>handleSegnaComePagata(f)} style={{background:T.green,border:'none',color:'#fff',fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleSegnaComePagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
                               Segna pagata
                             </button>
                           )}
                           {f.pagato && (
-                            <button onClick={()=>handleAnnullaPagamento(f)} style={{background:'none',border:`0.5px solid ${T.ink20}`,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleAnnullaPagamento(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
                               Annulla pag.
                             </button>
                           )}
-                          <button onClick={()=>openEdit(f)} style={{background:'none',border:`0.5px solid ${T.ink20}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>···</button>
+                          <button onClick={()=>openEdit(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>···</button>
                           <button onClick={()=>handleDelete(f.id)} style={{background:'none',border:`0.5px solid ${T.red}`,color:T.red,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>×</button>
                         </div>
                       </td>
@@ -339,8 +335,8 @@ export default function FatturePage() {
 
       {/* Modal nuova/modifica fattura */}
       {modalOpen && (
-        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:560,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
+        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:`${T.ink}80`,padding:16}}>
+          <div style={{width:'100%',maxWidth:560,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>{editFattura?'Modifica fattura':'Nuova fattura'}</div>
               <button onClick={()=>setModalOpen(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>
@@ -388,9 +384,9 @@ export default function FatturePage() {
 
               {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
 
-              <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.ink10}`}}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.ink20}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
-                <button type="submit" disabled={saving} style={{background:T.navy,border:'none',color:'#EEF1F6',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+              <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.borderMd}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
+                <button type="submit" disabled={saving} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
                   {saving?'Salvataggio...':editFattura?'Aggiorna':'Crea fattura'}
                 </button>
               </div>

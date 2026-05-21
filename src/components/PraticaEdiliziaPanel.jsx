@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', red:'#b91c1c',
-};
+import { useTheme } from "../contexts/ThemeContext";
 
 const TIPI_PRATICA = [
   "CILA",
@@ -16,6 +12,7 @@ const TIPI_PRATICA = [
 const SAME_DATE_TYPES = ["CILA", "SCIA art. 22"];
 
 function FieldLabel({ children, required }) {
+  const { T } = useTheme();
   return (
     <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>
       {children}{required && <span style={{ color:T.red, marginLeft:2 }}>*</span>}
@@ -23,13 +20,13 @@ function FieldLabel({ children, required }) {
   );
 }
 
-const inputSt = {
-  width:'100%', padding:'7px 10px', boxSizing:'border-box',
-  border:`0.5px solid ${T.ink20}`, background:'#fff', color:T.ink,
-  fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
-};
-
 export default function PraticaEdiliziaPanel({ projectId, studioId }) {
+  const { T } = useTheme();
+  const inputSt = {
+    width:'100%', padding:'7px 10px', boxSizing:'border-box',
+    border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink,
+    fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
+  };
   const [pratica, setPratica]   = useState(null);
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
@@ -110,7 +107,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const widget = (
     <button onClick={() => setModalOpen(true)} style={{
       display:'flex', alignItems:'center', gap:8,
-      border:`0.5px solid ${T.navy}`, background: pratica ? '#EEF3FA' : 'transparent',
+      border:`0.5px solid ${T.navy}`, background: pratica ? T.navyLight : 'transparent',
       padding:'6px 12px', cursor:'pointer',
     }}>
       <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
@@ -136,7 +133,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   // ── MODAL ─────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.5)', padding:16 }}>
-      <div style={{ width:'100%', maxWidth:680, background:'#fff', border:`0.5px solid ${T.ink20}`, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
+      <div style={{ width:'100%', maxWidth:680, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
 
         {/* Header modal */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
@@ -210,7 +207,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
 
         {/* Riepilogo date se già salvata */}
         {pratica?.tipo_pratica && (
-          <div style={{ marginTop:20, padding:'12px 14px', background:T.paper, border:`0.5px solid ${T.ink10}` }}>
+          <div style={{ marginTop:20, padding:'12px 14px', background:T.bg, border:`0.5px solid ${T.border}` }}>
             <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>
               Riepilogo
             </div>
@@ -231,11 +228,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
         )}
 
         {/* Footer */}
-        <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.ink10}` }}>
-          <button onClick={() => setModalOpen(false)} style={{ border:`0.5px solid ${T.ink20}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+          <button onClick={() => setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
             Annulla
           </button>
-          <button onClick={handleSave} disabled={saving || !form.tipo_pratica} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor: saving || !form.tipo_pratica ? 'not-allowed' : 'pointer', opacity: saving || !form.tipo_pratica ? 0.6 : 1 }}>
+          <button onClick={handleSave} disabled={saving || !form.tipo_pratica} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor: saving || !form.tipo_pratica ? 'not-allowed' : 'pointer', opacity: saving || !form.tipo_pratica ? 0.6 : 1 }}>
             {saving ? "Salvataggio..." : pratica ? "Aggiorna" : "Salva pratica"}
           </button>
         </div>

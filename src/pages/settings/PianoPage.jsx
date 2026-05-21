@@ -5,13 +5,10 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { usePlan, PLANS } from "../../hooks/usePlan";
 import { supabase } from "../../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A', paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', green:'#1a6b3c', red:'#b91c1c',
-};
+import { useTheme } from "../../contexts/ThemeContext";
 
 export default function PianoPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Piano");
   const navigate = useNavigate();
   const { teamMember, studioId } = useStudio();
@@ -75,7 +72,7 @@ export default function PianoPage() {
       </div>
 
       {successMessage && (
-        <div style={{ background:'#f0fdf4', border:`0.5px solid ${T.green}`, padding:'12px 16px', marginBottom:16, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.green }}>
+        <div style={{ background:T.greenLight, border:`0.5px solid ${T.green}`, padding:'12px 16px', marginBottom:16, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.green }}>
           ✓ {successMessage}
         </div>
       )}
@@ -89,7 +86,7 @@ export default function PianoPage() {
           const isDowngrade = planOrder.indexOf(pid) < planOrder.indexOf(pianoId);
 
           return (
-            <div key={pid} style={{ background:'#fff', border:`0.5px solid ${isCurrent?T.navy:T.ink10}`, padding:'22px 20px', position:'relative' }}>
+            <div key={pid} style={{ background:T.surface, border:`0.5px solid ${isCurrent?T.navy:T.border}`, padding:'22px 20px', position:'relative' }}>
               {isCurrent && (
                 <div style={{ position:'absolute', top:12, right:12, fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, padding:'2px 6px' }}>
                   Attuale
@@ -110,7 +107,7 @@ export default function PianoPage() {
               </div>
 
               {/* Limiti chiave */}
-              <div style={{ marginBottom:16, padding:'12px 14px', background:T.paper, border:`0.5px solid ${T.ink10}` }}>
+              <div style={{ marginBottom:16, padding:'12px 14px', background:T.bg, border:`0.5px solid ${T.border}` }}>
                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                   {[
                     { label:'Utenti', value: p.maxUsers === Infinity ? 'Illimitati' : `${p.maxUsers}` },
@@ -142,16 +139,16 @@ export default function PianoPage() {
                     Gestisci abbonamento
                   </button>
                 ) : (
-                  <div style={{ width:'100%', padding:'9px 0', background:T.paper, border:`0.5px solid ${T.ink10}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
+                  <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`0.5px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
                     Piano attuale
                   </div>
                 )
               ) : isUpgrade ? (
-                <button onClick={() => handleUpgrade(pid)} disabled={loading} style={{ width:'100%', padding:'9px 0', background:T.navy, border:'none', color:'#EEF1F6', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
+                <button onClick={() => handleUpgrade(pid)} disabled={loading} style={{ width:'100%', padding:'9px 0', background:T.navy, border:'none', color:T.bg, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
                   {loading ? "Caricamento..." : `Passa a ${p.name}`}
                 </button>
               ) : (
-                <div style={{ width:'100%', padding:'9px 0', background:T.paper, border:`0.5px solid ${T.ink10}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
+                <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`0.5px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
                   Piano inferiore
                 </div>
               )}
@@ -161,7 +158,7 @@ export default function PianoPage() {
       </div>
 
       {/* Info box */}
-      <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 20px' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
         <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:6 }}>Hai bisogno di aiuto?</div>
         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1.7 }}>
           Contattaci per assistenza con il tuo abbonamento, richieste personalizzate o codici sconto.

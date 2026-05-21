@@ -40,7 +40,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ sessionId: session.id }),
+      JSON.stringify({ url: session.url }),
       {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       }

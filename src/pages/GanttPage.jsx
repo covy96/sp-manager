@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useStudio } from "../hooks/useStudio";
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A',
-  paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33',
-  red:'#b91c1c', green:'#1a6b3c',
-};
 
 const ROW_H       = 44;
 const COL = { attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
@@ -22,8 +16,8 @@ const IMPRESA_COLORS = [
   '#92400e','#1e40af','#6b21a8','#0f766e',
 ];
 
-function colorForImpresa(impresa, map) {
-  if (!impresa) return T.navy;
+function colorForImpresa(impresa, map, fallback) {
+  if (!impresa) return fallback || '#13315C';
   if (map[impresa]) return map[impresa];
   const idx = Object.keys(map).length % IMPRESA_COLORS.length;
   map[impresa] = IMPRESA_COLORS[idx];
@@ -171,6 +165,7 @@ function exportPDF(lavorazioni, projectName) {
 
 // ── PROJECT GANTT ─────────────────────────────────────────────────
 function ProjectGantt({ project, studioId, onBack }) {
+  const { T } = useTheme();
   const [lavorazioni, setLavorazioni] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [viewMode, setViewMode]       = useState('week');
@@ -191,7 +186,7 @@ function ProjectGantt({ project, studioId, onBack }) {
   // Mappa impresa → colore (calcolata dai dati)
   const impresaColorMap = useMemo(() => {
     const map = {};
-    lavorazioni.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, map); });
+    lavorazioni.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, map, T.navy); });
     return map;
   }, [lavorazioni]);
 
@@ -248,7 +243,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     if (!newRow.descrizione.trim()) return;
     setSavingNew(true);
     const map = {...impresaColorMap};
-    const colore = newRow.operatore ? colorForImpresa(newRow.operatore, map) : T.navy;
+    const colore = newRow.operatore ? colorForImpresa(newRow.operatore, map, T.navy) : T.navy;
     let dataInizio = newRow.data_inizio;
     if (newRow.dipendenza_id) {
       const parent = lavorazioni.find(l => l.id === newRow.dipendenza_id);
@@ -294,7 +289,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     }
     if (field === 'operatore') {
       const map = {...impresaColorMap};
-      updated.colore = value ? colorForImpresa(value, map) : T.navy;
+      updated.colore = value ? colorForImpresa(value, map, T.navy) : T.navy;
     }
 
     await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
@@ -413,53 +408,53 @@ function ProjectGantt({ project, studioId, onBack }) {
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
 
       {/* Toolbar */}
-      <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+      <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.ink20}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Gantt</button>
+          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Gantt</button>
           <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>{project.name}</div>
           {project.client&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{project.client}</div>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {/* Export */}
-          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.ink20}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.ink20}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportPDF(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
-          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.ink20}`,color:onlyChart?'#EEF1F6':T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.borderMd}`,color:onlyChart?T.bg:T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             {onlyChart ? '⊞ Tabella' : '▦ Solo grafico'}
           </button>
           {/* Vista */}
-          <div style={{display:'flex',border:`0.5px solid ${T.ink20}`,overflow:'hidden'}}>
+          <div style={{display:'flex',border:`0.5px solid ${T.borderMd}`,overflow:'hidden'}}>
             {[['week','Settimane'],['month','Mesi']].map(([m,label])=>(
-              <button key={m} onClick={()=>setViewMode(m)} style={{padding:'6px 14px',border:'none',background:viewMode===m?T.navy:'transparent',color:viewMode===m?'#EEF1F6':T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',cursor:'pointer'}}>{label}</button>
+              <button key={m} onClick={()=>setViewMode(m)} style={{padding:'6px 14px',border:'none',background:viewMode===m?T.navy:'transparent',color:viewMode===m?T.bg:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',cursor:'pointer'}}>{label}</button>
             ))}
           </div>
         </div>
       </div>
 
       {/* Body */}
-      <div style={{flex:1,display:'flex',overflow:'hidden',border:`0.5px solid ${T.ink10}`,borderTop:'none',background:'#fff'}}>
+      <div style={{flex:1,display:'flex',overflow:'hidden',border:`0.5px solid ${T.border}`,borderTop:'none',background:T.surface}}>
 
         {/* LEFT */}
         {!onlyChart && (
-        <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.ink10}`,display:'flex',flexDirection:'column'}}>
+        <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.border}`,display:'flex',flexDirection:'column'}}>
           {/* Header colonne */}
-          <div style={{height:52,borderBottom:`0.5px solid ${T.ink10}`,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.paper,flexShrink:0}}>
+          <div style={{height:52,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
             {['Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
-              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<6?`0.5px solid ${T.ink10}`:'none'}}>{h}</div>
+              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<6?`0.5px solid ${T.border}`:'none'}}>{h}</div>
             ))}
           </div>
           {/* Righe */}
           <div ref={leftRef} style={{flex:1,overflowY:'hidden'}}>
             {lavorazioni.map((lav,i)=>{
-              const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}) : T.navy);
+              const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
               return (
-                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.ink10}`,background:i%2===0?'#fff':'#fafafa'}}>
+                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2}}>
                   {/* Nome */}
-                  <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
                     <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
                     <input value={lav.descrizione||''}
                       onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,descrizione:e.target.value}:l))}
@@ -468,7 +463,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                       style={{...inputSt,fontWeight:600,fontSize:12,fontFamily:"'Space Grotesk', sans-serif"}}/>
                   </div>
                   {/* Impresa */}
-                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <input value={lav.operatore||''}
                       onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,operatore:e.target.value}:l))}
                       onBlur={e=>handleInlineEdit(lav,'operatore',e.target.value)}
@@ -476,7 +471,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                       style={{...inputSt,fontSize:10}}/>
                   </div>
                   {/* Dipende da */}
-                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <select value={lav.dipendenza_id||''}
                       onChange={e=>handleInlineEdit(lav,'dipendenza_id',e.target.value||null)}
                       style={{...inputSt,fontSize:9,cursor:'pointer'}}>
@@ -487,19 +482,19 @@ function ProjectGantt({ project, studioId, onBack }) {
                     </select>
                   </div>
                   {/* Data inizio */}
-                  <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <input type="date" value={lav.data_inizio||''}
                       onChange={e=>handleInlineEdit(lav,'data_inizio',e.target.value)}
                       style={{...inputSt,fontSize:9,padding:'2px 4px'}}/>
                   </div>
                   {/* Data fine */}
-                  <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <input type="date" value={lav.data_fine||''}
                       onChange={e=>handleInlineEdit(lav,'data_fine',e.target.value)}
                       style={{...inputSt,fontSize:9,padding:'2px 4px'}}/>
                   </div>
                   {/* Durata */}
-                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <input type="number" min={1} value={lav.durata_giorni||''}
                       onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,durata_giorni:e.target.value}:l))}
                       onBlur={e=>handleInlineEdit(lav,'durata_giorni',e.target.value)}
@@ -515,9 +510,9 @@ function ProjectGantt({ project, studioId, onBack }) {
             })}
 
             {/* Riga nuova lavorazione */}
-            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.ink10}`,background:'#f0f4ff'}}>
+            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:T.navyLight}}>
               {/* Descrizione */}
-              <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
                 <input value={newRow.descrizione}
                   onChange={e=>setNewRow(p=>({...p,descrizione:e.target.value}))}
@@ -526,7 +521,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                   style={{...inputSt,fontSize:12,fontFamily:"'Space Grotesk', sans-serif",color:T.muted}}/>
               </div>
               {/* Impresa */}
-              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <input value={newRow.operatore}
                   onChange={e=>updateNewRow('operatore',e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter') handleSaveNew(); }}
@@ -534,7 +529,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                   style={{...inputSt,fontSize:10,color:T.muted}}/>
               </div>
               {/* Dipende da */}
-              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <select value={newRow.dipendenza_id}
                   onChange={e=>updateNewRow('dipendenza_id',e.target.value)}
                   style={{...inputSt,fontSize:9,cursor:'pointer'}}>
@@ -545,19 +540,19 @@ function ProjectGantt({ project, studioId, onBack }) {
                 </select>
               </div>
               {/* Data inizio */}
-              <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <input type="date" value={newRow.data_inizio}
                   onChange={e=>updateNewRow('data_inizio',e.target.value)}
                   style={{...inputSt,fontSize:9,padding:'2px 4px'}}/>
               </div>
               {/* Data fine */}
-              <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <input type="date" value={newRow.data_fine}
                   onChange={e=>updateNewRow('data_fine',e.target.value)}
                   style={{...inputSt,fontSize:9,padding:'2px 4px'}}/>
               </div>
               {/* Durata */}
-              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`}}>
+              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <input type="number" min={1} value={newRow.durata_giorni}
                   onChange={e=>updateNewRow('durata_giorni',e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter') handleSaveNew(); }}
@@ -566,7 +561,7 @@ function ProjectGantt({ project, studioId, onBack }) {
               {/* Salva */}
               <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <button onClick={handleSaveNew} disabled={savingNew||!newRow.descrizione.trim()}
-                  style={{background:T.navy,border:'none',cursor:'pointer',color:'#EEF1F6',width:22,height:22,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',borderRadius:2,opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>+</button>
+                  style={{background:T.navy,border:'none',cursor:'pointer',color:T.bg,width:22,height:22,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',borderRadius:2,opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>+</button>
               </div>
             </div>
           </div>
@@ -580,14 +575,14 @@ function ProjectGantt({ project, studioId, onBack }) {
           <div style={{width:totalW,minWidth:'100%',position:'relative'}}>
 
             {/* Header temporale sticky */}
-            <div style={{height:52,position:'sticky',top:0,zIndex:10,background:T.paper,borderBottom:`0.5px solid ${T.ink10}`}}>
+            <div style={{height:52,position:'sticky',top:0,zIndex:10,background:T.bg,borderBottom:`0.5px solid ${T.border}`}}>
               {/* Mesi */}
-              <div style={{height:26,display:'flex',borderBottom:`0.5px solid ${T.ink10}`}}>
+              <div style={{height:26,display:'flex',borderBottom:`0.5px solid ${T.border}`}}>
                 {timeHeaders.months.map((m,i)=>{
                   const [year,month]=m.label.split('-');
                   const label=new Date(Number(year),Number(month),1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
                   return (
-                    <div key={i} style={{width:m.width,flexShrink:0,padding:'0 8px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`,overflow:'hidden',background:T.paper}}>
+                    <div key={i} style={{width:m.width,flexShrink:0,padding:'0 8px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
                       <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.1em',textTransform:'uppercase',color:T.ink,whiteSpace:'nowrap'}}>{label}</span>
                     </div>
                   );
@@ -596,7 +591,7 @@ function ProjectGantt({ project, studioId, onBack }) {
               {/* Settimane */}
               <div style={{height:26,display:'flex'}}>
                 {viewMode==='week' ? timeHeaders.weeks.map((w,i)=>(
-                  <div key={i} style={{width:w.width,flexShrink:0,padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`,overflow:'hidden',background:T.paper}}>
+                  <div key={i} style={{width:w.width,flexShrink:0,padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
                     <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted,whiteSpace:'nowrap'}}>
                       {w.date?w.date.toLocaleDateString('it-IT',{day:'numeric',month:'short'}):''}
                     </span>
@@ -604,7 +599,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                 )) : Array.from({length:Math.ceil(totalDays/5)},(_,i)=>{
                   const d=addDays(startDate,i*5);
                   return (
-                    <div key={i} style={{width:dayW*5,flexShrink:0,padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.ink10}`,background:T.paper}}>
+                    <div key={i} style={{width:dayW*5,flexShrink:0,padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,background:T.bg}}>
                       <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted}}>{d.getDate()}</span>
                     </div>
                   );
@@ -629,11 +624,11 @@ function ProjectGantt({ project, studioId, onBack }) {
                     background: isToday
                       ? 'rgba(19,49,92,0.10)'
                       : isWeekend
-                      ? 'rgba(14,14,13,0.06)'
+                      ? T.border
                       : isOdd
                       ? 'rgba(19,49,92,0.03)'
-                      : 'rgba(238,241,246,0.5)',
-                    borderRight:`0.5px solid ${isMonday?'rgba(14,14,13,0.15)':'rgba(14,14,13,0.06)'}`,
+                      : `${T.bg}80`,
+                    borderRight:`0.5px solid ${isMonday?T.borderMd:T.border}`,
                     pointerEvents:'none',
                   }}/>
                 );
@@ -644,7 +639,7 @@ function ProjectGantt({ project, studioId, onBack }) {
 
               {/* Linee orizzontali righe */}
               {Array.from({length:lavorazioni.length+1},(_,i)=>(
-                <div key={i} style={{position:'absolute',left:0,top:i*ROW_H,right:0,height:ROW_H,borderBottom:`0.5px solid rgba(14,14,13,0.06)`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
+                <div key={i} style={{position:'absolute',left:0,top:i*ROW_H,right:0,height:ROW_H,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
               ))}
 
               {/* SVG dipendenze */}
@@ -676,7 +671,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                 const barX  = dateToX(lav.data_inizio);
                 const barW  = Math.max(Number(lav.durata_giorni||1)*dayW, 8);
                 const pct   = Number(lav.percentuale_completamento)||0;
-                const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}) : T.navy);
+                const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
                 return (
                   <div key={lav.id} style={{position:'absolute',top:i*ROW_H,left:0,right:0,height:ROW_H,zIndex:4}}>
                     <div
@@ -692,7 +687,7 @@ function ProjectGantt({ project, studioId, onBack }) {
                       <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
                       {/* Label */}
                       {barW>60&&(
-                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:'#fff',letterSpacing:'0.04em',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.surface,letterSpacing:'0.04em',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
                           {lav.descrizione}
                         </div>
                       )}
@@ -708,7 +703,7 @@ function ProjectGantt({ project, studioId, onBack }) {
               })}
 
               {/* Riga nuova — preview barra */}
-              <div style={{position:'absolute',top:lavorazioni.length*ROW_H,left:0,right:0,height:ROW_H,background:'rgba(240,244,255,0.8)'}}>
+              <div style={{position:'absolute',top:lavorazioni.length*ROW_H,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
                 {newRow.data_inizio&&(
                   <div style={{position:'absolute',left:dateToX(newRow.data_inizio),top:ROW_H*0.18,height:ROW_H*0.64,width:Math.max(Number(newRow.durata_giorni||7)*dayW,8),background:T.navy,opacity:0.25,borderRadius:4}}/>
                 )}
@@ -724,6 +719,7 @@ function ProjectGantt({ project, studioId, onBack }) {
 
 // ── LISTA PROGETTI ────────────────────────────────────────────────
 export default function GanttPage() {
+  const { T } = useTheme();
   const { studioId } = useStudio();
   const [projects, setProjects]               = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -758,7 +754,7 @@ export default function GanttPage() {
       </div>
 
       {projects.length===0 ? (
-        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'48px 0',textAlign:'center'}}>
+        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,marginBottom:8}}>
             Nessun progetto con Gantt attivo.
           </div>
@@ -770,9 +766,9 @@ export default function GanttPage() {
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:10}}>
           {projects.map(p=>(
             <button key={p.id} onClick={()=>setSelectedProject(p)}
-              style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'20px 22px',textAlign:'left',cursor:'pointer',transition:'border-color 0.1s'}}
+              style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'20px 22px',textAlign:'left',cursor:'pointer',transition:'border-color 0.1s'}}
               onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
-              onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
             >
               <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:6}}>{p.name}</div>
               <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,display:'flex',gap:10}}>

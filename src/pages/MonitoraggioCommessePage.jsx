@@ -7,14 +7,7 @@ import { calcolaIncassato } from "../lib/utils";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
-  red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from "../contexts/ThemeContext";
 
 const MONTHS = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 
@@ -43,8 +36,9 @@ function getDaysOpen(d) {
 
 // ── SHARED UI ────────────────────────────────────────────────────
 function KpiCard({ label, value, color }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
+    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.04em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
     </div>
@@ -52,6 +46,7 @@ function KpiCard({ label, value, color }) {
 }
 
 function SortButton({ label, col, sortBy, sortDir, onSort }) {
+  const { T } = useTheme();
   const active = sortBy === col;
   return (
     <button onClick={() => onSort(col)} style={{
@@ -69,6 +64,7 @@ function SortButton({ label, col, sortBy, sortDir, onSort }) {
 
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function MonitoraggioCommessePage() {
+  const { T } = useTheme();
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
@@ -181,8 +177,8 @@ export default function MonitoraggioCommessePage() {
     setSortBy(col); setSortDirection(col === "offerta" ? "desc" : "asc");
   };
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 14px', borderBottom: `0.5px solid ${T.ink10}`, textAlign: 'left', whiteSpace: 'nowrap' };
-  const tdSt = { padding: '10px 14px', borderBottom: `0.5px solid ${T.ink10}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
+  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
+  const tdSt = { padding: '10px 14px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
   const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   if (loading) return (
@@ -192,13 +188,13 @@ export default function MonitoraggioCommessePage() {
   );
 
   if (!studioLoading && !permissions.canViewMonitoraggio) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
       Non hai i permessi per accedere a questa sezione.
     </div>
   );
 
   if (error) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+    <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
   );
 
   return (
@@ -216,24 +212,24 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* GRAFICO */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px', overflowX: 'auto' }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>
             Andamento valore commesse
           </div>
           <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
-            style={{ padding: '5px 10px', border: `0.5px solid ${T.ink20}`, background: T.paper, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+            style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
             {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
         <div style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid stroke={T.ink10} strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.ink10 }} tickLine={false} />
+              <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
+              <XAxis dataKey="month" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
               <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${formatNumber(v)}€`} />
               <Tooltip
-                contentStyle={{ background: '#fff', border: `0.5px solid ${T.ink20}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}
+                contentStyle={{ background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}
                 formatter={v => currency(v)}
                 labelStyle={{ color: T.muted, fontSize: 10, letterSpacing: '0.1em' }}
               />
@@ -244,7 +240,7 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* TABELLA */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, overflowX: 'auto' }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
           <thead>
             <tr>
@@ -263,7 +259,7 @@ export default function MonitoraggioCommessePage() {
           </thead>
           <tbody>
             {/* Totali */}
-            <tr style={{ background: T.paper }}>
+            <tr style={{ background: T.bg }}>
               <td style={{ ...tdSt, fontWeight: 600, ...monoSt }}>TOTALE COMPLESSIVO</td>
               <td style={tdSt}>—</td>
               <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.navy }}>{currency(totals.valoreContratti)}</td>
@@ -281,9 +277,9 @@ export default function MonitoraggioCommessePage() {
               const delayed = row.residuo > 0 && row.giorniApertura > 60;
               return (
                 <tr key={row.id} onClick={() => navigate(`/commesse/${row.id}`)}
-                  style={{ cursor: 'pointer', background: delayed ? '#fef2f2' : 'transparent', transition: 'background 0.1s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = delayed ? '#fee2e2' : T.paper}
-                  onMouseLeave={e => e.currentTarget.style.background = delayed ? '#fef2f2' : 'transparent'}
+                  style={{ cursor: 'pointer', background: delayed ? T.redLight : 'transparent', transition: 'background 0.1s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = delayed ? T.redLight : T.bg}
+                  onMouseLeave={e => e.currentTarget.style.background = delayed ? T.redLight : 'transparent'}
                 >
                   <td style={{ ...tdSt, fontWeight: 600 }}>{row.nomeOfferta}</td>
                   <td style={{ ...tdSt, color: T.muted }}>{row.cliente || '—'}</td>

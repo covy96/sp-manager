@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from "../../contexts/ThemeContext";
 
 const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true,
@@ -23,6 +19,7 @@ const NOTIF_ITEMS = [
 ];
 
 function Toggle({ checked, onChange, disabled = false }) {
+  const { T } = useTheme();
   return (
     <button type="button" role="switch" aria-checked={checked} disabled={disabled} onClick={() => !disabled && onChange(!checked)}
       style={{
@@ -33,7 +30,7 @@ function Toggle({ checked, onChange, disabled = false }) {
       }}>
       <span style={{
         position: 'absolute', top: 3, left: checked ? 21 : 3,
-        width: 20, height: 20, borderRadius: '50%', background: '#fff',
+        width: 20, height: 20, borderRadius: '50%', background: T.surface,
         transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
       }} />
     </button>
@@ -41,6 +38,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 }
 
 export default function NotifichePage() {
+  const { T } = useTheme();
   console.log('NotifichePage rendering');
   usePageTitleOnMount("Notifiche");
   const { teamMember } = useStudio();
@@ -134,7 +132,7 @@ export default function NotifichePage() {
       </div>
 
       {!supportsNotifications && (
-        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px' }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>
             Le notifiche push non sono supportate su questo browser.<br/>
             Su iPhone, aggiungi l'app alla schermata home e aprila da lì.
@@ -145,7 +143,7 @@ export default function NotifichePage() {
       {supportsNotifications && (
       <>
       {/* Toggle principale */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Notifiche push</div>
@@ -160,12 +158,12 @@ export default function NotifichePage() {
       </div>
 
       {/* Lista preferenze */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 18px', borderBottom: `0.5px solid ${T.ink10}` }}>Tipo di notifica</div>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 18px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
         {prefsLoading ? (
           <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
         ) : NOTIF_ITEMS.map(item => (
-          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: `0.5px solid ${T.ink10}` }}>
+          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: `0.5px solid ${T.border}` }}>
             <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, color: T.ink, marginBottom: item.hasDays && prefs[item.key] ? 8 : 0 }}>{item.label}</div>
@@ -173,7 +171,7 @@ export default function NotifichePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Avvisami</span>
                   <input type="number" min={1} max={30} value={proformaDays} onChange={e => handleProformaDays(e.target.value)}
-                    style={{ width: 48, padding: '4px 8px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
+                    style={{ width: 48, padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>giorni prima</span>
                 </div>
               )}

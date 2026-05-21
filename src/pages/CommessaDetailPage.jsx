@@ -2,14 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', ink05: '#0E0E0D0D',
-  red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -18,18 +11,20 @@ function pct(v) { return `${Number(v).toFixed(1)}%`; }
 
 // ── SHARED UI ────────────────────────────────────────────────────
 function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }) {
+  const { T } = useTheme();
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
-      background: T.navy, color: '#EEF1F6', border: 'none',
+      background: T.navy, color: T.bg, border: 'none',
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
 }
 function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
+  const { T } = useTheme();
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
-      background: 'transparent', border: `0.5px solid ${danger ? T.red : T.ink20}`,
+      background: 'transparent', border: `0.5px solid ${danger ? T.red : T.borderMd}`,
       color: danger ? T.red : T.ink,
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
@@ -37,21 +32,24 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
   );
 }
 function FieldLabel({ children }) {
+  const { T } = useTheme();
   return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, required, style = {} }) {
+  const { T } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
     <input type={type} value={value ?? ""} onChange={onChange} placeholder={placeholder} required={required}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '7px 10px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', ...style }} />
+      style={{ width: '100%', padding: '7px 10px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', ...style }} />
   );
 }
 function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
+  const { T } = useTheme();
   if (!open) return null;
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: width, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: width, background: T.surface, border: `0.5px solid ${T.borderMd}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{title}</div>
@@ -64,8 +62,12 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
     </div>
   );
 }
-function Divider() { return <div style={{ height: '0.5px', background: T.ink10, margin: '14px 0' }} />; }
+function Divider() {
+  const { T } = useTheme();
+  return <div style={{ height: '0.5px', background: T.border, margin: '14px 0' }} />;
+}
 function SectionHeader({ title, action }) {
+  const { T } = useTheme();
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
@@ -74,23 +76,26 @@ function SectionHeader({ title, action }) {
   );
 }
 function Panel({ children, style = {} }) {
-  return <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '16px 18px', ...style }}>{children}</div>;
+  const { T } = useTheme();
+  return <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '16px 18px', ...style }}>{children}</div>;
 }
 function KpiCard({ label, value, color }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '14px 16px' }}>
+    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '14px 16px' }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
     </div>
   );
 }
 function RowMenu({ open, onOpen, onClose, items }) {
+  const { T } = useTheme();
   return (
     <div style={{ position: 'relative' }}>
       <button onClick={e => { e.stopPropagation(); open ? onClose() : onOpen(); }}
         style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px', lineHeight: 1 }}>···</button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 2, width: 150, background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 20 }}>
+        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 2, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
           {items.map(item => (
             <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
               style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
@@ -105,6 +110,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function CommessaDetailPage() {
+  const { T } = useTheme();
   const navigate = useNavigate();
   const { id: commessaId } = useParams();
   const { studioId } = useStudio();
@@ -413,11 +419,11 @@ export default function CommessaDetailPage() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento commessa...</div>
   );
   if (error || !commessa) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>{error || "Commessa non trovata."}</div>
+    <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>{error || "Commessa non trovata."}</div>
   );
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '6px 10px', borderBottom: `0.5px solid ${T.ink10}`, textAlign: 'left' };
-  const tdSt = { padding: '8px 10px', borderBottom: `0.5px solid ${T.ink10}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
+  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '6px 10px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left' };
+  const tdSt = { padding: '8px 10px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
   const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   return (
@@ -438,9 +444,9 @@ export default function CommessaDetailPage() {
             <BtnGhost onClick={() => navigate("/commesse")} style={{ fontSize: 10 }}>← Commesse</BtnGhost>
             {commessa.project_id && <BtnGhost onClick={() => navigate(`/progetti/${commessa.project_id}`)} style={{ fontSize: 10 }}>Progetto →</BtnGhost>}
             <div style={{ position: 'relative' }}>
-              <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `0.5px solid ${T.ink20}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
+              <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 150, background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 30 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
                 </div>
               )}
@@ -540,9 +546,9 @@ export default function CommessaDetailPage() {
                       <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(c.importo)}</td>
                       <td style={{ padding:'8px 14px', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>
                         {c.pagato ? (
-                          <span style={{ color:'#1a6b3c', fontSize:9, letterSpacing:'0.1em' }}>✓ PAGATO</span>
+                          <span style={{ color:T.green, fontSize:9, letterSpacing:'0.1em' }}>✓ PAGATO</span>
                         ) : (
-                          <span style={{ color:'#8a847b', fontSize:9, letterSpacing:'0.1em' }}>IN ATTESA</span>
+                          <span style={{ color:T.muted, fontSize:9, letterSpacing:'0.1em' }}>IN ATTESA</span>
                         )}
                       </td>
                       <td style={tdSt}><RowMenu open={openMenuId === `costo-${c.id}`} onOpen={() => setOpenMenuId(`costo-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCosto(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCosto(c.id) }]} /></td>
@@ -627,7 +633,7 @@ export default function CommessaDetailPage() {
           ))}
           <div><FieldLabel>Note amministrative</FieldLabel>
             <textarea value={editForm.note_amministrative ?? ""} onChange={e => setEditForm(p => ({ ...p, note_amministrative: e.target.value }))} rows={3}
-              style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', resize: 'vertical' }} />
+              style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', resize: 'vertical' }} />
           </div>
           {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditOpen(false)} disabled={editSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editSaving}>{editSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
@@ -638,7 +644,7 @@ export default function CommessaDetailPage() {
         <form onSubmit={handleSaveCosto} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>Tipo</FieldLabel>
             <select value={costoForm.tipo_costo ?? "Altro"} onChange={e => setCostoForm(p => ({ ...p, tipo_costo: e.target.value }))}
-              style={{ width: '100%', padding: '7px 10px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+              style={{ width: '100%', padding: '7px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
               {['Diritti','Trasferte','Stampe','Altro'].map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
@@ -659,7 +665,7 @@ export default function CommessaDetailPage() {
           </div>
           {suddivisione.length > 0 && (
             <div><FieldLabel>Rate da includere</FieldLabel>
-              <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 160, overflowY: 'auto' }}>
+              <div style={{ border: `0.5px solid ${T.border}`, background: T.bg, padding: '8px 12px', maxHeight: 160, overflowY: 'auto' }}>
                 {suddivisione.map((r, i) => {
                   const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
                   const used = rateGiaUsate.has(r.id);
@@ -676,7 +682,7 @@ export default function CommessaDetailPage() {
           )}
           {costiExtra.length > 0 && (
             <div><FieldLabel>Costi extra da includere</FieldLabel>
-              <div style={{ border: `0.5px solid ${T.ink10}`, background: T.paper, padding: '8px 12px', maxHeight: 130, overflowY: 'auto' }}>
+              <div style={{ border: `0.5px solid ${T.border}`, background: T.bg, padding: '8px 12px', maxHeight: 130, overflowY: 'auto' }}>
                 {costiExtra.map(c => {
                   const used = costiGiaUsati.has(c.id);
                   return (

@@ -4,14 +4,7 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
 import { ProjectForm } from './ProjectsPage';
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink:   '#0E0E0D', navy:  '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', ink05: '#0E0E0D0D',
-  red:   '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -35,6 +28,7 @@ function sortTasksForColumn(tasks) {
 
 // ── TASK EDIT POPUP ───────────────────────────────────────────────
 function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClose, isSubtask }) {
+  const { T } = useTheme();
   const ref = useRef(null);
   const [form, setForm] = useState({
     title: task.title ?? task.name ?? "",
@@ -67,8 +61,8 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   };
 
   const inputSt = {
-    width: '100%', padding: '6px 10px', border: `0.5px solid ${T.ink20}`,
-    background: '#fff', color: T.ink, fontSize: 12,
+    width: '100%', padding: '6px 10px', border: `0.5px solid ${T.borderMd}`,
+    background: T.surface, color: T.ink, fontSize: 12,
     fontFamily: "'Space Grotesk', sans-serif", outline: 'none', boxSizing: 'border-box',
   };
   const labelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
@@ -76,8 +70,8 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   return (
     <div ref={ref} onClick={e => e.stopPropagation()} style={{
       position: 'absolute', left: 0, top: '100%', zIndex: 50, marginTop: 4,
-      width: 280, background: '#fff', border: `0.5px solid ${T.ink20}`,
-      padding: 14, boxShadow: '0 4px 16px rgba(14,14,13,0.1)',
+      width: 280, background: T.surface, border: `0.5px solid ${T.borderMd}`,
+      padding: 14, boxShadow: `0 4px 16px ${T.border}`,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
@@ -110,12 +104,12 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         </div>
         <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
           <button onClick={handleSave} disabled={saving || !form.title.trim()} style={{
-            flex: 1, padding: '7px 0', background: T.navy, color: '#EEF1F6',
+            flex: 1, padding: '7px 0', background: T.navy, color: T.bg,
             border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 11,
             fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em', opacity: saving ? 0.6 : 1,
           }}>{saving ? "Salvo..." : "Salva"}</button>
           <button onClick={handleDelete} disabled={deleting} style={{
-            padding: '7px 12px', background: T.red, color: '#fff',
+            padding: '7px 12px', background: T.red, color: T.surface,
             border: 'none', cursor: 'pointer', fontSize: 11,
             fontFamily: "'IBM Plex Mono', monospace",
           }}>{deleting ? "..." : "Elimina"}</button>
@@ -127,19 +121,20 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
 
 // ── SUBTASK ROW ───────────────────────────────────────────────────
 function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onDeleteTask, isUpdating }) {
+  const { T } = useTheme();
   const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
   return (
     <div style={{
       position: 'relative', marginLeft: 20,
       display: 'flex', alignItems: 'flex-start', gap: 8,
-      padding: '5px 8px', background: T.paper,
-      border: `0.5px solid ${T.ink10}`,
+      padding: '5px 8px', background: T.bg,
+      border: `0.5px solid ${T.border}`,
       opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
     }}>
       <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
         marginTop: 2, width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
-        border: `1px solid ${done ? T.navy : T.ink20}`,
+        border: `1px solid ${done ? T.navy : T.borderMd}`,
         background: done ? T.navy : 'transparent',
         cursor: 'pointer', padding: 0,
       }} />
@@ -157,18 +152,19 @@ function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onD
 
 // ── TASK ROW ──────────────────────────────────────────────────────
 function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtaskAssignment, subtaskDate, onToggle, onUpdateTask, onDeleteTask, onSubtaskInputChange, onSubtaskAssignmentChange, onSubtaskDateChange, onCreateSubtask, isUpdating, isCreatingSubtask }) {
+  const { T } = useTheme();
   const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
 
   const assignedName = task.assigned_member ? (teamMembers.find(m => m.id === task.assigned_member)?.user_name || teamMembers.find(m => m.id === task.assigned_member)?.user_email) : null;
 
   const inputSt = {
-    padding: '6px 10px', border: `0.5px solid ${T.ink10}`, background: '#fff',
+    padding: '6px 10px', border: `0.5px solid ${T.border}`, background: T.surface,
     color: T.ink, fontSize: 11, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
   };
   const miniBtn = {
-    width: 28, height: 28, flexShrink: 0, border: `0.5px solid ${T.ink10}`,
-    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, flexShrink: 0, border: `0.5px solid ${T.border}`,
+    background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
 
@@ -176,13 +172,13 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{
         position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8,
-        padding: '8px 10px', background: '#fff', border: `0.5px solid ${T.ink10}`,
+        padding: '8px 10px', background: T.surface, border: `0.5px solid ${T.border}`,
         opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
         cursor: isUpdating ? 'not-allowed' : 'default',
       }}>
         <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
           marginTop: 2, width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : T.ink20}`,
+          border: `1px solid ${done ? T.navy : T.borderMd}`,
           background: done ? T.navy : 'transparent',
           cursor: 'pointer', padding: 0,
         }} />
@@ -196,7 +192,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{task.title ?? task.name ?? "Task"}</button>
             {assignedName && (
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em', border: `0.5px solid ${T.ink10}`, padding: '1px 6px', flexShrink: 0 }}>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em', border: `0.5px solid ${T.border}`, padding: '1px 6px', flexShrink: 0 }}>
                 {assignedName}
               </span>
             )}
@@ -234,7 +230,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
             </div>
             <button onClick={() => onCreateSubtask(task)} disabled={isCreatingSubtask} style={{
-              width: 28, height: 28, background: T.navy, color: '#EEF1F6',
+              width: 28, height: 28, background: T.navy, color: T.bg,
               border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 600,
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>+</button>
@@ -247,6 +243,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
+  const { T } = useTheme();
   const navigate = useNavigate();
   const { id: projectId } = useParams();
   const { studioId, teamMember } = useStudio();
@@ -455,11 +452,11 @@ export default function ProjectDetailPage() {
   };
 
   const inputSt = {
-    padding: '7px 10px', border: `0.5px solid ${T.ink10}`, background: '#fff',
+    padding: '7px 10px', border: `0.5px solid ${T.border}`, background: T.surface,
     color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', flex: 1, minWidth: 0,
   };
   const miniBtn = {
-    width: 32, height: 32, flexShrink: 0, border: `0.5px solid ${T.ink10}`, background: '#fff',
+    width: 32, height: 32, flexShrink: 0, border: `0.5px solid ${T.border}`, background: T.surface,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
@@ -468,19 +465,19 @@ export default function ProjectDetailPage() {
       Caricamento progetto...
     </div>
   );
-  if (error && !project) return <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>;
-  if (!project) return <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Progetto non trovato.</div>;
+  if (error && !project) return <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>;
+  if (!project) return <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Progetto non trovato.</div>;
 
   return (
     <div>
       {/* PROJECT HEADER */}
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 22px', marginBottom: 16 }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 22px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: T.ink }}>{project.name ?? "Progetto"}</div>
             <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
               onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
-              style={{ padding: '5px 10px', border: `0.5px solid ${T.ink20}`, background: T.paper, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+              style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
               <option value="show-all">Tutte le task</option>
               <option value="hide-completed">Nascondi completate</option>
             </select>
@@ -491,18 +488,18 @@ export default function ProjectDetailPage() {
             )}
             {project?.commessa_id && (
               <button onClick={() => navigate(`/commesse/${project.commessa_id}`)} style={{
-                border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.navy,
+                border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.navy,
                 fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em',
                 padding: '7px 14px', cursor: 'pointer',
               }}>€ Commessa</button>
             )}
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{
-                border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.ink,
+                border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink,
                 width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 160, background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 30 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 160, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
                     Modifica
                   </button>
@@ -537,9 +534,9 @@ export default function ProjectDetailPage() {
               return (
                 <span key={uid} title={name} style={{
                   width: 26, height: 26, borderRadius: '50%',
-                  background: avatarColor(name), border: '1.5px solid #fff', marginLeft: i > 0 ? -8 : 0,
+                  background: avatarColor(name), border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontWeight: 600, color: '#fff',
+                  fontSize: 9, fontWeight: 600, color: T.surface,
                 }}>{initials}</span>
               );
             })}
@@ -552,7 +549,7 @@ export default function ProjectDetailPage() {
       {/* EDIT MODAL */}
       {editOpen && (
         <div onClick={() => { if (!editSaving) setEditOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: '#fff', border: `0.5px solid ${T.ink20}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: T.surface, border: `0.5px solid ${T.borderMd}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Modifica Progetto</div>
               <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>×</button>
@@ -573,9 +570,9 @@ export default function ProjectDetailPage() {
                 onGanttChange={e => setEditForm(p => ({ ...p, gantt_enabled: e.target.checked }))}
               />
               {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.ink10}` }}>
-                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `0.5px solid ${T.ink20}`, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
-                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: '#EEF1F6', padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.border}` }}>
+                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
+                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: T.bg, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
               </div>
             </form>
           </div>
@@ -584,7 +581,7 @@ export default function ProjectDetailPage() {
 
       {/* KANBAN COLUMNS */}
       {selectedServices.length === 0 ? (
-        <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
           Nessun servizio selezionato per questo progetto.
         </div>
       ) : (
@@ -601,19 +598,19 @@ export default function ProjectDetailPage() {
                 minWidth: 'calc((100vw - 220px - 50px) / 3)',
                 maxWidth: 'calc((100vw - 220px - 50px) / 3)',
                 display: 'flex', flexDirection: 'column',
-                background: '#fff', border: `0.5px solid ${T.ink10}`,
+                background: T.surface, border: `0.5px solid ${T.border}`,
                 overflow: 'hidden', height: '100%',
                 opacity: catDone ? 0.5 : 1,
               }}>
                 {/* Column header */}
-                <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.ink10}` }}>
+                <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
                       style={{ accentColor: T.navy, width: 13, height: 13 }} />
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
                       {group.category}
                     </span>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `0.5px solid ${T.ink10}`, padding: '1px 6px' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `0.5px solid ${T.border}`, padding: '1px 6px' }}>
                       {group.completedCount}/{group.totalCount}
                     </span>
                     {catDone && <span style={{ fontSize: 11, color: T.navy, fontWeight: 600 }}>✓</span>}
@@ -640,7 +637,7 @@ export default function ProjectDetailPage() {
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
                     </div>
                     <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
-                      style={{ width: 32, height: 32, background: T.navy, color: '#EEF1F6', border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      style={{ width: 32, height: 32, background: T.navy, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       +
                     </button>
                   </div>

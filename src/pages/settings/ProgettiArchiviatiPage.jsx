@@ -3,11 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c',
-};
+import { useTheme } from "../../contexts/ThemeContext";
 
 function getInitials(text) {
   if (!text) return "?";
@@ -22,6 +18,7 @@ function avatarColor(seed = "") {
 }
 
 export default function ProgettiArchiviatiPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Progetti Archiviati");
   const navigate = useNavigate();
   const { studioId } = useStudio();
@@ -70,16 +67,16 @@ export default function ProgettiArchiviatiPage() {
       {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
 
       {projects.length === 0 ? (
-        <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '48px 0', textAlign: 'center' }}>
+        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '48px 0', textAlign: 'center' }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, marginBottom: 16 }}>Nessun progetto archiviato.</div>
-          <button onClick={() => navigate("/progetti")} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>Vai ai Progetti</button>
+          <button onClick={() => navigate("/progetti")} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>Vai ai Progetti</button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {projects.map(project => {
             const assignedMembers = (project.assigned_users || []).map(id => getMemberById(id)).filter(Boolean);
             return (
-              <div key={project.id} style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px' }}>
+              <div key={project.id} style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>
                   {project.name || "Progetto senza nome"}
                 </div>
@@ -95,14 +92,14 @@ export default function ProgettiArchiviatiPage() {
                     {assignedMembers.slice(0, 5).map((m, i) => (
                       <div key={m.id} title={m.user_name || m.user_email} style={{
                         width: 24, height: 24, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""),
-                        border: '1.5px solid #fff', marginLeft: i > 0 ? -8 : 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#fff',
+                        border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: T.surface,
                       }}>{getInitials(m.user_name || m.user_email)}</div>
                     ))}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => navigate(`/progetti/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.paper, border: `0.5px solid ${T.ink20}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
+                  <button onClick={() => navigate(`/progetti/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.bg, border: `0.5px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
                   <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '7px 14px', background: 'transparent', border: `0.5px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
                     {restoring === project.id ? "..." : "Ripristina"}
                   </button>

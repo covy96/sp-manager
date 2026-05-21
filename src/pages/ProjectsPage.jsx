@@ -1,19 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from '../contexts/ThemeContext';
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink:   '#0E0E0D', navy:  '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', ink05: '#0E0E0D0D',
-  red:   '#b91c1c', green: '#1a6b3c',
-};
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function getInitials(name = "") {
@@ -34,9 +27,10 @@ function getProgress(completed, total) {
 
 // ── SHARED UI ────────────────────────────────────────────────────
 function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }) {
+  const { T } = useTheme();
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
-      background: T.navy, color: '#EEF1F6', border: 'none',
+      background: T.navy, color: T.bg, border: 'none',
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
       letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
@@ -45,9 +39,10 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   );
 }
 function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
+  const { T } = useTheme();
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
-      background: 'transparent', border: `0.5px solid ${danger ? T.red : T.ink20}`,
+      background: 'transparent', border: `0.5px solid ${danger ? T.red : T.borderMd}`,
       color: danger ? T.red : T.ink,
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
       letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -58,6 +53,7 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
 }
 
 function FieldLabel({ children }) {
+  const { T } = useTheme();
   return (
     <div style={{
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
@@ -68,6 +64,7 @@ function FieldLabel({ children }) {
 }
 
 function Input({ value, onChange, type = "text", placeholder, required, autoComplete, onBlur }) {
+  const { T } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
     <input
@@ -76,8 +73,8 @@ function Input({ value, onChange, type = "text", placeholder, required, autoComp
       onFocus={() => setFocus(true)}
       style={{
         width: '100%', padding: '8px 12px', boxSizing: 'border-box',
-        border: `0.5px solid ${focus ? T.navy : T.ink20}`,
-        background: '#fff', color: T.ink, fontSize: 13,
+        border: `0.5px solid ${focus ? T.navy : T.borderMd}`,
+        background: T.surface, color: T.ink, fontSize: 13,
         fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
       }}
     />
@@ -85,6 +82,7 @@ function Input({ value, onChange, type = "text", placeholder, required, autoComp
 }
 
 function CheckRow({ checked, onChange, disabled, label, avatar, dim }) {
+  const { T } = useTheme();
   return (
     <label style={{
       display: 'flex', alignItems: 'center', gap: 10,
@@ -97,7 +95,7 @@ function CheckRow({ checked, onChange, disabled, label, avatar, dim }) {
         <span style={{
           width: 22, height: 22, borderRadius: '50%', background: avatar.bg,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontWeight: 600, color: '#fff', flexShrink: 0,
+          fontSize: 9, fontWeight: 600, color: T.surface, flexShrink: 0,
         }}>{avatar.initials}</span>
       )}
       <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{label}</span>
@@ -107,16 +105,17 @@ function CheckRow({ checked, onChange, disabled, label, avatar, dim }) {
 
 // ── MODAL WRAPPER ────────────────────────────────────────────────
 function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
+  const { T } = useTheme();
   if (!open) return null;
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(14,14,13,0.5)', padding: 16,
+      background: `rgba(14,14,13,0.5)`, padding: 16,
     }}>
       <div style={{
-        width: '100%', maxWidth: width, background: '#fff',
-        border: `0.5px solid ${T.ink20}`, padding: 28,
+        width: '100%', maxWidth: width, background: T.surface,
+        border: `0.5px solid ${T.borderMd}`, padding: 28,
         maxHeight: '90vh', overflowY: 'auto',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -133,13 +132,15 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
 }
 
 function Divider() {
-  return <div style={{ height: '0.5px', background: T.ink10, margin: '16px 0' }} />;
+  const { T } = useTheme();
+  return <div style={{ height: '0.5px', background: T.border, margin: '16px 0' }} />;
 }
 
 function ScrollBox({ children, maxHeight = 160 }) {
+  const { T } = useTheme();
   return (
     <div style={{
-      border: `0.5px solid ${T.ink10}`, background: T.paper,
+      border: `0.5px solid ${T.border}`, background: T.bg,
       padding: '8px 12px', maxHeight, overflowY: 'auto',
     }}>{children}</div>
   );
@@ -147,6 +148,7 @@ function ScrollBox({ children, maxHeight = 160 }) {
 
 // ── PROJECT CARD ─────────────────────────────────────────────────
 function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers, onEdit, onArchive, navigate }) {
+  const { T } = useTheme();
   const hours = timesheetByProject[project.id] || 0;
   const tasks = tasksByProject[project.id] || { total: 0, completed: 0 };
   const progress = getProgress(tasks.completed, tasks.total);
@@ -164,8 +166,8 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 
   return (
     <div style={{
-      background: hover ? '#f8f7f4' : '#fff',
-      border: `0.5px solid ${T.ink10}`,
+      background: hover ? '#f8f7f4' : T.surface,
+      border: `0.5px solid ${T.border}`,
       padding: 20, position: 'relative', transition: 'background 0.12s',
     }}
       onMouseEnter={() => setHover(true)}
@@ -180,7 +182,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
         {menuOpen && (
           <div style={{
             position: 'absolute', right: 0, top: '100%',
-            background: '#fff', border: `0.5px solid ${T.ink20}`,
+            background: T.surface, border: `0.5px solid ${T.borderMd}`,
             width: 160, zIndex: 20, marginTop: 4,
           }}>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onEdit(project); }} style={{
@@ -226,7 +228,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 
         {/* Progress bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 2, background: T.ink10 }}>
+          <div style={{ flex: 1, height: 2, background: T.border }}>
             <div style={{ height: 2, background: T.navy, width: `${progress}%`, transition: 'width 0.3s' }} />
           </div>
           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{progress}%</span>
@@ -238,18 +240,18 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
             {assignedMembers.slice(0, 5).map((m, i) => (
               <div key={m.id} title={m.user_name || m.user_email} style={{
                 width: 24, height: 24, borderRadius: '50%',
-                background: avatarColor(m), border: '1.5px solid #fff',
+                background: avatarColor(m), border: `1.5px solid ${T.surface}`,
                 marginLeft: i > 0 ? -8 : 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, fontWeight: 600, color: '#fff',
+                fontSize: 9, fontWeight: 600, color: T.surface,
               }}>{getInitials(m.user_name || m.user_email)}</div>
             ))}
             {assignedMembers.length > 5 && (
               <div style={{
                 width: 24, height: 24, borderRadius: '50%', background: T.muted,
-                border: '1.5px solid #fff', marginLeft: -8,
+                border: `1.5px solid ${T.surface}`, marginLeft: -8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, color: '#fff',
+                fontSize: 9, color: T.surface,
               }}>+{assignedMembers.length - 5}</div>
             )}
           </div>
@@ -265,6 +267,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 
 // ── FORM PROGETTO (riutilizzato per nuovo e modifica) ─────────────
 export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalContacts, currentMemberId, isEdit = false, onToggleMember, onToggleService, clientSuggestions, onSelectClient, onGanttChange }) {
+  const { T } = useTheme();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -277,7 +280,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
         {clientSuggestions?.length > 0 && (
           <div style={{
             position: 'absolute', left: 0, right: 0, top: '100%',
-            background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 40,
+            background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 40,
           }}>
             {clientSuggestions.map(c => (
               <button key={c.id} onMouseDown={() => onSelectClient(c.full_name)} style={{
@@ -318,8 +321,8 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
         <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
           <input type="checkbox" id="gantt_enabled" checked={!!data.gantt_enabled}
             onChange={onGanttChange}
-            style={{ accentColor:'#13315C', width:14, height:14 }}/>
-          <label htmlFor="gantt_enabled" style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#0E0E0D', cursor:'pointer' }}>
+            style={{ accentColor: T.navy, width:14, height:14 }}/>
+          <label htmlFor="gantt_enabled" style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: T.ink, cursor:'pointer' }}>
             Abilita Gantt per questo progetto
           </label>
         </div>
@@ -352,6 +355,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectsPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Progetti");
   const navigate = useNavigate();
   const { teamMember, studioId, studioLoading } = useStudio();
@@ -592,7 +596,7 @@ export default function ProjectsPage() {
               Utenti ({selectedUserIds.length})
             </BtnGhost>
             {filterOpen && (
-              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: '#fff', border: `0.5px solid ${T.ink20}`, zIndex: 20 }}>
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
                 <div style={{ padding: 8, maxHeight: 240, overflowY: 'auto' }}>
                   {teamMembers.map(m => (
                     <CheckRow
@@ -604,7 +608,7 @@ export default function ProjectsPage() {
                     />
                   ))}
                 </div>
-                <div style={{ borderTop: `0.5px solid ${T.ink10}`, padding: 8 }}>
+                <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
                   <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
                     Rimuovi tutti i filtri
                   </button>
@@ -616,8 +620,8 @@ export default function ProjectsPage() {
             <div>
               <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
               {!canAddProject(projects.length) && (
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:'#b91c1c', marginTop:6 }}>
-                  Limite {plan.maxProjects} progetti raggiunto — <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color:'#13315C', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>Upgrade</button>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: T.red, marginTop:6 }}>
+                  Limite {plan.maxProjects} progetti raggiunto — <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>Upgrade</button>
                 </div>
               )}
             </div>
@@ -629,9 +633,9 @@ export default function ProjectsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : error ? (
-        <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
+        <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
       ) : filteredProjects.length === 0 ? (
-        <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
           {selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
@@ -651,7 +655,7 @@ export default function ProjectsPage() {
       {toast && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: T.navy, color: '#EEF1F6', padding: '10px 20px',
+          background: T.navy, color: T.bg, padding: '10px 20px',
           fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.05em', zIndex: 100,
         }}>✓ {toast}</div>
       )}
@@ -677,7 +681,7 @@ export default function ProjectsPage() {
 
           {modalStep === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', border: `0.5px solid ${T.ink10}`, background: T.paper }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', border: `0.5px solid ${T.border}`, background: T.bg }}>
                 <input type="checkbox" checked={formData.createInlineCommessa} onChange={e => setFormData(p => ({ ...p, createInlineCommessa: e.target.checked }))} style={{ accentColor: T.navy, width: 14, height: 14 }} />
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>Crea anche la commessa per questo progetto</span>
               </label>
@@ -727,7 +731,7 @@ export default function ProjectsPage() {
           <div style={{ marginTop: 14 }}>
             <FieldLabel>Commessa collegata</FieldLabel>
             <select value={editFormData.selectedCommessaId ?? ""} onChange={e => setEditFormData(p => ({ ...p, selectedCommessaId: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+              style={{ width: '100%', padding: '8px 12px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
               <option value="">Nessuna</option>
               {commesseList.map(c => <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>)}
             </select>

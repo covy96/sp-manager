@@ -6,11 +6,7 @@ import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A', paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', red:'#b91c1c', green:'#1a6b3c',
-};
+import { useTheme } from '../contexts/ThemeContext';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -18,39 +14,48 @@ function currency(v) {
 
 // ── UI PRIMITIVI ─────────────────────────────────────────────────
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
+  const { T } = useTheme();
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
-      background:T.navy,color:'#EEF1F6',border:'none',
+      background:T.navy,color:T.bg,border:'none',
       fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
       padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,...style,
     }}>{children}</button>
   );
 }
 function BtnGhost({ children, onClick, disabled, danger, style={} }) {
+  const { T } = useTheme();
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
-      background:'transparent',border:`0.5px solid ${danger?T.red:T.ink20}`,color:danger?T.red:T.ink,
+      background:'transparent',border:`0.5px solid ${danger?T.red:T.borderMd}`,color:danger?T.red:T.ink,
       fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
       padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.5:1,...style,
     }}>{children}</button>
   );
 }
 function FieldLabel({ children }) {
+  const { T } = useTheme();
   return <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6}}>{children}</div>;
 }
 function Input({ value, onChange, type="text", placeholder, required, style={} }) {
+  const { T } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
       onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
-      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.ink20}`,background:'#fff',color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',...style}}/>
+      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.border}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',...style}}/>
   );
 }
-function Divider() { return <div style={{height:'0.5px',background:T.ink10,margin:'16px 0'}}/>; }
+function Divider() {
+  const { T } = useTheme();
+  return <div style={{height:'0.5px',background:T.border,margin:'16px 0'}}/>;
+}
 function ScrollBox({ children, maxHeight=150 }) {
-  return <div style={{border:`0.5px solid ${T.ink10}`,background:T.paper,padding:'8px 12px',maxHeight,overflowY:'auto'}}>{children}</div>;
+  const { T } = useTheme();
+  return <div style={{border:`0.5px solid ${T.border}`,background:T.bg,padding:'8px 12px',maxHeight,overflowY:'auto'}}>{children}</div>;
 }
 function CheckRow({ checked, onChange, label }) {
+  const { T } = useTheme();
   return (
     <label style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',cursor:'pointer'}}>
       <input type="checkbox" checked={checked} onChange={onChange} style={{accentColor:T.navy,width:13,height:13}}/>
@@ -61,12 +66,13 @@ function CheckRow({ checked, onChange, label }) {
 
 // ── COMMESSA CARD ─────────────────────────────────────────────────
 function CommessaCard({ commessa, incassato, onClick }) {
+  const { T } = useTheme();
   const base=Number(commessa.importo_offerta_base)||0, pagato=incassato||0, residuo=base-pagato;
   const pct=base>0?Math.min(100,Math.round((pagato/base)*100)):0;
   const [hover,setHover]=useState(false);
   return (
     <div onClick={onClick} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      style={{background:hover?'#f8f7f4':'#fff',border:`0.5px solid ${T.ink10}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s'}}>
+      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
@@ -78,7 +84,7 @@ function CommessaCard({ commessa, incassato, onClick }) {
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
         </div>
       </div>
-      <div style={{height:2,background:T.ink10,marginBottom:10}}>
+      <div style={{height:2,background:T.border,marginBottom:10}}>
         <div style={{height:2,background:T.navy,width:`${pct}%`,transition:'width 0.3s'}}/>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
@@ -99,6 +105,7 @@ function CommessaCard({ commessa, incassato, onClick }) {
 
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function CommessePage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Commesse");
   const navigate = useNavigate();
   const { studioId, studioLoading, teamMember } = useStudio();
@@ -282,11 +289,11 @@ export default function CommessePage() {
     setNewProjectData(p=>({...p,selectedMembers:p.selectedMembers.includes(id)?p.selectedMembers.filter(x=>x!==id):[...p.selectedMembers,id]}));
   };
 
-  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.ink20}`,background:'#fff',color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
+  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
   const radioBtnSt=(active)=>({
     display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
-    border:`0.5px solid ${active?T.navy:T.ink10}`,
-    background:active?'#EEF3FA':'#fff',cursor:'pointer',marginBottom:6,width:'100%',textAlign:'left',
+    border:`0.5px solid ${active?T.navy:T.border}`,
+    background:active?T.navyLight:T.surface,cursor:'pointer',marginBottom:6,width:'100%',textAlign:'left',
   });
 
   if (studioLoading||!studioId) return (
@@ -312,9 +319,9 @@ export default function CommessePage() {
       {loading ? (
         <div style={{textAlign:'center',padding:64,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
       ) : error ? (
-        <div style={{border:`0.5px solid ${T.ink10}`,background:'#fff',padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
+        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
       ) : commesse.length===0 ? (
-        <div style={{border:`0.5px solid ${T.ink10}`,background:'#fff',padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa disponibile.</div>
+        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa disponibile.</div>
       ) : (
         <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesse.map(c=>(
@@ -326,7 +333,7 @@ export default function CommessePage() {
       {/* ── MODAL NUOVA COMMESSA ── */}
       {modalOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:540,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
+          <div style={{width:'100%',maxWidth:540,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
 
             {/* Header modal */}
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:20}}>
@@ -356,11 +363,11 @@ export default function CommessePage() {
                   <FieldLabel>Cliente *</FieldLabel>
                   <Input value={clientInput} onChange={handleClientInput} placeholder="Cerca o inserisci..." required/>
                   {clientSugg.length>0 && (
-                    <div style={{position:'absolute',left:0,right:0,top:'100%',background:'#fff',border:`0.5px solid ${T.ink20}`,zIndex:40,maxHeight:160,overflowY:'auto'}}>
+                    <div style={{position:'absolute',left:0,right:0,top:'100%',background:T.surface,border:`0.5px solid ${T.borderMd}`,zIndex:40,maxHeight:160,overflowY:'auto'}}>
                       {clientSugg.map(c=>(
                         <button key={c.id} type="button" onMouseDown={()=>{setClientInput(c.full_name);setClientSugg([]);}}
                           style={{display:'block',width:'100%',padding:'8px 12px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontSize:13,color:T.ink,fontFamily:"'Space Grotesk', sans-serif"}}
-                          onMouseEnter={e=>e.currentTarget.style.background=T.paper}
+                          onMouseEnter={e=>e.currentTarget.style.background=T.bg}
                           onMouseLeave={e=>e.currentTarget.style.background='transparent'}
                         >{c.full_name}</button>
                       ))}
@@ -379,7 +386,7 @@ export default function CommessePage() {
                 <div>
                   <FieldLabel>Note amministrative</FieldLabel>
                   <textarea value={formData.note_amministrative} onChange={handleChange('note_amministrative')} rows={3}
-                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.ink20}`,background:'#fff',color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',resize:'vertical'}}/>
+                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',resize:'vertical'}}/>
                 </div>
 
                 {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
@@ -396,7 +403,7 @@ export default function CommessePage() {
               <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:14}}>
 
                 {/* Riepilogo commessa */}
-                <div style={{background:T.paper,border:`0.5px solid ${T.ink10}`,padding:'10px 14px'}}>
+                <div style={{background:T.bg,border:`0.5px solid ${T.border}`,padding:'10px 14px'}}>
                   <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.15em',marginBottom:4}}>COMMESSA</div>
                   <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{formData.nome_commessa}</div>
                   <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{clientInput} · {currency(Number(formData.importo_offerta_base)||0)}</div>
@@ -412,8 +419,8 @@ export default function CommessePage() {
                       {val:"new",      label:"Crea nuovo progetto",       desc:"Crea e collega automaticamente"},
                     ].map(opt=>(
                       <button key={opt.val} type="button" onClick={()=>setProjectMode(opt.val)} style={radioBtnSt(projectMode===opt.val)}>
-                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.ink20}`,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                          {projectMode===opt.val && <div style={{width:6,height:6,borderRadius:'50%',background:'#EEF1F6'}}/>}
+                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.borderMd}`,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                          {projectMode===opt.val && <div style={{width:6,height:6,borderRadius:'50%',background:T.bg}}/>}
                         </div>
                         <div>
                           <div style={{fontSize:13,fontWeight:600,color:projectMode===opt.val?T.navy:T.ink}}>{opt.label}</div>
@@ -445,7 +452,7 @@ export default function CommessePage() {
 
                 {/* Crea nuovo progetto */}
                 {projectMode==="new" && (
-                  <div style={{background:T.paper,border:`0.5px solid ${T.ink10}`,padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{background:T.bg,border:`0.5px solid ${T.border}`,padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
                     <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
                     <div>
                       <FieldLabel>Nome progetto *</FieldLabel>

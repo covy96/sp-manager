@@ -2,13 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A',
-  paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33',
-  red:'#b91c1c', green:'#1a6b3c',
-};
+import { useTheme } from "../../contexts/ThemeContext";
 
 const TIPO_OPTIONS = [
   {
@@ -28,8 +22,9 @@ const TIPO_OPTIONS = [
 ];
 
 function KpiCard({ label, value, color }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 20px' }}>
+    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink }}>{value}</div>
     </div>
@@ -37,8 +32,9 @@ function KpiCard({ label, value, color }) {
 }
 
 function Panel({ title, subtitle, children }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'20px 22px', marginBottom:14 }}>
+    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', marginBottom:14 }}>
       <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom: subtitle?4:16 }}>{title}</div>
       {subtitle && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:18 }}>{subtitle}</div>}
       {children}
@@ -46,10 +42,10 @@ function Panel({ title, subtitle, children }) {
   );
 }
 
-const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.ink20}`, background:'#fff', color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
-const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
-
 export default function ProfiloStudioPage() {
+  const { T } = useTheme();
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
 
@@ -173,7 +169,7 @@ export default function ProfiloStudioPage() {
             </div>
           </div>
           <div style={{display:'flex',justifyContent:'flex-end'}}>
-            <button type="submit" disabled={saving} style={{background:T.navy,color:'#EEF1F6',border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+            <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
               {saving?'Salvataggio...':'Salva'}
             </button>
           </div>
@@ -192,14 +188,14 @@ export default function ProfiloStudioPage() {
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{tipoAttuale?.desc}</div>
           </div>
           <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
-            style={{background:'transparent',border:`0.5px solid ${T.ink20}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
+            style={{background:'transparent',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
             Modifica
           </button>
         </div>
 
         {/* Avviso cambio tipo */}
-        <div style={{marginTop:14,padding:'10px 14px',background:'#fefce8',border:`0.5px solid #854d0e22`}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:'#854d0e',lineHeight:1.6}}>
+        <div style={{marginTop:14,padding:'10px 14px',background:T.yellowLight,border:`0.5px solid ${T.yellow}22`}}>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.yellow,lineHeight:1.6}}>
             ⚠️ Cambiare il tipo di fatturazione influenza il flusso in CommessaDetail — da Proforma a Fattura diretta o viceversa. Le commesse e proforma già create non vengono modificate.
           </div>
         </div>
@@ -208,7 +204,7 @@ export default function ProfiloStudioPage() {
       {/* Modal cambio tipo */}
       {tipoModal && (
         <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:500,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28}}>
+          <div style={{width:'100%',maxWidth:500,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>Cambia tipo fatturazione</div>
               <button onClick={()=>setTipoModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>
@@ -218,8 +214,8 @@ export default function ProfiloStudioPage() {
               {TIPO_OPTIONS.map(t=>(
                 <button key={t.id} onClick={()=>setNuovoTipo(t.id)} style={{
                   display:'flex',flexDirection:'column',gap:6,padding:'14px 16px',textAlign:'left',
-                  border:`0.5px solid ${nuovoTipo===t.id?T.navy:T.ink10}`,
-                  background:nuovoTipo===t.id?'#EEF3FA':'#fff',cursor:'pointer',
+                  border:`0.5px solid ${nuovoTipo===t.id?T.navy:T.border}`,
+                  background:nuovoTipo===t.id?T.navyLight:T.surface,cursor:'pointer',
                 }}>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
                     <span style={{fontSize:18}}>{t.emoji}</span>
@@ -232,9 +228,9 @@ export default function ProfiloStudioPage() {
               ))}
             </div>
 
-            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.ink10}`}}>
-              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.ink20}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
-              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:'#EEF1F6',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
+              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
+              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
                 {saving?'Salvataggio...':'Conferma cambio'}
               </button>
             </div>
@@ -245,7 +241,7 @@ export default function ProfiloStudioPage() {
       {/* Codice invito */}
       <Panel title="Codice invito studio">
         <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:24,letterSpacing:'0.3em',color:T.navy,fontWeight:600,background:T.paper,padding:'10px 20px',border:`0.5px solid ${T.ink10}`}}>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:24,letterSpacing:'0.3em',color:T.navy,fontWeight:600,background:T.bg,padding:'10px 20px',border:`0.5px solid ${T.border}`}}>
             {studioData?.invite_code||'——'}
           </div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,lineHeight:1.6}}>

@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
-
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33',
-};
+import { useTheme } from '../../contexts/ThemeContext';
 
 function SunIcon() {
   return <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
@@ -46,6 +42,7 @@ export function initTheme() {
 }
 
 export default function AspettoPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Aspetto");
   const [theme, setTheme] = useState(() => localStorage.getItem("asm-theme") || "system");
 
@@ -74,7 +71,7 @@ export default function AspettoPage() {
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px' }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>Tema</div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -83,8 +80,8 @@ export default function AspettoPage() {
             return (
               <button key={id} onClick={() => handleChange(id)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                padding: '20px 12px', border: `0.5px solid ${active ? T.navy : T.ink20}`,
-                background: active ? '#EEF3FA' : '#fff', cursor: 'pointer', transition: 'all 0.1s',
+                padding: '20px 12px', border: `0.5px solid ${active ? T.navy : T.borderMd}`,
+                background: active ? T.navyLight : T.surface, cursor: 'pointer', transition: 'all 0.1s',
               }}>
                 <span style={{ color: active ? T.navy : T.muted }}><Icon /></span>
                 <div style={{ textAlign: 'center' }}>
@@ -105,7 +102,7 @@ export default function AspettoPage() {
       </div>
 
       {/* Preview del tema corrente */}
-      <div style={{ marginTop: 14, background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '14px 18px' }}>
+      <div style={{ marginTop: 14, background: T.surface, border: `0.5px solid ${T.border}`, padding: '14px 18px' }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
           Anteprima tema corrente
         </div>
@@ -118,7 +115,7 @@ export default function AspettoPage() {
             { label: 'Brass', color: 'var(--asm-brass)' },
           ].map(({ label, color }) => (
             <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 32, height: 32, background: color, border: `0.5px solid ${T.ink10}` }} />
+              <div style={{ width: 32, height: 32, background: color, border: `0.5px solid ${T.border}` }} />
               <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: T.muted }}>{label}</div>
             </div>
           ))}

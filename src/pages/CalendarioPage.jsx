@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', brass:'#D9C98A',
-  paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33',
-  red:'#b91c1c', green:'#1a6b3c',
-};
+import { useTheme } from "../contexts/ThemeContext";
 
 const MONTHS   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
@@ -48,10 +42,10 @@ function getMonthDays(year,month) {
 function fmtDay(date) { return date.toLocaleDateString('it-IT',{day:'numeric',month:'short'}); }
 function fmtDayNum(date) { return String(date.getDate()); }
 
-function getTaskBg(task,today) {
-  if (task.status==="completed") return { bg:'#f3f4f6', color:T.muted };
-  if (task.data_pianificata<today) return { bg:'#fef2f2', color:T.red };
-  return { bg:'#EEF3FA', color:T.navy };
+function getTaskBg(task,today,T) {
+  if (task.status==="completed") return { bg:T.surface2, color:T.muted };
+  if (task.data_pianificata<today) return { bg:T.redLight, color:T.red };
+  return { bg:T.navyLight, color:T.navy };
 }
 
 // ── AVATAR ────────────────────────────────────────────────────────
@@ -66,7 +60,8 @@ function getInitials(name="") {
 
 // ── TASK PILL ─────────────────────────────────────────────────────
 function TaskPill({ task, today, onClick }) {
-  const { bg, color } = getTaskBg(task, today);
+  const { T } = useTheme();
+  const { bg, color } = getTaskBg(task, today, T);
   return (
     <div onClick={e=>{e.stopPropagation();onClick&&onClick(task);}} style={{
       background:bg, color, fontFamily:"'IBM Plex Mono', monospace", fontSize:9,
@@ -80,8 +75,9 @@ function TaskPill({ task, today, onClick }) {
 
 // ── TASK DETAIL SIDEBAR ───────────────────────────────────────────
 function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
+    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:4 }}>Task del giorno</div>
@@ -95,7 +91,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today })
       {date && tasks.length===0 && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {tasks.map(task=>{
-          const {bg,color}=getTaskBg(task,today);
+          const {bg,color}=getTaskBg(task,today,T);
           return (
             <div key={task.id} style={{ background:bg, border:`0.5px solid ${color}22`, padding:'10px 12px' }}>
               <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:6 }}>
@@ -117,6 +113,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today })
 
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function CalendarioPage() {
+  const { T } = useTheme();
   const { studioId } = useStudio();
   const now = new Date();
   const todayISO = toISO(now);
@@ -258,8 +255,8 @@ export default function CalendarioPage() {
   const monthDays = useMemo(()=>getMonthDays(refDate.getFullYear(),refDate.getMonth()),[refDate]);
 
   const renderMonth = () => (
-    <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.paper }}>
+    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
         {WEEKDAYS.map(d=>(
           <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
         ))}
@@ -275,11 +272,11 @@ export default function CalendarioPage() {
             <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
               minHeight:90, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
               padding:'5px 6px', textAlign:'left', cursor:'pointer',
-              background:isSel?'#EEF3FA':day.isCurrentMonth?'#fff':T.paper,
+              background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
               outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
             }}
-              onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.paper;}}
-              onMouseLeave={e=>{e.currentTarget.style.background=isSel?'#EEF3FA':day.isCurrentMonth?'#fff':T.paper;}}
+              onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
+              onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg;}}
             >
               <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.muted, fontWeight:isToday?600:400, marginBottom:3 }}>
                 {day.date.getDate()}
@@ -298,9 +295,9 @@ export default function CalendarioPage() {
     const startDate = count===7 ? getMondayOf(refDate) : new Date(refDate);
     const days = getWeekDays(startDate, count);
     return (
-      <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
         {/* Header giorni */}
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.paper }}>
+        <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
           {days.map((d,i)=>{
             const iso=toISO(d);
             const isToday=iso===todayISO;
@@ -309,7 +306,7 @@ export default function CalendarioPage() {
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                   {WEEKDAYS[i%7]}
                 </div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:18, fontWeight:600, color:isToday?T.navy:T.ink, width:32, height:32, borderRadius:'50%', background:isToday?'#EEF3FA':'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:18, fontWeight:600, color:isToday?T.navy:T.ink, width:32, height:32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
                   {fmtDayNum(d)}
                 </div>
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginTop:2 }}>
@@ -329,11 +326,11 @@ export default function CalendarioPage() {
             return (
               <div key={i} onClick={()=>setSelectedDay(isSel?null:iso)} style={{
                 padding:'8px 6px', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none',
-                background:isSel?'#EEF3FA':isToday?'#f8f9fd':'#fff',
+                background:isSel?T.navyLight:isToday?T.surface2:T.surface,
                 cursor:'pointer', minHeight:200,
               }}
-                onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.paper;}}
-                onMouseLeave={e=>{e.currentTarget.style.background=isSel?'#EEF3FA':isToday?'#f8f9fd':'#fff';}}
+                onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
+                onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:isToday?T.surface2:T.surface;}}
               >
                 {dayTasks.length===0 ? (
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.ink10, padding:'8px 0', textAlign:'center' }}>—</div>
@@ -352,7 +349,7 @@ export default function CalendarioPage() {
   const renderToday = () => {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
-      <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'20px 24px' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'20px 24px' }}>
         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
           Oggi — {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>
@@ -363,7 +360,7 @@ export default function CalendarioPage() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {dayTasks.map(task=>{
-              const {bg,color}=getTaskBg(task,todayISO);
+              const {bg,color}=getTaskBg(task,todayISO,T);
               return (
                 <div key={task.id} style={{ background:bg, border:`0.5px solid ${color}33`, padding:'12px 16px', display:'flex', alignItems:'flex-start', gap:12 }}>
                   <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0, marginTop:4 }}/>
@@ -393,7 +390,7 @@ export default function CalendarioPage() {
     </div>
   );
   if (error) return (
-    <div style={{ border:`0.5px solid ${T.ink10}`, background:'#fff', padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
+    <div style={{ border:`0.5px solid ${T.ink10}`, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
   );
 
   const showSidebar = viewMode==="month" || viewMode==="week" || viewMode==="3days";
@@ -402,14 +399,14 @@ export default function CalendarioPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:'#fff', border:`0.5px solid ${T.ink10}`, padding:'12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
 
         {/* Toggle vista */}
         <div style={{ display:'flex', border:`0.5px solid ${T.ink20}`, overflow:'hidden' }}>
           {[["month","Mese"],["week","Settimana"],["3days","3 Giorni"],["today","Oggi"]].map(([m,label])=>(
             <button key={m} onClick={()=>{setViewMode(m);if(m==="today")setRefDate(new Date(now));}} style={{
               padding:'6px 14px', border:'none', background:viewMode===m?T.navy:'transparent',
-              color:viewMode===m?'#EEF1F6':T.muted,
+              color:viewMode===m?T.bg:T.muted,
               fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
               cursor:'pointer',
             }}>{label}</button>
@@ -424,7 +421,7 @@ export default function CalendarioPage() {
               {periodLabel}
             </div>
             <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
-            <button onClick={goToday} style={{ background:T.paper, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
           </div>
         )}
 
@@ -433,7 +430,7 @@ export default function CalendarioPage() {
           <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
             display:'flex', alignItems:'center', gap:6,
             border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`,
-            background:selectedMembers.length>0?'#EEF3FA':'transparent',
+            background:selectedMembers.length>0?T.navyLight:'transparent',
             padding:'6px 12px', cursor:'pointer',
             fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
             color:selectedMembers.length>0?T.navy:T.muted,
@@ -444,7 +441,7 @@ export default function CalendarioPage() {
                 {selectedMembers.slice(0,3).map(id=>{
                   const m=teamMembers.find(x=>x.id===id);
                   return m ? (
-                    <div key={id} style={{ width:18,height:18,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:600,color:'#fff' }}>
+                    <div key={id} style={{ width:18,height:18,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:600,color:T.surface }}>
                       {getInitials(m.user_name||m.user_email)}
                     </div>
                   ) : null;
@@ -456,12 +453,12 @@ export default function CalendarioPage() {
           </button>
 
           {showMemberFilter && (
-            <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:'#fff', border:`0.5px solid ${T.ink20}`, zIndex:30 }}>
+            <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`0.5px solid ${T.ink20}`, zIndex:30 }}>
               <div style={{ padding:'8px 12px', maxHeight:240, overflowY:'auto' }}>
                 {teamMembers.map(m=>(
                   <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
                     <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
-                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:'#fff',flexShrink:0 }}>
+                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:T.surface,flexShrink:0 }}>
                       {getInitials(m.user_name||m.user_email)}
                     </div>
                     <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>

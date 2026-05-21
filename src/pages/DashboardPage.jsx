@@ -1,22 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
-
-// ── BRAND TOKENS ─────────────────────────────────────────────────
-const T = {
-  ink:   '#0E0E0D',
-  navy:  '#13315C',
-  brass: '#D9C98A',
-  paper: '#EEF1F6',
-  muted: '#8a847b',
-  ink10: '#0E0E0D1A',
-  ink20: '#0E0E0D33',
-  ink05: '#0E0E0D0D',
-  red:   '#b91c1c',
-  green: '#1a6b3c',
-};
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function currency(value) {
@@ -41,10 +28,11 @@ function getMonday(d) {
 // ── SUB-COMPONENTS ────────────────────────────────────────────────
 
 function KpiCard({ label, value, note, valueColor }) {
+  const { T } = useTheme();
   return (
     <div style={{
-      background: '#fff',
-      border: `0.5px solid ${T.ink10}`,
+      background: T.surface,
+      border: `0.5px solid ${T.border}`,
       padding: '18px 20px',
     }}>
       <div style={{
@@ -67,10 +55,11 @@ function KpiCard({ label, value, note, valueColor }) {
 }
 
 function Panel({ title, children }) {
+  const { T } = useTheme();
   return (
     <div style={{
-      background: '#fff',
-      border: `0.5px solid ${T.ink10}`,
+      background: T.surface,
+      border: `0.5px solid ${T.border}`,
       padding: '20px 22px',
     }}>
       <div style={{
@@ -85,6 +74,7 @@ function Panel({ title, children }) {
 }
 
 function EmptyState({ label }) {
+  const { T } = useTheme();
   return (
     <div style={{
       padding: '40px 0', textAlign: 'center',
@@ -95,6 +85,7 @@ function EmptyState({ label }) {
 }
 
 function TaskRow({ task, onToggle, overdue }) {
+  const { T } = useTheme();
   const done = task.status === 'completed';
   const [hover, setHover] = useState(false);
 
@@ -103,7 +94,7 @@ function TaskRow({ task, onToggle, overdue }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '8px 0',
-        borderBottom: `0.5px solid ${T.ink10}`,
+        borderBottom: `0.5px solid ${T.border}`,
       }}
     >
       {/* Toggle button */}
@@ -113,7 +104,7 @@ function TaskRow({ task, onToggle, overdue }) {
         onMouseLeave={() => setHover(false)}
         style={{
           width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.ink20}`,
+          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.borderMd}`,
           background: done ? T.navy : 'transparent',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 0,
@@ -121,7 +112,7 @@ function TaskRow({ task, onToggle, overdue }) {
       >
         {done && (
           <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-            <path d="M1 3L3 5L7 1" stroke="#EEF1F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M1 3L3 5L7 1" stroke={T.bg} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
         {overdue && !done && (
@@ -161,8 +152,9 @@ function TaskRow({ task, onToggle, overdue }) {
 }
 
 function ProjectRow({ proj }) {
+  const { T } = useTheme();
   return (
-    <div style={{ padding: '10px 0', borderBottom: `0.5px solid ${T.ink10}` }}>
+    <div style={{ padding: '10px 0', borderBottom: `0.5px solid ${T.border}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
         <div style={{
           fontSize: 12, fontWeight: 600, color: T.ink,
@@ -179,7 +171,7 @@ function ProjectRow({ proj }) {
         fontSize: 9, color: T.muted, marginBottom: 6,
       }}>{proj.client || '—'}</div>
       {/* Progress bar */}
-      <div style={{ height: 2, background: T.ink10, width: '100%' }}>
+      <div style={{ height: 2, background: T.border, width: '100%' }}>
         <div style={{ height: 2, background: T.navy, width: `${proj.progress}%`, transition: 'width 0.3s' }} />
       </div>
       <div style={{
@@ -192,6 +184,7 @@ function ProjectRow({ proj }) {
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { T } = useTheme();
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
 
@@ -363,7 +356,7 @@ export default function DashboardPage() {
 
           {/* Task scadute */}
           {overdueTasks.length > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.ink10}` }}>
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
                 fontFamily: "'IBM Plex Mono', monospace",
@@ -371,7 +364,7 @@ export default function DashboardPage() {
               }}>
                 Task scadute
                 <span style={{
-                  background: T.red, color: '#fff', borderRadius: '50%',
+                  background: T.red, color: T.surface, borderRadius: '50%',
                   width: 16, height: 16, display: 'inline-flex',
                   alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, fontWeight: 600,

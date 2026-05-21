@@ -3,12 +3,7 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../hooks/usePermissions";
-
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', brass: '#D9C98A',
-  paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from '../../contexts/ThemeContext';
 
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
 
@@ -29,6 +24,7 @@ function getInitials(text) {
 }
 
 function RoleBadge({ role }) {
+  const { T } = useTheme();
   const isTop = role === "Owner" || role === "Partner";
   const isPM = role === "Project Manager";
   const c = isTop ? T.navy : isPM ? '#7c3aed' : T.muted;
@@ -40,6 +36,7 @@ function RoleBadge({ role }) {
 }
 
 export default function GestioneUtentiPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Gestione Utenti");
   const { studioId, teamMember: currentMember } = useStudio();
 
@@ -127,11 +124,11 @@ export default function GestioneUtentiPage() {
             const color = m.color || T.navy;
             return (
               <button key={m.id} onClick={() => isSel ? setSelectedMember(null) : openMember(m)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, background: isSel ? '#EEF3FA' : '#fff', border: `0.5px solid ${isSel ? T.navy : T.ink10}`, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.1s' }}
-                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = T.paper; }}
-                onMouseLeave={e => { e.currentTarget.style.background = isSel ? '#EEF3FA' : '#fff'; }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, background: isSel ? T.navyLight : T.surface, border: `0.5px solid ${isSel ? T.navy : T.border}`, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.1s' }}
+                onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = T.bg; }}
+                onMouseLeave={e => { e.currentTarget.style.background = isSel ? T.navyLight : T.surface; }}
               >
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#fff' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: color, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: T.surface }}>
                   {getInitials(m.user_name || m.user_email)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -148,11 +145,11 @@ export default function GestioneUtentiPage() {
 
         {/* Pannello dettaglio */}
         {selectedMember && (
-          <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px' }}>
+          <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: `0.5px solid ${T.ink10}` }}>
-              <div style={{ width: 42, height: 42, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#fff', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 14, borderBottom: `0.5px solid ${T.border}` }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: T.surface, flexShrink: 0 }}>
                 {getInitials(selectedMember.user_name || selectedMember.user_email)}
               </div>
               <div>
@@ -162,7 +159,7 @@ export default function GestioneUtentiPage() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: `0.5px solid ${T.ink10}`, marginBottom: 18 }}>
+            <div style={{ display: 'flex', borderBottom: `0.5px solid ${T.border}`, marginBottom: 18 }}>
               <button onClick={() => setActiveTab("role")} style={btnSt(activeTab === "role")}>Ruolo & Permessi</button>
               <button onClick={() => setActiveTab("color")} style={btnSt(activeTab === "color")}>Colore Avatar</button>
             </div>
@@ -172,12 +169,12 @@ export default function GestioneUtentiPage() {
               <div>
                 {/* Avvisi */}
                 {!canEditRoles && (
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 14 }}>
                     Solo il Titolare o un Partner possono modificare i ruoli.
                   </div>
                 )}
                 {isOwnProfile && (
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: '8px 12px', background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 14 }}>
                     Non puoi modificare il tuo stesso ruolo.
                   </div>
                 )}
@@ -190,7 +187,7 @@ export default function GestioneUtentiPage() {
                     const perms = PERM_SUMMARY[role] || [];
                     return (
                       <button key={role} onClick={() => canClick && setEditRole(role)}
-                        style={{ padding: '11px 14px', border: `0.5px solid ${isSel ? T.navy : T.ink10}`, background: isSel ? '#EEF3FA' : '#fff', cursor: canClick ? 'pointer' : 'not-allowed', textAlign: 'left', opacity: canEditRoles ? 1 : 0.6 }}>
+                        style={{ padding: '11px 14px', border: `0.5px solid ${isSel ? T.navy : T.border}`, background: isSel ? T.navyLight : T.surface, cursor: canClick ? 'pointer' : 'not-allowed', textAlign: 'left', opacity: canEditRoles ? 1 : 0.6 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                           <span style={{ fontSize: 12, fontWeight: 600, color: isSel ? T.navy : T.ink }}>{ROLE_LABELS[role]}</span>
                           {isSel && <span style={{ color: T.navy, fontSize: 12 }}>✓</span>}
@@ -198,7 +195,7 @@ export default function GestioneUtentiPage() {
                         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 6 }}>{ROLE_DESCRIPTIONS[role]}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           {perms.map(p => (
-                            <span key={p} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: isSel ? T.navy : T.muted, background: isSel ? '#dbeafe' : T.paper, padding: '1px 5px' }}>{p}</span>
+                            <span key={p} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: isSel ? T.navy : T.muted, background: isSel ? '#dbeafe' : T.bg, padding: '1px 5px' }}>{p}</span>
                           ))}
                         </div>
                       </button>
@@ -209,7 +206,7 @@ export default function GestioneUtentiPage() {
                 {canEditRoles && !isOwnProfile && (
                   <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
                     <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
-                      style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity: saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
+                      style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity: saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
                       {saving ? "Salvataggio..." : "Salva ruolo"}
                     </button>
                   </div>
@@ -228,20 +225,20 @@ export default function GestioneUtentiPage() {
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Personalizzato</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width: 38, height: 34, border: `0.5px solid ${T.ink20}`, cursor: 'pointer', padding: 2 }} />
+                    <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width: 38, height: 34, border: `0.5px solid ${T.borderMd}`, cursor: 'pointer', padding: 2 }} />
                     <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)}
-                      style={{ flex: 1, padding: '6px 10px', border: `0.5px solid ${T.ink20}`, background: '#fff', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none' }} />
+                      style={{ flex: 1, padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none' }} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: T.paper, border: `0.5px solid ${T.ink10}`, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 14 }}>
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>Anteprima</span>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: editColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: T.surface }}>
                     {getInitials(selectedMember.user_name || selectedMember.user_email)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button onClick={handleSaveColor} disabled={saving || editColor === selectedMember.color}
-                    style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity: saving || editColor === selectedMember.color ? 0.5 : 1 }}>
+                    style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity: saving || editColor === selectedMember.color ? 0.5 : 1 }}>
                     {saving ? "Salvataggio..." : "Salva colore"}
                   </button>
                 </div>

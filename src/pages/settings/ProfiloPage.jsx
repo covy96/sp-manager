@@ -2,33 +2,33 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-
-const T = {
-  ink: '#0E0E0D', navy: '#13315C', paper: '#EEF1F6', muted: '#8a847b',
-  ink10: '#0E0E0D1A', ink20: '#0E0E0D33', red: '#b91c1c', green: '#1a6b3c',
-};
+import { useTheme } from "../../contexts/ThemeContext";
 
 function FieldLabel({ children }) {
+  const { T } = useTheme();
   return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, disabled }) {
+  const { T } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.ink20}`, background: disabled ? T.paper : '#fff', color: disabled ? T.muted : T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.borderMd}`, background: disabled ? T.bg : '#fff', color: disabled ? T.muted : T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
   );
 }
 function BtnPrimary({ children, type = "button", onClick, disabled }) {
+  const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: '#EEF1F6', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
 }
 function Panel({ title, subtitle, children }) {
+  const { T } = useTheme();
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '20px 22px', marginBottom: 14 }}>
+    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', marginBottom: 14 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>{title}</div>
       {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 18 }}>{subtitle}</div>}
       {children}
@@ -37,6 +37,7 @@ function Panel({ title, subtitle, children }) {
 }
 
 export default function ProfiloPage() {
+  const { T } = useTheme();
   console.log('ProfiloPage rendering');
   usePageTitleOnMount("Profilo");
   const { teamMember } = useStudio();
@@ -133,7 +134,7 @@ export default function ProfiloPage() {
                 setNotifLoading(false);
               }}
               style={{
-                background: notifEnabled ? '#f0fdf4' : T.navy, color: notifEnabled ? T.green : '#EEF1F6',
+                background: notifEnabled ? T.greenLight : T.navy, color: notifEnabled ? T.green : T.bg,
                 border: `0.5px solid ${notifEnabled ? T.green : T.navy}`,
                 fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
                 padding: '7px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,

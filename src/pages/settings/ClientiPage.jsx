@@ -4,34 +4,34 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { backfillContacts } from "../../utils/backfillContacts";
-
-const T = {
-  ink:'#0E0E0D', navy:'#13315C', paper:'#EEF1F6', muted:'#8a847b',
-  ink10:'#0E0E0D1A', ink20:'#0E0E0D33', red:'#b91c1c', green:'#1a6b3c',
-};
+import { useTheme } from '../../contexts/ThemeContext';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
 }
 function BtnPrimary({ children, onClick, disabled, type="button" }) {
+  const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
       {children}
     </button>
   );
 }
 function BtnGhost({ children, onClick, disabled, danger }) {
+  const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.ink20}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
 }
 function FieldLabel({ children }) {
+  const { T } = useTheme();
   return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 
 export default function ClientiPage() {
+  const { T } = useTheme();
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
   const navigate = useNavigate();
@@ -104,7 +104,7 @@ export default function ClientiPage() {
     else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.ink20}`, background:'#fff', color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
@@ -131,7 +131,7 @@ export default function ClientiPage() {
 
       {/* Lista vuota */}
       {contacts.length===0 ? (
-        <div style={{background:'#fff',border:`0.5px solid ${T.ink10}`,padding:'48px 0',textAlign:'center'}}>
+        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
             Nessun cliente ancora.<br/>
             I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
@@ -146,14 +146,14 @@ export default function ClientiPage() {
             const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
 
             return (
-              <div key={c.id} style={{background:'#fff',border:`0.5px solid ${isOpen?T.navy:T.ink10}`,transition:'border-color 0.1s'}}>
+              <div key={c.id} style={{background:T.surface,border:`0.5px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s'}}>
 
                 {/* Riga cliente */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
                   <button onClick={()=>setExpandedId(isOpen?null:c.id)}
                     style={{display:'flex',alignItems:'center',gap:12,flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
                     {/* Avatar */}
-                    <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:isOpen?T.navy:T.paper,display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.1s'}}>
+                    <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:isOpen?T.navy:T.bg,display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.1s'}}>
                       <span style={{fontSize:14}}>{c.company?'🏢':'👤'}</span>
                     </div>
                     {/* Testo */}
@@ -180,7 +180,7 @@ export default function ClientiPage() {
 
                 {/* Pannello espanso */}
                 {isOpen && (
-                  <div style={{borderTop:`0.5px solid ${T.ink10}`,padding:'14px 16px',background:T.paper}}>
+                  <div style={{borderTop:`0.5px solid ${T.border}`,padding:'14px 16px',background:T.bg}}>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
 
                       {/* Progetti */}
@@ -194,9 +194,9 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {projs.map(p=>(
                               <button key={p.id} onClick={()=>navigate(`/progetti/${p.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
-                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
                                 <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
                                 <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
@@ -217,9 +217,9 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {comms.map(com=>(
                               <button key={com.id} onClick={()=>navigate(`/commesse/${com.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:'#fff',border:`0.5px solid ${T.ink10}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
-                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.ink10}
+                                onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
                                   <div style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{com.nome_commessa}</div>
@@ -246,7 +246,7 @@ export default function ClientiPage() {
       {/* Modal aggiungi cliente */}
       {addModalOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:400,background:'#fff',border:`0.5px solid ${T.ink20}`,padding:28}}>
+          <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>
             <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
               I clienti si aggiungono anche automaticamente dai progetti e commesse
@@ -265,7 +265,7 @@ export default function ClientiPage() {
                   style={inputSt}/>
               </div>
               {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
-              <div style={{height:'0.5px',background:T.ink10,margin:'4px 0'}}/>
+              <div style={{height:'0.5px',background:T.border,margin:'4px 0'}}/>
               <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
                 <BtnGhost onClick={()=>{ setAddModalOpen(false); setNewContact({full_name:"",company:""}); setFormError(""); }} disabled={saving}>Annulla</BtnGhost>
                 <BtnPrimary type="submit" disabled={saving||!newContact.full_name.trim()}>{saving?"Salvataggio...":"Aggiungi"}</BtnPrimary>
