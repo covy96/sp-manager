@@ -37,7 +37,7 @@ export function useStudio() {
           || members[0];                    // fallback al più recente
       }
 
-      setTeamMember(tm ?? null);
+setTeamMember(tm ?? null);
       const sid = tm?.studio ?? null;
       setStudioId(sid);
 
@@ -47,7 +47,7 @@ export function useStudio() {
           .select("*")
           .eq("id", sid)
           .single();
-        setStudio(st ?? null);
+setStudio(st ?? null);
       } else {
         // Fallback: cerca uno studio di cui l'utente è owner (team_member senza studio)
         const { data: ownedStudio } = await supabase
@@ -55,7 +55,7 @@ export function useStudio() {
           .select("*")
           .eq("owner_id", u.id)
           .maybeSingle();
-        if (ownedStudio) {
+if (ownedStudio) {
           setStudio(ownedStudio);
           setStudioId(ownedStudio.id);
           localStorage.setItem("asm-active-studio", ownedStudio.id);
