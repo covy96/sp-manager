@@ -8,27 +8,28 @@ export function formatOre(decimale) {
 }
 
 export async function calcolaIncassato(commesseIds, studioId, supabase) {
-  // Carica tutte le proforma pagate dello studio
-  const { data: proformePagate } = await supabase
-    .from("proforma")
-    .select("commessa_id, importo_totale, costo_extra_ids")
-    .eq("studio", studioId)
-    .eq("pagato", true);
+  // Calcola incassato dalle rate pagate — stesso metodo della pagina di dettaglio
+  // Questo gestisce correttamente anche le proforma multi-commessa
+  const [{ data: ratePagate }, { data: commesse }] = await Promise.all([
+    supabase
+      .from("suddivisione_pagamenti")
+      .select("commessa_id, percentuale, importo_fisso")
+      .in("commessa_id", commesseIds)
+      .eq("pagato", true),
+    supabase
+      .from("commesse")
+      .select("id, importo_offerta_base")
+      .in("id", commesseIds),
+  ]);
 
-  // Per ogni proforma pagata, calcola importo senza costi extra
+  const basePerCommessa = {};
+  (commesse || []).forEach(c => { basePerCommessa[c.id] = Number(c.importo_offerta_base) || 0; });
+
   const incassatoPerCommessa = {};
-
-  for (const pf of proformePagate || []) {
-    let importoCostiExtra = 0;
-    if (pf.costo_extra_ids?.length > 0) {
-      const { data: costi } = await supabase
-        .from("costi_extra")
-        .select("importo")
-        .in("id", pf.costo_extra_ids);
-      importoCostiExtra = costi?.reduce((sum, c) => sum + (c.importo || 0), 0) || 0;
-    }
-    const importoRate = (pf.importo_totale || 0) - importoCostiExtra;
-    incassatoPerCommessa[pf.commessa_id] = (incassatoPerCommessa[pf.commessa_id] || 0) + importoRate;
+  for (const r of (ratePagate || [])) {
+    const base = basePerCommessa[r.commessa_id] || 0;
+    const importoRata = Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100);
+    incassatoPerCommessa[r.commessa_id] = (incassatoPerCommessa[r.commessa_id] || 0) + importoRata;
   }
 
   return incassatoPerCommessa;
