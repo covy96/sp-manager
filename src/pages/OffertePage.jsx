@@ -33,6 +33,8 @@ export default function OffertePage() {
   const [accettaModal, setAccettaModal] = useState(false);
   const [accettaForm, setAccettaForm]   = useState(null);
   const [accettaId, setAccettaId]       = useState(null);
+  const [allineaModal, setAllineaModal] = useState(false);
+  const [offertaOriginale, setOffertaOriginale] = useState(null);
 
   const [form, setForm] = useState({
     numero_offerta:'', nome_offerta:'', cliente:'',
@@ -120,6 +122,7 @@ export default function OffertePage() {
 
   const openAccetta = (o) => {
     setAccettaId(o.id);
+    setOffertaOriginale(o);
     setAccettaForm({
       nome_commessa: o.nome_offerta,
       cliente: o.cliente,
@@ -132,7 +135,7 @@ export default function OffertePage() {
     setAccettaModal(true);
   };
 
-  const handleConfermaAccetta = async () => {
+  const _doCreaNcommessa = async (aggiornaOfferta) => {
     setSaving(true);
 
     let projectId = accettaForm.project_id||null;
@@ -167,10 +170,27 @@ export default function OffertePage() {
       stato_pagamento: 'non_iniziato',
     }).select().single();
     if (cErr) { alert('Errore: '+cErr.message); setSaving(false); return; }
-    await supabase.from('offerte').update({ stato:'accettata', commessa_id:commessa.id }).eq('id',accettaId);
-    setAccettaModal(false); setSaving(false);
+
+    const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
+    if (aggiornaOfferta) offerUpdate.importo_offerta_base = Number(accettaForm.importo_offerta_base);
+    await supabase.from('offerte').update(offerUpdate).eq('id', accettaId);
+
+    setSaving(false);
+    setAccettaModal(false);
+    setAllineaModal(false);
     await loadData();
     navigate(`/commesse/${commessa.id}`);
+  };
+
+  const handleConfermaAccetta = async () => {
+    const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
+    const valoreNuovo = Number(accettaForm.importo_offerta_base);
+    if (valoreNuovo !== valoreOriginale) {
+      setAccettaModal(false);
+      setAllineaModal(true);
+      return;
+    }
+    await _doCreaNcommessa(false);
   };
 
   const handleRifiuta = async (offerta) => {
@@ -430,6 +450,49 @@ export default function OffertePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal allineamento valore */}
+      {allineaModal && accettaForm && offertaOriginale && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:80, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'28px 28px 24px', maxWidth:420, width:'100%' }}>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:8 }}>
+              Aggiornare anche l'offerta?
+            </div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:20, lineHeight:1.7 }}>
+              Hai modificato il valore rispetto all'offerta originale.<br/>
+              Vuoi allineare anche il valore dell'offerta a quello della commessa?
+            </div>
+            <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
+              <div>
+                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
+                  {currency(offertaOriginale.importo_offerta_base)}
+                </div>
+              </div>
+              <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
+                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
+                  {currency(accettaForm.importo_offerta_base)}
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => _doCreaNcommessa(true)} disabled={saving}
+                style={{ flex:1, background:T.navy, color:T.bg, border:'none', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
+                {saving ? 'Creazione...' : 'Sì, aggiorna offerta'}
+              </button>
+              <button onClick={() => _doCreaNcommessa(false)} disabled={saving}
+                style={{ flex:1, background:'transparent', color:T.ink, border:`0.5px solid ${T.borderMd}`, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
+                No, mantieni offerta
+              </button>
+            </div>
+            <button onClick={() => { setAllineaModal(false); setAccettaModal(true); }} disabled={saving}
+              style={{ marginTop:12, background:'none', border:'none', color:T.muted, ...mono, fontSize:10, cursor:'pointer', width:'100%', textAlign:'center' }}>
+              ← Torna a modifica
+            </button>
           </div>
         </div>
       )}
