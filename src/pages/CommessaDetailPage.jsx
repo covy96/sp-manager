@@ -312,7 +312,7 @@ export default function CommessaDetailPage() {
 
   const handleSaveCosto = async e => {
     e.preventDefault(); setCostoError(""); setCostoSaving(true);
-    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: costoForm.tipo_costo || "Altro", description: costoForm.description || null, importo: Number(costoForm.importo) || 0, studio: studioId });
+    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: costoForm.tipo_costo || "Altro", description: costoForm.description || null, importo: Number(costoForm.importo) || 0, data_costo: costoForm.data_costo || new Date().toISOString().slice(0,10), studio: studioId });
     if (iErr) { setCostoError(iErr.message); setCostoSaving(false); return; }
     setCostoModal(false); setCostoForm({}); await loadData(); setCostoSaving(false);
   };
@@ -375,12 +375,12 @@ export default function CommessaDetailPage() {
 
   const openEditCosto = costo => {
     setEditCostoData(costo);
-    setEditCostoForm({ tipo_costo: costo.tipo_costo || "", description: costo.description || "", importo: costo.importo || "", data: costo.data || "" });
+    setEditCostoForm({ tipo_costo: costo.tipo_costo || "", description: costo.description || "", importo: costo.importo || "", data_costo: costo.data_costo || "" });
     setEditCostoModal(true); setOpenMenuId(null);
   };
   const handleSaveCostoEdit = async e => {
     e.preventDefault(); setEditCostoSaving(true);
-    await supabase.from("costi_extra").update({ tipo_costo: editCostoForm.tipo_costo, description: editCostoForm.description || null, importo: Number(editCostoForm.importo) }).eq("id", editCostoData.id);
+    await supabase.from("costi_extra").update({ tipo_costo: editCostoForm.tipo_costo, description: editCostoForm.description || null, importo: Number(editCostoForm.importo), data_costo: editCostoForm.data_costo || new Date().toISOString().slice(0,10) }).eq("id", editCostoData.id);
     setEditCostoModal(false); await loadData(); setEditCostoSaving(false);
   };
   const handleDeleteCosto = async id => {
@@ -849,6 +849,7 @@ export default function CommessaDetailPage() {
           </div>
           <div><FieldLabel>Descrizione</FieldLabel><Input value={costoForm.description ?? ""} onChange={e => setCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
           <div><FieldLabel>Importo *</FieldLabel><Input type="number" value={costoForm.importo ?? ""} onChange={e => setCostoForm(p => ({ ...p, importo: e.target.value }))} required /></div>
+          <div><FieldLabel>Data</FieldLabel><Input type="date" value={costoForm.data_costo ?? new Date().toISOString().slice(0,10)} onChange={e => setCostoForm(p => ({ ...p, data_costo: e.target.value }))} /></div>
           {costoError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{costoError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setCostoModal(false)} disabled={costoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={costoSaving}>{costoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
@@ -1031,6 +1032,7 @@ export default function CommessaDetailPage() {
           <div><FieldLabel>Tipo</FieldLabel><Input value={editCostoForm.tipo_costo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, tipo_costo: e.target.value }))} /></div>
           <div><FieldLabel>Descrizione</FieldLabel><Input value={editCostoForm.description ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
           <div><FieldLabel>Importo</FieldLabel><Input type="number" value={editCostoForm.importo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, importo: e.target.value }))} /></div>
+          <div><FieldLabel>Data</FieldLabel><Input type="date" value={editCostoForm.data_costo ?? ""} onChange={e => setEditCostoForm(p => ({ ...p, data_costo: e.target.value }))} /></div>
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditCostoModal(false)} disabled={editCostoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editCostoSaving}>{editCostoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
