@@ -96,15 +96,33 @@ export default function OfferteDetailPage() {
 
   const handleConfermaAccetta = async () => {
     setSaving(true);
-    const proj = progetti.find(p=>p.id===accettaForm.project_id);
+
+    let projectId = accettaForm.project_id||null;
+    let projectName = progetti.find(p=>p.id===accettaForm.project_id)?.name||null;
+
+    if (!projectId && accettaForm.creaProgetto && accettaForm.nuovoProgettoNome?.trim()) {
+      const { data:newProj, error:pErr } = await supabase.from('projects').insert({
+        studio: studioId,
+        name: accettaForm.nuovoProgettoNome.trim(),
+        client: accettaForm.cliente,
+        status: 'in_corso',
+        gantt_enabled: false,
+        archived: false,
+      }).select().single();
+      if (pErr) { alert('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
+      projectId = newProj.id;
+      projectName = newProj.name;
+      await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', id);
+    }
+
     const { data:commessa, error } = await supabase.from("commesse").insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
       nome_commessa: accettaForm.nome_commessa,
       cliente: accettaForm.cliente,
-      project_id: accettaForm.project_id||null,
-      project_name: proj?.name||null,
-      data_commessa: accettaForm.data_commessa||null,
+      project_id: projectId,
+      project_name: projectName,
+      data_commessa: accettaForm.data_commessa || new Date().toISOString().slice(0,10),
       importo_offerta_base: Number(accettaForm.importo_offerta_base),
       perc_iva1:60, perc_contributo1:5, perc_iva2:40, perc_contributo2:4, perc_iva_finale:22,
       importo_totale: Number(accettaForm.importo_offerta_base),
@@ -244,6 +262,24 @@ export default function OfferteDetailPage() {
                   {progetti.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
+              {!accettaForm.project_id && (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="checkbox" id="creaProgettoAccetta" checked={accettaForm.creaProgetto||false}
+                      onChange={e=>setAccettaForm(p=>({...p,creaProgetto:e.target.checked}))}
+                      style={{ accentColor:T.navy, width:14, height:14 }}/>
+                    <label htmlFor="creaProgettoAccetta" style={{ ...mono, fontSize:11, color:T.ink, cursor:'pointer' }}>
+                      Crea nuovo progetto per questa commessa
+                    </label>
+                  </div>
+                  {accettaForm.creaProgetto && (
+                    <div style={{ padding:'12px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                      <label style={labelSt}>Nome progetto *</label>
+                      <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                    </div>
+                  )}
+                </div>
+              )}
               <div>
                 <label style={labelSt}>Data commessa</label>
                 <input type="date" value={accettaForm.data_commessa} onChange={e=>setAccettaForm(p=>({...p,data_commessa:e.target.value}))} style={inputSt}/>
