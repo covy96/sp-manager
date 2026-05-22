@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePlan } from "../hooks/usePlan";
 import { supabase } from "../lib/supabase";
 
 function currency(v) {
@@ -15,9 +17,11 @@ function fmtOre(h) {
 
 export default function AnalisiPage() {
   usePageTitleOnMount("Analisi");
+  const navigate = useNavigate();
   const { T } = useTheme();
   const { studioId } = useStudio();
   const permissions = usePermissions();
+  const { plan } = usePlan();
 
   const [projects, setProjects]     = useState([]);
   const [members, setMembers]       = useState([]);
@@ -47,7 +51,7 @@ export default function AnalisiPage() {
         supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId),
-        supabase.from("commesse").select("id,project_id,valore_contratto,archived").eq("studio",studioId),
+        supabase.from("commesse").select("id,project_id,valore_contratto,importo_base,nome_commessa,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
       ]);
@@ -88,7 +92,7 @@ export default function AnalisiPage() {
 
       // Commesse del progetto
       const commProj = commesse.filter(c => c.project_id === proj.id);
-      const valoreCommesse = commProj.reduce((s,c)=>s+Number(c.valore_contratto||0), 0);
+      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.valore_contratto || c.importo_base || 0), 0);
 
       // Costi extra e collaboratori
       const commIds = commProj.map(c=>c.id);
@@ -124,9 +128,22 @@ export default function AnalisiPage() {
 
   if (!permissions.isOwner) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240 }}>
-      <div style={{ ...mono, fontSize:11, color:T.muted, textAlign:'center' }}>
+      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center' }}>
         Questa sezione è riservata al titolare dello studio.
       </div>
+    </div>
+  );
+
+  if (plan.id !== 'pro') return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:300, gap:16 }}>
+      <div style={{ fontSize:32 }}>🔒</div>
+      <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Funzionalità Pro</div>
+      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
+        La pagina Analisi è disponibile solo per il piano Pro.<br/>Fai l'upgrade per accedere ai report economici.
+      </div>
+      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
+        Vedi piani →
+      </button>
     </div>
   );
 
@@ -240,6 +257,8 @@ export default function AnalisiPage() {
               <thead>
                 <tr>
                   <th style={thSt}>Commessa</th>
+                  <th style={thSt}>Importo base</th>
+                  <th style={thSt}>Valore contratto</th>
                   <th style={thSt}>Costi extra</th>
                   <th style={thSt}>Collaboratori</th>
                   <th style={thSt}>Totale esterni</th>
@@ -251,7 +270,9 @@ export default function AnalisiPage() {
                   const co = collab.filter(x=>x.commessa_id===c.id).reduce((s,x)=>s+Number(x.importo||0),0);
                   return (
                     <tr key={c.id}>
-                      <td style={{ ...tdSt, fontWeight:600 }}>{c.nome_commessa || c.id.slice(0,8)}</td>
+                      <td style={{ ...tdSt, fontWeight:600 }}>{c.nome_commessa || '—'}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.importo_base||0)}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.valore_contratto||0)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(ce)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(co)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:13, fontWeight:600, color:T.red }}>{currency(ce+co)}</td>
@@ -259,7 +280,7 @@ export default function AnalisiPage() {
                   );
                 })}
                 <tr>
-                  <td colSpan={3} style={{ ...tdSt, fontWeight:600, color:T.ink }}>Totale esterni</td>
+                  <td colSpan={5} style={{ ...tdSt, fontWeight:600, color:T.ink }}>Totale esterni</td>
                   <td style={{ ...tdSt, ...mono, fontSize:14, fontWeight:600, color:T.red }}>{currency(stat.costoEsterni)}</td>
                 </tr>
               </tbody>
