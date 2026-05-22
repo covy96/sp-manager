@@ -87,7 +87,7 @@ export default function OfferteDetailPage() {
       nome_commessa: offerta.nome_offerta,
       cliente: offerta.cliente,
       project_id: offerta.project_id||'',
-      data_commessa: offerta.data_offerta||'',
+      data_commessa: new Date().toISOString().slice(0,10),
       importo_offerta_base: offerta.importo_offerta_base,
       numero_offerta: offerta.numero_offerta,
     });

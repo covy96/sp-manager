@@ -106,7 +106,7 @@ export default function OffertePage() {
       nome_commessa: o.nome_offerta,
       cliente: o.cliente,
       project_id: o.project_id||'',
-      data_commessa: o.data_offerta||'',
+      data_commessa: new Date().toISOString().slice(0,10),
       importo_offerta_base: o.importo_offerta_base,
       numero_offerta: o.numero_offerta,
       note: o.note||'',
