@@ -15,60 +15,90 @@ export default function OnboardingPage() {
   const [loading, setLoading]       = useState(true);  // parte true: controlla pending studio
   const [error, setError]           = useState("");
 
-  // Al mount: se c'è uno studio in sospeso (da /crea-studio), crealo subito
+  // Al mount: gestisce studio in sospeso (crea-studio) o join in sospeso (unisciti)
   useEffect(() => {
     const checkPending = async () => {
-      const raw = localStorage.getItem("asm-pending-studio");
-      if (!raw) { setLoading(false); return; }
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      try {
-        const pendingStudio = JSON.parse(raw);
-        const code = generateInviteCode();
+      // ── Caso 1: studio da creare (da /crea-studio) ──
+      const rawStudio = localStorage.getItem("asm-pending-studio");
+      if (rawStudio) {
+        try {
+          const pendingStudio = JSON.parse(rawStudio);
+          const code = generateInviteCode();
 
-        const { data: studio, error: studioErr } = await supabase
-          .from("studios")
-          .insert({
-            name: pendingStudio.name,
-            owner_id: user.id,
-            invite_code: code,
-            piano: "free",
-            tipo_fatturazione: pendingStudio.tipo_fatturazione,
-          })
-          .select("*")
-          .single();
+          const { data: studio, error: studioErr } = await supabase
+            .from("studios")
+            .insert({
+              name: pendingStudio.name,
+              owner_id: user.id,
+              invite_code: code,
+              piano: "free",
+              tipo_fatturazione: pendingStudio.tipo_fatturazione,
+            })
+            .select("*")
+            .single();
 
-        if (studioErr || !studio) {
-          console.error("Errore creazione studio da pending:", studioErr);
-          setLoading(false);
+          if (studioErr || !studio) {
+            console.error("Errore creazione studio da pending:", studioErr);
+            setLoading(false);
+            return;
+          }
+
+          await supabase.from("team_members").insert({
+            user_account: user.id,
+            user_email: user.email,
+            user_name: pendingStudio.ownerName || user.email,
+            studio: studio.id,
+            role_internal: "Owner",
+            active: true,
+          });
+
+          await seedServiceTaskTemplates(studio.id);
+          localStorage.setItem("asm-active-studio", studio.id);
+          localStorage.removeItem("asm-pending-studio");
+          window.location.href = "/dashboard";
           return;
+        } catch (e) {
+          console.error("Errore parsing pending studio:", e);
         }
-
-        const { error: memberErr } = await supabase.from("team_members").insert({
-          user_account: user.id,
-          user_email: user.email,
-          user_name: pendingStudio.ownerName || user.email,
-          studio: studio.id,
-          role_internal: "Owner",
-          active: true,
-        });
-
-        if (memberErr) {
-          console.error("Errore creazione team_member da pending:", memberErr);
-          setLoading(false);
-          return;
-        }
-
-        await seedServiceTaskTemplates(studio.id);
-        localStorage.setItem("asm-active-studio", studio.id);
-        localStorage.removeItem("asm-pending-studio");
-        window.location.href = "/dashboard";
-      } catch (e) {
-        console.error("Errore parsing pending studio:", e);
-        setLoading(false);
       }
+
+      // ── Caso 2: join in sospeso (da /unisciti) ──
+      const rawJoin = localStorage.getItem("asm-pending-join");
+      if (rawJoin) {
+        try {
+          const pendingJoin = JSON.parse(rawJoin);
+
+          const { data: existing } = await supabase
+            .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
+
+          if (existing) {
+            await supabase.from("team_members")
+              .update({ studio: pendingJoin.studioId }).eq("id", existing.id);
+          } else {
+            await supabase.from("team_members").insert({
+              user_account: user.id,
+              user_email: user.email,
+              user_name: pendingJoin.memberName || user.email,
+              studio: pendingJoin.studioId,
+              role_internal: "Collaboratore Interno",
+              active: true,
+            });
+          }
+
+          await seedServiceTaskTemplates(pendingJoin.studioId);
+          localStorage.setItem("asm-active-studio", pendingJoin.studioId);
+          localStorage.removeItem("asm-pending-join");
+          window.location.href = "/dashboard";
+          return;
+        } catch (e) {
+          console.error("Errore parsing pending join:", e);
+        }
+      }
+
+      setLoading(false);
     };
 
     checkPending();

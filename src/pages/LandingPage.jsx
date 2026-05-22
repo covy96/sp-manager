@@ -90,7 +90,7 @@ const SECTIONS = [
 ];
 
 // ── COMPONENT ─────────────────────────────────────────────────────
-export default function LandingPage({ onLogin, onRegister }) {
+export default function LandingPage({ onLogin, onRegister, onJoin }) {
   const [openFaq, setOpenFaq]       = useState(null);
   const [activeSection, setActive]  = useState(0);
   const containerRef                = useRef(null);
@@ -137,6 +137,9 @@ export default function LandingPage({ onLogin, onRegister }) {
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={onLogin} style={{ border:`0.5px solid ${activeSection===0?'rgba(238,241,246,0.5)':C.ink}`, background:'transparent', color:activeSection===0?'#EEF1F6':C.ink, padding:'7px 18px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
             Accedi
+          </button>
+          <button onClick={onJoin} style={{ border:`0.5px solid ${activeSection===0?'rgba(238,241,246,0.4)':'rgba(14,14,13,0.4)'}`, background:'transparent', color:activeSection===0?'rgba(238,241,246,0.85)':C.ink, padding:'7px 18px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+            Entra in uno studio
           </button>
           <button onClick={onRegister} style={{ border:'none', background:C.brass, color:C.ink, padding:'7px 22px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', fontWeight:700 }}>
             Crea Studio →
@@ -194,6 +197,11 @@ export default function LandingPage({ onLogin, onRegister }) {
               </button>
               <button onClick={()=>scrollTo(1)} style={{ background:'transparent', border:'0.5px solid rgba(238,241,246,0.3)', color:'rgba(238,241,246,0.7)', padding:'14px 36px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
                 Scopri di più ↓
+              </button>
+            </div>
+            <div style={{ marginTop:16 }}>
+              <button onClick={onJoin} style={{ background:'none', border:'none', color:'rgba(238,241,246,0.4)', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3 }}>
+                Hai un codice invito? Entra in uno studio esistente
               </button>
             </div>
           </div>

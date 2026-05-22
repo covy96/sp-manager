@@ -87,11 +87,11 @@ export default function AuthCallbackPage() {
 
       const user = session.user;
 
-      // Controlla se c'è uno studio in sospeso da creare
-      const raw = localStorage.getItem("asm-pending-studio");
-      if (raw) {
+      // ── Caso 1: studio da creare (da /crea-studio) ──
+      const rawStudio = localStorage.getItem("asm-pending-studio");
+      if (rawStudio) {
         try {
-          const pendingStudio = JSON.parse(raw);
+          const pendingStudio = JSON.parse(rawStudio);
           const studio = await createStudioForUser(user, pendingStudio);
           if (!studio) {
             setError("Account confermato, ma si è verificato un errore nella creazione dello studio. Accedi e riprova.");
@@ -99,6 +99,37 @@ export default function AuthCallbackPage() {
           }
         } catch (e) {
           console.error("Errore parsing pending studio:", e);
+        }
+      }
+
+      // ── Caso 2: join in sospeso (da /unisciti) ──
+      const rawJoin = localStorage.getItem("asm-pending-join");
+      if (rawJoin) {
+        try {
+          const pendingJoin = JSON.parse(rawJoin);
+
+          const { data: existing } = await supabase
+            .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
+
+          if (existing) {
+            await supabase.from("team_members")
+              .update({ studio: pendingJoin.studioId }).eq("id", existing.id);
+          } else {
+            await supabase.from("team_members").insert({
+              user_account: user.id,
+              user_email: user.email,
+              user_name: pendingJoin.memberName || user.email,
+              studio: pendingJoin.studioId,
+              role_internal: "Collaboratore Interno",
+              active: true,
+            });
+          }
+
+          await seedServiceTaskTemplates(pendingJoin.studioId);
+          localStorage.setItem("asm-active-studio", pendingJoin.studioId);
+          localStorage.removeItem("asm-pending-join");
+        } catch (e) {
+          console.error("Errore parsing pending join:", e);
         }
       }
 
