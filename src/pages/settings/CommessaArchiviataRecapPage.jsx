@@ -65,21 +65,21 @@ export default function CommessaArchiviataRecapPage() {
   const proformaPagate  = proforma.filter(p => p.pagato);
   const totProfPagate   = proformaPagate.reduce((s,p) => s+Number(p.importo_totale||0), 0);
 
+  // Costi esterni
+  const totCostiExtra = costiExtra.reduce((s,c) => s+Number(c.importo||0), 0);
+  const totCollab     = collab.reduce((s,c) => s+Number(c.importo||0), 0);
+  const totEsterni    = totCostiExtra + totCollab;
+
   // Calcoli finanziari
   const valoreBase   = Number(commessa.importo_offerta_base || 0);
   const valoreTotale = Number(commessa.importo_totale || valoreBase);
   // Calcola incassato dalle proforma pagate invece di importo_incassato
   const incassato    = proformaPagate.reduce((s,p) => s + Number(p.importo_totale||0), 0);
-  const residuo      = valoreTotale - incassato;
-  const percIncassato = valoreTotale > 0 ? Math.round((incassato/valoreTotale)*100) : 0;
+  const costoTotale  = valoreTotale + totEsterni;
+  const residuo      = costoTotale - incassato;
 
   // Rate
   const ratePagate   = suddivisione.filter(r => r.pagato).length;
-
-  // Costi esterni
-  const totCostiExtra = costiExtra.reduce((s,c) => s+Number(c.importo||0), 0);
-  const totCollab     = collab.reduce((s,c) => s+Number(c.importo||0), 0);
-  const totEsterni    = totCostiExtra + totCollab;
 
   // Margine
   const margine = valoreTotale - totEsterni;
@@ -102,17 +102,18 @@ export default function CommessaArchiviataRecapPage() {
       </div>
 
       {/* KPI principali */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
         {[
-          { label:'Valore contratto', value:currency(valoreTotale),   color:T.ink   },
-          { label:'Incassato',        value:currency(incassato),       sub:`${percIncassato}%`, color:T.green },
-          { label:'Residuo',          value:currency(residuo),         color:residuo>0?T.red:T.green },
-          { label:'Costi esterni',    value:currency(totEsterni),      color:T.muted },
+          { label:'Valore contratto', value:currency(valoreTotale),  color:T.ink   },
+          { label:'Costi esterni',    value:currency(totEsterni),    color:T.muted },
+          { label:'Costo totale',     value:currency(costoTotale),   color:T.navy  },
+          { label:'Incassato',        value:currency(incassato), sub:`${valoreTotale>0?Math.round((incassato/valoreTotale)*100):0}%`, color:T.green },
+          { label:'Residuo',          value:currency(residuo),       color:residuo>0?T.red:T.green },
         ].map((k,i) => (
           <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
             <div style={labelSt}>{k.label}</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
-            {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub} del valore</div>}
+            {k.sub && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, marginTop:4 }}>{k.sub} del valore</div>}
           </div>
         ))}
       </div>
