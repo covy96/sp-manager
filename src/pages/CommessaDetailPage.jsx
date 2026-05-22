@@ -844,7 +844,7 @@ export default function CommessaDetailPage() {
           <div><FieldLabel>Tipo</FieldLabel>
             <select value={costoForm.tipo_costo ?? "Altro"} onChange={e => setCostoForm(p => ({ ...p, tipo_costo: e.target.value }))}
               style={{ width: '100%', padding: '7px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
-              {['Diritti','Trasferte','Stampe','Altro'].map(o => <option key={o} value={o}>{o}</option>)}
+              {['Diritti','Trasferte','Marche da bollo','Altro'].map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div><FieldLabel>Descrizione</FieldLabel><Input value={costoForm.description ?? ""} onChange={e => setCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
