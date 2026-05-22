@@ -170,7 +170,7 @@ export default function CommessaArchiviataRecapPage() {
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
               <tr>
-                {['N°','Data','Scadenza','Importo','Stato','Fattura'].map(h=>(
+                {['N°','Data','Scadenza','Importo','Stato','Fattura','Data pagamento'].map(h=>(
                   <th key={h} style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'6px 10px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left' }}>{h}</th>
                 ))}
               </tr>
@@ -186,6 +186,9 @@ export default function CommessaArchiviataRecapPage() {
                     <span style={{ ...mono, fontSize:9, color: p.pagato?T.green:T.muted, letterSpacing:'0.05em' }}>{p.pagato?'✓ PAGATA':'IN ATTESA'}</span>
                   </td>
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:11, color:T.muted }}>{p.numero_fattura||'—'}</td>
+                  <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:11, color: p.data_pagamento ? T.green : T.muted }}>
+                    {p.data_pagamento ? fmtDate(p.data_pagamento) : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -200,7 +203,7 @@ export default function CommessaArchiviataRecapPage() {
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
               <tr>
-                {['N°','Data emissione','Scadenza','Importo','Stato'].map(h=>(
+                {['N°','Data emissione','Scadenza','Importo','Stato','Data pagamento'].map(h=>(
                   <th key={h} style={{ ...mono, fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'6px 10px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left' }}>{h}</th>
                 ))}
               </tr>
@@ -214,6 +217,9 @@ export default function CommessaArchiviataRecapPage() {
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:12, fontWeight:600, color:T.navy }}>{currency(f.importo_totale)}</td>
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}` }}>
                     <span style={{ ...mono, fontSize:9, color:f.pagato?T.green:T.muted, letterSpacing:'0.05em' }}>{f.pagato?'✓ PAGATA':'IN ATTESA'}</span>
+                  </td>
+                  <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:11, color: f.data_pagamento ? T.green : T.muted }}>
+                    {f.data_pagamento ? fmtDate(f.data_pagamento) : '—'}
                   </td>
                 </tr>
               ))}
