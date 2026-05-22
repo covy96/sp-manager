@@ -398,6 +398,7 @@ export default function ProjectsPage() {
 
   const [commesseList, setCommesseList]         = useState([]);
   const [toast, setToast]                       = useState("");
+  const [annoFiltro, setAnnoFiltro]             = useState(new Date().getFullYear());
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
@@ -407,9 +408,6 @@ export default function ProjectsPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => {
-    if (teamMember?.id && selectedUserIds.length === 0) setSelectedUserIds([teamMember.id]);
-  }, [teamMember?.id]);
 
   const loadCommesseList = async () => {
     if (!studioId) return;
@@ -448,9 +446,26 @@ export default function ProjectsPage() {
   }, [studioId]);
 
   const filteredProjects = useMemo(() => {
-    if (selectedUserIds.length === 0) return projects;
-    return projects.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
-  }, [projects, selectedUserIds]);
+    let result = projects.filter(p => {
+      const dateStr = p.start_date || p.created_at;
+      const year = dateStr ? new Date(dateStr).getFullYear() : null;
+      return year === annoFiltro;
+    });
+    if (selectedUserIds.length > 0) {
+      result = result.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
+    }
+    return result;
+  }, [projects, selectedUserIds, annoFiltro]);
+
+  const anniDisponibili = useMemo(() => {
+    const anni = new Set(projects.map(p => {
+      const d = p.start_date || p.created_at;
+      return d ? new Date(d).getFullYear() : null;
+    }).filter(Boolean));
+    const currentYear = new Date().getFullYear();
+    for (let i = 0; i < 5; i++) anni.add(currentYear - i);
+    return Array.from(anni).sort((a, b) => b - a);
+  }, [projects]);
 
   const resetForm = () => {
     setFormData({ name: "", client: "", address: "", startDate: "", selectedServices: [], selectedMembers: teamMember?.id ? [teamMember.id] : [], createInlineCommessa: false, numero_offerta: "", importo_offerta_base: "", selectedCommessaId: "" });
@@ -590,6 +605,13 @@ export default function ProjectsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {/* Year filter */}
+          <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
+            style={{ padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto' }}>
+            {anniDisponibili.map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
           {/* Filter dropdown */}
           <div ref={filterRef} style={{ position: 'relative' }}>
             <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>
