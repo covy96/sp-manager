@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { useStudio } from '../../hooks/useStudio';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -29,41 +30,20 @@ function downloadCSV(filename, content) {
   URL.revokeObjectURL(url);
 }
 
-// ── EXCEL MULTI-FOGLIO via HTML ───────────────────────────────────
+// ── EXCEL MULTI-FOGLIO via SheetJS ───────────────────────────────
 function downloadExcel(sheets) {
-  // Genera un file Excel usando formato XML SpreadsheetML
-  const wsXML = sheets.map(({ name, rows }) => {
-    const rowsXML = rows.map((row, ri) =>
-      `<Row ss:Index="${ri + 1}">` +
-      row.map(cell => {
-        const isNum = ri > 0 && !isNaN(cell) && cell !== '';
-        return `<Cell><Data ss:Type="${isNum ? 'Number' : 'String'}">${String(cell ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</Data></Cell>`;
-      }).join('') +
-      `</Row>`
-    ).join('');
-    return `<Worksheet ss:Name="${name}"><Table>${rowsXML}</Table></Worksheet>`;
-  }).join('');
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-  <Styles>
-    <Style ss:ID="header">
-      <Font ss:Bold="1"/>
-      <Interior ss:Color="#13315C" ss:Pattern="Solid"/>
-      <Font ss:Color="#FFFFFF" ss:Bold="1"/>
-    </Style>
-  </Styles>
-  ${wsXML}
-</Workbook>`;
-
-  const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const wb = XLSX.utils.book_new();
+  sheets.forEach(({ name, rows }) => {
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Larghezza colonne automatica
+    const colWidths = rows[0]?.map((_, ci) =>
+      Math.min(40, Math.max(10, ...rows.map(r => String(r[ci] ?? '').length)))
+    );
+    ws['!cols'] = colWidths?.map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+  });
   const oggi = new Date().toISOString().slice(0, 10);
-  a.href = url; a.download = `ASM-export-${oggi}.xls`; a.click();
-  URL.revokeObjectURL(url);
+  XLSX.writeFile(wb, `ASM-export-${oggi}.xlsx`);
 }
 
 // ── SEZIONI DISPONIBILI ───────────────────────────────────────────
