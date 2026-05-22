@@ -4,13 +4,7 @@ import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
 
 export default function JoinStudioPage({ session }) {
   const navigate = useNavigate();
-
-  if (session) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
-  const [step, setStep]         = useState(1); // 1=codice invito, 2=crea account
+  const [step, setStep]         = useState(1);
   const [inviteCode, setInviteCode] = useState("");
   const [studio, setStudio]     = useState(null);
   const [nome, setNome]         = useState("");
@@ -20,6 +14,11 @@ export default function JoinStudioPage({ session }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [done, setDone]         = useState(false);
+
+  if (session) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   const inputCls = "w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#0a84ff]";
   const btnPrimary = "w-full rounded-lg bg-[#0a84ff] py-2.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50 transition";

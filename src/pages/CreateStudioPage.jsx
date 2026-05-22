@@ -28,13 +28,6 @@ const TIPO_FATTURAZIONE = [
 
 export default function CreateStudioPage({ session }) {
   const navigate = useNavigate();
-
-  // Se già loggato e ha uno studio, vai a dashboard
-  if (session) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-
   const [step, setStep]                     = useState(1);
   const [studioName, setStudioName]         = useState("");
   const [tipoFatturazione, setTipoFatturazione] = useState("proforma");
@@ -45,6 +38,12 @@ export default function CreateStudioPage({ session }) {
   const [loading, setLoading]               = useState(false);
   const [error, setError]                   = useState("");
   const [done, setDone]                     = useState(false);
+
+  // Se già loggato, vai a dashboard
+  if (session) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   const inputCls = "w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#0a84ff]";
   const btnPrimary = "w-full rounded-lg bg-[#0a84ff] py-2.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50 transition";
