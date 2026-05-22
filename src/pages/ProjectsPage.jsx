@@ -398,6 +398,8 @@ export default function ProjectsPage() {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [projectToArchive, setProjectToArchive] = useState(null);
   const [archiveLoading, setArchiveLoading]     = useState(false);
+  const [commessaArchiveModal, setCommessaArchiveModal] = useState(null); // { commessa, residuo, canArchive }
+  const [commessaArchiving, setCommessaArchiving]       = useState(false);
 
   const [commesseList, setCommesseList]         = useState([]);
   const [toast, setToast]                       = useState("");
@@ -587,8 +589,38 @@ export default function ProjectsPage() {
   const handleArchiveProject = async () => {
     if (!projectToArchive) return; setArchiveLoading(true);
     const { error } = await supabase.from("projects").update({ archived: true }).eq("id", projectToArchive.id);
-    if (!error) { setArchiveModalOpen(false); setProjectToArchive(null); await loadData(); }
+    if (error) { setArchiveLoading(false); return; }
+    setArchiveModalOpen(false);
+    await loadData();
     setArchiveLoading(false);
+
+    // Se il progetto ha una commessa collegata, controlla il residuo
+    if (projectToArchive.commessa_id) {
+      const { data: commessa } = await supabase
+        .from("commesse").select("id, nome_commessa, importo_offerta_base, archived")
+        .eq("id", projectToArchive.commessa_id).single();
+      if (commessa && !commessa.archived) {
+        const importoBase = Number(commessa.importo_offerta_base) || 0;
+        const { data: ratePagate } = await supabase
+          .from("suddivisione_pagamenti")
+          .select("percentuale, importo_fisso")
+          .eq("commessa_id", commessa.id)
+          .eq("pagato", true);
+        const incassato = (ratePagate || []).reduce((s, r) =>
+          s + (Number(r.importo_fisso) || (importoBase * (Number(r.percentuale) || 0) / 100)), 0);
+        const residuo = importoBase - incassato;
+        setCommessaArchiveModal({ commessa, residuo, canArchive: Math.abs(residuo) < 0.01 });
+      }
+    }
+    setProjectToArchive(null);
+  };
+
+  const handleArchiveCommessa = async () => {
+    if (!commessaArchiveModal?.commessa) return;
+    setCommessaArchiving(true);
+    await supabase.from("commesse").update({ archived: true }).eq("id", commessaArchiveModal.commessa.id);
+    setCommessaArchiving(false);
+    setCommessaArchiveModal(null);
   };
 
   if (studioLoading || !studioId) return (
@@ -769,7 +801,7 @@ export default function ProjectsPage() {
         </form>
       </Modal>
 
-      {/* MODAL: ARCHIVIA */}
+      {/* MODAL: ARCHIVIA PROGETTO */}
       <Modal open={archiveModalOpen && !!projectToArchive} onClose={() => { if (!archiveLoading) setArchiveModalOpen(false); }} title="Archivia progetto?" width={420}>
         <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
           Il progetto <strong style={{ color: T.ink }}>{projectToArchive?.name}</strong> non sarà più visibile nella lista principale.
@@ -779,6 +811,42 @@ export default function ProjectsPage() {
           <BtnGhost danger onClick={handleArchiveProject} disabled={archiveLoading}>{archiveLoading ? "Archiviazione..." : "Archivia"}</BtnGhost>
         </div>
       </Modal>
+
+      {/* MODAL: ARCHIVIA ANCHE COMMESSA? */}
+      {commessaArchiveModal && (
+        <Modal open={true} onClose={() => setCommessaArchiveModal(null)} title={commessaArchiveModal.canArchive ? "Archiviare anche la commessa?" : "Commessa con saldo in sospeso"} width={440}>
+          {commessaArchiveModal.canArchive ? (
+            <>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 8 }}>
+                La commessa collegata <strong style={{ color: T.ink }}>{commessaArchiveModal.commessa.nome_commessa}</strong> ha saldo a zero.
+              </p>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+                Vuoi archiviarla insieme al progetto?
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <BtnGhost onClick={() => setCommessaArchiveModal(null)} disabled={commessaArchiving}>No, lascia attiva</BtnGhost>
+                <BtnPrimary onClick={handleArchiveCommessa} disabled={commessaArchiving}>{commessaArchiving ? "Archiviazione..." : "Sì, archivia commessa"}</BtnPrimary>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ background: '#fefce8', border: '0.5px solid #fbbf24', padding: '12px 16px', marginBottom: 20 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#92400e', lineHeight: 1.7 }}>
+                  La commessa <strong>{commessaArchiveModal.commessa.nome_commessa}</strong> ha ancora{' '}
+                  <strong>{new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Math.abs(commessaArchiveModal.residuo))}</strong>{' '}
+                  di residuo non incassato e non verrà archiviata.
+                </div>
+              </div>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+                Il progetto è stato archiviato. Puoi archiviare la commessa manualmente una volta saldato il pagamento.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <BtnPrimary onClick={() => setCommessaArchiveModal(null)}>Ok, capito</BtnPrimary>
+              </div>
+            </>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
