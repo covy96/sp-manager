@@ -222,43 +222,6 @@ export default function CommessaArchiviataRecapPage() {
         </div>
       )}
 
-      {/* Costi esterni */}
-      {(costiExtra.length > 0 || collab.length > 0) && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <div style={labelSt}>Costi esterni</div>
-            <div style={{ ...mono, fontSize:12, fontWeight:600, color:T.red }}>{currency(totEsterni)}</div>
-          </div>
-          {costiExtra.length > 0 && (
-            <div style={{ marginBottom:12 }}>
-              <div style={{ ...mono, fontSize:9, color:T.muted, marginBottom:8 }}>Costi extra</div>
-              {costiExtra.map(c => (
-                <div key={c.id} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`0.5px solid ${T.border}` }}>
-                  <span style={{ fontSize:13, color:T.ink }}>{c.descrizione||'—'}</span>
-                  <span style={{ ...mono, fontSize:12, color:T.red }}>{currency(c.importo)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {collab.length > 0 && (
-            <div>
-              <div style={{ ...mono, fontSize:9, color:T.muted, marginBottom:8 }}>Collaboratori esterni</div>
-              {collab.map(c => (
-                <div key={c.id} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`0.5px solid ${T.border}` }}>
-                  <span style={{ fontSize:13, color:T.ink }}>{c.nome_cognome} <span style={{ ...mono, fontSize:10, color:T.muted }}>({c.ruolo})</span></span>
-                  <span style={{ ...mono, fontSize:12, color:T.red }}>{currency(c.importo)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Margine */}
-          <div style={{ display:'flex', justifyContent:'space-between', padding:'12px 0 0', marginTop:8 }}>
-            <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>Margine (valore - costi esterni)</span>
-            <span style={{ ...mono, fontSize:16, fontWeight:600, color:margine>=0?T.green:T.red }}>{currency(margine)}</span>
-          </div>
-        </div>
-      )}
-
       {/* Ripristina */}
       <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:8 }}>
         <button onClick={async()=>{
