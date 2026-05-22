@@ -24,6 +24,8 @@ export default function OffertePage() {
   const [offerte, setOfferte]           = useState([]);
   const [progetti, setProgetti]         = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
+  const [globalContacts, setGlobalContacts]     = useState([]);
+  const [clientSuggestions, setClientSuggestions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
   const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
@@ -45,14 +47,16 @@ export default function OffertePage() {
 
   const loadData = async () => {
     if (!studioId) return;
-    const [{ data:off }, { data:proj }, { data:svc }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }] = await Promise.all([
       supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
       supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
+      supabase.from("global_contacts").select("id,full_name").eq("studio",studioId).order("full_name",{ascending:true}),
     ]);
     setOfferte(off??[]);
     setProgetti(proj??[]);
     setServiceTemplates(svc??[]);
+    setGlobalContacts(contacts??[]);
     setLoading(false);
   };
 
@@ -377,9 +381,29 @@ export default function OffertePage() {
                   <label style={labelSt}>Nome offerta *</label>
                   <input type="text" value={form.nome_offerta} onChange={e=>setForm(p=>({...p,nome_offerta:e.target.value}))} required autoFocus style={inputSt}/>
                 </div>
-                <div style={{ gridColumn:'span 2' }}>
+                <div style={{ gridColumn:'span 2', position:'relative' }}>
                   <label style={labelSt}>Cliente *</label>
-                  <input type="text" value={form.cliente} onChange={e=>setForm(p=>({...p,cliente:e.target.value}))} required style={inputSt}/>
+                  <input type="text" value={form.cliente} autoComplete="off" required style={inputSt}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setForm(p=>({...p, cliente: val}));
+                      const q = val.trim().toLowerCase();
+                      setClientSuggestions(q.length >= 3
+                        ? globalContacts.filter(c=>(c.full_name||'').toLowerCase().includes(q)).slice(0,8)
+                        : []);
+                    }}
+                    onBlur={() => setTimeout(()=>setClientSuggestions([]), 150)}
+                  />
+                  {clientSuggestions.length > 0 && (
+                    <div style={{ position:'absolute', left:0, right:0, top:'100%', background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, maxHeight:200, overflowY:'auto' }}>
+                      {clientSuggestions.map(c => (
+                        <button key={c.id} type="button" onMouseDown={() => { setForm(p=>({...p,cliente:c.full_name})); setClientSuggestions([]); }}
+                          style={{ display:'block', width:'100%', padding:'9px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
+                          {c.full_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div style={{ gridColumn:'span 2' }}>
                   <label style={labelSt}>Progetto</label>
