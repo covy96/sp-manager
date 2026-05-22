@@ -299,17 +299,15 @@ export default function CommessaDetailPage() {
   };
   const handleRataValueChange = (idx, newVal) => {
     setRateRows(prev => {
-      const updated = [...prev];
-      updated[idx] = { ...updated[idx], value: newVal };
+      const updated = prev.map((r, i) => i === idx ? { ...r, value: newVal } : r);
       const totale = rataMode === "percentuale" ? 100 : importoBase;
-      const valIdx = parseFloat(newVal) || 0;
-      const residuo = totale - valIdx;
-      const altreRate = prev.length - 1;
-      if (altreRate > 0) {
-        const valPerAltra = parseFloat((residuo / altreRate).toFixed(2));
-        for (let i = 0; i < updated.length; i++) {
-          if (i !== idx) updated[i] = { ...updated[i], value: valPerAltra };
-        }
+      const ultimoIdx = prev.length - 1;
+      if (idx !== ultimoIdx) {
+        const sommaEsclUltima = updated
+          .slice(0, ultimoIdx)
+          .reduce((s, r) => s + (parseFloat(r.value) || 0), 0);
+        const residuo = parseFloat((totale - sommaEsclUltima).toFixed(2));
+        updated[ultimoIdx] = { ...updated[ultimoIdx], value: residuo };
       }
       return updated;
     });
@@ -761,9 +759,17 @@ export default function CommessaDetailPage() {
               ))}
             </div>
             {rateRows.map((r, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
-                <Input value={r.label} onChange={e => setRateRows(p => p.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                <Input type="number" value={r.value} onChange={e => handleRataValueChange(i, e.target.value)} />
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:8 }}>
+                <div style={{ padding:'8px 12px', border:`0.5px solid ${T.border}`, background:T.surface2, fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, display:'flex', alignItems:'center' }}>
+                  {r.label}
+                </div>
+                <Input
+                  type="number"
+                  value={r.value}
+                  onChange={e => handleRataValueChange(i, e.target.value)}
+                  disabled={i === rateRows.length - 1}
+                  style={{ background: i === rateRows.length - 1 ? T.surface2 : T.inputBg, color: i === rateRows.length - 1 ? T.muted : T.inputText }}
+                />
               </div>
             ))}
             {(() => {
