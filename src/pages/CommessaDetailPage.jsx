@@ -194,11 +194,10 @@ export default function CommessaDetailPage() {
   const loadData = async () => {
     if (!commessaId) return;
     setLoading(true); setError("");
-    const [cR, costiR, suddR, profR, collabR] = await Promise.all([
+    const [cR, costiR, suddR, collabR] = await Promise.all([
       supabase.from("commesse").select("*").eq("id", commessaId).maybeSingle(),
       supabase.from("costi_extra").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
       supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).order("numero_rata", { ascending: true }).order("created_at", { ascending: true }),
-      supabase.from("proforma").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
       supabase.from("collaboratori_esterni").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
     ]);
     if (cR.error) { setError(cR.error.message); setLoading(false); return; }
@@ -206,7 +205,16 @@ export default function CommessaDetailPage() {
     setCommessa(commessa);
     setCostiExtra(costiR.data ?? []);
     setSuddivisione(suddR.data ?? []);
-    setProforma(profR.data ?? []);
+
+    // Carica proforma: quelle di questa commessa + quelle che la includono in commessa_ids
+    const [{ data: profDirect }, { data: profLinked }] = await Promise.all([
+      supabase.from("proforma").select("*").eq("commessa_id", commessaId).is("deleted_at", null),
+      supabase.from("proforma").select("*").contains("commessa_ids", [commessaId]).is("deleted_at", null),
+    ]);
+    const profMap = new Map();
+    [...(profDirect || []), ...(profLinked || [])].forEach(p => profMap.set(p.id, p));
+    const allProf = Array.from(profMap.values()).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    setProforma(allProf);
     setCollaboratori(collabR.data ?? []);
 
     const { data: ci } = await supabase.from('costi_interni').select('*').eq('commessa_id', commessaId).order('data', { ascending:false });
@@ -280,9 +288,13 @@ export default function CommessaDetailPage() {
     const fromCosti = costiExtra
       .filter(c => proformaCostiIds.includes(c.id))
       .reduce((s, c) => s + (Number(c.importo) || 0), 0);
-    const fromAltreRate = Object.values(altreCommesseData).flatMap(d => d.suddivisione)
-      .filter(r => proformaRateIds.includes(r.id))
-      .reduce((s, r) => s + (Number(r.importo_fisso) || 0), 0);
+    const fromAltreRate = Object.entries(altreCommesseData).flatMap(([acId, d]) =>
+      d.suddivisione.filter(r => proformaRateIds.includes(r.id)).map(r => {
+        const ac = altreCommesse.find(a => a.id === acId);
+        const acBase = Number(ac?.importo_offerta_base) || 0;
+        return Number(r.importo_fisso) || (acBase * (Number(r.percentuale) || 0) / 100);
+      })
+    ).reduce((s, v) => s + v, 0);
     const fromAltreCosti = Object.values(altreCommesseData).flatMap(d => d.costiExtra)
       .filter(c => proformaCostiIds.includes(c.id))
       .reduce((s, c) => s + (Number(c.importo) || 0), 0);
@@ -481,7 +493,7 @@ export default function CommessaDetailPage() {
         .update({ pagato: false })
         .in("id", proformaToDelete.costo_extra_ids);
     }
-    await supabase.from("proforma").update({ deleted_at: new Date().toISOString() }).eq("id", proformaToDelete.id);
+    await supabase.from("proforma").delete().eq("id", proformaToDelete.id);
     setOpenMenuId(null); await loadData();
   };
 
