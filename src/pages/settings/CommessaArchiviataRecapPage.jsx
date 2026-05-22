@@ -79,9 +79,9 @@ export default function CommessaArchiviataRecapPage() {
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
   if (!commessa) return <div style={{ ...mono, fontSize:11, color:T.red }}>Commessa non trovata</div>;
 
-  // Proforma (usate per il calcolo incassato)
-  const proformaPagate  = proforma.filter(p => p.pagato);
-  const totProfPagate   = proformaPagate.reduce((s,p) => s+Number(p.importo_totale||0), 0);
+  // Proforma pagate (per conteggio e totale fatturato)
+  const proformaPagate = proforma.filter(p => p.pagato);
+  const totProfPagate  = proformaPagate.reduce((s,p) => s+Number(p.importo_totale||0), 0);
 
   // Costi esterni
   const totCostiExtra = costiExtra.reduce((s,c) => s+Number(c.importo||0), 0);
@@ -91,8 +91,13 @@ export default function CommessaArchiviataRecapPage() {
   // Calcoli finanziari
   const valoreBase   = Number(commessa.importo_offerta_base || 0);
   const valoreTotale = Number(commessa.importo_totale || valoreBase);
-  // Calcola incassato dalle proforma pagate invece di importo_incassato
-  const incassato    = proformaPagate.reduce((s,p) => s + Number(p.importo_totale||0), 0);
+
+  // Incassato: somma delle RATE PAGATE di questa commessa (non dell'intera proforma,
+  // che potrebbe coprire più commesse e sovrastimare l'importo)
+  const incassato = suddivisione
+    .filter(r => r.pagato)
+    .reduce((s, r) => s + (Number(r.importo_fisso) || (valoreBase * (Number(r.percentuale) || 0) / 100)), 0);
+
   const costoTotale  = valoreTotale + totEsterni;
   const residuo      = costoTotale - incassato;
 
