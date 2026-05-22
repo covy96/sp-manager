@@ -29,6 +29,7 @@ export default function AnalisiPage() {
   const [commesse, setCommesse]     = useState([]);
   const [costiExtra, setCostiExtra] = useState([]);
   const [collab, setCollab]         = useState([]);
+  const [proforma, setProforma]     = useState([]);
   const [loading, setLoading]       = useState(true);
 
   const [selectedProject, setSelectedProject] = useState(null);
@@ -48,6 +49,7 @@ export default function AnalisiPage() {
         { data:comm },
         { data:ce },
         { data:co },
+        { data:pf },
       ] = await Promise.all([
         supabase.from("projects").select("id,name,client,archived").eq("studio",studioId).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
@@ -55,6 +57,7 @@ export default function AnalisiPage() {
         supabase.from("commesse").select("id,project_id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,data_commessa,created_at,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
+        supabase.from("proforma").select("commessa_id,importo_totale,pagato").eq("studio",studioId).eq("pagato",true),
       ]);
       setProjects(proj??[]);
       setMembers(mem??[]);
@@ -62,6 +65,7 @@ export default function AnalisiPage() {
       setCommesse(comm??[]);
       setCostiExtra(ce??[]);
       setCollab(co??[]);
+      setProforma(pf??[]);
       // Init editCosti
       const map = {};
       (mem??[]).forEach(m => { map[m.id] = m.costo_orario||0; });
@@ -117,13 +121,15 @@ export default function AnalisiPage() {
       const costoEsterni = costExtra + costCollab;
 
       const costoTotale = costoOre + costoEsterni;
-      const incassato = commProj.reduce((s,c) => s + Number(c.importo_incassato||0), 0);
+      const incassato = proforma
+        .filter(p => commProj.some(c => c.id === p.commessa_id))
+        .reduce((s,p) => s + Number(p.importo_totale||0), 0);
       const margine = valoreCommesse - costoTotale;
       const marginePerc = valoreCommesse > 0 ? (margine/valoreCommesse)*100 : null;
 
       return { proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
     });
-  }, [projects, timesheet, members, commesse, costiExtra, collab, editCosti, annoFiltro]);
+  }, [projects, timesheet, members, commesse, costiExtra, collab, proforma, editCosti, annoFiltro]);
 
   // ── SALVA COSTI ORARI ─────────────────────────────────────────────
   const handleSaveCosti = async () => {
