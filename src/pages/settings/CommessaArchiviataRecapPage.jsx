@@ -21,6 +21,7 @@ export default function CommessaArchiviataRecapPage() {
   const [commessa, setCommessa]     = useState(null);
   const [suddivisione, setSuddivisione] = useState([]);
   const [proforma, setProforma]     = useState([]);
+  const [commNomi, setCommNomi]     = useState({});
   const [fatture, setFatture]       = useState([]);
   const [costiExtra, setCostiExtra] = useState([]);
   const [collab, setCollab]         = useState([]);
@@ -32,21 +33,38 @@ export default function CommessaArchiviataRecapPage() {
       const [
         { data: comm },
         { data: sudd },
-        { data: prof },
+        { data: profDirect },
+        { data: profLinked },
         { data: fatt },
         { data: costi },
         { data: co },
       ] = await Promise.all([
         supabase.from("commesse").select("*").eq("id", id).single(),
         supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id).order("order"),
-        supabase.from("proforma").select("*").eq("commessa_id", id).order("created_at", { ascending:false }),
+        supabase.from("proforma").select("*").eq("commessa_id", id).is("deleted_at", null).order("created_at", { ascending:false }),
+        supabase.from("proforma").select("*").contains("commessa_ids", [id]).is("deleted_at", null).order("created_at", { ascending:false }),
         supabase.from("fatture").select("*").eq("commessa_id", id).order("data_emissione", { ascending:false }),
         supabase.from("costi_extra").select("*").eq("commessa_id", id),
         supabase.from("collaboratori_esterni").select("*").eq("commessa_id", id),
       ]);
+
+      // Merge proforma dirette + collegate (dedup per id)
+      const profMap = new Map();
+      [...(profDirect || []), ...(profLinked || [])].forEach(p => profMap.set(p.id, p));
+      const allProf = Array.from(profMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      // Carica nomi delle commesse referenziate
+      const allCommIds = [...new Set(allProf.flatMap(p => p.commessa_ids || []).filter(cid => cid !== id))];
+      let commNomi = {};
+      if (allCommIds.length > 0) {
+        const { data: altreComm } = await supabase.from("commesse").select("id, nome_commessa").in("id", allCommIds);
+        (altreComm || []).forEach(c => { commNomi[c.id] = c.nome_commessa; });
+      }
+
       setCommessa(comm);
       setSuddivisione(sudd ?? []);
-      setProforma(prof ?? []);
+      setProforma(allProf);
+      setCommNomi(commNomi);
       setFatture(fatt ?? []);
       setCostiExtra(costi ?? []);
       setCollab(co ?? []);
@@ -176,9 +194,22 @@ export default function CommessaArchiviataRecapPage() {
               </tr>
             </thead>
             <tbody>
-              {proforma.map(p => (
+              {proforma.map(p => {
+                const altreComm = (p.commessa_ids || []).filter(cid => cid !== id);
+                const isLinked = p.commessa_id !== id;
+                return (
                 <tr key={p.id}>
-                  <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, fontWeight:600, color:T.ink }}>{p.numero_proforma}</td>
+                  <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, fontWeight:600, color:T.ink }}>
+                    {p.numero_proforma}
+                    {(isLinked || altreComm.length > 0) && (
+                      <div style={{ ...mono, fontSize:8, color:T.navy, marginTop:3, letterSpacing:'0.08em' }}>
+                        ↗ {isLinked
+                          ? `da: ${commNomi[p.commessa_id] || 'altra commessa'}`
+                          : altreComm.map(cid => commNomi[cid] || 'altra commessa').join(', ')
+                        }
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:11, color:T.muted }}>{fmtDate(p.data_creazione)}</td>
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:11, color:T.muted }}>{fmtDate(p.data_scadenza)}</td>
                   <td style={{ padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, ...mono, fontSize:12, fontWeight:600, color:T.navy }}>{currency(p.importo_totale)}</td>
@@ -190,7 +221,8 @@ export default function CommessaArchiviataRecapPage() {
                     {p.data_pagamento ? fmtDate(p.data_pagamento) : '—'}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
