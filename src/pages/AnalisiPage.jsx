@@ -52,7 +52,7 @@ export default function AnalisiPage() {
         supabase.from("projects").select("id,name,client,archived").eq("studio",studioId).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId),
-        supabase.from("commesse").select("id,project_id,nome_commessa,cliente,importo_offerta_base,importo_totale,data_commessa,created_at,archived").eq("studio",studioId),
+        supabase.from("commesse").select("id,project_id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,data_commessa,created_at,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
       ]);
@@ -117,10 +117,11 @@ export default function AnalisiPage() {
       const costoEsterni = costExtra + costCollab;
 
       const costoTotale = costoOre + costoEsterni;
+      const incassato = commProj.reduce((s,c) => s + Number(c.importo_incassato||0), 0);
       const margine = valoreCommesse - costoTotale;
       const marginePerc = valoreCommesse > 0 ? (margine/valoreCommesse)*100 : null;
 
-      return { proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, margine, marginePerc, membroBreakdown, commProj };
+      return { proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
     });
   }, [projects, timesheet, members, commesse, costiExtra, collab, editCosti, annoFiltro]);
 
@@ -187,9 +188,11 @@ export default function AnalisiPage() {
         </div>
 
         {/* KPI */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
           {[
             { label:'Valore commesse',  value:currency(stat.valoreCommesse), color:T.ink  },
+            { label:'Incassato',        value:currency(stat.incassato),      color:T.green,
+              sub: stat.valoreCommesse>0 ? `${((stat.incassato/stat.valoreCommesse)*100).toFixed(0)}% del valore` : null },
             { label:'Costo ore interne',value:currency(stat.costoOre),       color:T.navy },
             { label:'Costi esterni',    value:currency(stat.costoEsterni),   color:T.muted},
             { label:'Margine stimato',  value:currency(stat.margine),        color:stat.margine>=0?T.green:T.red,
@@ -310,6 +313,7 @@ export default function AnalisiPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:400 }}>
             {[
               ['Valore commesse', currency(stat.valoreCommesse), T.ink],
+              ['Incassato', currency(stat.incassato), T.green],
               ['− Costo ore interne', currency(stat.costoOre), T.navy],
               ['− Costi esterni', currency(stat.costoEsterni), T.muted],
             ].map(([l,v,c])=>(
@@ -372,14 +376,15 @@ export default function AnalisiPage() {
               <th style={thSt}>Costi esterni</th>
               <th style={thSt}>Costo totale</th>
               <th style={thSt}>Valore commesse</th>
+              <th style={thSt}>Incassato</th>
               <th style={thSt}>Margine</th>
               <th style={thSt}></th>
             </tr>
           </thead>
           <tbody>
             {projectStats.length === 0 ? (
-              <tr><td colSpan={8} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun progetto attivo</td></tr>
-            ) : projectStats.map(({ proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, margine, marginePerc }) => (
+              <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun progetto attivo</td></tr>
+            ) : projectStats.map(({ proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => (
               <tr key={proj.id}
                 onClick={()=>setSelectedProject(proj)}
                 style={{ cursor:'pointer' }}
@@ -398,7 +403,8 @@ export default function AnalisiPage() {
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.muted }}>{currency(costoEsterni)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, fontWeight:600, color:T.ink }}>{currency(costoTotale)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(valoreCommesse)}</td>
-                <td style={tdSt}>
+                <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(incassato)}</td>
+                <td style={tdSt}
                   <div style={{ ...mono, fontSize:13, fontWeight:600, color:margine>=0?T.green:T.red }}>{currency(margine)}</div>
                   {marginePerc!=null && <div style={{ ...mono, fontSize:9, color:T.muted }}>{marginePerc.toFixed(1)}%</div>}
                 </td>
@@ -414,14 +420,16 @@ export default function AnalisiPage() {
         const totOre = projectStats.reduce((s,p)=>s+p.oreTotali,0);
         const totCosto = projectStats.reduce((s,p)=>s+p.costoTotale,0);
         const totValore = projectStats.reduce((s,p)=>s+p.valoreCommesse,0);
+        const totIncassato = projectStats.reduce((s,p)=>s+p.incassato,0);
         const totMargine = totValore - totCosto;
         return (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
             {[
-              { label:'Ore totali studio',   value:fmtOre(totOre),       color:T.ink  },
-              { label:'Costo totale',        value:currency(totCosto),   color:T.navy },
-              { label:'Valore commesse',     value:currency(totValore),  color:T.green},
-              { label:'Margine complessivo', value:currency(totMargine), color:totMargine>=0?T.green:T.red },
+              { label:'Ore totali studio',   value:fmtOre(totOre),           color:T.ink  },
+              { label:'Costo totale',        value:currency(totCosto),       color:T.navy },
+              { label:'Valore commesse',     value:currency(totValore),      color:T.green},
+              { label:'Incassato totale',    value:currency(totIncassato),   color:T.green},
+              { label:'Margine complessivo', value:currency(totMargine),     color:totMargine>=0?T.green:T.red },
             ].map((k,i)=>(
               <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
                 <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
