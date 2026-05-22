@@ -21,10 +21,12 @@ export default function OffertePage() {
   const { studioId } = useStudio();
   const { T } = useTheme();
 
-  const [offerte, setOfferte]   = useState([]);
-  const [progetti, setProgetti] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [offerte, setOfferte]           = useState([]);
+  const [progetti, setProgetti]         = useState([]);
+  const [serviceTemplates, setServiceTemplates] = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
+  const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
@@ -41,12 +43,14 @@ export default function OffertePage() {
 
   const loadData = async () => {
     if (!studioId) return;
-    const [{ data:off }, { data:proj }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:svc }] = await Promise.all([
       supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
+      supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
     ]);
     setOfferte(off??[]);
     setProgetti(proj??[]);
+    setServiceTemplates(svc??[]);
     setLoading(false);
   };
 
@@ -63,6 +67,7 @@ export default function OffertePage() {
     let projectName = progetti.find(p=>p.id===form.project_id)?.name||null;
 
     if (form.creaProgetto && form.nuovoProgettoNome?.trim()) {
+      const serviziScelti = form.nuovoProgettoServizi || [];
       const { data:newProj, error:pErr } = await supabase.from('projects').insert({
         studio: studioId,
         name: form.nuovoProgettoNome.trim(),
@@ -71,10 +76,23 @@ export default function OffertePage() {
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
+        servizi_selezionati: serviziScelti,
       }).select().single();
       if (pErr) { setFormError('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
       projectName = newProj.name;
+      // Crea task predefinite per i servizi selezionati
+      if (serviziScelti.length > 0) {
+        const taskRows = [];
+        for (const serviceName of serviziScelti) {
+          const template = serviceTemplates.find(t => t.service_name === serviceName);
+          const taskList = Array.isArray(template?.task_templates) ? template.task_templates : [];
+          for (const taskName of taskList) {
+            taskRows.push({ project_id: newProj.id, title: taskName, categoria: serviceName, status: 'todo', studio: studioId });
+          }
+        }
+        if (taskRows.length > 0) await supabase.from('tasks').insert(taskRows);
+      }
     }
 
     const { error } = await supabase.from("offerte").insert({
@@ -166,9 +184,26 @@ export default function OffertePage() {
     await loadData();
   };
 
-  const visibili = useMemo(()=>
-    filtroStato === 'tutti' ? offerte : offerte.filter(o=>o.stato===filtroStato)
-  ,[offerte,filtroStato]);
+  const anniDisponibili = useMemo(() => {
+    const anni = new Set();
+    anni.add(new Date().getFullYear());
+    offerte.forEach(o => {
+      const d = o.data_offerta || o.created_at;
+      if (d) anni.add(new Date(d).getFullYear());
+    });
+    return Array.from(anni).sort((a,b)=>b-a);
+  }, [offerte]);
+
+  const visibili = useMemo(() => {
+    let list = filtroStato === 'tutti' ? offerte : offerte.filter(o=>o.stato===filtroStato);
+    if (annoFiltro !== 0) {
+      list = list.filter(o => {
+        const d = o.data_offerta || o.created_at;
+        return d && new Date(d).getFullYear() === annoFiltro;
+      });
+    }
+    return list;
+  }, [offerte, filtroStato, annoFiltro]);
 
   // KPI
   const nOfferte   = offerte.filter(o=>o.stato==='offerta').length;
@@ -213,16 +248,23 @@ export default function OffertePage() {
         ))}
       </div>
 
-      {/* Filtri stato */}
-      <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, width:'fit-content', overflow:'hidden' }}>
-        {[['tutti','Tutte'],['offerta','In corso'],['accettata','Accettate'],['rifiutata','Rifiutate']].map(([id,label])=>(
-          <button key={id} onClick={()=>setFiltroStato(id)} style={{
-            padding:'7px 16px', border:'none', cursor:'pointer',
-            background: filtroStato===id ? T.navy : 'transparent',
-            color: filtroStato===id ? '#EEF1F6' : T.muted,
-            ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-          }}>{label}</button>
-        ))}
+      {/* Filtri */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
+          {[['tutti','Tutte'],['offerta','In corso'],['accettata','Accettate'],['rifiutata','Rifiutate']].map(([id,label])=>(
+            <button key={id} onClick={()=>setFiltroStato(id)} style={{
+              padding:'7px 16px', border:'none', cursor:'pointer',
+              background: filtroStato===id ? T.navy : 'transparent',
+              color: filtroStato===id ? '#EEF1F6' : T.muted,
+              ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
+            }}>{label}</button>
+          ))}
+        </div>
+        <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+          style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+          <option value={0}>Tutti gli anni</option>
+          {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+        </select>
       </div>
 
       {/* Lista offerte */}
@@ -346,6 +388,27 @@ export default function OffertePage() {
                       <label style={labelSt}>Indirizzo</label>
                       <input type="text" value={form.nuovoProgettoIndirizzo||''} onChange={e=>setForm(p=>({...p,nuovoProgettoIndirizzo:e.target.value}))} placeholder="Via Roma 1, Milano" style={inputSt}/>
                     </div>
+                    {serviceTemplates.length > 0 && (
+                      <div>
+                        <label style={labelSt}>Servizi</label>
+                        <div style={{ border:`0.5px solid ${T.border}`, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                          {serviceTemplates.map(s => {
+                            const selected = (form.nuovoProgettoServizi||[]).includes(s.service_name);
+                            return (
+                              <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                <input type="checkbox" checked={selected}
+                                  onChange={() => setForm(p => {
+                                    const list = p.nuovoProgettoServizi || [];
+                                    return { ...p, nuovoProgettoServizi: selected ? list.filter(x=>x!==s.service_name) : [...list, s.service_name] };
+                                  })}
+                                  style={{ accentColor:T.navy, width:13, height:13 }}/>
+                                <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ gridColumn:'span 2' }}>
