@@ -162,6 +162,11 @@ export default function CommessaDetailPage() {
   const [editCollabForm, setEditCollabForm]   = useState({});
   const [editCollabSaving, setEditCollabSaving] = useState(false);
 
+  const [teamMembers, setTeamMembers]           = useState([]);
+  const [costiInterni, setCostiInterni]         = useState([]);
+  const [newCostoInterno, setNewCostoInterno]   = useState({ team_member_id:'', descrizione:'', importo:'', data:new Date().toISOString().slice(0,10) });
+  const [savingCostoInt, setSavingCostoInt]     = useState(false);
+
   const [proformaModal, setProformaModal] = useState(false);
   const [proformaForm, setProformaForm]   = useState({ numero_proforma: "", data_creazione: "", data_scadenza: "", note: "" });
   const [proformaSaving, setProformaSaving] = useState(false);
@@ -202,6 +207,11 @@ export default function CommessaDetailPage() {
     setSuddivisione(suddR.data ?? []);
     setProforma(profR.data ?? []);
     setCollaboratori(collabR.data ?? []);
+
+    const { data: ci } = await supabase.from('costi_interni').select('*').eq('commessa_id', commessaId).order('data', { ascending:false });
+    setCostiInterni(ci ?? []);
+    const { data: tm } = await supabase.from('team_members').select('id, user_name, user_email').eq('studio', studioId).eq('active', true);
+    setTeamMembers(tm ?? []);
 
     if (commessa?.project_id) {
       const { data: altreComm } = await supabase
@@ -395,6 +405,30 @@ export default function CommessaDetailPage() {
     setOpenMenuId(null); await loadData();
   };
 
+  const handleAddCostoInterno = async () => {
+    if (!newCostoInterno.descrizione.trim() || !newCostoInterno.importo) return;
+    setSavingCostoInt(true);
+    const membro = teamMembers?.find(m => m.id === newCostoInterno.team_member_id);
+    await supabase.from('costi_interni').insert({
+      studio: studioId,
+      commessa_id: commessaId,
+      team_member_id: newCostoInterno.team_member_id || null,
+      nome_membro: membro?.user_name || membro?.user_email || null,
+      descrizione: newCostoInterno.descrizione.trim(),
+      importo: Number(newCostoInterno.importo),
+      data: newCostoInterno.data || new Date().toISOString().slice(0,10),
+    });
+    setNewCostoInterno({ team_member_id:'', descrizione:'', importo:'', data:new Date().toISOString().slice(0,10) });
+    setSavingCostoInt(false);
+    await loadData();
+  };
+
+  const handleDeleteCostoInterno = async (id) => {
+    if (!confirm('Eliminare questo costo interno?')) return;
+    await supabase.from('costi_interni').delete().eq('id', id);
+    await loadData();
+  };
+
   // Proforma — usa nomi originali: data_creazione, suddivisione_pagamento_ids, costo_extra_ids, pagato
   const handleSaveProforma = async e => {
     e.preventDefault(); setProformaError(""); setProformaSaving(true);
@@ -510,8 +544,9 @@ export default function CommessaDetailPage() {
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
+                  <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display:'flex', alignItems:'center', width:'100%', padding:'7px 14px', background:'none', border:'none', cursor:'pointer', color:T.muted, fontFamily:"'Space Grotesk',sans-serif", fontSize:13, textAlign:'left' }}>Archivia commessa</button>
                 </div>
               )}
             </div>
@@ -687,6 +722,81 @@ export default function CommessaDetailPage() {
         )}
         {showCollaboratori && collaboratori.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 0', textAlign: 'center' }}>Nessun collaboratore</div>}
       </Panel>
+
+      {/* ── COSTI INTERNI ── */}
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, marginTop:14 }}>
+        <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
+          <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted }}>
+            Solo per analisi — non incide su proforma o fatture
+          </div>
+        </div>
+
+        {/* Lista costi interni */}
+        {costiInterni.length > 0 && (
+          <div style={{ borderBottom:`0.5px solid ${T.border}` }}>
+            {costiInterni.map(c => (
+              <div key={c.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', borderBottom:`0.5px solid ${T.border}` }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:13, color:T.ink, fontWeight:500 }}>{c.descrizione}</div>
+                    <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                      {c.nome_membro && <span>{c.nome_membro} · </span>}
+                      {c.data && new Date(c.data).toLocaleDateString('it-IT')}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:T.red }}>
+                    {new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(c.importo)}
+                  </div>
+                  <button onClick={()=>handleDeleteCostoInterno(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16 }}>×</button>
+                </div>
+              </div>
+            ))}
+            <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 20px', borderBottom:`0.5px solid ${T.border}` }}>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Totale: </span>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red, marginLeft:8 }}>
+                {new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(costiInterni.reduce((s,c)=>s+Number(c.importo),0))}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Form aggiunta */}
+        <div style={{ padding:'14px 20px', display:'grid', gridTemplateColumns:'1fr 2fr 100px 90px 36px', gap:8, alignItems:'end' }}>
+          <div>
+            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Membro</div>
+            <select value={newCostoInterno.team_member_id} onChange={e=>setNewCostoInterno(p=>({...p,team_member_id:e.target.value}))}
+              style={{ width:'100%', padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}>
+              <option value=''>— Nessuno —</option>
+              {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Descrizione *</div>
+            <input type='text' value={newCostoInterno.descrizione} onChange={e=>setNewCostoInterno(p=>({...p,descrizione:e.target.value}))}
+              onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+              placeholder='Es. Trasferta, materiali...'
+              style={{ width:'100%', padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none', boxSizing:'border-box' }}/>
+          </div>
+          <div>
+            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Importo €</div>
+            <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e=>setNewCostoInterno(p=>({...p,importo:e.target.value}))}
+              onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+              style={{ width:'100%', padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none', boxSizing:'border-box' }}/>
+          </div>
+          <div>
+            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Data</div>
+            <input type='date' value={newCostoInterno.data} onChange={e=>setNewCostoInterno(p=>({...p,data:e.target.value}))}
+              style={{ width:'100%', padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none', boxSizing:'border-box' }}/>
+          </div>
+          <button onClick={handleAddCostoInterno} disabled={savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo}
+            style={{ background:T.navy, border:'none', color:'#EEF1F6', cursor:'pointer', height:32, width:36, fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', opacity:savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo?0.4:1 }}>
+            +
+          </button>
+        </div>
+      </div>
 
       {/* ════ MODALI ════ */}
 

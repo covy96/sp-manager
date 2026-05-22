@@ -30,13 +30,14 @@ export default function AnalisiPage() {
   const [costiExtra, setCostiExtra] = useState([]);
   const [collab, setCollab]         = useState([]);
   const [proforma, setProforma]     = useState([]);
+  const [costiInterni, setCostiInterni] = useState([]);
   const [loading, setLoading]       = useState(true);
 
   const [selectedProject, setSelectedProject] = useState(null);
   const [costiPanel, setCostiPanel]           = useState(false);
   const [editCosti, setEditCosti]             = useState({}); // memberId → costo_orario
   const [savingCosti, setSavingCosti]         = useState(false);
-  const [annoFiltro, setAnnoFiltro]           = useState('tutti');
+  const [annoFiltro, setAnnoFiltro]           = useState(new Date().getFullYear());
 
   // ── LOAD ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function AnalisiPage() {
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("proforma").select("commessa_id,importo_totale,pagato").eq("studio",studioId).eq("pagato",true),
       ]);
+      const { data: ci } = await supabase.from('costi_interni').select('*').eq('studio', studioId);
       setProjects(proj??[]);
       setMembers(mem??[]);
       setTimesheet(ts??[]);
@@ -66,6 +68,7 @@ export default function AnalisiPage() {
       setCostiExtra(ce??[]);
       setCollab(co??[]);
       setProforma(pf??[]);
+      setCostiInterni(ci??[]);
       // Init editCosti
       const map = {};
       (mem??[]).forEach(m => { map[m.id] = m.costo_orario||0; });
@@ -82,8 +85,13 @@ export default function AnalisiPage() {
   };
 
   const anniDisponibili = useMemo(() => {
-    const anni = new Set(commesse.map(c => getAnnoCommessa(c)).filter(Boolean));
-    return ['tutti', ...Array.from(anni).sort((a,b)=>b-a)];
+    const anni = new Set();
+    anni.add(new Date().getFullYear());
+    commesse.forEach(c => {
+      const d = c.data_commessa || c.created_at;
+      if (d) anni.add(new Date(d).getFullYear());
+    });
+    return Array.from(anni).sort((a,b)=>b-a);
   }, [commesse]);
 
   // ── CALCOLI PER PROGETTO ──────────────────────────────────────────
@@ -109,8 +117,9 @@ export default function AnalisiPage() {
       // Commesse del progetto (filtrate per anno)
       const commProj = commesse.filter(c => {
         if (c.project_id !== proj.id) return false;
-        if (annoFiltro === 'tutti') return true;
-        return getAnnoCommessa(c) === Number(annoFiltro);
+        if (annoFiltro === 0) return true;
+        const d = c.data_commessa || c.created_at;
+        return d && new Date(d).getFullYear() === annoFiltro;
       });
       const valoreCommesse = commProj.reduce((s,c) => s + Number(c.importo_offerta_base || c.importo_totale || 0), 0);
 
@@ -120,16 +129,20 @@ export default function AnalisiPage() {
       const costCollab = collab.filter(c=>commIds.includes(c.commessa_id)).reduce((s,c)=>s+Number(c.importo||0),0);
       const costoEsterni = costExtra + costCollab;
 
-      const costoTotale = costoOre + costoEsterni;
+      const costoInterno = costiInterni
+        .filter(c => commProj.some(x => x.id === c.commessa_id))
+        .reduce((s,c) => s + Number(c.importo||0), 0);
+
+      const costoTotale = costoOre + costoEsterni + costoInterno;
       const incassato = proforma
         .filter(p => commProj.some(c => c.id === p.commessa_id))
         .reduce((s,p) => s + Number(p.importo_totale||0), 0);
       const margine = valoreCommesse - costoTotale;
       const marginePerc = valoreCommesse > 0 ? (margine/valoreCommesse)*100 : null;
 
-      return { proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
+      return { proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
     });
-  }, [projects, timesheet, members, commesse, costiExtra, collab, proforma, editCosti, annoFiltro]);
+  }, [projects, timesheet, members, commesse, costiExtra, collab, proforma, costiInterni, editCosti, annoFiltro]);
 
   // ── SALVA COSTI ORARI ─────────────────────────────────────────────
   const handleSaveCosti = async () => {
@@ -313,6 +326,42 @@ export default function AnalisiPage() {
           )}
         </div>
 
+        {/* ── ANALISI 3: Costi interni ── */}
+        {costiInterni.filter(c => stat.commProj.some(x => x.id === c.commessa_id)).length > 0 && (
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+            <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
+              <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
+              <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Spese interne non fatturate al cliente</div>
+            </div>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={thSt}>Membro</th>
+                  <th style={thSt}>Descrizione</th>
+                  <th style={thSt}>Data</th>
+                  <th style={thSt}>Importo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costiInterni
+                  .filter(c => stat.commProj.some(x => x.id === c.commessa_id))
+                  .map(c => (
+                    <tr key={c.id}>
+                      <td style={tdSt}>{c.nome_membro||'—'}</td>
+                      <td style={tdSt}>{c.descrizione}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:11, color:T.muted }}>{c.data ? new Date(c.data).toLocaleDateString('it-IT') : '—'}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:12, fontWeight:600, color:T.red }}>{currency(c.importo)}</td>
+                    </tr>
+                  ))}
+                <tr>
+                  <td colSpan={3} style={{ ...tdSt, fontWeight:600 }}>Totale costi interni</td>
+                  <td style={{ ...tdSt, ...mono, fontSize:14, fontWeight:600, color:T.red }}>{currency(stat.costoInterno)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Riepilogo finale */}
         <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:16 }}>Riepilogo economico</div>
@@ -322,6 +371,7 @@ export default function AnalisiPage() {
               ['Incassato', currency(stat.incassato), T.green],
               ['− Costo ore interne', currency(stat.costoOre), T.navy],
               ['− Costi esterni', currency(stat.costoEsterni), T.muted],
+              ['− Costi interni', currency(stat.costoInterno), T.muted],
             ].map(([l,v,c])=>(
               <div key={l} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`0.5px solid ${T.border}` }}>
                 <span style={{ ...mono, fontSize:11, color:T.muted }}>{l}</span>
@@ -352,19 +402,11 @@ export default function AnalisiPage() {
           <div style={{ ...mono, fontSize:10, color:T.muted }}>Costi, margini e redditività per progetto — visibile solo al titolare</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-            {anniDisponibili.map(a => (
-              <button key={a} onClick={()=>setAnnoFiltro(String(a))} style={{
-                padding:'7px 14px', border:'none', cursor:'pointer',
-                background: String(annoFiltro)===String(a) ? T.navy : 'transparent',
-                color: String(annoFiltro)===String(a) ? '#EEF1F6' : T.muted,
-                fontFamily:"'IBM Plex Mono', monospace", fontSize:10,
-                letterSpacing:'0.08em', textTransform:'uppercase',
-              }}>
-                {a === 'tutti' ? 'Tutti gli anni' : a}
-              </button>
-            ))}
-          </div>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
           <button onClick={()=>setCostiPanel(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer' }}>
             ⚙ Costi orari
           </button>
@@ -380,6 +422,7 @@ export default function AnalisiPage() {
               <th style={thSt}>Ore totali</th>
               <th style={thSt}>Costo ore</th>
               <th style={thSt}>Costi esterni</th>
+              <th style={thSt}>Costi interni</th>
               <th style={thSt}>Costo totale</th>
               <th style={thSt}>Valore commesse</th>
               <th style={thSt}>Incassato</th>
@@ -390,7 +433,7 @@ export default function AnalisiPage() {
           <tbody>
             {projectStats.length === 0 ? (
               <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun progetto attivo</td></tr>
-            ) : projectStats.map(({ proj, oreTotali, costoOre, costoEsterni, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => (
+            ) : projectStats.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => (
               <tr key={proj.id}
                 onClick={()=>setSelectedProject(proj)}
                 style={{ cursor:'pointer' }}
@@ -407,6 +450,7 @@ export default function AnalisiPage() {
                 <td style={{ ...tdSt, ...mono, fontSize:12 }}>{fmtOre(oreTotali)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.navy }}>{currency(costoOre)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.muted }}>{currency(costoEsterni)}</td>
+                <td style={{ ...tdSt, ...mono, fontSize:12, color:T.muted }}>{currency(costoInterno)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, fontWeight:600, color:T.ink }}>{currency(costoTotale)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(valoreCommesse)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(incassato)}</td>
