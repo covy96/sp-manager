@@ -587,18 +587,34 @@ export default function ProjectsPage() {
 
   const openArchiveModal = (project, e) => { e.stopPropagation(); setProjectToArchive(project); setArchiveModalOpen(true); };
   const handleArchiveProject = async () => {
-    if (!projectToArchive) return; setArchiveLoading(true);
-    const { error } = await supabase.from("projects").update({ archived: true }).eq("id", projectToArchive.id);
-    if (error) { setArchiveLoading(false); return; }
-    setArchiveModalOpen(false);
-    await loadData();
-    setArchiveLoading(false);
+    if (!projectToArchive) return;
+    setArchiveLoading(true);
 
-    // Se il progetto ha una commessa collegata, controlla il residuo
-    if (projectToArchive.commessa_id) {
+    // Cattura i dati necessari PRIMA degli await per evitare stale closure
+    const projectId    = projectToArchive.id;
+    const projectName  = projectToArchive.name;
+    let   commessaId   = projectToArchive.commessa_id;
+
+    // Se commessa_id non è sul progetto, cerca tramite project_id sulla commessa
+    if (!commessaId) {
+      const { data: linked } = await supabase
+        .from("commesse").select("id").eq("project_id", projectId).eq("archived", false).maybeSingle();
+      commessaId = linked?.id || null;
+    }
+
+    const { error } = await supabase.from("projects").update({ archived: true }).eq("id", projectId);
+    if (error) { setArchiveLoading(false); return; }
+
+    setArchiveModalOpen(false);
+    setProjectToArchive(null);
+    setArchiveLoading(false);
+    await loadData();
+
+    // Controlla commessa collegata
+    if (commessaId) {
       const { data: commessa } = await supabase
         .from("commesse").select("id, nome_commessa, importo_offerta_base, archived")
-        .eq("id", projectToArchive.commessa_id).single();
+        .eq("id", commessaId).single();
       if (commessa && !commessa.archived) {
         const importoBase = Number(commessa.importo_offerta_base) || 0;
         const { data: ratePagate } = await supabase
@@ -612,7 +628,6 @@ export default function ProjectsPage() {
         setCommessaArchiveModal({ commessa, residuo, canArchive: Math.abs(residuo) < 0.01 });
       }
     }
-    setProjectToArchive(null);
   };
 
   const handleArchiveCommessa = async () => {
