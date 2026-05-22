@@ -7,6 +7,9 @@ export default function LoginPage({ session }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   if (session) {
     return <Navigate to="/dashboard" replace />;
@@ -17,6 +20,9 @@ export default function LoginPage({ session }) {
     setError("");
     setLoading(true);
 
+    setEmailNotConfirmed(false);
+    setResendSuccess(false);
+
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -25,11 +31,17 @@ export default function LoginPage({ session }) {
 
       if (signInError) {
         console.error("Login error:", signInError);
-        setError(JSON.stringify(signInError));
+        if (signInError.message?.toLowerCase().includes("email not confirmed")) {
+          setEmailNotConfirmed(true);
+        } else if (signInError.message?.toLowerCase().includes("invalid login credentials")) {
+          setError("Email o password non corretti.");
+        } else {
+          setError(signInError.message || "Errore durante il login.");
+        }
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setError(JSON.stringify(error));
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Errore imprevisto. Riprova.");
     }
 
     setLoading(false);
@@ -73,11 +85,35 @@ export default function LoginPage({ session }) {
             />
           </div>
 
-          {error ? (
-            <div style={{ background: "#ff3b30", color: "#fff", padding: "10px 12px", borderRadius: "8px", fontSize: "13px", wordBreak: "break-all" }}>
-              <strong>Errore:</strong> {error}
+          {emailNotConfirmed && (
+            <div className="rounded-lg border border-[#ff9f0a]/40 bg-[#ff9f0a]/10 p-3 space-y-2">
+              <p className="text-sm text-[#ff9f0a] font-medium">📧 Email non confermata</p>
+              <p className="text-xs text-white/60">
+                Controlla la tua casella email e clicca il link di conferma che ti abbiamo inviato.
+              </p>
+              {resendSuccess ? (
+                <p className="text-xs text-[#30d158] font-medium">✓ Email inviata! Controlla la tua casella.</p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={resendLoading}
+                  onClick={async () => {
+                    setResendLoading(true);
+                    await supabase.auth.resend({ type: "signup", email });
+                    setResendLoading(false);
+                    setResendSuccess(true);
+                  }}
+                  className="text-xs text-[#0a84ff] hover:underline disabled:opacity-50"
+                >
+                  {resendLoading ? "Invio in corso..." : "Rinvia email di conferma"}
+                </button>
+              )}
             </div>
-          ) : null}
+          )}
+
+          {error && (
+            <p className="text-sm text-[#ff453a]">{error}</p>
+          )}
 
           <button
             type="submit"
