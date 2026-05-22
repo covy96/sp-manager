@@ -40,6 +40,8 @@ import PianoPage from "./pages/settings/PianoPage";
 import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
 import CestinoPage from "./pages/settings/CestinoPage";
 import EsportaDatiPage from "./pages/settings/EsportaDatiPage";
+import ProgettoArchiviotoRecapPage from "./pages/settings/ProgettoArchiviotoRecapPage";
+import CommessaArchiviataRecapPage from "./pages/settings/CommessaArchiviataRecapPage";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -360,6 +362,22 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><CestinoPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/progetti-archiviati/:id"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><ProgettoArchiviotoRecapPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/commesse-archiviate/:id"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><CommessaArchiviataRecapPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

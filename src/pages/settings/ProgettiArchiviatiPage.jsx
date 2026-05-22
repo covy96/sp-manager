@@ -99,7 +99,7 @@ export default function ProgettiArchiviatiPage() {
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => navigate(`/progetti/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.bg, border: `0.5px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
+                  <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.bg, border: `0.5px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
                   <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '7px 14px', background: 'transparent', border: `0.5px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
                     {restoring === project.id ? "..." : "Ripristina"}
                   </button>
