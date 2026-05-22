@@ -276,15 +276,19 @@ export default function CommessaDetailPage() {
   // Rate — usa campi originali: percentuale, importo_fisso, studio
   const initRateRows = () => {
     const n = Math.max(1, Number(rataCount));
-    const base = rataMode === "percentuale" ? (100 / n).toFixed(1) : (importoBase / n).toFixed(2);
+    const base = rataMode === "percentuale"
+      ? parseFloat((100 / n).toFixed(1))
+      : parseFloat((importoBase / n).toFixed(2));
     setRateRows(Array.from({ length: n }, (_, i) => ({ label: `Rata ${i + 1}`, value: base })));
     setRataStep("edit"); setRataError("");
   };
   const handleSaveRate = async e => {
     e.preventDefault(); setRataSaving(true); setRataError("");
     const payload = rateRows.map((r, i) => ({
-      commessa_id: commessaId, studio: studioId,
+      commessa_id: commessaId,
+      studio: studioId,
       numero_rata: suddivisione.length + i + 1,
+      label: r.label || `Rata ${i+1}`,
       percentuale: rataMode === "percentuale" ? Number(r.value) : null,
       importo_fisso: rataMode === "importo" ? Number(r.value) : null,
       pagato: false,
@@ -292,6 +296,23 @@ export default function CommessaDetailPage() {
     const { error: iErr } = await supabase.from("suddivisione_pagamenti").insert(payload);
     if (iErr) { setRataError(iErr.message); setRataSaving(false); return; }
     setRataModal(false); setRataStep("config"); setRateRows([]); await loadData(); setRataSaving(false);
+  };
+  const handleRataValueChange = (idx, newVal) => {
+    setRateRows(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], value: newVal };
+      const totale = rataMode === "percentuale" ? 100 : importoBase;
+      const valIdx = parseFloat(newVal) || 0;
+      const residuo = totale - valIdx;
+      const altreRate = prev.length - 1;
+      if (altreRate > 0) {
+        const valPerAltra = parseFloat((residuo / altreRate).toFixed(2));
+        for (let i = 0; i < updated.length; i++) {
+          if (i !== idx) updated[i] = { ...updated[i], value: valPerAltra };
+        }
+      }
+      return updated;
+    });
   };
 
   const openEditRata = rata => {
@@ -742,9 +763,23 @@ export default function CommessaDetailPage() {
             {rateRows.map((r, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
                 <Input value={r.label} onChange={e => setRateRows(p => p.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                <Input type="number" value={r.value} onChange={e => setRateRows(p => p.map((x, j) => j === i ? { ...x, value: e.target.value } : x))} />
+                <Input type="number" value={r.value} onChange={e => handleRataValueChange(i, e.target.value)} />
               </div>
             ))}
+            {(() => {
+              const totale = rataMode === "percentuale" ? 100 : importoBase;
+              const somma = rateRows.reduce((s,r) => s + (parseFloat(r.value)||0), 0);
+              const ok = Math.abs(somma - totale) < 0.1;
+              return (
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderTop:`0.5px solid ${T.border}` }}>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>Totale</span>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:12, fontWeight:600, color: ok ? T.green : T.red }}>
+                    {rataMode === "percentuale" ? `${somma.toFixed(1)}%` : currency(somma)}
+                    {!ok && ` ≠ ${rataMode === "percentuale" ? "100%" : currency(totale)}`}
+                  </span>
+                </div>
+              );
+            })()}
             {rataError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{rataError}</div>}
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
