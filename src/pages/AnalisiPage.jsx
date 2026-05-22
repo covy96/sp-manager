@@ -404,7 +404,7 @@ export default function AnalisiPage() {
                 <td style={{ ...tdSt, ...mono, fontSize:12, fontWeight:600, color:T.ink }}>{currency(costoTotale)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(valoreCommesse)}</td>
                 <td style={{ ...tdSt, ...mono, fontSize:12, color:T.green }}>{currency(incassato)}</td>
-                <td style={tdSt}
+                <td style={tdSt}>
                   <div style={{ ...mono, fontSize:13, fontWeight:600, color:margine>=0?T.green:T.red }}>{currency(margine)}</div>
                   {marginePerc!=null && <div style={{ ...mono, fontSize:9, color:T.muted }}>{marginePerc.toFixed(1)}%</div>}
                 </td>
