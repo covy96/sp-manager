@@ -52,7 +52,7 @@ export default function AnalisiPage() {
         supabase.from("projects").select("id,name,client,archived").eq("studio",studioId).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId),
-        supabase.from("commesse").select("id,project_id,project_name,nome_commessa,cliente,importo_offerta_base,importo_totale,data_commessa,archived").eq("studio",studioId),
+        supabase.from("commesse").select("id,project_id,nome_commessa,cliente,importo_offerta_base,importo_totale,data_commessa,created_at,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
       ]);
@@ -72,8 +72,13 @@ export default function AnalisiPage() {
   }, [studioId]);
 
   // ── ANNI DISPONIBILI ─────────────────────────────────────────────
+  const getAnnoCommessa = (c) => {
+    const d = c.data_commessa || c.created_at;
+    return d ? new Date(d).getFullYear() : null;
+  };
+
   const anniDisponibili = useMemo(() => {
-    const anni = new Set(commesse.map(c => c.data_commessa ? new Date(c.data_commessa).getFullYear() : null).filter(Boolean));
+    const anni = new Set(commesse.map(c => getAnnoCommessa(c)).filter(Boolean));
     return ['tutti', ...Array.from(anni).sort((a,b)=>b-a)];
   }, [commesse]);
 
@@ -101,9 +106,9 @@ export default function AnalisiPage() {
       const commProj = commesse.filter(c => {
         if (c.project_id !== proj.id) return false;
         if (annoFiltro === 'tutti') return true;
-        return c.data_commessa && new Date(c.data_commessa).getFullYear() === Number(annoFiltro);
+        return getAnnoCommessa(c) === Number(annoFiltro);
       });
-      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.importo_totale || c.importo_offerta_base || 0), 0);
+      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.importo_offerta_base || c.importo_totale || 0), 0);
 
       // Costi extra e collaboratori
       const commIds = commProj.map(c=>c.id);
