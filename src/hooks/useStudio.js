@@ -21,11 +21,21 @@ export function useStudio() {
         return;
       }
 
-      const { data: tm } = await supabase
+      // Usa select multiplo per gestire duplicati senza errore
+      const { data: members } = await supabase
         .from("team_members")
         .select("*")
         .eq("user_account", u.id)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
+
+      let tm = null;
+      if (members && members.length > 0) {
+        const savedStudioId = localStorage.getItem("asm-active-studio");
+        // Preferisci il record con lo studio salvato in localStorage
+        tm = (savedStudioId && members.find(m => m.studio === savedStudioId))
+          || members.find(m => m.studio)   // qualsiasi con studio
+          || members[0];                    // fallback al più recente
+      }
 
       setTeamMember(tm ?? null);
       const sid = tm?.studio ?? null;

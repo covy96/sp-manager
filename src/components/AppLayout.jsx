@@ -18,7 +18,7 @@ const ALL_MENU_ITEMS = [
   { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all",   minPlan:"free"   },
   { label:"Calendario",   path:"/calendario",            num:"05", roles:"all",   minPlan:"free"   },
   { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
-  { label:"Offerte",      path:"/offerte",               num:"07", roles:"pm",    minPlan:"studio" },
+  { label:"Offerte",      path:"/offerte",               num:"07", roles:"pm",    minPlan:"free"   },
   { label:"Team",         path:"/team",                  num:"08", roles:"all",   minPlan:"studio" },
   { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"09", roles:"pm",    minPlan:"studio" },
   { label:"Proforma",     path:"/proforma",              num:"10", roles:"pm",    minPlan:"studio" },
