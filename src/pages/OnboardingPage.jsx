@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
 
 function generateInviteCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -63,15 +63,24 @@ export default function OnboardingPage() {
 
     if (studioError || !studio) { setError(studioError?.message || "Errore creazione studio."); setLoading(false); return; }
 
+    console.log("[handleCreate] user:", user);
+    console.log("[handleCreate] studio creato:", studio);
+
     if (existing) {
-      await supabase.from("team_members").update({ studio: studio.id, role_internal: "Owner" }).eq("id", existing.id);
+      const { error: updateErr } = await supabase.from("team_members").update({ studio: studio.id, role_internal: "Owner" }).eq("id", existing.id);
+      if (updateErr) console.error("[handleCreate] team_members update error:", updateErr);
+      else console.log("[handleCreate] team_members updated (existing member)");
     } else {
-      await supabase.from("team_members").insert({
+      const { error: insertErr } = await supabase.from("team_members").insert({
         user_account: user.id, user_email: user.email, user_name: user.email,
         studio: studio.id, role_internal: "Owner", active: true,
       });
+      if (insertErr) console.error("[handleCreate] team_members insert error:", insertErr);
+      else console.log("[handleCreate] team_members inserted (new member)");
     }
 
+    await seedServiceTaskTemplates(studio.id);
+    console.log("[handleCreate] setting localStorage and redirecting...");
     localStorage.setItem("asm-active-studio", studio.id);
     window.location.href = "/dashboard";
   };
@@ -122,6 +131,7 @@ export default function OnboardingPage() {
       });
     }
 
+    await seedServiceTaskTemplates(studio.id);
     localStorage.setItem("asm-active-studio", studio.id);
     window.location.href = "/dashboard";
   };

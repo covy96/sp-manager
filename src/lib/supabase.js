@@ -29,10 +29,12 @@ const DEFAULT_SERVICE_TEMPLATES = [
   { service_name: "GESTIONE FORNITURE", order: 8 },
 ];
 
-export async function seedServiceTaskTemplates() {
+export async function seedServiceTaskTemplates(studioId) {
+  if (!studioId) return;
+  const rows = DEFAULT_SERVICE_TEMPLATES.map(t => ({ ...t, studio: studioId }));
   const { error } = await supabase
     .from("service_task_templates")
-    .upsert(DEFAULT_SERVICE_TEMPLATES, { onConflict: "studio,service_name" });
+    .upsert(rows, { onConflict: "studio,service_name" });
 
   if (error) {
     console.error("Errore seed service_task_templates:", error.message);

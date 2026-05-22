@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
-import { seedServiceTaskTemplates, supabase } from "./lib/supabase";
+import { supabase } from "./lib/supabase";
 import { initTheme } from "./contexts/ThemeContext";
 
 initTheme();
@@ -14,7 +14,6 @@ function Root() {
 
   useEffect(() => {
     const getSession = async () => {
-      await seedServiceTaskTemplates();
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
       setLoading(false);
