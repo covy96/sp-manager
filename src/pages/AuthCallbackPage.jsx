@@ -1,6 +1,52 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
+
+function generateInviteCode() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+async function createStudioForUser(user, pendingStudio) {
+  const code = generateInviteCode();
+  const { data: studio, error: studioError } = await supabase
+    .from("studios")
+    .insert({
+      name: pendingStudio.name,
+      owner_id: user.id,
+      invite_code: code,
+      piano: "free",
+      tipo_fatturazione: pendingStudio.tipo_fatturazione,
+    })
+    .select("*")
+    .single();
+
+  if (studioError || !studio) {
+    console.error("Errore creazione studio:", studioError);
+    return null;
+  }
+
+  const { error: memberError } = await supabase.from("team_members").insert({
+    user_account: user.id,
+    user_email: user.email,
+    user_name: pendingStudio.ownerName || user.email,
+    studio: studio.id,
+    role_internal: "Owner",
+    active: true,
+  });
+
+  if (memberError) {
+    console.error("Errore creazione team_member:", memberError);
+    return null;
+  }
+
+  await seedServiceTaskTemplates(studio.id);
+  localStorage.setItem("asm-active-studio", studio.id);
+  localStorage.removeItem("asm-pending-studio");
+  return studio;
+}
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -8,35 +54,55 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // PKCE flow: il codice arriva come query param ?code=...
+      let session = null;
+
+      // PKCE flow: ?code=...
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
 
       if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
           setError("Link non valido o scaduto. Richiedi una nuova email di conferma.");
           return;
         }
-        navigate("/dashboard", { replace: true });
-        return;
-      }
-
-      // Implicit flow: il token arriva nel hash #access_token=...
-      const hash = window.location.hash;
-      if (hash && hash.includes("access_token")) {
-        // Supabase JS v2 legge automaticamente il hash alla getSession
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !data.session) {
-          setError("Link non valido o scaduto. Richiedi una nuova email di conferma.");
-          return;
+        session = data.session;
+      } else {
+        // Implicit flow: #access_token=...
+        const hash = window.location.hash;
+        if (hash && hash.includes("access_token")) {
+          const { data, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !data.session) {
+            setError("Link non valido o scaduto. Richiedi una nuova email di conferma.");
+            return;
+          }
+          session = data.session;
         }
-        navigate("/dashboard", { replace: true });
+      }
+
+      if (!session) {
+        setError("Link non valido. Torna al login e riprova.");
         return;
       }
 
-      // Nessun parametro valido
-      setError("Link non valido. Torna al login e riprova.");
+      const user = session.user;
+
+      // Controlla se c'è uno studio in sospeso da creare
+      const raw = localStorage.getItem("asm-pending-studio");
+      if (raw) {
+        try {
+          const pendingStudio = JSON.parse(raw);
+          const studio = await createStudioForUser(user, pendingStudio);
+          if (!studio) {
+            setError("Account confermato, ma si è verificato un errore nella creazione dello studio. Accedi e riprova.");
+            return;
+          }
+        } catch (e) {
+          console.error("Errore parsing pending studio:", e);
+        }
+      }
+
+      navigate("/dashboard", { replace: true });
     };
 
     handleCallback();
@@ -64,7 +130,7 @@ export default function AuthCallbackPage() {
     <main className="flex min-h-screen items-center justify-center bg-[#1c1c1e] p-4">
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
-        <p className="text-sm text-white/50">Conferma in corso...</p>
+        <p className="text-sm text-white/50">Attivazione account in corso...</p>
       </div>
     </main>
   );

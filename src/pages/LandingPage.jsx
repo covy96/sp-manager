@@ -138,8 +138,8 @@ export default function LandingPage({ onLogin, onRegister }) {
           <button onClick={onLogin} style={{ border:`0.5px solid ${activeSection===0?'rgba(238,241,246,0.5)':C.ink}`, background:'transparent', color:activeSection===0?'#EEF1F6':C.ink, padding:'7px 18px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
             Accedi
           </button>
-          <button onClick={onRegister} style={{ border:'none', background:C.navy, color:'#EEF1F6', padding:'7px 18px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
-            Inizia gratis
+          <button onClick={onRegister} style={{ border:'none', background:C.brass, color:C.ink, padding:'7px 22px', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', fontWeight:700 }}>
+            Crea Studio →
           </button>
         </div>
       </nav>
@@ -189,8 +189,8 @@ export default function LandingPage({ onLogin, onRegister }) {
               Progettato per architetti, non per contabili.
             </p>
             <div style={{ display:'flex', gap:14, justifyContent:'center' }}>
-              <button onClick={onRegister} style={{ background:C.brass, border:'none', color:C.ink, padding:'14px 36px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', fontWeight:600 }}>
-                Inizia gratis →
+              <button onClick={onRegister} style={{ background:C.brass, border:'none', color:C.ink, padding:'14px 36px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', fontWeight:700 }}>
+                Crea il tuo studio →
               </button>
               <button onClick={()=>scrollTo(1)} style={{ background:'transparent', border:'0.5px solid rgba(238,241,246,0.3)', color:'rgba(238,241,246,0.7)', padding:'14px 36px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
                 Scopri di più ↓
@@ -677,9 +677,9 @@ export default function LandingPage({ onLogin, onRegister }) {
               background:C.brass, border:'none', color:C.ink,
               padding:'16px 48px', ...mono, fontSize:13,
               letterSpacing:'0.12em', textTransform:'uppercase',
-              cursor:'pointer', fontWeight:600,
+              cursor:'pointer', fontWeight:700,
             }}>
-              Crea il tuo account gratuito →
+              Crea il tuo studio gratuitamente →
             </button>
           </div>
           {/* Footer */}

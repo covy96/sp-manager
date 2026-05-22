@@ -43,6 +43,7 @@ import EsportaDatiPage from "./pages/settings/EsportaDatiPage";
 import ProgettoArchiviotoRecapPage from "./pages/settings/ProgettoArchiviotoRecapPage";
 import CommessaArchiviataRecapPage from "./pages/settings/CommessaArchiviataRecapPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import CreateStudioPage from "./pages/CreateStudioPage";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -106,12 +107,13 @@ export default function App({ session }) {
             ? <Navigate to="/dashboard" replace />
             : <LandingPage
                 onLogin={() => navigate("/login")}
-                onRegister={() => navigate("/register")}
+                onRegister={() => navigate("/crea-studio")}
               />
         }
       />
       <Route path="/login" element={<LoginPage session={session} />} />
       <Route path="/register" element={<RegisterPage session={session} />} />
+      <Route path="/crea-studio" element={<CreateStudioPage session={session} />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route
         path="/onboarding"
