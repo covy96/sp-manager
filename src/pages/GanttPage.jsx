@@ -321,7 +321,7 @@ function ProjectGantt({ project, studioId, onBack }) {
 
   const handleDelete = async (id) => {
     if (!confirm("Eliminare questa lavorazione?")) return;
-    await supabase.from("lavorazioni_gantt").delete().eq("id", id);
+    await supabase.from("lavorazioni_gantt").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     loadData();
   };
 

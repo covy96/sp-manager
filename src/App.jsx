@@ -38,6 +38,7 @@ import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviateP
 import NotifichePage from "./pages/settings/NotifichePage";
 import PianoPage from "./pages/settings/PianoPage";
 import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
+import CestinoPage from "./pages/settings/CestinoPage";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -342,6 +343,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><ProfiloStudioPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/cestino"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><CestinoPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

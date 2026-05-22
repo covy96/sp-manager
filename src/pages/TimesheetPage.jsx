@@ -170,7 +170,7 @@ export default function TimesheetPage() {
 
   const handleDeleteEntry = async () => {
     if (!editingEntry || !confirm("Sei sicuro di voler eliminare questa registrazione?")) return;
-    const { error: dErr } = await supabase.from("timesheet").delete().eq("id", editingEntry.id);
+    const { error: dErr } = await supabase.from("timesheet").update({ deleted_at: new Date().toISOString() }).eq("id", editingEntry.id);
     if (dErr) alert("Errore: " + dErr.message);
     else { setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null); }
   };

@@ -42,6 +42,7 @@ const ALL_MENU_ITEMS = [
   { label:'Gantt',          path:'/gantt-progetti',               roles:'pm',  minPlan:'studio' },
   { label:'Analisi',        path:'/analisi',                      roles:'owner', minPlan:'free'  },
   { label:'Profilo Studio', path:'/impostazioni/profilo-studio',  roles:'all', minPlan:'free'   },
+  { label:'Cestino',        path:'/impostazioni/cestino',          roles:'all', minPlan:'free'   },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };

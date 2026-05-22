@@ -169,6 +169,9 @@ export default function CommessaDetailPage() {
   const [proformaRateIds, setProformaRateIds] = useState([]);
   const [proformaCostiIds, setProformaCostiIds] = useState([]);
 
+  const [altreCommesse, setAltreCommesse] = useState([]);
+  const [altreCommesseData, setAltreCommesseData] = useState({});
+
   const [editProformaModal, setEditProformaModal] = useState(false);
   const [editProformaData, setEditProformaData]   = useState(null);
   const [editProformaForm, setEditProformaForm]   = useState({});
@@ -193,15 +196,39 @@ export default function CommessaDetailPage() {
       supabase.from("collaboratori_esterni").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
     ]);
     if (cR.error) { setError(cR.error.message); setLoading(false); return; }
-    setCommessa(cR.data ?? null);
+    const commessa = cR.data ?? null;
+    setCommessa(commessa);
     setCostiExtra(costiR.data ?? []);
     setSuddivisione(suddR.data ?? []);
     setProforma(profR.data ?? []);
     setCollaboratori(collabR.data ?? []);
+
+    if (commessa?.project_id) {
+      const { data: altreComm } = await supabase
+        .from('commesse')
+        .select('id, nome_commessa, importo_offerta_base')
+        .eq('project_id', commessa.project_id)
+        .eq('studio', studioId)
+        .neq('id', commessaId);
+      setAltreCommesse(altreComm ?? []);
+      const altreData = {};
+      for (const ac of (altreComm ?? [])) {
+        const [{ data: rate }, { data: costi }] = await Promise.all([
+          supabase.from('suddivisione_pagamenti').select('*').eq('commessa_id', ac.id).order('order'),
+          supabase.from('costi_extra').select('*').eq('commessa_id', ac.id),
+        ]);
+        altreData[ac.id] = { suddivisione: rate ?? [], costiExtra: costi ?? [] };
+      }
+      setAltreCommesseData(altreData);
+    } else {
+      setAltreCommesse([]);
+      setAltreCommesseData({});
+    }
+
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, [commessaId]);
+  useEffect(() => { if (studioId) loadData(); }, [commessaId, studioId]);
 
   // ── CALCOLATI — usa nomi campi originali ──────────────────────
   const importoBase = Number(commessa?.importo_offerta_base) || 0;
@@ -242,8 +269,14 @@ export default function CommessaDetailPage() {
     const fromCosti = costiExtra
       .filter(c => proformaCostiIds.includes(c.id))
       .reduce((s, c) => s + (Number(c.importo) || 0), 0);
-    return fromRate + fromCosti;
-  }, [proformaRateIds, proformaCostiIds, suddivisione, costiExtra, importoBase]);
+    const fromAltreRate = Object.values(altreCommesseData).flatMap(d => d.suddivisione)
+      .filter(r => proformaRateIds.includes(r.id))
+      .reduce((s, r) => s + (Number(r.importo_fisso) || 0), 0);
+    const fromAltreCosti = Object.values(altreCommesseData).flatMap(d => d.costiExtra)
+      .filter(c => proformaCostiIds.includes(c.id))
+      .reduce((s, c) => s + (Number(c.importo) || 0), 0);
+    return fromRate + fromCosti + fromAltreRate + fromAltreCosti;
+  }, [proformaRateIds, proformaCostiIds, suddivisione, costiExtra, importoBase, altreCommesseData]);
 
   const ricalcolaIncassato = async () => {
     const totale = proforma
@@ -325,7 +358,7 @@ export default function CommessaDetailPage() {
   };
   const handleDeleteRata = async id => {
     if (!window.confirm("Eliminare questa rata?")) return;
-    await supabase.from("suddivisione_pagamenti").delete().eq("id", id);
+    await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     setOpenMenuId(null); await loadData();
   };
 
@@ -341,7 +374,7 @@ export default function CommessaDetailPage() {
   };
   const handleDeleteCosto = async id => {
     if (!window.confirm("Eliminare questo costo?")) return;
-    await supabase.from("costi_extra").delete().eq("id", id);
+    await supabase.from("costi_extra").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     setOpenMenuId(null); await loadData();
   };
 
@@ -358,7 +391,7 @@ export default function CommessaDetailPage() {
   };
   const handleDeleteCollab = async id => {
     if (!window.confirm("Eliminare questo collaboratore?")) return;
-    await supabase.from("collaboratori_esterni").delete().eq("id", id);
+    await supabase.from("collaboratori_esterni").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     setOpenMenuId(null); await loadData();
   };
 
@@ -367,6 +400,17 @@ export default function CommessaDetailPage() {
     e.preventDefault(); setProformaError(""); setProformaSaving(true);
     if (!proformaForm.numero_proforma?.trim()) { setProformaError("Numero proforma obbligatorio."); setProformaSaving(false); return; }
     if (!proformaForm.data_scadenza) { setProformaError("Inserisci la data di scadenza."); setProformaSaving(false); return; }
+    const commessaIdsSet = new Set([commessaId]);
+    proformaRateIds.forEach(rid => {
+      Object.entries(altreCommesseData).forEach(([cId, data]) => {
+        if (data.suddivisione.some(r => r.id === rid)) commessaIdsSet.add(cId);
+      });
+    });
+    proformaCostiIds.forEach(ceid => {
+      Object.entries(altreCommesseData).forEach(([cId, data]) => {
+        if (data.costiExtra.some(ce => ce.id === ceid)) commessaIdsSet.add(cId);
+      });
+    });
     const { error: iErr } = await supabase.from("proforma").insert({
       commessa_id: commessaId, numero_proforma: proformaForm.numero_proforma.trim(),
       data_creazione: proformaForm.data_creazione || null,
@@ -375,6 +419,7 @@ export default function CommessaDetailPage() {
       note: proformaForm.note || null, pagato: false,
       suddivisione_pagamento_ids: proformaRateIds,
       costo_extra_ids: proformaCostiIds,
+      commessa_ids: Array.from(commessaIdsSet),
       studio: studioId,
     });
     if (iErr) { setProformaError(iErr.message); setProformaSaving(false); return; }
@@ -401,7 +446,7 @@ export default function CommessaDetailPage() {
         .update({ pagato: false })
         .in("id", proformaToDelete.costo_extra_ids);
     }
-    await supabase.from("proforma").delete().eq("id", proformaToDelete.id);
+    await supabase.from("proforma").update({ deleted_at: new Date().toISOString() }).eq("id", proformaToDelete.id);
     setOpenMenuId(null); await loadData();
   };
 
@@ -715,6 +760,45 @@ export default function CommessaDetailPage() {
               </div>
             </div>
           )}
+          {altreCommesse.map(ac => {
+            const acData = altreCommesseData[ac.id] || { suddivisione: [], costiExtra: [] };
+            if (acData.suddivisione.length === 0 && acData.costiExtra.length === 0) return null;
+            return (
+              <div key={ac.id} style={{ marginTop: 16 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
+                  {ac.nome_commessa}
+                </div>
+                {acData.suddivisione.map(r => {
+                  const checked = proformaRateIds.includes(r.id);
+                  const used = rateGiaUsate.has(r.id);
+                  return (
+                    <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.5 : 1 }}>
+                      <input type="checkbox" checked={checked} disabled={used}
+                        onChange={e => setProformaRateIds(p => e.target.checked ? [...p, r.id] : p.filter(x => x !== r.id))}
+                        style={{ accentColor: T.navy }} />
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+                        {r.label || r.numero_rata} — {r.importo_fisso ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(r.importo_fisso) : `${r.percentuale}%`}
+                      </span>
+                    </label>
+                  );
+                })}
+                {acData.costiExtra.map(ce => {
+                  const checked = proformaCostiIds.includes(ce.id);
+                  const used = costiGiaUsati.has(ce.id);
+                  return (
+                    <label key={ce.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.5 : 1 }}>
+                      <input type="checkbox" checked={checked} disabled={used}
+                        onChange={e => setProformaCostiIds(p => e.target.checked ? [...p, ce.id] : p.filter(x => x !== ce.id))}
+                        style={{ accentColor: T.navy }} />
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+                        {ce.descrizione} — {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(ce.importo)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            );
+          })}
           <div><FieldLabel>Note</FieldLabel><Input value={proformaForm.note} onChange={e => setProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
           {proformaError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{proformaError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setProformaModal(false)} disabled={proformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={proformaSaving}>{proformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>

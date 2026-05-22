@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
+import CommessePanel from '../components/CommessePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -276,6 +277,7 @@ export default function ProjectDetailPage() {
   const [editForm, setEditForm]       = useState({});
   const [editSaving, setEditSaving]   = useState(false);
   const [editError, setEditError]     = useState("");
+  const [commesseProgetto, setCommesseProgetto] = useState([]);
 
   useEffect(() => {
     if (!projectId || projectId === "null" || projectId === "undefined") { navigate("/progetti"); return; }
@@ -302,6 +304,8 @@ export default function ProjectDetailPage() {
       setServiceTemplates(sR.data ?? []);
       setGlobalContacts(gcR.data ?? []);
       setCompletedCategories(pR.data?.completed_categories ?? {});
+      const { data: commProg } = await supabase.from('commesse').select('id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,stato_pagamento,archived').eq('project_id', projectId).eq('studio', studioId).order('created_at', { ascending: false });
+      setCommesseProgetto(commProg ?? []);
       setLoading(false);
     };
     loadData();
@@ -363,7 +367,7 @@ export default function ProjectDetailPage() {
 
   const handleDeleteTask = async task => {
     if (!task?.id) return;
-    const { error: dErr } = await supabase.from("tasks").delete().eq("id", task.id);
+    const { error: dErr } = await supabase.from("tasks").update({ deleted_at: new Date().toISOString() }).eq("id", task.id);
     if (dErr) setError(dErr.message);
     else { setTasks(p => p.filter(t => t.id !== task.id)); setError(""); }
   };
@@ -486,13 +490,7 @@ export default function ProjectDetailPage() {
             {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
-            {project?.commessa_id && (
-              <button onClick={() => navigate(`/commesse/${project.commessa_id}`)} style={{
-                border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.navy,
-                fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em',
-                padding: '7px 14px', cursor: 'pointer',
-              }}>€ Commessa</button>
-            )}
+            <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{
                 border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink,
