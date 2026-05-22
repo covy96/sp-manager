@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
 
 export default function JoinStudioPage({ session }) {
   const navigate = useNavigate();
@@ -71,15 +71,17 @@ export default function JoinStudioPage({ session }) {
 
     setLoading(true);
 
-    // Salva il join in sospeso in localStorage
-    localStorage.setItem("asm-pending-join", JSON.stringify({
+    const pendingJoin = {
       inviteCode: inviteCode.trim().toUpperCase(),
       studioId: studio.id,
       studioName: studio.name,
       memberName: `${nome.trim()} ${cognome.trim()}`,
-    }));
+    };
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    // Salva in localStorage come fallback
+    localStorage.setItem("asm-pending-join", JSON.stringify(pendingJoin));
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { full_name: `${nome.trim()} ${cognome.trim()}` } },
@@ -92,6 +94,37 @@ export default function JoinStudioPage({ session }) {
       return;
     }
 
+    // Se la conferma email è disabilitata, sessione immediata → unisciti ora
+    if (data?.session?.user) {
+      const user = data.session.user;
+
+      const { data: existing } = await supabase
+        .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
+
+      if (existing) {
+        const { error: updateErr } = await supabase
+          .from("team_members").update({ studio: pendingJoin.studioId }).eq("id", existing.id);
+        if (updateErr) { setError("Errore aggiornamento: " + updateErr.message); setLoading(false); return; }
+      } else {
+        const { error: insertErr } = await supabase.from("team_members").insert({
+          user_account: user.id,
+          user_email: user.email,
+          user_name: pendingJoin.memberName,
+          studio: pendingJoin.studioId,
+          role_internal: "Collaboratore Interno",
+          active: true,
+        });
+        if (insertErr) { setError("Errore registrazione: " + insertErr.message); setLoading(false); return; }
+      }
+
+      await seedServiceTaskTemplates(pendingJoin.studioId);
+      localStorage.setItem("asm-active-studio", pendingJoin.studioId);
+      localStorage.removeItem("asm-pending-join");
+      window.location.href = "/dashboard";
+      return;
+    }
+
+    // Conferma email abilitata → mostra schermata "controlla email"
     setLoading(false);
     setDone(true);
   };

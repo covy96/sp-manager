@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
+
+function generateInviteCode() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
 
 const TIPO_FATTURAZIONE = [
   {
@@ -50,14 +57,16 @@ export default function CreateStudioPage({ session }) {
 
     setLoading(true);
 
-    // Salva i dati dello studio in localStorage — verranno usati in /auth/callback
-    localStorage.setItem("asm-pending-studio", JSON.stringify({
+    const pendingStudio = {
       name: studioName.trim(),
       tipo_fatturazione: tipoFatturazione,
       ownerName: `${nome.trim()} ${cognome.trim()}`,
-    }));
+    };
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    // Salva in localStorage come fallback (usato da /auth/callback o /onboarding)
+    localStorage.setItem("asm-pending-studio", JSON.stringify(pendingStudio));
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { full_name: `${nome.trim()} ${cognome.trim()}` } },
@@ -70,6 +79,52 @@ export default function CreateStudioPage({ session }) {
       return;
     }
 
+    // Se la conferma email è disabilitata, la sessione arriva subito → crea lo studio ora
+    if (data?.session?.user) {
+      const user = data.session.user;
+      const code = generateInviteCode();
+
+      const { data: studio, error: studioErr } = await supabase
+        .from("studios")
+        .insert({
+          name: pendingStudio.name,
+          owner_id: user.id,
+          invite_code: code,
+          piano: "free",
+          tipo_fatturazione: pendingStudio.tipo_fatturazione,
+        })
+        .select("*")
+        .single();
+
+      if (studioErr || !studio) {
+        setError("Errore nella creazione dello studio: " + (studioErr?.message || ""));
+        setLoading(false);
+        return;
+      }
+
+      const { error: memberErr } = await supabase.from("team_members").insert({
+        user_account: user.id,
+        user_email: user.email,
+        user_name: pendingStudio.ownerName,
+        studio: studio.id,
+        role_internal: "Owner",
+        active: true,
+      });
+
+      if (memberErr) {
+        setError("Errore registrazione membro: " + memberErr.message);
+        setLoading(false);
+        return;
+      }
+
+      await seedServiceTaskTemplates(studio.id);
+      localStorage.setItem("asm-active-studio", studio.id);
+      localStorage.removeItem("asm-pending-studio");
+      window.location.href = "/dashboard";
+      return;
+    }
+
+    // Conferma email abilitata → mostra schermata "controlla email"
     setLoading(false);
     setDone(true);
   };
