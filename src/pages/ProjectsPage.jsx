@@ -268,7 +268,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 // ── FORM PROGETTO (riutilizzato per nuovo e modifica) ─────────────
 export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, globalContacts, currentMemberId, isEdit = false, onToggleMember, onToggleService, clientSuggestions, onSelectClient, onGanttChange }) {
   const { T } = useTheme();
-  const { isPro } = usePlan();
+  const { isPro, isStudio } = usePlan();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div>
@@ -319,7 +319,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
               })
           }
         </ScrollBox>
-        {isPro && (
+        {(isPro || isStudio) && (
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:8 }}>
             <input type="checkbox" id="gantt_enabled" checked={!!data.gantt_enabled}
               onChange={onGanttChange}
