@@ -51,7 +51,7 @@ export default function AnalisiPage() {
         supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId),
-        supabase.from("commesse").select("id,project_id,valore_contratto,importo_base,nome_commessa,archived").eq("studio",studioId),
+        supabase.from("commesse").select("id,project_id,project_name,nome_commessa,cliente,importo_offerta_base,importo_totale,archived").eq("studio",studioId).eq("archived",false),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
       ]);
@@ -92,7 +92,7 @@ export default function AnalisiPage() {
 
       // Commesse del progetto
       const commProj = commesse.filter(c => c.project_id === proj.id);
-      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.valore_contratto || c.importo_base || 0), 0);
+      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.importo_totale || c.importo_offerta_base || 0), 0);
 
       // Costi extra e collaboratori
       const commIds = commProj.map(c=>c.id);
@@ -271,8 +271,8 @@ export default function AnalisiPage() {
                   return (
                     <tr key={c.id}>
                       <td style={{ ...tdSt, fontWeight:600 }}>{c.nome_commessa || '—'}</td>
-                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.importo_base||0)}</td>
-                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.valore_contratto||0)}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.importo_offerta_base||0)}</td>
+                      <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(c.importo_totale||0)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(ce)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:12 }}>{currency(co)}</td>
                       <td style={{ ...tdSt, ...mono, fontSize:13, fontWeight:600, color:T.red }}>{currency(ce+co)}</td>
