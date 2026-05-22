@@ -67,19 +67,23 @@ export default function TeamPage() {
   const [statsByMember, setStatsByMember] = useState({});
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState("");
+  const [annoFiltro, setAnnoFiltro]       = useState(new Date().getFullYear());
   const [modalOpen, setModalOpen]         = useState(false);
   const [saving, setSaving]               = useState(false);
   const [formError, setFormError]         = useState("");
   const [formData, setFormData]           = useState({ user_name: "", user_email: "", role_internal: "Architetto" });
 
-  const loadData = async () => {
+  const loadData = async (anno) => {
     if (!studioId) return;
     setLoading(true); setError("");
-    const monday = getMondayISODate();
+    const currentAnno = anno ?? annoFiltro;
+    // Timesheet: filtra per anno selezionato
+    const dateFrom = `${currentAnno}-01-01`;
+    const dateTo   = `${currentAnno}-12-31`;
     const [{ data: authData, error: authError }, membersR, tsR, tasksR] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from("team_members").select("*").eq("studio", studioId).order("user_name", { ascending: true }),
-      supabase.from("timesheet").select("team_member,date,hours").gte("date", monday),
+      supabase.from("timesheet").select("team_member,date,hours").gte("date", dateFrom).lte("date", dateTo),
       supabase.from("tasks").select("assigned_member,status,project_id"),
     ]);
     if (authError || !authData?.user?.id) { setError(authError?.message || "Utente non autenticato."); setLoading(false); return; }
@@ -107,7 +111,7 @@ export default function TeamPage() {
     setMembers(loadedMembers); setStatsByMember(normalized); setLoading(false);
   };
 
-  useEffect(() => { if (studioId) loadData(); }, [studioId]);
+  useEffect(() => { if (studioId) loadData(annoFiltro); }, [studioId, annoFiltro]);
 
   const cards = useMemo(() => members.map(m => {
     const s = statsByMember[m.id] ?? { weeklyHours: 0, activeTasks: 0, projects: 0, completedTasks: 0, totalTasks: 0 };
@@ -148,13 +152,21 @@ export default function TeamPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Team</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Panoramica membri e produttività settimanale</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Ore e produttività — {annoFiltro}</div>
         </div>
-        {permissions.canManageUsers && (
-          <BtnPrimary onClick={() => { setFormError(""); setFormData({ user_name: "", user_email: "", role_internal: "Architetto" }); setModalOpen(true); }}>
-            + Aggiungi membro
-          </BtnPrimary>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
+            style={{ padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto' }}>
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+          {permissions.canManageUsers && (
+            <BtnPrimary onClick={() => { setFormError(""); setFormData({ user_name: "", user_email: "", role_internal: "Architetto" }); setModalOpen(true); }}>
+              + Aggiungi membro
+            </BtnPrimary>
+          )}
+        </div>
       </div>
 
       {cards.length === 0 ? (

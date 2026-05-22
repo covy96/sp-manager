@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
@@ -65,23 +65,42 @@ function CheckRow({ checked, onChange, label }) {
 }
 
 // ── COMMESSA CARD ─────────────────────────────────────────────────
-function CommessaCard({ commessa, incassato, onClick }) {
+function CommessaCard({ commessa, incassato, onClick, onArchive }) {
   const { T } = useTheme();
   const base=Number(commessa.importo_offerta_base)||0, pagato=incassato||0, residuo=base-pagato;
   const pct=base>0?Math.min(100,Math.round((pagato/base)*100)):0;
   const [hover,setHover]=useState(false);
+  const [menuOpen,setMenuOpen]=useState(false);
+  const menuRef=useRef(null);
+  useEffect(()=>{
+    function h(e){ if(menuRef.current&&!menuRef.current.contains(e.target)) setMenuOpen(false); }
+    document.addEventListener('mousedown',h);
+    return ()=>document.removeEventListener('mousedown',h);
+  },[]);
   return (
-    <div onClick={onClick} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s'}}>
+    <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-        <div>
+        <div onClick={onClick} style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
           <div style={{fontSize:14,fontWeight:600,color:T.ink,letterSpacing:'-0.01em'}}>{commessa.nome_commessa||"Commessa senza nome"}</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
         </div>
-        <div style={{textAlign:'right'}}>
-          <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.03em'}}>{currency(base)}</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
+        <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+          <div onClick={onClick} style={{textAlign:'right'}}>
+            <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.03em'}}>{currency(base)}</div>
+            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
+          </div>
+          <div ref={menuRef} style={{position:'relative',flexShrink:0}}>
+            <button onClick={e=>{e.stopPropagation();setMenuOpen(p=>!p);}} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,lineHeight:1}}>···</button>
+            {menuOpen&&(
+              <div style={{position:'absolute',right:0,top:'100%',zIndex:20,background:T.surface,border:`0.5px solid ${T.borderMd}`,minWidth:160,boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
+                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
+                  Archivia
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div style={{height:2,background:T.border,marginBottom:10}}>
@@ -114,6 +133,7 @@ export default function CommessePage() {
 
   const [commesse, setCommesse]         = useState([]);
   const [incassatoMap, setIncassatoMap] = useState({});
+  const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
 
@@ -303,16 +323,38 @@ export default function CommessePage() {
   return (
     <div>
       {/* Header */}
+      {/* Anno filtro + header */}
+      {(() => {
+        const anniDisponibili = Array.from(new Set([
+          new Date().getFullYear(),
+          ...commesse.map(c => c.data_commessa || c.created_at).filter(Boolean).map(d => new Date(d).getFullYear())
+        ])).sort((a,b) => b-a);
+
+        const commesseFiltrate = annoFiltro === 0
+          ? commesse
+          : commesse.filter(c => {
+              const d = c.data_commessa || c.created_at;
+              return d && new Date(d).getFullYear() === annoFiltro;
+            });
+
+        return (<>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div>
           <div style={{fontSize:22,fontWeight:600,letterSpacing:'-0.03em',color:T.ink}}>Commesse</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>
-            {commesse.length} commesse · {currency(commesse.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
+            {commesseFiltrate.length} commesse · {currency(commesseFiltrate.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
           </div>
         </div>
-        {permissions.canManageCommesse && (
-          <BtnPrimary onClick={()=>setModalOpen(true)}>+ Nuova</BtnPrimary>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto'}}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          {permissions.canManageCommesse && (
+            <BtnPrimary onClick={()=>setModalOpen(true)}>+ Nuova</BtnPrimary>
+          )}
+        </div>
       </div>
 
       {/* Lista */}
@@ -320,15 +362,17 @@ export default function CommessePage() {
         <div style={{textAlign:'center',padding:64,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
       ) : error ? (
         <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
-      ) : commesse.length===0 ? (
-        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa disponibile.</div>
+      ) : commesseFiltrate.length===0 ? (
+        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa per {annoFiltro || 'questo filtro'}.</div>
       ) : (
         <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
-          {commesse.map(c=>(
-            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)}/>
+          {commesseFiltrate.map(c=>(
+            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }}/>
           ))}
         </div>
       )}
+        </>);
+      })()}
 
       {/* ── MODAL NUOVA COMMESSA ── */}
       {modalOpen && (
