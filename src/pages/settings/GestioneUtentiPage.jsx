@@ -50,6 +50,8 @@ export default function GestioneUtentiPage() {
   const [editRole, setEditRole]             = useState("");
   const [editColor, setEditColor]           = useState("");
   const [activeTab, setActiveTab]           = useState("role");
+  const [confirmRemove, setConfirmRemove]   = useState(false);
+  const [removing, setRemoving]             = useState(false);
 
   useEffect(() => { if (studioId) loadMembers(); }, [studioId]);
 
@@ -69,6 +71,7 @@ export default function GestioneUtentiPage() {
     setEditRole(m.role_internal || "Architetto");
     setEditColor(m.color || PREDEFINED_COLORS[0]);
     setActiveTab("role");
+    setConfirmRemove(false);
   };
 
   const handleSaveRole = async () => {
@@ -88,6 +91,21 @@ export default function GestioneUtentiPage() {
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, color: editColor } : m));
     setSelectedMember(p => ({ ...p, color: editColor }));
     setSaving(false);
+  };
+
+  const handleRemoveUser = async () => {
+    if (!selectedMember) return;
+    setRemoving(true);
+    // Rimuove il membro dallo studio (non cancella task/ore/dati)
+    const { error: e } = await supabase
+      .from("team_members")
+      .delete()
+      .eq("id", selectedMember.id);
+    if (e) { alert("Errore: " + e.message); setRemoving(false); return; }
+    setMembers(p => p.filter(m => m.id !== selectedMember.id));
+    setSelectedMember(null);
+    setConfirmRemove(false);
+    setRemoving(false);
   };
 
   const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
@@ -217,11 +235,41 @@ export default function GestioneUtentiPage() {
                 </div>
 
                 {canEditRoles && !isOwnProfile && (
-                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
-                    <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
-                      style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity: saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
-                      {saving ? "Salvataggio..." : "Salva ruolo"}
-                    </button>
+                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    {/* Elimina utente */}
+                    {!confirmRemove ? (
+                      <button onClick={() => setConfirmRemove(true)}
+                        style={{ background: 'transparent', color: '#ff453a', border: '0.5px solid #ff453a', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', cursor: 'pointer' }}>
+                        Elimina utente
+                      </button>
+                    ) : (
+                      <div style={{ background: 'rgba(255,69,58,0.08)', border: '0.5px solid rgba(255,69,58,0.4)', padding: '10px 14px', flex: 1 }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#ff453a', marginBottom: 8, fontWeight: 600 }}>
+                          Sei sicuro di voler eliminare {selectedMember.user_name || selectedMember.user_email}?
+                        </div>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 10, lineHeight: 1.6 }}>
+                          L'utente verrà rimosso dallo studio. Le ore, le task e i dati inseriti rimarranno. L'account di accesso verrà disattivato.
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={handleRemoveUser} disabled={removing}
+                            style={{ background: '#ff453a', color: '#fff', border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 14px', cursor: removing ? 'not-allowed' : 'pointer', opacity: removing ? 0.6 : 1 }}>
+                            {removing ? "Rimozione..." : "Sì, elimina"}
+                          </button>
+                          <button onClick={() => setConfirmRemove(false)}
+                            style={{ background: 'transparent', color: T.muted, border: `0.5px solid ${T.border}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '7px 14px', cursor: 'pointer' }}>
+                            Annulla
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Salva ruolo */}
+                    {!confirmRemove && (
+                      <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
+                        style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity: saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
+                        {saving ? "Salvataggio..." : "Salva ruolo"}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
