@@ -126,6 +126,7 @@ export default function CommessaDetailPage() {
   const [menuOpen, setMenuOpen]           = useState(false);
   const [openMenuId, setOpenMenuId]       = useState(null);
   const [showCollaboratori, setShowCollaboratori] = useState(false);
+  const [showCostiInterni, setShowCostiInterni]   = useState(false);
 
   const [editOpen, setEditOpen]           = useState(false);
   const [editForm, setEditForm]           = useState({});
@@ -691,111 +692,135 @@ export default function CommessaDetailPage() {
         </Panel>
       </div>
 
-      {/* COLLABORATORI */}
-      <Panel>
-        <SectionHeader title="Collaboratori Esterni" action={
-          <button onClick={() => setShowCollaboratori(p => !p)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.08em' }}>
-            {showCollaboratori ? 'Nascondi' : 'Mostra'}
-          </button>
-        } />
-        <form onSubmit={handleAddCollab} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px auto', gap: 8, marginBottom: 8 }}>
-          <Input value={newCollab.ruolo} onChange={e => setNewCollab(p => ({ ...p, ruolo: e.target.value }))} placeholder="Ruolo" />
-          <Input value={newCollab.nome_cognome} onChange={e => setNewCollab(p => ({ ...p, nome_cognome: e.target.value }))} placeholder="Nome e cognome" required />
-          <Input type="number" value={newCollab.importo} onChange={e => setNewCollab(p => ({ ...p, importo: e.target.value }))} placeholder="Importo" />
-          <BtnPrimary type="submit" disabled={savingCollab} style={{ whiteSpace: 'nowrap' }}>+ Aggiungi</BtnPrimary>
-        </form>
-        {showCollaboratori && collaboratori.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>{['Ruolo','Nome','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-            <tbody>
-              {collaboratori.map(c => (
-                <tr key={c.id}>
-                  <td style={{ ...tdSt, color: T.muted, ...monoSt }}>{c.ruolo || '—'}</td>
-                  <td style={{ ...tdSt, fontWeight: 600 }}>{c.nome_cognome}</td>
-                  <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(c.importo)}</td>
-                  <td style={tdSt}><RowMenu open={openMenuId === `collab-${c.id}`} onOpen={() => setOpenMenuId(`collab-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCollab(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCollab(c.id) }]} /></td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot><tr><td colSpan={2} style={{ ...tdSt, ...monoSt, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</td><td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(totCollaboratori)}</td><td /></tr></tfoot>
-          </table>
-        )}
-        {showCollaboratori && collaboratori.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 0', textAlign: 'center' }}>Nessun collaboratore</div>}
-      </Panel>
+      {/* ── COLLABORATORI + COSTI INTERNI affiancati ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginTop:14 }}>
 
-      {/* ── COSTI INTERNI ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, marginTop:14 }}>
-        <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
-          <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted }}>
-            Solo per analisi — non incide su proforma o fatture
+        {/* COLLABORATORI ESTERNI */}
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+          <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Collaboratori esterni</div>
+              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                {currency(totCollaboratori)} totale
+              </div>
+            </div>
+            <button onClick={()=>setShowCollaboratori(p=>!p)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'4px 10px' }}>
+              {showCollaboratori ? 'Chiudi ↑' : `Vedi (${collaboratori.length}) ↓`}
+            </button>
+          </div>
+
+          {showCollaboratori && (
+            <>
+              {collaboratori.length > 0 && (
+                <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                  <thead><tr>{['Ruolo','Nome','Importo',''].map(h=><th key={h} style={thSt}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {collaboratori.map(c=>(
+                      <tr key={c.id}>
+                        <td style={{ ...tdSt, color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:11 }}>{c.ruolo||'—'}</td>
+                        <td style={{ ...tdSt, fontWeight:600, fontSize:12 }}>{c.nome_cognome}</td>
+                        <td style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontWeight:600, fontSize:12 }}>{currency(c.importo)}</td>
+                        <td style={tdSt}><RowMenu open={openMenuId===`collab-${c.id}`} onOpen={()=>setOpenMenuId(`collab-${c.id}`)} onClose={()=>setOpenMenuId(null)} items={[{label:'Modifica',onClick:()=>openEditCollab(c)},{label:'Elimina',danger:true,onClick:()=>handleDeleteCollab(c.id)}]}/></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot><tr><td colSpan={2} style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted }}>Totale</td><td style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontWeight:600 }}>{currency(totCollaboratori)}</td><td/></tr></tfoot>
+                </table>
+              )}
+              {collaboratori.length === 0 && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted, padding:'12px 16px', textAlign:'center' }}>Nessun collaboratore</div>}
+            </>
+          )}
+
+          {/* Form aggiungi collaboratore */}
+          <div style={{ padding:'10px 14px', borderTop:`0.5px solid ${T.border}` }}>
+            <form onSubmit={handleAddCollab} style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <Input value={newCollab.ruolo} onChange={e=>setNewCollab(p=>({...p,ruolo:e.target.value}))} placeholder="Ruolo"/>
+                <Input value={newCollab.nome_cognome} onChange={e=>setNewCollab(p=>({...p,nome_cognome:e.target.value}))} placeholder="Nome e cognome" required/>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
+                <Input type="number" value={newCollab.importo} onChange={e=>setNewCollab(p=>({...p,importo:e.target.value}))} placeholder="Importo €"/>
+                <BtnPrimary type="submit" disabled={savingCollab}>+ Aggiungi</BtnPrimary>
+              </div>
+            </form>
           </div>
         </div>
 
-        {/* Lista costi interni */}
-        {costiInterni.length > 0 && (
-          <div style={{ borderBottom:`0.5px solid ${T.border}` }}>
-            {costiInterni.map(c => (
-              <div key={c.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 20px', borderBottom:`0.5px solid ${T.border}` }}>
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div>
-                    <div style={{ fontSize:13, color:T.ink, fontWeight:500 }}>{c.descrizione}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
-                      {c.nome_membro && <span>{c.nome_membro} · </span>}
-                      {c.data && new Date(c.data).toLocaleDateString('it-IT')}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:T.red }}>
-                    {new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(c.importo)}
-                  </div>
-                  <button onClick={()=>handleDeleteCostoInterno(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16 }}>×</button>
-                </div>
+        {/* COSTI INTERNI */}
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+          <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Costi interni</div>
+              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                {currency(costiInterni.reduce((s,c)=>s+Number(c.importo),0))} · solo per analisi
               </div>
-            ))}
-            <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 20px', borderBottom:`0.5px solid ${T.border}` }}>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Totale: </span>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red, marginLeft:8 }}>
-                {new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(costiInterni.reduce((s,c)=>s+Number(c.importo),0))}
-              </span>
+            </div>
+            <button onClick={()=>setShowCostiInterni(p=>!p)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'4px 10px' }}>
+              {showCostiInterni ? 'Chiudi ↑' : `Vedi (${costiInterni.length}) ↓`}
+            </button>
+          </div>
+
+          {showCostiInterni && (
+            <>
+              {costiInterni.length > 0 && (
+                <div>
+                  {costiInterni.map(c=>(
+                    <div key={c.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+                      <div>
+                        <div style={{ fontSize:12, color:T.ink, fontWeight:500 }}>{c.descrizione}</div>
+                        <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:1 }}>
+                          {c.nome_membro&&<span>{c.nome_membro} · </span>}
+                          {c.data&&new Date(c.data).toLocaleDateString('it-IT')}
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red }}>{currency(c.importo)}</span>
+                        <button onClick={()=>handleDeleteCostoInterno(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16 }}>×</button>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ display:'flex', justifyContent:'flex-end', padding:'6px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Totale: </span>
+                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red, marginLeft:8 }}>
+                      {currency(costiInterni.reduce((s,c)=>s+Number(c.importo),0))}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {costiInterni.length === 0 && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted, padding:'12px 16px', textAlign:'center' }}>Nessun costo interno</div>}
+            </>
+          )}
+
+          {/* Form aggiungi costo interno */}
+          <div style={{ padding:'10px 14px', borderTop:`0.5px solid ${T.border}` }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <select value={newCostoInterno.team_member_id} onChange={e=>setNewCostoInterno(p=>({...p,team_member_id:e.target.value}))}
+                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}>
+                  <option value=''>— Membro —</option>
+                  {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email}</option>)}
+                </select>
+                <input type='date' value={newCostoInterno.data} onChange={e=>setNewCostoInterno(p=>({...p,data:e.target.value}))}
+                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr auto', gap:8 }}>
+                <input type='text' value={newCostoInterno.descrizione} onChange={e=>setNewCostoInterno(p=>({...p,descrizione:e.target.value}))}
+                  onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+                  placeholder='Descrizione spesa...'
+                  style={{ padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }}/>
+                <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e=>setNewCostoInterno(p=>({...p,importo:e.target.value}))}
+                  onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+                  placeholder='€'
+                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
+                <button onClick={handleAddCostoInterno} disabled={savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo}
+                  style={{ background:T.navy, border:'none', color:'#EEF1F6', cursor:'pointer', padding:'0 14px', fontSize:18, opacity:savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo?0.4:1 }}>
+                  +
+                </button>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Form aggiunta */}
-        <div style={{ padding:'14px 20px', display:'grid', gridTemplateColumns:'1fr 2fr 100px 90px 36px', gap:8, alignItems:'end' }}>
-          <div>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Membro</div>
-            <select value={newCostoInterno.team_member_id} onChange={e=>setNewCostoInterno(p=>({...p,team_member_id:e.target.value}))}
-              style={{ width:'100%', padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}>
-              <option value=''>— Nessuno —</option>
-              {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email}</option>)}
-            </select>
-          </div>
-          <div>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Descrizione *</div>
-            <input type='text' value={newCostoInterno.descrizione} onChange={e=>setNewCostoInterno(p=>({...p,descrizione:e.target.value}))}
-              onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
-              placeholder='Es. Trasferta, materiali...'
-              style={{ width:'100%', padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none', boxSizing:'border-box' }}/>
-          </div>
-          <div>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Importo €</div>
-            <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e=>setNewCostoInterno(p=>({...p,importo:e.target.value}))}
-              onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
-              style={{ width:'100%', padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none', boxSizing:'border-box' }}/>
-          </div>
-          <div>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>Data</div>
-            <input type='date' value={newCostoInterno.data} onChange={e=>setNewCostoInterno(p=>({...p,data:e.target.value}))}
-              style={{ width:'100%', padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none', boxSizing:'border-box' }}/>
-          </div>
-          <button onClick={handleAddCostoInterno} disabled={savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo}
-            style={{ background:T.navy, border:'none', color:'#EEF1F6', cursor:'pointer', height:32, width:36, fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', opacity:savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo?0.4:1 }}>
-            +
-          </button>
         </div>
+
       </div>
 
       {/* ════ MODALI ════ */}
