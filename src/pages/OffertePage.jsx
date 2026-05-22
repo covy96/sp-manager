@@ -28,14 +28,14 @@ export default function OffertePage() {
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
+  const [accettaModal, setAccettaModal] = useState(false);
+  const [accettaForm, setAccettaForm]   = useState(null);
+  const [accettaId, setAccettaId]       = useState(null);
 
   const [form, setForm] = useState({
     numero_offerta:'', nome_offerta:'', cliente:'',
     project_id:'', data_offerta:'',
     importo_offerta_base:'',
-    perc_iva1:60, perc_contributo1:5,
-    perc_iva2:40, perc_contributo2:4,
-    perc_iva_finale:22,
     note:'',
   });
 
@@ -51,18 +51,6 @@ export default function OffertePage() {
   };
 
   useEffect(()=>{ loadData(); },[studioId]);
-
-  // Calcola importo totale
-  const calcTotale = (form) => {
-    const base = Number(form.importo_offerta_base)||0;
-    const parte1 = base * (Number(form.perc_iva1)||0)/100;
-    const contrib1 = parte1 * (Number(form.perc_contributo1)||0)/100;
-    const parte2 = base * (Number(form.perc_iva2)||0)/100;
-    const contrib2 = parte2 * (Number(form.perc_contributo2)||0)/100;
-    const subtot = base + contrib1 + contrib2;
-    const iva = subtot * (Number(form.perc_iva_finale)||0)/100;
-    return subtot + iva;
-  };
 
   const handleSave = async e => {
     e.preventDefault();
@@ -80,46 +68,53 @@ export default function OffertePage() {
       project_name: proj?.name||null,
       data_offerta: form.data_offerta||null,
       importo_offerta_base: Number(form.importo_offerta_base),
-      perc_iva1: Number(form.perc_iva1),
-      perc_contributo1: Number(form.perc_contributo1),
-      perc_iva2: Number(form.perc_iva2),
-      perc_contributo2: Number(form.perc_contributo2),
-      perc_iva_finale: Number(form.perc_iva_finale),
-      importo_totale: calcTotale(form),
+      perc_iva1: 60, perc_contributo1: 5,
+      perc_iva2: 40, perc_contributo2: 4,
+      perc_iva_finale: 22,
+      importo_totale: Number(form.importo_offerta_base),
       note: form.note||null,
       stato: 'offerta',
     });
     if (error) { setFormError(error.message); setSaving(false); return; }
     setModalOpen(false);
-    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', importo_offerta_base:'', perc_iva1:60, perc_contributo1:5, perc_iva2:40, perc_contributo2:4, perc_iva_finale:22, note:'' });
+    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', importo_offerta_base:'', note:'' });
     await loadData();
     setSaving(false);
   };
 
-  const handleAccetta = async (offerta) => {
-    if (!confirm(`Accettare l'offerta "${offerta.nome_offerta}" e creare la commessa?`)) return;
-    // Crea commessa
-    const { data:commessa, error:cErr } = await supabase.from("commesse").insert({
+  const openAccetta = (o) => {
+    setAccettaId(o.id);
+    setAccettaForm({
+      nome_commessa: o.nome_offerta,
+      cliente: o.cliente,
+      project_id: o.project_id||'',
+      data_commessa: o.data_offerta||'',
+      importo_offerta_base: o.importo_offerta_base,
+      numero_offerta: o.numero_offerta,
+      note: o.note||'',
+    });
+    setAccettaModal(true);
+  };
+
+  const handleConfermaAccetta = async () => {
+    setSaving(true);
+    const proj = progetti.find(p=>p.id===accettaForm.project_id);
+    const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
       studio: studioId,
-      numero_offerta: offerta.numero_offerta,
-      nome_commessa: offerta.nome_offerta,
-      cliente: offerta.cliente,
-      client_id: offerta.client_id||null,
-      project_id: offerta.project_id||null,
-      project_name: offerta.project_name||null,
-      data_commessa: offerta.data_offerta||null,
-      importo_offerta_base: offerta.importo_offerta_base,
-      perc_iva1: offerta.perc_iva1,
-      perc_contributo1: offerta.perc_contributo1,
-      perc_iva2: offerta.perc_iva2,
-      perc_contributo2: offerta.perc_contributo2,
-      perc_iva_finale: offerta.perc_iva_finale,
-      importo_totale: offerta.importo_totale,
+      numero_offerta: accettaForm.numero_offerta,
+      nome_commessa: accettaForm.nome_commessa,
+      cliente: accettaForm.cliente,
+      project_id: accettaForm.project_id||null,
+      project_name: proj?.name||null,
+      data_commessa: accettaForm.data_commessa||null,
+      importo_offerta_base: Number(accettaForm.importo_offerta_base),
+      perc_iva1:60, perc_contributo1:5, perc_iva2:40, perc_contributo2:4, perc_iva_finale:22,
+      importo_totale: Number(accettaForm.importo_offerta_base),
       stato_pagamento: 'non_iniziato',
     }).select().single();
-    if (cErr) { alert('Errore creazione commessa: '+cErr.message); return; }
-    // Aggiorna offerta
-    await supabase.from("offerte").update({ stato:'accettata', commessa_id:commessa.id }).eq("id",offerta.id);
+    if (cErr) { alert('Errore: '+cErr.message); setSaving(false); return; }
+    await supabase.from('offerte').update({ stato:'accettata', commessa_id:commessa.id }).eq('id',accettaId);
+    setAccettaModal(false); setSaving(false);
     await loadData();
     navigate(`/commesse/${commessa.id}`);
   };
@@ -238,7 +233,7 @@ export default function OffertePage() {
                   Dettaglio
                 </button>
                 {o.stato==='offerta' && <>
-                  <button onClick={()=>handleAccetta(o)} style={{ flex:1, padding:'7px 0', border:'none', background:T.green, color:'#fff', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  <button onClick={()=>openAccetta(o)} style={{ flex:1, padding:'7px 0', border:'none', background:T.green, color:'#fff', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
                     Accetta
                   </button>
                   <button onClick={()=>handleRifiuta(o)} style={{ flex:1, padding:'7px 0', border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
@@ -299,33 +294,6 @@ export default function OffertePage() {
                   <label style={labelSt}>Importo offerta base (€) *</label>
                   <input type="number" min={0} step={0.01} value={form.importo_offerta_base} onChange={e=>setForm(p=>({...p,importo_offerta_base:e.target.value}))} required style={inputSt}/>
                 </div>
-                {/* Percentuali */}
-                <div>
-                  <label style={labelSt}>% IVA parte 1</label>
-                  <input type="number" value={form.perc_iva1} onChange={e=>setForm(p=>({...p,perc_iva1:e.target.value}))} style={inputSt}/>
-                </div>
-                <div>
-                  <label style={labelSt}>% Contributo 1</label>
-                  <input type="number" value={form.perc_contributo1} onChange={e=>setForm(p=>({...p,perc_contributo1:e.target.value}))} style={inputSt}/>
-                </div>
-                <div>
-                  <label style={labelSt}>% IVA parte 2</label>
-                  <input type="number" value={form.perc_iva2} onChange={e=>setForm(p=>({...p,perc_iva2:e.target.value}))} style={inputSt}/>
-                </div>
-                <div>
-                  <label style={labelSt}>% Contributo 2</label>
-                  <input type="number" value={form.perc_contributo2} onChange={e=>setForm(p=>({...p,perc_contributo2:e.target.value}))} style={inputSt}/>
-                </div>
-                <div>
-                  <label style={labelSt}>% IVA finale</label>
-                  <input type="number" value={form.perc_iva_finale} onChange={e=>setForm(p=>({...p,perc_iva_finale:e.target.value}))} style={inputSt}/>
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-                  <label style={labelSt}>Totale calcolato</label>
-                  <div style={{ padding:'8px 12px', background:T.surface2, border:`0.5px solid ${T.border}`, ...mono, fontSize:14, fontWeight:600, color:T.navy }}>
-                    {currency(calcTotale(form))}
-                  </div>
-                </div>
                 <div style={{ gridColumn:'span 2' }}>
                   <label style={labelSt}>Note</label>
                   <input type="text" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} placeholder="Note aggiuntive..." style={inputSt}/>
@@ -341,6 +309,52 @@ export default function OffertePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal accettazione */}
+      {accettaModal && accettaForm && (
+        <div style={{ position:'fixed', inset:0, zIndex:70, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
+          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Accetta offerta</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Verifica i dati prima di creare la commessa</div>
+              </div>
+              <button onClick={()=>setAccettaModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div>
+                <label style={labelSt}>Nome commessa</label>
+                <input type="text" value={accettaForm.nome_commessa} onChange={e=>setAccettaForm(p=>({...p,nome_commessa:e.target.value}))} style={inputSt}/>
+              </div>
+              <div>
+                <label style={labelSt}>Cliente</label>
+                <input type="text" value={accettaForm.cliente} onChange={e=>setAccettaForm(p=>({...p,cliente:e.target.value}))} style={inputSt}/>
+              </div>
+              <div>
+                <label style={labelSt}>Progetto</label>
+                <select value={accettaForm.project_id} onChange={e=>setAccettaForm(p=>({...p,project_id:e.target.value}))} style={{...inputSt,cursor:'pointer'}}>
+                  <option value="">— Nessun progetto —</option>
+                  {progetti.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelSt}>Data commessa</label>
+                <input type="date" value={accettaForm.data_commessa} onChange={e=>setAccettaForm(p=>({...p,data_commessa:e.target.value}))} style={inputSt}/>
+              </div>
+              <div>
+                <label style={labelSt}>Importo base (€)</label>
+                <input type="number" value={accettaForm.importo_offerta_base} onChange={e=>setAccettaForm(p=>({...p,importo_offerta_base:e.target.value}))} style={inputSt}/>
+              </div>
+            </div>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+              <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
+                {saving?'Creazione...':'Crea commessa →'}
+              </button>
+            </div>
           </div>
         </div>
       )}
