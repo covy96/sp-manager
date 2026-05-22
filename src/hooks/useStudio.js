@@ -48,6 +48,24 @@ export function useStudio() {
           .eq("id", sid)
           .single();
         setStudio(st ?? null);
+      } else {
+        // Fallback: cerca uno studio di cui l'utente è owner (team_member senza studio)
+        const { data: ownedStudio } = await supabase
+          .from("studios")
+          .select("*")
+          .eq("owner_id", u.id)
+          .maybeSingle();
+        if (ownedStudio) {
+          setStudio(ownedStudio);
+          setStudioId(ownedStudio.id);
+          localStorage.setItem("asm-active-studio", ownedStudio.id);
+          // Aggiorna anche il team_member se esiste
+          if (tm?.id) {
+            await supabase.from("team_members")
+              .update({ studio: ownedStudio.id, role_internal: "Owner" })
+              .eq("id", tm.id);
+          }
+        }
       }
 
       setLoading(false);

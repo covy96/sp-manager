@@ -102,7 +102,13 @@ const DEFAULT_PERMISSIONS = {
 };
 
 export function usePermissions() {
-  const { teamMember } = useStudio();
+  const { teamMember, studio, user } = useStudio();
   const role = teamMember?.role_internal;
+
+  // Fallback: se l'utente è il proprietario dello studio ma il ruolo non è settato
+  if (!role && studio?.owner_id && user?.id && studio.owner_id === user.id) {
+    return ROLE_PERMISSIONS["Owner"];
+  }
+
   return ROLE_PERMISSIONS[role] ?? DEFAULT_PERMISSIONS;
 }
