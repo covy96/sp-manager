@@ -25,7 +25,7 @@ const ALL_MENU_ITEMS = [
   { label:"Fatture",      path:"/fatture",               num:"11", roles:"pm",    minPlan:"studio" },
   { label:"Report",       path:"/report",                num:"12", roles:"pm",    minPlan:"studio" },
   { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
-  { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"free"   },
+  { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"pro"    },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
