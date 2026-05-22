@@ -33,6 +33,7 @@ const TAB_ITEMS = [
 const ALL_MENU_ITEMS = [
   { label:'Dashboard',      path:'/dashboard',                    roles:'all', minPlan:'free'   },
   { label:'Commesse',       path:'/commesse',                     roles:'all', minPlan:'free'   },
+  { label:'Offerte',        path:'/offerte',                      roles:'pm',  minPlan:'studio' },
   { label:'Team',           path:'/team',                         roles:'all', minPlan:'studio' },
   { label:'Monitoraggio',   path:'/monitoraggio-commesse',        roles:'pm',  minPlan:'studio' },
   { label:'Proforma',       path:'/proforma',                     roles:'pm',  minPlan:'studio' },

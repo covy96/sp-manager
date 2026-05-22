@@ -12,19 +12,20 @@ import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
 const ALL_MENU_ITEMS = [
-  { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all", minPlan:"free"   },
-  { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all", minPlan:"free"   },
-  { label:"Progetti",     path:"/progetti",              num:"03", roles:"all", minPlan:"free"   },
-  { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all", minPlan:"free"   },
-  { label:"Calendario",   path:"/calendario",            num:"05", roles:"all", minPlan:"free"   },
-  { label:"Commesse",     path:"/commesse",              num:"06", roles:"all", minPlan:"free"   },
-  { label:"Team",         path:"/team",                  num:"07", roles:"all", minPlan:"studio" },
-  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"08", roles:"pm",  minPlan:"studio" },
-  { label:"Proforma",     path:"/proforma",              num:"09", roles:"pm",  minPlan:"studio" },
-  { label:"Fatture",      path:"/fatture",               num:"10", roles:"pm",  minPlan:"studio" },
-  { label:"Report",       path:"/report",                num:"11", roles:"pm",  minPlan:"studio" },
-  { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm",  minPlan:"studio" },
-  { label:"Analisi",      path:"/analisi",               num:"13", roles:"owner", minPlan:"free"  },
+  { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all",   minPlan:"free"   },
+  { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all",   minPlan:"free"   },
+  { label:"Progetti",     path:"/progetti",              num:"03", roles:"all",   minPlan:"free"   },
+  { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all",   minPlan:"free"   },
+  { label:"Calendario",   path:"/calendario",            num:"05", roles:"all",   minPlan:"free"   },
+  { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
+  { label:"Offerte",      path:"/offerte",               num:"07", roles:"pm",    minPlan:"studio" },
+  { label:"Team",         path:"/team",                  num:"08", roles:"all",   minPlan:"studio" },
+  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"09", roles:"pm",    minPlan:"studio" },
+  { label:"Proforma",     path:"/proforma",              num:"10", roles:"pm",    minPlan:"studio" },
+  { label:"Fatture",      path:"/fatture",               num:"11", roles:"pm",    minPlan:"studio" },
+  { label:"Report",       path:"/report",                num:"12", roles:"pm",    minPlan:"studio" },
+  { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
+  { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"free"   },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
