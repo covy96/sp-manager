@@ -51,7 +51,7 @@ export default function AnalisiPage() {
         supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId),
-        supabase.from("commesse").select("id,project_id,project_name,nome_commessa,cliente,importo_offerta_base,importo_totale,archived").eq("studio",studioId).eq("archived",false),
+        supabase.from("commesse").select("id,project_id,project_name,nome_commessa,cliente,importo_offerta_base,importo_totale,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
       ]);
