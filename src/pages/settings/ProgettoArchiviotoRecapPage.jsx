@@ -28,6 +28,13 @@ export default function ProgettoArchiviotoRecapPage() {
   const [members, setMembers]   = useState([]);
   const [commesse, setCommesse] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [categoriAperte, setCategoriAperte] = useState(new Set());
+
+  const toggleCategoria = (cat) => setCategoriAperte(prev => {
+    const next = new Set(prev);
+    next.has(cat) ? next.delete(cat) : next.add(cat);
+    return next;
+  });
 
   useEffect(() => {
     if (!id || !studioId) return;
@@ -43,7 +50,7 @@ export default function ProgettoArchiviotoRecapPage() {
         supabase.from("tasks").select("*").eq("project_id", id).is("deleted_at", null),
         supabase.from("timesheet").select("*").eq("project_id", id).eq("studio", studioId),
         supabase.from("team_members").select("id, user_name, user_email, color").eq("studio", studioId),
-        supabase.from("commesse").select("id, nome_commessa, importo_offerta_base, importo_totale, importo_incassato, stato_pagamento").eq("project_id", id),
+        supabase.from("commesse").select("id, nome_commessa, importo_offerta_base, importo_totale, importo_incassato, stato_pagamento, archived").eq("project_id", id),
       ]);
       setProject(proj);
       setTasks(tsk ?? []);
@@ -144,15 +151,31 @@ export default function ProgettoArchiviotoRecapPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {Object.entries(perCategoria).map(([cat, { totale, completate }]) => {
               const perc = totale > 0 ? Math.round((completate/totale)*100) : 0;
+              const isOpen = categoriAperte.has(cat);
+              const taskDiQuesta = tasks.filter(t => !t.parent_task_id && (t.categoria||'Senza categoria') === cat);
               return (
                 <div key={cat}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                    <span style={{ fontSize:13, color:T.ink }}>{cat}</span>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, cursor:'pointer' }} onClick={()=>toggleCategoria(cat)}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ ...mono, fontSize:11, color:T.muted, transition:'transform 0.15s', display:'inline-block', transform:isOpen?'rotate(90deg)':'rotate(0deg)' }}>›</span>
+                      <span style={{ fontSize:13, color:T.ink, fontWeight:600 }}>{cat}</span>
+                    </div>
                     <span style={{ ...mono, fontSize:11, color:T.muted }}>{completate}/{totale} · {perc}%</span>
                   </div>
-                  <div style={{ height:4, background:T.border, borderRadius:2 }}>
+                  <div style={{ height:4, background:T.border, borderRadius:2, marginBottom: isOpen?12:0 }}>
                     <div style={{ height:4, background:perc===100?T.green:T.navy, width:`${perc}%`, borderRadius:2, transition:'width 0.3s' }}/>
                   </div>
+                  {isOpen && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:8 }}>
+                      {taskDiQuesta.map(t => (
+                        <div key={t.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', background:t.status==='completed'?T.greenLight:T.surface2, border:`0.5px solid ${t.status==='completed'?T.green:T.border}` }}>
+                          <span style={{ color:t.status==='completed'?T.green:T.muted, fontSize:12 }}>{t.status==='completed'?'✓':'○'}</span>
+                          <span style={{ fontSize:12, color:T.ink }}>{t.title}</span>
+                          {t.assigned_to_name && <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft:'auto' }}>{t.assigned_to_name}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -203,16 +226,23 @@ export default function ProgettoArchiviotoRecapPage() {
               const inc = Number(c.importo_incassato||0);
               const perc = tot > 0 ? Math.round((inc/tot)*100) : 0;
               return (
-                <div key={c.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                <button key={c.id}
+                  onClick={()=> navigate(c.archived ? `/impostazioni/commesse-archiviate/${c.id}` : `/commesse/${c.id}`)}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:T.surface2, border:`0.5px solid ${T.border}`, cursor:'pointer', textAlign:'left', width:'100%' }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
+                >
                   <div>
                     <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{c.nome_commessa}</div>
-                    <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.08em' }}>{c.stato_pagamento||'—'}</div>
+                    <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+                      {c.stato_pagamento||'—'} {c.archived ? '· archiviata' : ''}
+                    </div>
                   </div>
                   <div style={{ textAlign:'right' }}>
                     <div style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(tot)}</div>
-                    <div style={{ ...mono, fontSize:9, color:T.green, marginTop:2 }}>{perc}% incassato</div>
+                    <div style={{ ...mono, fontSize:9, color:T.green, marginTop:2 }}>{perc}% incassato →</div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
