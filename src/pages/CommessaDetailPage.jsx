@@ -256,7 +256,7 @@ export default function CommessaDetailPage() {
     suddivisione
       .filter(s => s.pagato)
       .reduce((sum, s) => {
-        const importoRata = (importoBase * (Number(s.percentuale) || 0)) / 100;
+        const importoRata = Number(s.importo_fisso) || (importoBase * (Number(s.percentuale) || 0) / 100);
         return sum + importoRata;
       }, 0)
   , [suddivisione, importoBase]);
