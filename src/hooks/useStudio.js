@@ -25,7 +25,7 @@ export function useStudio() {
         .from("team_members")
         .select("*")
         .eq("user_account", u.id)
-        .single();
+        .maybeSingle();
 
       setTeamMember(tm ?? null);
       const sid = tm?.studio ?? null;
