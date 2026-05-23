@@ -72,7 +72,7 @@ export default function MonitoraggioCommessePage() {
   const [commesse, setCommesse]                   = useState([]);
   const [pagamentiByCommessa, setPagamentiByCommessa] = useState({});
   const [incassatoPerCommessa, setIncassatoPerCommessa] = useState({});
-  const [selectedYear, setSelectedYear]           = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear]           = useState(new Date().getFullYear()); // null = tutti gli anni
   const [sortBy, setSortBy]                       = useState("offerta");
   const [sortDirection, setSortDirection]         = useState("desc");
   const [loading, setLoading]                     = useState(true);
@@ -129,14 +129,6 @@ export default function MonitoraggioCommessePage() {
     };
   }), [commesse, pagamentiByCommessa, incassatoPerCommessa, permissions.canViewFinancials]);
 
-  const totals = useMemo(() => rows.reduce((acc, r) => {
-    acc.valoreContratti += r.valoreContratto;
-    acc.incassato += r.incassato;
-    return acc;
-  }, { valoreContratti: 0, incassato: 0 }), [rows]);
-
-  const daIncassare = totals.valoreContratti - totals.incassato;
-
   const availableYears = useMemo(() => {
     const years = rows.map(r => {
       const d = getReferenceDate(r);
@@ -147,21 +139,55 @@ export default function MonitoraggioCommessePage() {
     return years.length === 0 ? [new Date().getFullYear()] : [...new Set(years)].sort((a, b) => b - a);
   }, [rows]);
 
-  const chartData = useMemo(() => {
-    const monthly = Array.from({ length: 12 }, (_, i) => ({ month: MONTHS[i], valore: 0 }));
-    rows.forEach(r => {
+  // Righe filtrate per anno (null = tutti)
+  const filteredRows = useMemo(() => {
+    if (selectedYear === null) return rows;
+    return rows.filter(r => {
       const d = getReferenceDate(r);
-      if (!d) return;
-      const date = new Date(d);
-      if (isNaN(date.getTime()) || date.getFullYear() !== selectedYear) return;
-      monthly[date.getMonth()].valore += r.valoreContratto;
+      if (!d) return false;
+      const y = new Date(d).getFullYear();
+      return !isNaN(y) && y === selectedYear;
     });
-    return monthly;
+  }, [rows, selectedYear]);
+
+  const totals = useMemo(() => filteredRows.reduce((acc, r) => {
+    acc.valoreContratti += r.valoreContratto;
+    acc.incassato += r.incassato;
+    return acc;
+  }, { valoreContratti: 0, incassato: 0 }), [filteredRows]);
+
+  const daIncassare = totals.valoreContratti - totals.incassato;
+
+  // Grafico: mensile per anno specifico, annuale per "tutti gli anni"
+  const chartData = useMemo(() => {
+    if (selectedYear !== null) {
+      const monthly = Array.from({ length: 12 }, (_, i) => ({ month: MONTHS[i], valore: 0 }));
+      rows.forEach(r => {
+        const d = getReferenceDate(r);
+        if (!d) return;
+        const date = new Date(d);
+        if (isNaN(date.getTime()) || date.getFullYear() !== selectedYear) return;
+        monthly[date.getMonth()].valore += r.valoreContratto;
+      });
+      return monthly;
+    } else {
+      // Tutti gli anni: totale per anno
+      const byYear = {};
+      rows.forEach(r => {
+        const d = getReferenceDate(r);
+        if (!d) return;
+        const y = new Date(d).getFullYear();
+        if (isNaN(y)) return;
+        byYear[y] = (byYear[y] || 0) + r.valoreContratto;
+      });
+      return Object.entries(byYear).sort(([a],[b]) => Number(a)-Number(b))
+        .map(([year, valore]) => ({ month: String(year), valore }));
+    }
   }, [rows, selectedYear]);
 
   const sortedRows = useMemo(() => {
     const mult = sortDirection === "asc" ? 1 : -1;
-    return [...rows].sort((a, b) => {
+    return [...filteredRows].sort((a, b) => {
       if (sortBy === "offerta") return (a.offertaSortValue - b.offertaSortValue) * mult;
       if (sortBy === "cliente") return (a.cliente || "").localeCompare(b.cliente || "", "it", { sensitivity: "base" }) * mult;
       if (sortBy === "valore")    return (a.valoreContratto - b.valoreContratto) * mult;
@@ -170,7 +196,7 @@ export default function MonitoraggioCommessePage() {
       if (sortBy === "giorni")    return (a.giorniApertura - b.giorniApertura) * mult;
       return 0;
     });
-  }, [rows, sortBy, sortDirection]);
+  }, [filteredRows, sortBy, sortDirection]);
 
   const handleSort = col => {
     if (sortBy === col) { setSortDirection(p => p === "asc" ? "desc" : "asc"); return; }
@@ -202,11 +228,11 @@ export default function MonitoraggioCommessePage() {
 
       {/* KPI */}
       <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
-        <KpiCard label="Valore contratti totale" value={currency(totals.valoreContratti)} color={T.navy} />
+        <KpiCard label={selectedYear ? `Valore contratti ${selectedYear}` : "Valore contratti — tutti gli anni"} value={currency(totals.valoreContratti)} color={T.navy} />
         {permissions.canViewFinancials && (
           <>
-            <KpiCard label="Incassato totale"    value={currency(totals.incassato)} color={T.green} />
-            <KpiCard label="Da incassare totale" value={currency(daIncassare)}      color={T.red} />
+            <KpiCard label={selectedYear ? `Incassato ${selectedYear}` : "Incassato — tutti gli anni"}       value={currency(totals.incassato)} color={T.green} />
+            <KpiCard label={selectedYear ? `Da incassare ${selectedYear}` : "Da incassare — tutti gli anni"} value={currency(daIncassare)}      color={T.red} />
           </>
         )}
       </div>
@@ -215,10 +241,13 @@ export default function MonitoraggioCommessePage() {
       <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>
-            Andamento valore commesse
+            {selectedYear ? `Andamento valore commesse — ${selectedYear}` : "Andamento valore commesse — tutti gli anni"}
           </div>
-          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}
+          <select
+            value={selectedYear === null ? "all" : selectedYear}
+            onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
             style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+            <option value="all">Tutti gli anni</option>
             {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -260,7 +289,7 @@ export default function MonitoraggioCommessePage() {
           <tbody>
             {/* Totali */}
             <tr style={{ background: T.bg }}>
-              <td style={{ ...tdSt, fontWeight: 600, ...monoSt }}>TOTALE COMPLESSIVO</td>
+              <td style={{ ...tdSt, fontWeight: 600, ...monoSt }}>{selectedYear ? `TOTALE ${selectedYear}` : "TOTALE COMPLESSIVO"}</td>
               <td style={tdSt}>—</td>
               <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.navy }}>{currency(totals.valoreContratti)}</td>
               {permissions.canViewFinancials && (
