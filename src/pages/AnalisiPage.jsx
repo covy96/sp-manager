@@ -413,6 +413,31 @@ export default function AnalisiPage() {
         </div>
       </div>
 
+      {/* Totali KPI */}
+      {projectStats.length > 0 && (() => {
+        const totOre = projectStats.reduce((s,p)=>s+p.oreTotali,0);
+        const totCosto = projectStats.reduce((s,p)=>s+p.costoTotale,0);
+        const totValore = projectStats.reduce((s,p)=>s+p.valoreCommesse,0);
+        const totIncassato = projectStats.reduce((s,p)=>s+p.incassato,0);
+        const totMargine = totValore - totCosto;
+        return (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
+            {[
+              { label:'Ore totali studio',   value:fmtOre(totOre),           color:T.ink  },
+              { label:'Costo totale',        value:currency(totCosto),       color:T.navy },
+              { label:'Valore commesse',     value:currency(totValore),      color:T.green},
+              { label:'Incassato totale',    value:currency(totIncassato),   color:T.green},
+              { label:'Margine complessivo', value:currency(totMargine),     color:totMargine>=0?T.green:T.red },
+            ].map((k,i)=>(
+              <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+                <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
+                <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Tabella progetti */}
       <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -464,31 +489,6 @@ export default function AnalisiPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Totali */}
-      {projectStats.length > 0 && (() => {
-        const totOre = projectStats.reduce((s,p)=>s+p.oreTotali,0);
-        const totCosto = projectStats.reduce((s,p)=>s+p.costoTotale,0);
-        const totValore = projectStats.reduce((s,p)=>s+p.valoreCommesse,0);
-        const totIncassato = projectStats.reduce((s,p)=>s+p.incassato,0);
-        const totMargine = totValore - totCosto;
-        return (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
-            {[
-              { label:'Ore totali studio',   value:fmtOre(totOre),           color:T.ink  },
-              { label:'Costo totale',        value:currency(totCosto),       color:T.navy },
-              { label:'Valore commesse',     value:currency(totValore),      color:T.green},
-              { label:'Incassato totale',    value:currency(totIncassato),   color:T.green},
-              { label:'Margine complessivo', value:currency(totMargine),     color:totMargine>=0?T.green:T.red },
-            ].map((k,i)=>(
-              <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
-                <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
-                <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
 
       {/* ── PANEL COSTI ORARI ── */}
       {costiPanel && (
