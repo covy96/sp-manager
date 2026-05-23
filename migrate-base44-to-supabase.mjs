@@ -447,9 +447,19 @@ async function main() {
 
   // ── PHASE 2: Clear old data and insert fresh ─────────────────
   console.log("🧹 Clearing existing studio data...");
-  // Tables with studio column — delete by studio
+  // project_contacts has no studio column — clear first (before projects/global_contacts)
+  // by matching projects that belong to this studio
+  const { data: studioProjectIds } = await supabase
+    .from("projects").select("id").eq("studio", STUDIO_ID);
+  if (studioProjectIds?.length) {
+    const ids = studioProjectIds.map(r => r.id);
+    const { error } = await supabase.from("project_contacts").delete().in("project_id", ids);
+    if (error) console.warn(`  ⚠ Could not clear project_contacts: ${error.message}`);
+    else console.log(`  ✓ Cleared project_contacts`);
+  }
+  // Tables with studio column — delete by studio (now safe, no FK blockers)
   const studioTables = [
-    "project_contacts","lavorazioni_gantt","costi_extra",
+    "lavorazioni_gantt","costi_extra",
     "pagamenti","proforma","timesheet","tasks","projects","commesse","global_contacts",
   ];
   for (const t of studioTables) {
@@ -549,6 +559,45 @@ async function main() {
   // ProjectContact — only if table exists
   if (projectContacts.length > 0) {
     await upsertAll("project_contacts", projectContacts.map(mapProjectContact), "ProjectContact");
+  }
+
+  // ── PHASE 3: Ricalcola importo_incassato per ogni commessa ──────
+  // importo_incassato è un campo denormalizzato aggiornato dall'app quando
+  // si marca una proforma come pagata. Dobbiamo ricalcolarlo dalle proforma migrate.
+  // Logica identica a CommessaDetailPage.ricalcolaIncassato():
+  //   somma importo_totale dove pagato=true e suddivisione_pagamento_ids.length > 0
+  console.log("💰 Ricalcolo importo_incassato per ogni commessa...");
+  const { data: sbProformas, error: pfErr } = await supabase
+    .from("proforma")
+    .select("commessa_id, importo_totale, pagato, suddivisione_pagamento_ids")
+    .eq("studio", STUDIO_ID);
+  if (pfErr) {
+    console.warn(`  ⚠ Impossibile leggere proforma: ${pfErr.message}`);
+  } else {
+    // Raggruppa per commessa_id
+    const incassatoPerCommessa = new Map();
+    for (const p of sbProformas || []) {
+      if (!p.commessa_id) continue;
+      const hasSuddivisione = Array.isArray(p.suddivisione_pagamento_ids) && p.suddivisione_pagamento_ids.length > 0;
+      if (p.pagato && hasSuddivisione) {
+        incassatoPerCommessa.set(
+          p.commessa_id,
+          (incassatoPerCommessa.get(p.commessa_id) || 0) + (Number(p.importo_totale) || 0)
+        );
+      }
+    }
+    // Aggiorna solo le commesse con valore > 0 (le altre rimangono a 0)
+    let incOk = 0, incFail = 0;
+    for (const [commessaId, totale] of incassatoPerCommessa) {
+      const { error } = await supabase
+        .from("commesse").update({ importo_incassato: totale }).eq("id", commessaId);
+      if (error) { console.error(`  ✗ importo_incassato [${commessaId}]: ${error.message}`); incFail++; }
+      else incOk++;
+    }
+    console.log(`  ✓ importo_incassato aggiornato: ${incOk} commesse${incFail ? `, ${incFail} failed` : ""}`);
+    if (incassatoPerCommessa.size === 0) {
+      console.log("  ℹ Nessuna proforma pagata con suddivisione trovata — importo_incassato rimane a 0");
+    }
   }
 
   console.log("\n✅ Migration complete!\n");
