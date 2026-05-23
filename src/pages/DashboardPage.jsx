@@ -192,6 +192,9 @@ export default function DashboardPage() {
   const [teamMember, setTeamMember]   = useState(null);
   const [loading, setLoading]         = useState(true);
 
+  // "mine" = solo l'utente corrente, "all" = tutto lo studio (solo owner)
+  const [scope, setScope] = useState("mine");
+
   const [activeProjects, setActiveProjects]   = useState(0);
   const [openTasks, setOpenTasks]             = useState(0);
   const [weekHours, setWeekHours]             = useState(0);
@@ -218,28 +221,33 @@ export default function DashboardPage() {
       setTeamMember(studioMember);
 
       if (studioUser?.id && studioId) {
-        // 1. Progetti attivi
-        const { count: projCount } = await supabase
-          .from("projects").select("*", { count: "exact", head: true })
+        const memberId = studioMember?.id;
+        const isAll = scope === "all";
+
+        // 1. Progetti attivi — filtrati per utente se scope=mine
+        let projQ = supabase.from("projects").select("*", { count: "exact", head: true })
           .eq("studio", studioId).eq("archived", false);
+        if (!isAll && memberId) projQ = projQ.contains("assigned_users", [memberId]);
+        const { count: projCount } = await projQ;
         setActiveProjects(projCount || 0);
 
-        // 2. Task aperti
-        const { count: taskCount } = await supabase
-          .from("tasks").select("*", { count: "exact", head: true })
+        // 2. Task aperti — filtrati per utente se scope=mine
+        let taskQ = supabase.from("tasks").select("*", { count: "exact", head: true })
           .eq("studio", studioId).neq("status", "completed").is("parent_task_id", null);
+        if (!isAll && memberId) taskQ = taskQ.eq("assigned_member", memberId);
+        const { count: taskCount } = await taskQ;
         setOpenTasks(taskCount || 0);
 
-        // 3. Ore settimana
+        // 3. Ore settimana (sempre personali)
         const mondayStr = getMonday(new Date()).toISOString().slice(0, 10);
-        if (studioMember?.id) {
+        if (memberId) {
           const { data: times } = await supabase
             .from("timesheet").select("hours")
-            .eq("team_member", studioMember.id).gte("date", mondayStr);
+            .eq("team_member", memberId).gte("date", mondayStr);
           setWeekHours((times || []).reduce((s, t) => s + (Number(t.hours) || 0), 0));
         }
 
-        // 4. Credito da incassare
+        // 4. Credito da incassare (sempre tutto lo studio)
         const { data: commesse } = await supabase
           .from("commesse").select("id, importo_offerta_base").eq("studio", studioId);
         const totalCommesse = (commesse || []).reduce((s, c) => s + (Number(c.importo_offerta_base) || 0), 0);
@@ -248,33 +256,35 @@ export default function DashboardPage() {
         const totalIncassato = Object.values(incassatoMap).reduce((s, v) => s + v, 0);
         setCreditToCollect(totalCommesse - totalIncassato);
 
-        // 5. Task di oggi e scadute
+        // 5. Task di oggi e scadute (sempre personali)
         const today = new Date().toISOString().split("T")[0];
-        if (studioMember?.id) {
+        if (memberId) {
           const { data: allTasks } = await supabase
             .from("tasks").select("*, projects(name)")
-            .eq("studio", studioId).eq("assigned_member", studioMember.id);
+            .eq("studio", studioId).eq("assigned_member", memberId);
           setTodayTasks((allTasks || []).filter(t => String(t.data_pianificata).slice(0, 10) === today));
 
           const { data: overdue } = await supabase
             .from("tasks").select("*, projects(name)")
-            .eq("assigned_member", studioMember.id).eq("studio", studioId)
+            .eq("assigned_member", memberId).eq("studio", studioId)
             .neq("status", "completed").lt("data_pianificata", today)
             .is("parent_task_id", null).order("data_pianificata", { ascending: true });
           setOverdueTasks(overdue || []);
         }
 
-        // 6. Progetti recenti
-        const { data: projs } = await supabase
-          .from("projects").select("id, name, client, created_at, updated_at")
+        // 6. Progetti recenti — filtrati per utente se scope=mine
+        let projsQ = supabase.from("projects").select("id, name, client, created_at, updated_at")
           .eq("studio", studioId).eq("archived", false)
           .order("updated_at", { ascending: false }).limit(5);
+        if (!isAll && memberId) projsQ = projsQ.contains("assigned_users", [memberId]);
+        const { data: projs } = await projsQ;
 
         const projectsWithProgress = await Promise.all(
           (projs || []).map(async p => {
+            const taskBase = supabase.from("tasks").select("*", { count: "exact", head: true })
+              .eq("project_id", p.id).is("parent_task_id", null);
             const [{ count: total }, { count: completed }] = await Promise.all([
-              supabase.from("tasks").select("*", { count: "exact", head: true })
-                .eq("project_id", p.id).is("parent_task_id", null),
+              taskBase,
               supabase.from("tasks").select("*", { count: "exact", head: true })
                 .eq("project_id", p.id).eq("status", "completed").is("parent_task_id", null),
             ]);
@@ -287,7 +297,7 @@ export default function DashboardPage() {
       setLoading(false);
     };
     init();
-  }, [todayStr, studioId, studioLoading, studioUser, studioMember]);
+  }, [todayStr, studioId, studioLoading, studioUser, studioMember, scope]);
 
   const toggleTaskStatus = async (task) => {
     const newStatus = task.status === "completed" ? "open" : "completed";
@@ -317,26 +327,48 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Header */}
-      <div>
-        <h1 style={{
-          fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em',
-          color: T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4,
-        }}>
-          {greeting}{teamMember?.user_name ? `, ${teamMember.user_name}` : ""}
-        </h1>
-        <p style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
-        }}>
-          {formatDateIt(new Date())}
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{
+            fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em',
+            color: T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4,
+          }}>
+            {greeting}{teamMember?.user_name ? `, ${teamMember.user_name}` : ""}
+          </h1>
+          <p style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>
+            {formatDateIt(new Date())}
+          </p>
+        </div>
+
+        {/* Toggle scope — solo per owner con team */}
+        {permissions.isOwner && (
+          <div style={{ display: 'flex', border: `0.5px solid ${T.borderMd}`, overflow: 'hidden', alignSelf: 'flex-start', marginTop: 4 }}>
+            {[["mine", "Solo miei"], ["all", "Tutto lo studio"]].map(([s, label]) => (
+              <button key={s} onClick={() => setScope(s)} style={{
+                padding: '6px 14px', border: 'none', cursor: 'pointer',
+                background: scope === s ? T.navy : 'transparent',
+                color: scope === s ? T.bg : T.muted,
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                transition: 'background 0.15s',
+              }}>{label}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
-        <KpiCard label="Progetti Attivi"      value={activeProjects}          note="in corso"                          valueColor={T.ink} />
-        <KpiCard label="Task da Completare"   value={openTasks}               note="aperti"                            valueColor={T.red} />
-        <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana"         valueColor={T.navy} />
+        <KpiCard
+          label={scope === "all" ? "Progetti Attivi — studio" : "I miei progetti attivi"}
+          value={activeProjects} note="in corso" valueColor={T.ink} />
+        <KpiCard
+          label={scope === "all" ? "Task da Completare — studio" : "I miei task aperti"}
+          value={openTasks} note="aperti" valueColor={T.red} />
+        <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
         {permissions.canViewFinancials && (
           <KpiCard label="Credito da Incassare" value={currency(creditToCollect)} note="da commesse - proforma pagate" valueColor={T.green} />
         )}
@@ -378,9 +410,9 @@ export default function DashboardPage() {
         </Panel>
 
         {/* Progetti recenti */}
-        <Panel title="Progetti recenti">
+        <Panel title={scope === "all" ? "Progetti recenti — studio" : "I miei progetti"}>
           {recentProjects.length === 0
-            ? <EmptyState label="Nessun progetto" />
+            ? <EmptyState label={scope === "all" ? "Nessun progetto" : "Nessun progetto assegnato"} />
             : recentProjects.map(proj => (
                 <ProjectRow key={proj.id} proj={proj} />
               ))
