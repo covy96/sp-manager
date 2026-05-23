@@ -326,10 +326,10 @@ export default function ReportPage() {
       </div>
 
       {/* ── TABELLE DETTAGLIO ── */}
-      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
 
-        {/* Tabella ore per utente */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto' }}>
+        {/* Tabella ore per utente — sticky left */}
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:16, alignSelf:'start' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
