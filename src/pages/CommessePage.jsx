@@ -134,6 +134,7 @@ export default function CommessePage() {
   const [commesse, setCommesse]         = useState([]);
   const [incassatoMap, setIncassatoMap] = useState({});
   const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
+  const [searchQuery, setSearchQuery]   = useState("");
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
 
@@ -330,12 +331,19 @@ export default function CommessePage() {
           ...commesse.map(c => c.data_commessa || c.created_at).filter(Boolean).map(d => new Date(d).getFullYear())
         ])).sort((a,b) => b-a);
 
-        const commesseFiltrate = annoFiltro === 0
-          ? commesse
-          : commesse.filter(c => {
-              const d = c.data_commessa || c.created_at;
-              return d && new Date(d).getFullYear() === annoFiltro;
-            });
+        const q = searchQuery.trim().toLowerCase();
+        const commesseFiltrate = q
+          ? commesse.filter(c =>
+              (c.nome_commessa || "").toLowerCase().includes(q) ||
+              (c.cliente || "").toLowerCase().includes(q) ||
+              (c.numero_offerta || "").toLowerCase().includes(q)
+            )
+          : annoFiltro === 0
+            ? commesse
+            : commesse.filter(c => {
+                const d = c.data_commessa || c.created_at;
+                return d && new Date(d).getFullYear() === annoFiltro;
+              });
 
         return (<>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
@@ -345,9 +353,16 @@ export default function CommessePage() {
             {commesseFiltrate.length} commesse · {currency(commesseFiltrate.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
           </div>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+          <input
+            type="text"
+            placeholder="Cerca commessa, cliente..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{padding:'5px 10px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
+          />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto'}}>
+            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -363,7 +378,7 @@ export default function CommessePage() {
       ) : error ? (
         <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
       ) : commesseFiltrate.length===0 ? (
-        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Nessuna commessa per {annoFiltro || 'questo filtro'}.</div>
+        <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
       ) : (
         <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(

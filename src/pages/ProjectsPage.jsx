@@ -377,6 +377,8 @@ export default function ProjectsPage() {
   const [selectedUserIds, setSelectedUserIds]   = useState([]);
   const [filterOpen, setFilterOpen]             = useState(false);
   const filterRef                               = useRef(null);
+  const [searchQuery, setSearchQuery]           = useState("");
+  const [userFilterReady, setUserFilterReady]   = useState(false);
 
   const [isModalOpen, setIsModalOpen]           = useState(false);
   const [modalStep, setModalStep]               = useState(1);
@@ -412,6 +414,14 @@ export default function ProjectsPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Imposta filtro utente corrente al primo caricamento
+  useEffect(() => {
+    if (teamMember?.id && !userFilterReady) {
+      setSelectedUserIds([teamMember.id]);
+      setUserFilterReady(true);
+    }
+  }, [teamMember?.id]);
 
 
   const loadCommesseList = async () => {
@@ -451,16 +461,27 @@ export default function ProjectsPage() {
   }, [studioId]);
 
   const filteredProjects = useMemo(() => {
-    let result = projects.filter(p => {
-      const dateStr = p.start_date || p.created_at;
-      const year = dateStr ? new Date(dateStr).getFullYear() : null;
-      return year === annoFiltro;
-    });
+    let result = projects;
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      // Ricerca su tutti gli anni (bypass filtro anno)
+      result = result.filter(p =>
+        (p.name || "").toLowerCase().includes(q) ||
+        (p.client || "").toLowerCase().includes(q)
+      );
+    } else {
+      // Filtro per anno solo senza ricerca
+      result = result.filter(p => {
+        const dateStr = p.start_date || p.created_at;
+        const year = dateStr ? new Date(dateStr).getFullYear() : null;
+        return year === annoFiltro;
+      });
+    }
     if (selectedUserIds.length > 0) {
       result = result.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
     }
     return result;
-  }, [projects, selectedUserIds, annoFiltro]);
+  }, [projects, selectedUserIds, annoFiltro, searchQuery]);
 
   const anniDisponibili = useMemo(() => {
     const anni = new Set(projects.map(p => {
@@ -655,9 +676,17 @@ export default function ProjectsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {/* Search bar */}
+          <input
+            type="text"
+            placeholder="Cerca progetto o cliente..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', width: 200 }}
+          />
           {/* Year filter */}
           <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-            style={{ padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto' }}>
+            style={{ padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
             {anniDisponibili.map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -708,7 +737,7 @@ export default function ProjectsPage() {
         <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
       ) : filteredProjects.length === 0 ? (
         <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
-          {selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
+          {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
