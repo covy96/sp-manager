@@ -58,6 +58,7 @@ export default function ProformaPage() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
   const [mostraPagate, setMostraPagate] = useState(false);
+  const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
   const [sortField, setSortField]       = useState("data_creazione");
   const [sortDesc, setSortDesc]         = useState(true);
 
@@ -83,8 +84,24 @@ export default function ProformaPage() {
     loadData();
   }, [studioId]);
 
+  const anniDisponibili = useMemo(() => {
+    const anni = new Set();
+    anni.add(new Date().getFullYear());
+    proformaList.forEach(p => {
+      const d = p.data_creazione || p.created_at;
+      if (d) anni.add(new Date(d).getFullYear());
+    });
+    return Array.from(anni).sort((a,b)=>b-a);
+  }, [proformaList]);
+
   const filteredProforma = useMemo(() => {
     let list = mostraPagate ? proformaList : proformaList.filter(p => !p.pagato);
+    if (annoFiltro !== 0) {
+      list = list.filter(p => {
+        const d = p.data_creazione || p.created_at;
+        return d && new Date(d).getFullYear() === annoFiltro;
+      });
+    }
     return [...list].sort((a, b) => {
       let vA = a[sortField], vB = b[sortField];
       if (sortField === "importo_totale") { vA = Number(vA)||0; vB = Number(vB)||0; }
@@ -94,7 +111,7 @@ export default function ProformaPage() {
       if (vA > vB) return sortDesc ? -1 : 1;
       return 0;
     });
-  }, [proformaList, mostraPagate, sortField, sortDesc, commesseMap]);
+  }, [proformaList, mostraPagate, annoFiltro, sortField, sortDesc, commesseMap]);
 
   const stats = useMemo(() => {
     const totale = proformaList.reduce((s, p) => s + (Number(p.importo_totale)||0), 0);
@@ -117,10 +134,17 @@ export default function ProformaPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Proforma</div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
-          <input type="checkbox" checked={mostraPagate} onChange={e => setMostraPagate(e.target.checked)} style={{ accentColor: T.navy, width: 13, height: 13 }} />
-          Mostra anche pagate
-        </label>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+            <input type="checkbox" checked={mostraPagate} onChange={e => setMostraPagate(e.target.checked)} style={{ accentColor: T.navy, width: 13, height: 13 }} />
+            Mostra anche pagate
+          </label>
+        </div>
       </div>
 
       {/* KPI */}

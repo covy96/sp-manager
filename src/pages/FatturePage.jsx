@@ -39,6 +39,7 @@ export default function FatturePage() {
   const [commesse, setCommesse]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [showPagate, setShowPagate]     = useState(true);
+  const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
   const [modalOpen, setModalOpen]       = useState(false);
   const [editFattura, setEditFattura]   = useState(null);
   const [form, setForm]                 = useState({
@@ -82,9 +83,26 @@ export default function FatturePage() {
     ? 0
     : fatture.filter(f=>isOverdue(f.data_scadenza,f.pagato)).length;
 
-  const visibili = useMemo(()=>
-    showPagate ? fatture : fatture.filter(f=>!f.pagato)
-  ,[fatture,showPagate]);
+  const anniDisponibili = useMemo(() => {
+    const anni = new Set();
+    anni.add(new Date().getFullYear());
+    fatture.forEach(f => {
+      const d = f.data_emissione || f.created_at;
+      if (d) anni.add(new Date(d).getFullYear());
+    });
+    return Array.from(anni).sort((a,b)=>b-a);
+  }, [fatture]);
+
+  const visibili = useMemo(() => {
+    let list = showPagate ? fatture : fatture.filter(f=>!f.pagato);
+    if (annoFiltro !== 0) {
+      list = list.filter(f => {
+        const d = f.data_emissione || f.created_at;
+        return d && new Date(d).getFullYear() === annoFiltro;
+      });
+    }
+    return list;
+  }, [fatture, showPagate, annoFiltro]);
 
   const openNew = () => {
     setEditFattura(null);
@@ -178,11 +196,18 @@ export default function FatturePage() {
             }
           </div>
         </div>
-        {tipoFatturazione === 'fattura' && (
-          <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'9px 20px',cursor:'pointer'}}>
-            + Nuova fattura
-          </button>
-        )}
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          {tipoFatturazione === 'fattura' && (
+            <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'9px 20px',cursor:'pointer'}}>
+              + Nuova fattura
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPI */}

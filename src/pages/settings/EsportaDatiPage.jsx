@@ -87,7 +87,7 @@ export default function EsportaDatiPage() {
       if (selected.has('progetti')) {
         setProgress('Esportazione progetti...');
         const { data: proj } = await supabase.from('projects')
-          .select('name, client, address, status, created_at')
+          .select('id, name, client, address, status, created_at')
           .eq('studio', studioId).is('deleted_at', null).order('name');
 
         const { data: ts } = await supabase.from('timesheet')
@@ -95,6 +95,7 @@ export default function EsportaDatiPage() {
 
         const orePerProg = {};
         (ts ?? []).forEach(t => {
+          if (!t.project_id) return;
           orePerProg[t.project_id] = (orePerProg[t.project_id] || 0) + Number(t.hours || 0);
         });
 
@@ -103,8 +104,11 @@ export default function EsportaDatiPage() {
           rows: [
             ['Nome', 'Cliente', 'Indirizzo', 'Stato', 'Ore totali', 'Data creazione'],
             ...(proj ?? []).map(p => [
-              p.name, p.client || '', p.address || '',
-              p.status || '', currency(orePerProg[p.id] || 0),
+              p.name,
+              p.client || '',
+              p.address || '',
+              p.status || '',
+              Number(orePerProg[p.id] || 0).toFixed(2),
               fmtDate(p.created_at),
             ]),
           ],
