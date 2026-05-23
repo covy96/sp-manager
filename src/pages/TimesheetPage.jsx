@@ -108,9 +108,14 @@ export default function TimesheetPage() {
   const searchRef = useRef(null);
 
   const loadEntries = async (date) => {
-    if (!studioId) return;
+    if (!studioId || !currentMember?.id) return;
     setLoading(true); setError("");
-    const { data, error: qErr } = await supabase.from("timesheet").select("*").eq("studio", studioId).eq("date", date).order("created_at", { ascending: false });
+    const { data, error: qErr } = await supabase
+      .from("timesheet").select("*")
+      .eq("studio", studioId)
+      .eq("date", date)
+      .eq("team_member", currentMember.id)
+      .order("created_at", { ascending: false });
     if (qErr) { setError(qErr.message); setEntries([]); } else setEntries(data ?? []);
     setLoading(false);
   };
@@ -121,7 +126,7 @@ export default function TimesheetPage() {
     supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId).then(({ data }) => setTeamMembers(data ?? []));
   }, [studioId]);
 
-  useEffect(() => { if (studioId) loadEntries(selectedDate); }, [selectedDate, studioId]);
+  useEffect(() => { if (studioId && currentMember?.id) loadEntries(selectedDate); }, [selectedDate, studioId, currentMember?.id]);
 
   useEffect(() => {
     function handler(e) { if (searchRef.current && !searchRef.current.contains(e.target)) setShowDrop(false); }
