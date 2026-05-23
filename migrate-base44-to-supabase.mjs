@@ -574,12 +574,13 @@ async function main() {
   if (pfErr) {
     console.warn(`  ⚠ Impossibile leggere proforma: ${pfErr.message}`);
   } else {
-    // Raggruppa per commessa_id
+    // Raggruppa per commessa_id — conta tutte le proforma pagate
+    // (non richiediamo suddivisione_pagamento_ids perché durante la migrazione
+    //  il collegamento potrebbe non essere stato migrato lato proforma)
     const incassatoPerCommessa = new Map();
     for (const p of sbProformas || []) {
       if (!p.commessa_id) continue;
-      const hasSuddivisione = Array.isArray(p.suddivisione_pagamento_ids) && p.suddivisione_pagamento_ids.length > 0;
-      if (p.pagato && hasSuddivisione) {
+      if (p.pagato) {
         incassatoPerCommessa.set(
           p.commessa_id,
           (incassatoPerCommessa.get(p.commessa_id) || 0) + (Number(p.importo_totale) || 0)
