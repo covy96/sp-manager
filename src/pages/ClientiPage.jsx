@@ -5,6 +5,13 @@ import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
 
+// Normalizzazione robusta: lowercase, trim, rimuove accenti, collassa spazi
+function nk(s) {
+  return (s||"").toLowerCase().trim()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ");
+}
+
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
 }
@@ -53,23 +60,23 @@ export default function ClientiPage() {
     try {
       const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
         supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
-        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("archived",false),
+        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId),
         supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
       ]);
       if (cErr) throw cErr;
       setContacts(cts||[]);
 
-      // Raggruppa per nome cliente (case-insensitive)
+      // Raggruppa per nome cliente (normalizzato)
       const pMap = {};
       (projs||[]).forEach(p => {
-        const key=(p.client||"").toLowerCase().trim();
+        const key = nk(p.client);
         if (key) { if (!pMap[key]) pMap[key]=[]; pMap[key].push(p); }
       });
       setProjectsByClient(pMap);
 
       const cMap = {};
       (comms||[]).forEach(c => {
-        const key=(c.cliente||"").toLowerCase().trim();
+        const key = nk(c.cliente);
         if (key) { if (!cMap[key]) cMap[key]=[]; cMap[key].push(c); }
       });
       setCommesseByClient(cMap);
@@ -78,12 +85,22 @@ export default function ClientiPage() {
     finally { setLoading(false); }
   };
 
-  const getProjects = (c) => projectsByClient[(c.full_name||"").toLowerCase().trim()] || [];
-  const getCommesse = (c) => commesseByClient[(c.full_name||"").toLowerCase().trim()] || [];
+  const getProjects = (c) => {
+    const byName    = projectsByClient[nk(c.full_name)] || [];
+    const byCompany = c.company ? (projectsByClient[nk(c.company)] || []) : [];
+    const seen = new Set();
+    return [...byName, ...byCompany].filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; });
+  };
+  const getCommesse = (c) => {
+    const byName    = commesseByClient[nk(c.full_name)] || [];
+    const byCompany = c.company ? (commesseByClient[nk(c.company)] || []) : [];
+    const seen = new Set();
+    return [...byName, ...byCompany].filter(com => { if (seen.has(com.id)) return false; seen.add(com.id); return true; });
+  };
 
   const handleAdd = async e => {
     e.preventDefault(); setFormError(""); if (!newContact.full_name.trim()) return; setSaving(true);
-    const dup = contacts.some(c=>(c.full_name||"").toLowerCase()===newContact.full_name.trim().toLowerCase());
+    const dup = contacts.some(c => nk(c.full_name) === nk(newContact.full_name));
     if (dup) { setFormError("Cliente già presente."); setSaving(false); return; }
     const { data, error:iErr } = await supabase.from("global_contacts").insert({
       full_name:newContact.full_name.trim(), company:newContact.company.trim()||null, studio:studioId,
@@ -105,6 +122,7 @@ export default function ClientiPage() {
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
+
 
   return (
     <div style={{maxWidth:700}}>
@@ -194,7 +212,10 @@ export default function ClientiPage() {
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
-                                <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
+                                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                  <div style={{fontSize:12,fontWeight:600,color:p.archived?T.muted:T.ink}}>{p.name}</div>
+                                  {p.archived && <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.1em',textTransform:'uppercase',color:T.muted,border:`0.5px solid ${T.border}`,padding:'1px 5px'}}>archiviato</span>}
+                                </div>
                                 <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
                               </button>
                             ))}

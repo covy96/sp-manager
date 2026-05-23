@@ -8,6 +8,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
+import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
@@ -83,8 +84,11 @@ export default function AppLayout({ session, children }) {
   const [showMacShortcut, setShowMac]   = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [studioName, setStudioName]     = useState("");
-  const [studioList, setStudioList]     = useState([]);
+  const [studioList, setStudioList]         = useState([]);
   const [showStudioPicker, setShowStudioPicker] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
+  const [savedAccounts, setSavedAccounts]   = useState([]);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
 
   const settingsRef = useRef(null);
   const searchRef   = useRef(null);
@@ -143,15 +147,43 @@ export default function AppLayout({ session, children }) {
     setSettingsOpen(false);
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user?.id) return;
-    const studios = await getUserStudios(authData.user.id);
-    if (studios.length <= 1) navigate('/onboarding');
-    else { setStudioList(studios); setShowStudioPicker(true); }
+    // Aggiorna studio corrente nell'account salvato
+    updateSavedAccountStudio(authData.user.id, studioId, studioName);
+    // Carica account salvati e studi dell'utente corrente
+    const [studios, accounts] = await Promise.all([
+      getUserStudios(authData.user.id),
+      Promise.resolve(getSavedAccounts()),
+    ]);
+    setStudioList(studios);
+    setSavedAccounts(accounts);
+    setShowAccountPicker(true);
   };
 
   const handleSelectStudio = (sid) => {
     localStorage.setItem('asm-active-studio', sid);
     setShowStudioPicker(false);
+    setShowAccountPicker(false);
     window.location.reload();
+  };
+
+  const handleSwitchAccount = async (account) => {
+    if (switchingAccount) return;
+    setSwitchingAccount(true);
+    try {
+      if (!account.refreshToken) throw new Error('no token');
+      const { data, error } = await supabase.auth.refreshSession({ refresh_token: account.refreshToken });
+      if (error || !data.session) throw new Error('expired');
+      // Sessione ripristinata — imposta lo studio salvato e ricarica
+      if (account.studioId) localStorage.setItem('asm-active-studio', account.studioId);
+      else localStorage.removeItem('asm-active-studio');
+      window.location.href = '/dashboard';
+    } catch {
+      // Sessione scaduta → login con email pre-compilata
+      setShowAccountPicker(false);
+      navigate(`/login?email=${encodeURIComponent(account.email)}`);
+    } finally {
+      setSwitchingAccount(false);
+    }
   };
 
   const handleResultClick = (item) => {
@@ -382,33 +414,96 @@ export default function AppLayout({ session, children }) {
         </main>
       </div>
 
-      {/* Studio picker modal */}
-      {showStudioPicker && (
-        <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)' }}>
-          <div style={{ width:'100%', maxWidth:360, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}>
-            <div style={{ fontSize:16, fontWeight:600, color:T.ink, marginBottom:4 }}>Cambia studio</div>
-            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:20 }}>Seleziona lo studio a cui accedere</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {studioList.map(m => (
-                <button key={m.studio} onClick={() => handleSelectStudio(m.studio)} style={{
-                  display:'flex', alignItems:'center', justifyContent:'space-between',
-                  padding:'12px 16px',
-                  background: m.studio === studioId ? T.navyLight : T.surface2,
-                  border:`0.5px solid ${m.studio === studioId ? T.navy : T.border}`,
-                  cursor:'pointer', textAlign:'left',
-                }}>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{m.studios?.name || 'Studio'}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.role_internal || '—'}</div>
+      {/* Account switcher modal (stile Instagram) */}
+      {showAccountPicker && (
+        <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowAccountPicker(false)}>
+          <div style={{ width:'100%', maxWidth:380, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}
+            onClick={e => e.stopPropagation()}>
+
+            <div style={{ fontSize:16, fontWeight:600, color:T.ink, marginBottom:4 }}>Cambia account</div>
+            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:20 }}>
+              Seleziona un account o uno studio
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+
+              {/* Studi dell'account corrente */}
+              {studioList.length > 0 && (
+                <>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                    {session?.user?.email}
                   </div>
-                  {m.studio === studioId && <span style={{ color:T.navy, fontSize:12 }}>✓ Attivo</span>}
-                </button>
-              ))}
-              <button onClick={() => { setShowStudioPicker(false); navigate('/onboarding'); }} style={{ padding:'10px 16px', background:'transparent', border:`0.5px solid ${T.border}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase', marginTop:4 }}>
-                + Crea o unisciti a un nuovo studio
+                  {studioList.map(m => (
+                    <button key={m.studio} onClick={() => handleSelectStudio(m.studio)} style={{
+                      display:'flex', alignItems:'center', justifyContent:'space-between',
+                      padding:'12px 16px',
+                      background: m.studio === studioId ? T.navyLight : T.surface2,
+                      border:`0.5px solid ${m.studio === studioId ? T.navy : T.border}`,
+                      cursor:'pointer', textAlign:'left', width:'100%',
+                    }}>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{m.studios?.name || 'Studio'}</div>
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.role_internal || '—'}</div>
+                      </div>
+                      {m.studio === studioId && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, letterSpacing:'0.08em', textTransform:'uppercase' }}>✓ Attivo</span>}
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Altri account salvati */}
+              {savedAccounts.filter(a => a.userId !== session?.user?.id).length > 0 && (
+                <>
+                  <div style={{ height:'0.5px', background:T.border, margin:'8px 0' }}/>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                    Altri account
+                  </div>
+                  {savedAccounts.filter(a => a.userId !== session?.user?.id).map(account => (
+                    <button key={account.userId} onClick={() => handleSwitchAccount(account)}
+                      disabled={switchingAccount}
+                      style={{
+                        display:'flex', alignItems:'center', gap:12,
+                        padding:'12px 16px', background:T.surface2,
+                        border:`0.5px solid ${T.border}`,
+                        cursor: switchingAccount ? 'not-allowed' : 'pointer', textAlign:'left', width:'100%',
+                        opacity: switchingAccount ? 0.6 : 1,
+                      }}>
+                      {/* Avatar */}
+                      <div style={{ width:32, height:32, borderRadius:'50%', background:T.navy, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'#fff', flexShrink:0 }}>
+                        {(account.email||'?')[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {account.email}
+                        </div>
+                        {account.studioName && (
+                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                            {account.studioName}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>→</span>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Aggiungi account */}
+              <div style={{ height:'0.5px', background:T.border, margin:'4px 0' }}/>
+              <button onClick={() => { setShowAccountPicker(false); navigate('/login'); }} style={{
+                padding:'10px 16px', background:'transparent',
+                border:`0.5px solid ${T.border}`, cursor:'pointer',
+                fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
+                color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase', width:'100%',
+              }}>
+                + Aggiungi account
               </button>
             </div>
-            <button onClick={() => setShowStudioPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>Annulla</button>
+
+            <button onClick={() => setShowAccountPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+              Annulla
+            </button>
           </div>
         </div>
       )}

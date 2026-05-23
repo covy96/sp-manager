@@ -5,6 +5,7 @@ import App from "./App";
 import "./index.css";
 import { supabase } from "./lib/supabase";
 import { initTheme } from "./contexts/ThemeContext";
+import { upsertSavedAccount } from "./lib/accounts";
 
 initTheme();
 
@@ -25,6 +26,15 @@ function Root() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
+      // Salva il refresh token ogni volta che la sessione cambia
+      if (nextSession?.user?.id) {
+        upsertSavedAccount({
+          userId:       nextSession.user.id,
+          email:        nextSession.user.email,
+          refreshToken: nextSession.refresh_token,
+          studioId:     localStorage.getItem('asm-active-studio') || null,
+        });
+      }
     });
 
     return () => {

@@ -36,6 +36,7 @@ export const ROLE_DESCRIPTIONS = {
 const ROLE_PERMISSIONS = {
   "Owner": {
     isOwner: true, isProjectManager: true, isMember: true,
+    canViewProjects: true,
     canManageUsers: true, canManageSettings: true, canViewFinancials: true,
     canCreateProjects: true, canEditProjects: true, canArchiveProjects: true,
     canDeleteAnything: true, canAssignTasks: true, canViewAllTimesheets: true,
@@ -44,6 +45,7 @@ const ROLE_PERMISSIONS = {
   },
   "Partner": {
     isOwner: false, isProjectManager: true, isMember: true,
+    canViewProjects: true,
     canManageUsers: true, canManageSettings: true, canViewFinancials: true,
     canCreateProjects: true, canEditProjects: true, canArchiveProjects: true,
     canDeleteAnything: true, canAssignTasks: true, canViewAllTimesheets: true,
@@ -52,6 +54,7 @@ const ROLE_PERMISSIONS = {
   },
   "Project Manager": {
     isOwner: false, isProjectManager: true, isMember: true,
+    canViewProjects: true,
     canManageUsers: false, canManageSettings: false, canViewFinancials: true,
     canCreateProjects: true, canEditProjects: true, canArchiveProjects: false,
     canDeleteAnything: false, canAssignTasks: true, canViewAllTimesheets: true,
@@ -60,6 +63,7 @@ const ROLE_PERMISSIONS = {
   },
   "Architetto": {
     isOwner: false, isProjectManager: false, isMember: true,
+    canViewProjects: true,
     canManageUsers: false, canManageSettings: false, canViewFinancials: false,
     canCreateProjects: false, canEditProjects: false, canArchiveProjects: false,
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
@@ -68,6 +72,7 @@ const ROLE_PERMISSIONS = {
   },
   "Ingegnere": {
     isOwner: false, isProjectManager: false, isMember: true,
+    canViewProjects: true,
     canManageUsers: false, canManageSettings: false, canViewFinancials: false,
     canCreateProjects: false, canEditProjects: false, canArchiveProjects: false,
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
@@ -76,6 +81,7 @@ const ROLE_PERMISSIONS = {
   },
   "Collaboratore Interno": {
     isOwner: false, isProjectManager: false, isMember: true,
+    canViewProjects: true,
     canManageUsers: false, canManageSettings: false, canViewFinancials: false,
     canCreateProjects: false, canEditProjects: false, canArchiveProjects: false,
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
@@ -84,6 +90,7 @@ const ROLE_PERMISSIONS = {
   },
   "Collaboratore Esterno": {
     isOwner: false, isProjectManager: false, isMember: true,
+    canViewProjects: false,
     canManageUsers: false, canManageSettings: false, canViewFinancials: false,
     canCreateProjects: false, canEditProjects: false, canArchiveProjects: false,
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
@@ -94,12 +101,69 @@ const ROLE_PERMISSIONS = {
 
 const DEFAULT_PERMISSIONS = {
   isOwner: false, isProjectManager: false, isMember: true,
+  canViewProjects: true,
   canManageUsers: false, canManageSettings: false, canViewFinancials: false,
   canCreateProjects: false, canEditProjects: false, canArchiveProjects: false,
   canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
   canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
   canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
 };
+
+// ── SEZIONI PERMESSI GRANULARI ────────────────────────────────────
+// Usato nella UI di GestioneUtentiPage per la tab "Permessi"
+export const PERMISSION_SECTIONS = [
+  {
+    label: "Progetti",
+    perms: [
+      { key: "canViewProjects",    label: "Vedere" },
+      { key: "canCreateProjects",  label: "Creare" },
+      { key: "canEditProjects",    label: "Modificare" },
+      { key: "canArchiveProjects", label: "Archiviare" },
+    ],
+  },
+  {
+    label: "Commesse",
+    perms: [
+      { key: "canViewCommesse",   label: "Vedere" },
+      { key: "canManageCommesse", label: "Creare / Modificare" },
+    ],
+  },
+  {
+    label: "Finanziari (Proforma / Fatture)",
+    perms: [
+      { key: "canViewFinancials", label: "Vedere" },
+    ],
+  },
+  {
+    label: "Report & Monitoraggio",
+    perms: [
+      { key: "canViewReport",       label: "Report" },
+      { key: "canViewMonitoraggio", label: "Monitoraggio commesse" },
+    ],
+  },
+  {
+    label: "Timesheet",
+    perms: [
+      { key: "canCompleteOwnTask",    label: "Inserire proprio timesheet" },
+      { key: "canViewAllTimesheets",  label: "Vedere timesheet team" },
+    ],
+  },
+  {
+    label: "Task",
+    perms: [
+      { key: "canEditTask",    label: "Modificare task" },
+      { key: "canAssignTasks", label: "Assegnare task ad altri" },
+    ],
+  },
+  {
+    label: "Gestione Studio",
+    perms: [
+      { key: "canManageUsers",    label: "Gestire utenti" },
+      { key: "canManageSettings", label: "Impostazioni studio" },
+      { key: "canDeleteAnything", label: "Eliminare contenuti" },
+    ],
+  },
+];
 
 export function usePermissions() {
   const { teamMember, studio, user } = useStudio();
@@ -110,5 +174,13 @@ export function usePermissions() {
     return ROLE_PERMISSIONS["Owner"];
   }
 
-  return ROLE_PERMISSIONS[role] ?? DEFAULT_PERMISSIONS;
+  const rolePerms = ROLE_PERMISSIONS[role] ?? DEFAULT_PERMISSIONS;
+
+  // Applica permessi personalizzati sovrascrivendo il ruolo
+  const custom = teamMember?.custom_permissions;
+  if (custom && typeof custom === 'object') {
+    return { ...rolePerms, ...custom };
+  }
+
+  return rolePerms;
 }

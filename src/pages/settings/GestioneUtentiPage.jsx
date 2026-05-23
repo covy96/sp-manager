@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS } from "../../hooks/usePermissions";
+import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_SECTIONS } from "../../hooks/usePermissions";
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePlan } from '../../hooks/usePlan';
 
@@ -52,6 +52,7 @@ export default function GestioneUtentiPage() {
   const [activeTab, setActiveTab]           = useState("role");
   const [confirmRemove, setConfirmRemove]   = useState(false);
   const [removing, setRemoving]             = useState(false);
+  const [editPerms, setEditPerms]           = useState({});
 
   useEffect(() => { if (studioId) loadMembers(); }, [studioId]);
 
@@ -59,17 +60,32 @@ export default function GestioneUtentiPage() {
     setLoading(true); setError("");
     const { data, error: e } = await supabase
       .from("team_members")
-      .select("id,user_name,user_email,color,role_internal")
+      .select("id,user_name,user_email,color,role_internal,custom_permissions")
       .eq("studio", studioId)
       .order("user_name", { ascending: true });
     if (e) setError(e.message); else setMembers(data || []);
     setLoading(false);
   };
 
+  // Permessi di base del ruolo selezionato
+  const getRoleBasePerms = (role) => {
+    const ROLE_BASE = {
+      "Owner":                 { canViewProjects:true, canCreateProjects:true, canEditProjects:true, canArchiveProjects:true, canViewCommesse:true, canManageCommesse:true, canViewFinancials:true, canViewReport:true, canViewMonitoraggio:true, canCompleteOwnTask:true, canViewAllTimesheets:true, canEditTask:true, canAssignTasks:true, canManageUsers:true, canManageSettings:true, canDeleteAnything:true },
+      "Partner":               { canViewProjects:true, canCreateProjects:true, canEditProjects:true, canArchiveProjects:true, canViewCommesse:true, canManageCommesse:true, canViewFinancials:true, canViewReport:true, canViewMonitoraggio:true, canCompleteOwnTask:true, canViewAllTimesheets:true, canEditTask:true, canAssignTasks:true, canManageUsers:true, canManageSettings:true, canDeleteAnything:true },
+      "Project Manager":       { canViewProjects:true, canCreateProjects:true, canEditProjects:true, canArchiveProjects:false, canViewCommesse:true, canManageCommesse:true, canViewFinancials:true, canViewReport:true, canViewMonitoraggio:true, canCompleteOwnTask:true, canViewAllTimesheets:true, canEditTask:true, canAssignTasks:true, canManageUsers:false, canManageSettings:false, canDeleteAnything:false },
+      "Architetto":            { canViewProjects:true, canCreateProjects:false, canEditProjects:false, canArchiveProjects:false, canViewCommesse:false, canManageCommesse:false, canViewFinancials:false, canViewReport:false, canViewMonitoraggio:false, canCompleteOwnTask:true, canViewAllTimesheets:false, canEditTask:true, canAssignTasks:false, canManageUsers:false, canManageSettings:false, canDeleteAnything:false },
+      "Ingegnere":             { canViewProjects:true, canCreateProjects:false, canEditProjects:false, canArchiveProjects:false, canViewCommesse:false, canManageCommesse:false, canViewFinancials:false, canViewReport:false, canViewMonitoraggio:false, canCompleteOwnTask:true, canViewAllTimesheets:false, canEditTask:true, canAssignTasks:false, canManageUsers:false, canManageSettings:false, canDeleteAnything:false },
+      "Collaboratore Interno": { canViewProjects:true, canCreateProjects:false, canEditProjects:false, canArchiveProjects:false, canViewCommesse:false, canManageCommesse:false, canViewFinancials:false, canViewReport:false, canViewMonitoraggio:false, canCompleteOwnTask:true, canViewAllTimesheets:false, canEditTask:true, canAssignTasks:false, canManageUsers:false, canManageSettings:false, canDeleteAnything:false },
+      "Collaboratore Esterno": { canViewProjects:false, canCreateProjects:false, canEditProjects:false, canArchiveProjects:false, canViewCommesse:false, canManageCommesse:false, canViewFinancials:false, canViewReport:false, canViewMonitoraggio:false, canCompleteOwnTask:true, canViewAllTimesheets:false, canEditTask:true, canAssignTasks:false, canManageUsers:false, canManageSettings:false, canDeleteAnything:false },
+    };
+    return ROLE_BASE[role] || ROLE_BASE["Collaboratore Interno"];
+  };
+
   const openMember = m => {
     setSelectedMember(m);
     setEditRole(m.role_internal || "Architetto");
     setEditColor(m.color || PREDEFINED_COLORS[0]);
+    setEditPerms(m.custom_permissions || {});
     setActiveTab("role");
     setConfirmRemove(false);
   };
@@ -77,10 +93,29 @@ export default function GestioneUtentiPage() {
   const handleSaveRole = async () => {
     if (!selectedMember || selectedMember.id === currentMember?.id) return;
     setSaving(true);
-    const { error: e } = await supabase.from("team_members").update({ role_internal: editRole }).eq("id", selectedMember.id);
+    // Cambiando ruolo, azzera i permessi custom
+    const { error: e } = await supabase.from("team_members").update({ role_internal: editRole, custom_permissions: null }).eq("id", selectedMember.id);
     if (e) { alert("Errore: " + e.message); setSaving(false); return; }
-    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, role_internal: editRole } : m));
-    setSelectedMember(p => ({ ...p, role_internal: editRole }));
+    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, role_internal: editRole, custom_permissions: null } : m));
+    setSelectedMember(p => ({ ...p, role_internal: editRole, custom_permissions: null }));
+    setEditPerms({});
+    setSaving(false);
+  };
+
+  const handleSavePerms = async () => {
+    if (!selectedMember || selectedMember.id === currentMember?.id) return;
+    setSaving(true);
+    // Salva solo le differenze rispetto ai default del ruolo
+    const base = getRoleBasePerms(editRole);
+    const overrides = {};
+    for (const [k, v] of Object.entries(editPerms)) {
+      if (base[k] !== undefined && base[k] !== v) overrides[k] = v;
+    }
+    const toSave = Object.keys(overrides).length > 0 ? overrides : null;
+    const { error: e } = await supabase.from("team_members").update({ custom_permissions: toSave }).eq("id", selectedMember.id);
+    if (e) { alert("Errore: " + e.message + "\n\nAssicurati di aver aggiunto la colonna custom_permissions (jsonb) alla tabella team_members in Supabase."); setSaving(false); return; }
+    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, custom_permissions: toSave } : m));
+    setSelectedMember(p => ({ ...p, custom_permissions: toSave }));
     setSaving(false);
   };
 
@@ -192,6 +227,7 @@ export default function GestioneUtentiPage() {
             {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: `0.5px solid ${T.border}`, marginBottom: 18 }}>
               <button onClick={() => setActiveTab("role")} style={btnSt(activeTab === "role")}>Ruolo & Permessi</button>
+              <button onClick={() => setActiveTab("perms")} style={btnSt(activeTab === "perms")}>Permessi Dettagliati</button>
               <button onClick={() => setActiveTab("color")} style={btnSt(activeTab === "color")}>Colore Avatar</button>
             </div>
 
@@ -274,6 +310,116 @@ export default function GestioneUtentiPage() {
                 )}
               </div>
             )}
+
+            {/* TAB: Permessi Dettagliati */}
+            {activeTab === "perms" && (() => {
+              const base = getRoleBasePerms(editRole);
+              const effective = { ...base, ...editPerms };
+              const hasCustom = selectedMember?.custom_permissions && Object.keys(selectedMember.custom_permissions).length > 0;
+              const canEdit = canEditRoles && !isOwnProfile;
+
+              const togglePerm = (key) => {
+                if (!canEdit) return;
+                setEditPerms(prev => ({ ...prev, [key]: !effective[key] }));
+              };
+
+              return (
+                <div>
+                  {!canEdit && (
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
+                      Solo il Titolare o un Partner possono modificare i permessi.
+                    </div>
+                  )}
+
+                  {/* Info ruolo corrente */}
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:14, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, lineHeight:1.7 }}>
+                    Base: <span style={{ color:T.navy, fontWeight:600 }}>{ROLE_LABELS[editRole]}</span>
+                    {hasCustom && <span style={{ marginLeft:8, color:'#b45309' }}>· permessi personalizzati attivi</span>}
+                    <br/>Le modifiche qui sotto sovrascrivono i permessi del ruolo.
+                  </div>
+
+                  {/* Griglia sezioni */}
+                  <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                    {PERMISSION_SECTIONS.map(section => (
+                      <div key={section.label} style={{ border:`0.5px solid ${T.border}`, background:T.bg }}>
+                        {/* Intestazione sezione */}
+                        <div style={{ padding:'7px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>
+                          {section.label}
+                        </div>
+                        {/* Righe permesso */}
+                        <div style={{ display:'flex', flexDirection:'column' }}>
+                          {section.perms.map((perm, i) => {
+                            const val = effective[perm.key] ?? false;
+                            const isOverride = editPerms[perm.key] !== undefined && editPerms[perm.key] !== base[perm.key];
+                            return (
+                              <div key={perm.key} style={{
+                                display:'flex', alignItems:'center', justifyContent:'space-between',
+                                padding:'9px 12px',
+                                borderTop: i > 0 ? `0.5px solid ${T.border}` : 'none',
+                                background: isOverride ? (val ? 'rgba(16,185,129,0.04)' : 'rgba(255,69,58,0.04)') : 'transparent',
+                              }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                  <span style={{ fontSize:12, color:T.ink }}>{perm.label}</span>
+                                  {isOverride && (
+                                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:'#b45309', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+                                      modificato
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => togglePerm(perm.key)}
+                                  disabled={!canEdit}
+                                  style={{
+                                    width:40, height:22, borderRadius:11,
+                                    background: val ? '#10b981' : T.border,
+                                    border:'none', cursor: canEdit ? 'pointer' : 'not-allowed',
+                                    position:'relative', transition:'background 0.15s', flexShrink:0,
+                                  }}
+                                >
+                                  <span style={{
+                                    position:'absolute', top:3, left: val ? 21 : 3,
+                                    width:16, height:16, borderRadius:'50%', background:'#fff',
+                                    transition:'left 0.15s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)',
+                                  }}/>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  {canEdit && (
+                    <div style={{ marginTop:14, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                      {hasCustom && (
+                        <button
+                          onClick={async () => {
+                            setSaving(true);
+                            await supabase.from("team_members").update({ custom_permissions: null }).eq("id", selectedMember.id);
+                            setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, custom_permissions: null } : m));
+                            setSelectedMember(p => ({ ...p, custom_permissions: null }));
+                            setEditPerms({});
+                            setSaving(false);
+                          }}
+                          style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 14px', cursor:'pointer' }}
+                        >
+                          Ripristina defaults ruolo
+                        </button>
+                      )}
+                      <button
+                        onClick={handleSavePerms}
+                        disabled={saving}
+                        style={{ marginLeft:'auto', background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1 }}
+                      >
+                        {saving ? "Salvataggio..." : "Salva permessi"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* TAB: Colore */}
             {activeTab === "color" && (
