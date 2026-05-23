@@ -561,44 +561,45 @@ async function main() {
     await upsertAll("project_contacts", projectContacts.map(mapProjectContact), "ProjectContact");
   }
 
-  // ── PHASE 3: Ricalcola importo_incassato per ogni commessa ──────
-  // importo_incassato è un campo denormalizzato aggiornato dall'app quando
-  // si marca una proforma come pagata. Dobbiamo ricalcolarlo dalle proforma migrate.
-  // Logica identica a CommessaDetailPage.ricalcolaIncassato():
-  //   somma importo_totale dove pagato=true e suddivisione_pagamento_ids.length > 0
-  console.log("💰 Ricalcolo importo_incassato per ogni commessa...");
+  // ── PHASE 3: Sincronizza pagato sulle rate delle proforma pagate ──
+  // L'app, quando marca una proforma come pagata, aggiorna anche le
+  // suddivisione_pagamenti collegate a pagato=true. Durante la migrazione
+  // Base44 potrebbe avere rate ancora a pagato=false anche se la proforma
+  // è pagata. Forziamo la sincronizzazione.
+  // Il PAGATO mostrato nell'app viene calcolato da calcolaIncassato() in utils.js
+  // che legge suddivisione_pagamenti.pagato — non proforma.pagato né importo_incassato.
+  console.log("💰 Sincronizzazione pagato su rate delle proforma pagate...");
   const { data: sbProformas, error: pfErr } = await supabase
     .from("proforma")
-    .select("commessa_id, importo_totale, pagato, suddivisione_pagamento_ids")
+    .select("id, commessa_id, importo_totale, pagato, suddivisione_pagamento_ids, costo_extra_ids, data_pagamento")
     .eq("studio", STUDIO_ID);
   if (pfErr) {
     console.warn(`  ⚠ Impossibile leggere proforma: ${pfErr.message}`);
   } else {
-    // Raggruppa per commessa_id — conta tutte le proforma pagate
-    // (non richiediamo suddivisione_pagamento_ids perché durante la migrazione
-    //  il collegamento potrebbe non essere stato migrato lato proforma)
-    const incassatoPerCommessa = new Map();
-    for (const p of sbProformas || []) {
-      if (!p.commessa_id) continue;
-      if (p.pagato) {
-        incassatoPerCommessa.set(
-          p.commessa_id,
-          (incassatoPerCommessa.get(p.commessa_id) || 0) + (Number(p.importo_totale) || 0)
-        );
+    const proformePagate = (sbProformas || []).filter(p => p.pagato);
+    let rateOk = 0, rateFail = 0, costiOk = 0, costiFail = 0;
+    for (const p of proformePagate) {
+      // Aggiorna rate collegate a pagato=true
+      if (Array.isArray(p.suddivisione_pagamento_ids) && p.suddivisione_pagamento_ids.length > 0) {
+        const { error } = await supabase
+          .from("suddivisione_pagamenti")
+          .update({ pagato: true, data_pagamento: p.data_pagamento || null })
+          .in("id", p.suddivisione_pagamento_ids);
+        if (error) { console.error(`  ✗ Rate proforma [${p.id}]: ${error.message}`); rateFail++; }
+        else rateOk += p.suddivisione_pagamento_ids.length;
+      }
+      // Aggiorna costi extra collegati a pagato=true
+      if (Array.isArray(p.costo_extra_ids) && p.costo_extra_ids.length > 0) {
+        const { error } = await supabase
+          .from("costi_extra")
+          .update({ pagato: true })
+          .in("id", p.costo_extra_ids);
+        if (error) { console.error(`  ✗ Costi proforma [${p.id}]: ${error.message}`); costiFail++; }
+        else costiOk += p.costo_extra_ids.length;
       }
     }
-    // Aggiorna solo le commesse con valore > 0 (le altre rimangono a 0)
-    let incOk = 0, incFail = 0;
-    for (const [commessaId, totale] of incassatoPerCommessa) {
-      const { error } = await supabase
-        .from("commesse").update({ importo_incassato: totale }).eq("id", commessaId);
-      if (error) { console.error(`  ✗ importo_incassato [${commessaId}]: ${error.message}`); incFail++; }
-      else incOk++;
-    }
-    console.log(`  ✓ importo_incassato aggiornato: ${incOk} commesse${incFail ? `, ${incFail} failed` : ""}`);
-    if (incassatoPerCommessa.size === 0) {
-      console.log("  ℹ Nessuna proforma pagata con suddivisione trovata — importo_incassato rimane a 0");
-    }
+    console.log(`  ✓ ${proformePagate.length} proforma pagate → ${rateOk} rate aggiornate${rateFail ? `, ${rateFail} failed` : ""}`);
+    if (costiOk > 0) console.log(`  ✓ ${costiOk} costi extra aggiornati a pagato${costiFail ? `, ${costiFail} failed` : ""}`);
   }
 
   console.log("\n✅ Migration complete!\n");
