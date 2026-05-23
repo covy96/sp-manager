@@ -89,6 +89,8 @@ export default function ReportPage() {
   const [rows, setRows]         = useState([]);
   const [allRows, setAllRows]   = useState([]); // per confronto anno/totale
   const [projects, setProjects] = useState([]);
+  const [projectMap, setProjectMap] = useState({}); // id → {name, client}
+  const [memberMap, setMemberMap]   = useState({}); // id → user_name
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
 
@@ -125,15 +127,25 @@ export default function ReportPage() {
     if (!studioId) return;
     setLoading(true); setError("");
     try {
-      const [tsRes, pRes, allRes] = await Promise.all([
+      const [tsRes, pRes, allRes, mRes] = await Promise.all([
         supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",range.start).lte("date",range.end).order("date",{ascending:true}),
-        supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false),
+        supabase.from("projects").select("id,name,client").eq("studio",studioId),
         supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",`${selectedYear}-01-01`).lte("date",`${selectedYear}-12-31`),
+        supabase.from("team_members").select("id,user_name").eq("studio",studioId),
       ]);
       if (tsRes.error) throw tsRes.error;
-      setRows(tsRes.data??[]);
-      setProjects(pRes.data??[]);
-      setAllRows(allRes.data??[]);
+      const projList = pRes.data ?? [];
+      const memberList = mRes.data ?? [];
+      // Mappe id → metadati per join client-side
+      const pMap = {};
+      projList.forEach(p => { pMap[p.id] = { name: p.name, client: p.client }; });
+      const mMap = {};
+      memberList.forEach(m => { mMap[m.id] = m.user_name; });
+      setRows(tsRes.data ?? []);
+      setProjects(projList);
+      setProjectMap(pMap);
+      setMemberMap(mMap);
+      setAllRows(allRes.data ?? []);
     } catch(e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -144,38 +156,40 @@ export default function ReportPage() {
   const oreTotali = useMemo(() => rows.reduce((s,r)=>s+(Number(r.hours)||0),0), [rows]);
   const oreAnno   = useMemo(() => allRows.reduce((s,r)=>s+(Number(r.hours)||0),0), [allRows]);
 
+  // Helper per risolvere nomi da UUID (join client-side)
+  const projName   = r => projectMap[r.project_id]?.name   || r.project_name || "Senza progetto";
+  const projClient = r => projectMap[r.project_id]?.client || r.project_client || "—";
+  const userName   = r => memberMap[r.team_member]          || r.user_name     || "—";
+
   // ── DATI GRAFICO / TABELLA per vista ─────────────────────────
   const byProgetto = useMemo(() => {
     const g={};
-    rows.forEach(r => { const n=r.project_name||"Senza progetto"; g[n]=(g[n]||0)+(Number(r.hours)||0); });
+    rows.forEach(r => { const n=projName(r); g[n]=(g[n]||0)+(Number(r.hours)||0); });
     return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
-  }, [rows]);
+  }, [rows, projectMap]);
 
   const byCliente = useMemo(() => {
-    // Mappa project_name → client
-    const clientMap={};
-    projects.forEach(p=>{ clientMap[p.name]=p.client||"—"; });
     const g={};
     rows.forEach(r => {
-      const c = clientMap[r.project_name] || r.project_name || "—";
+      const c = projClient(r) !== "—" ? projClient(r) : projName(r);
       g[c]=(g[c]||0)+(Number(r.hours)||0);
     });
     return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
-  }, [rows,projects]);
+  }, [rows, projectMap]);
 
   const byUtente = useMemo(() => {
     const g={};
-    rows.forEach(r => { const n=r.user_name||"—"; g[n]=(g[n]||0)+(Number(r.hours)||0); });
+    rows.forEach(r => { const n=userName(r); g[n]=(g[n]||0)+(Number(r.hours)||0); });
     return Object.entries(g).map(([name,hours])=>({name,hours})).sort((a,b)=>b.hours-a.hours);
-  }, [rows]);
+  }, [rows, memberMap]);
 
   // Dati tabella dettaglio per utente (con confronto anno)
   const tableByUtente = useMemo(() => {
     const g={};
-    rows.forEach(r=>{ const n=r.user_name||"—"; if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].period+=Number(r.hours)||0; });
-    allRows.forEach(r=>{ const n=r.user_name||"—"; if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].year+=Number(r.hours)||0; });
+    rows.forEach(r=>{ const n=userName(r); if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].period+=Number(r.hours)||0; });
+    allRows.forEach(r=>{ const n=userName(r); if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].year+=Number(r.hours)||0; });
     return Object.values(g).sort((a,b)=>b.period-a.period);
-  }, [rows,allRows]);
+  }, [rows, allRows, memberMap]);
 
   // Dati grafico corrente
   const chartData = view==="progetto" ? byProgetto : view==="cliente" ? byCliente : byUtente;
@@ -209,7 +223,7 @@ export default function ReportPage() {
   // ── EXPORT CSV ───────────────────────────────────────────────
   const exportCsv = () => {
     const headers=["data","progetto","utente","ore","note"];
-    const lines=[headers.join(","),...rows.map(r=>[csvEscape(r.date),csvEscape(r.project_name),csvEscape(r.user_name),csvEscape(r.hours),csvEscape(r.notes||r.note)].join(","))];
+    const lines=[headers.join(","),...rows.map(r=>[csvEscape(r.date),csvEscape(projName(r)),csvEscape(userName(r)),csvEscape(r.hours),csvEscape(r.notes||r.note)].join(","))];
     const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a"); a.href=url; a.download=`report-${range.start}-${range.end}.csv`; a.click();
@@ -258,8 +272,8 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
         <KpiCard label={mode==="week"?"Ore settimana":"Ore del mese"} value={formatOre(oreTotali)} color={T.navy}/>
         <KpiCard label="Ore anno in corso" value={formatOre(oreAnno)} color={T.muted}/>
-        <KpiCard label="Progetti nel periodo" value={new Set(rows.map(r=>r.project_name).filter(Boolean)).size} color={T.green}/>
-        <KpiCard label="Membri attivi" value={new Set(rows.map(r=>r.user_name).filter(Boolean)).size} color={T.ink}/>
+        <KpiCard label="Progetti nel periodo" value={new Set(rows.map(r=>projName(r)).filter(n=>n!=="Senza progetto")).size} color={T.green}/>
+        <KpiCard label="Membri attivi" value={new Set(rows.map(r=>userName(r)).filter(n=>n!=="—")).size} color={T.ink}/>
       </div>
 
       {/* ── GRAFICI ── */}
@@ -359,10 +373,11 @@ export default function ReportPage() {
                 <tr><td colSpan={3} style={{...tdSt,color:T.muted,textAlign:'center',padding:'24px 0'}}>Nessun dato</td></tr>
               ) : byProgetto.map(r=>{
                 const proj=projects.find(p=>p.name===r.name);
+                const client=proj?.client || projectMap[Object.keys(projectMap).find(id=>projectMap[id]?.name===r.name)]?.client || "—";
                 return (
                   <tr key={r.name}>
                     <td style={{...tdSt,fontWeight:600}}>{r.name}</td>
-                    <td style={{...tdSt,color:T.muted}}>{proj?.client||"—"}</td>
+                    <td style={{...tdSt,color:T.muted}}>{client}</td>
                     <td style={{...tdSt,...monoSt,color:T.navy}}>{formatOre(r.hours)}</td>
                   </tr>
                 );
