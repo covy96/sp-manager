@@ -183,7 +183,8 @@ export default function TimesheetPage() {
   const totalHours = useMemo(() => entries.reduce((s, en) => s + (Number(en.hours) || 0), 0), [entries]);
 
   const getMemberColor = id => { const m = teamMembers.find(m => m.id === id); return m?.color || avatarColor(m?.user_name || m?.user_email || ""); };
-  const getClientName = pid => projects.find(p => p.id === pid)?.client || null;
+  const getProjectName = pid => projects.find(p => p.id === pid)?.name || null;
+  const getClientName  = pid => projects.find(p => p.id === pid)?.client || null;
 
   const selectSt = { width: '100%', padding: '8px 12px', border: `0.5px solid ${T.ink20}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', appearance: 'none' };
 
@@ -307,14 +308,14 @@ export default function TimesheetPage() {
               onMouseEnter={e => e.currentTarget.style.background = T.bg}
               onMouseLeave={e => e.currentTarget.style.background = T.surface}
             >
-              {/* Avatar */}
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: getMemberColor(en.team_member), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: T.surface }}>
-                {getInitials(en.user_name)}
-              </div>
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{en.project_name}</div>
-                {getClientName(en.project_id) && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{getClientName(en.project_id)}</div>}
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {getProjectName(en.project_id) || en.project_name || '—'}
+                </div>
+                {getClientName(en.project_id) && (
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{getClientName(en.project_id)}</div>
+                )}
                 {en.notes && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{en.notes}</div>}
               </div>
               {/* Hours */}
