@@ -37,7 +37,7 @@ export default function AnalisiPage() {
   const [costiPanel, setCostiPanel]           = useState(false);
   const [editCosti, setEditCosti]             = useState({}); // memberId → costo_orario
   const [savingCosti, setSavingCosti]         = useState(false);
-  const [annoFiltro, setAnnoFiltro]           = useState(new Date().getFullYear());
+  const [annoFiltro, setAnnoFiltro]           = useState(0); // default: tutti gli anni
 
   // ── LOAD ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -123,9 +123,9 @@ export default function AnalisiPage() {
         const d = c.data_commessa || c.created_at;
         return d && new Date(d).getFullYear() === annoFiltro;
       });
-      // Preferisci importo_totale se disponibile, altrimenti importo_offerta_base
+      // Preferisci importo_totale → importo_offerta_base → importo_incassato come fallback
       const valoreCommesse = commProj.reduce((s,c) => {
-        const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || 0;
+        const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || Number(c.importo_incassato) || 0;
         return s + v;
       }, 0);
 
