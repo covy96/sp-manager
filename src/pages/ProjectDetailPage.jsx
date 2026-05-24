@@ -311,10 +311,24 @@ export default function ProjectDetailPage() {
     loadData();
   }, [projectId, studioId]);
 
-  const selectedServices = useMemo(() => Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : [], [project]);
+  const selectedServices = useMemo(() => {
+    // Prima usa servizi_selezionati salvati nel progetto
+    if (Array.isArray(project?.servizi_selezionati) && project.servizi_selezionati.length > 0) {
+      return project.servizi_selezionati;
+    }
+    // Fallback: ricava le categorie dalle task esistenti
+    const cats = [...new Set(tasks.map(t => t.categoria).filter(Boolean))];
+    // Se ci sono anche task senza categoria, aggiungi un bucket generico
+    const hasUncategorized = tasks.some(t => !t.categoria);
+    if (hasUncategorized) cats.push("__uncategorized__");
+    return cats;
+  }, [project, tasks]);
 
   const groupedTasks = useMemo(() => selectedServices.map(category => {
-    const catTasks = tasks.filter(t => (t.categoria ?? "") === category);
+    const isUncategorized = category === "__uncategorized__";
+    const catTasks = isUncategorized
+      ? tasks.filter(t => !t.categoria)
+      : tasks.filter(t => (t.categoria ?? "") === category);
     const visible = catTasks.filter(t => !hideCompletedTasks || t.status !== "completed");
     return {
       category,
@@ -428,9 +442,10 @@ export default function ProjectDetailPage() {
     const member = teamMembers.find(m => m.id === memberId);
     const plannedDate = newTaskDates[category] || null;
     const optimisticId = `tmp-${Date.now()}`;
-    setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: category, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, order: 0, created_at: new Date().toISOString() }]);
+    const dbCategoria = category === "__uncategorized__" ? null : category;
+    setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: dbCategoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, order: 0, created_at: new Date().toISOString() }]);
     setNewTaskInputs(p => ({ ...p, [category]: "" })); setNewTaskAssignments(p => ({ ...p, [category]: "" })); setNewTaskDates(p => ({ ...p, [category]: "" }));
-    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: category || null, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
+    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: dbCategoria, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else { setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus(); }
     setCreatingCategory("");
@@ -606,7 +621,7 @@ export default function ProjectDetailPage() {
                     <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
                       style={{ accentColor: T.navy, width: 13, height: 13 }} />
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
-                      {group.category}
+                      {group.category === "__uncategorized__" ? "Generali" : group.category}
                     </span>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `0.5px solid ${T.border}`, padding: '1px 6px' }}>
                       {group.completedCount}/{group.totalCount}
