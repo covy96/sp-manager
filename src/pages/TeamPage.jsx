@@ -6,6 +6,7 @@ import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_SECTIONS } from "../hooks/usePermissions";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 // ── COLORI / HELPERS ─────────────────────────────────────────────
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
@@ -96,6 +97,7 @@ function RoleBadge({ role }) {
 // ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function TeamPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const { studioId, loading: studioLoading, teamMember: currentMember } = useStudio();
   const permissions = usePermissions();
   const { plan, canAddUser } = usePlan();
@@ -306,7 +308,7 @@ export default function TeamPage() {
       {!selectedMember ? (
 
         /* ── CARD GRID ── */
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
           {cards.length === 0 ? (
             <div style={{ gridColumn:'1/-1', background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
               Nessun membro presente.
@@ -354,7 +356,7 @@ export default function TeamPage() {
       ) : (
 
         /* ── SPLIT VIEW: lista compatta + pannello dettaglio ── */
-        <div style={{ display:'grid', gridTemplateColumns:'280px 1fr', gap:10, alignItems:'start' }}>
+        <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '280px 1fr', gap:10, alignItems:'start' }}>
 
           {/* Lista compatta */}
           <div style={{ display:'flex', flexDirection:'column', gap:6 }}>

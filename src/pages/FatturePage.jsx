@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -30,6 +31,7 @@ function KpiCard({ label, value, color, sub }) {
 
 export default function FatturePage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   usePageTitleOnMount("Fatture");
   const navigate = useNavigate();
   const { studioId, studio } = useStudio();
@@ -211,7 +213,7 @@ export default function FatturePage() {
       </div>
 
       {/* KPI */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)',gap:10}}>
         <KpiCard label="Totale emesso"  value={currency(totaleEmesso)}  color={T.ink}
           sub={tipoFatturazione==='proforma' ? `${proformePagate.length} proforma pagate` : `${fatture.length} fatture`}/>
         <KpiCard label="Pagato"         value={currency(totalePagato)}  color={T.green}

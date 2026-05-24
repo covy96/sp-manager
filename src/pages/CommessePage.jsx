@@ -7,6 +7,7 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -67,6 +68,7 @@ function CheckRow({ checked, onChange, label }) {
 // ── COMMESSA CARD ─────────────────────────────────────────────────
 function CommessaCard({ commessa, incassato, onClick, onArchive }) {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const base=Number(commessa.importo_offerta_base)||0, pagato=incassato||0, residuo=base-pagato;
   const pct=base>0?Math.min(100,Math.round((pagato/base)*100)):0;
   const [hover,setHover]=useState(false);
@@ -106,7 +108,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive }) {
       <div style={{height:2,background:T.border,marginBottom:10}}>
         <div style={{height:2,background:T.navy,width:`${pct}%`,transition:'width 0.3s'}}/>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'1fr 1fr 1fr',gap:8}}>
         {[
           {label:'Pagato',value:currency(pagato),color:T.green},
           {label:'Residuo',value:currency(residuo),color:residuo>0?T.navy:T.muted},

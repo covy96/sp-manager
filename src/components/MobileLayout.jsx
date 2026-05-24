@@ -164,7 +164,6 @@ export default function MobileLayout({ session, children }) {
                   </button>
 
                   {[
-                    { label:'Gestione Utenti', path:'/impostazioni/utenti'    },
                     { label:'Servizi',         path:'/impostazioni/servizi'   },
                     { label:'Notifiche',       path:'/impostazioni/notifiche' },
                     { label:'Clienti',         path:'/impostazioni/clienti'   },
@@ -239,7 +238,7 @@ export default function MobileLayout({ session, children }) {
       )}
 
       {/* ── CONTENT ── */}
-      <main style={{ flex:1, padding:'16px 16px 80px', overflowY:'auto', background:T.bg }}>
+      <main style={{ flex:1, padding:'16px 16px 80px', overflowY:'auto', overflowX:'hidden', background:T.bg }}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

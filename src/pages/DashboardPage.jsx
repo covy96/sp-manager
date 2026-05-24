@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
 
@@ -187,6 +188,7 @@ export default function DashboardPage() {
   const { T } = useTheme();
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
+  const isMobile = useIsMobile();
 
   const [user, setUser]               = useState(null);
   const [teamMember, setTeamMember]   = useState(null);
@@ -361,7 +363,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
         <KpiCard
           label={scope === "all" ? "Progetti Attivi — studio" : "I miei progetti attivi"}
           value={activeProjects} note="in corso" valueColor={T.ink} />
@@ -375,7 +377,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
 
         {/* Task di oggi */}
         <Panel title="I miei task di oggi">

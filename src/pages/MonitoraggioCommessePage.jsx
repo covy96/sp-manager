@@ -8,6 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const MONTHS = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
 
@@ -65,6 +66,7 @@ function SortButton({ label, col, sortBy, sortDir, onSort }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function MonitoraggioCommessePage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
@@ -227,7 +229,7 @@ export default function MonitoraggioCommessePage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : permissions.canViewFinancials ? 'repeat(3, 1fr)' : '1fr', gap: 10 }}>
         <KpiCard label={selectedYear ? `Valore contratti ${selectedYear}` : "Valore contratti — tutti gli anni"} value={currency(totals.valoreContratti)} color={T.navy} />
         {permissions.canViewFinancials && (
           <>

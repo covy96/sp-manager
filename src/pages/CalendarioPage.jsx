@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const MONTHS   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
@@ -114,6 +115,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today })
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function CalendarioPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const { studioId } = useStudio();
   const now = new Date();
   const todayISO = toISO(now);
@@ -255,7 +257,8 @@ export default function CalendarioPage() {
   const monthDays = useMemo(()=>getMonthDays(refDate.getFullYear(),refDate.getMonth()),[refDate]);
 
   const renderMonth = () => (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+    <div style={{ overflowX:isMobile?'auto':'visible' }}>
+    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:isMobile?560:undefined }}>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
         {WEEKDAYS.map(d=>(
           <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
@@ -288,14 +291,17 @@ export default function CalendarioPage() {
         })}
       </div>
     </div>
+    </div>
   );
 
   // Vista SETTIMANA e 3 GIORNI (colonne per giorno)
   const renderMultiDay = (count) => {
     const startDate = count===7 ? getMondayOf(refDate) : new Date(refDate);
     const days = getWeekDays(startDate, count);
+    const minW = count === 7 ? 560 : 320;
     return (
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+      <div style={{ overflowX:isMobile?'auto':'visible' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:isMobile?minW:undefined }}>
         {/* Header giorni */}
         <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
           {days.map((d,i)=>{
@@ -341,6 +347,7 @@ export default function CalendarioPage() {
             );
           })}
         </div>
+      </div>
       </div>
     );
   };

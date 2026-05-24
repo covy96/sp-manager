@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 
@@ -74,6 +75,7 @@ export default function ReportPage() {
   const axisSt = { tick:{ fill:T.muted, fontSize:9, fontFamily:"'IBM Plex Mono', monospace" }, axisLine:false, tickLine:false };
   const { studioId, loading:studioLoading } = useStudio();
   const permissions = usePermissions();
+  const isMobile = useIsMobile();
   const now = new Date();
 
   // Periodo
@@ -290,7 +292,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── KPI ── */}
-      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
         <KpiCard
           label={mode==="week"?"Ore settimana":"Ore del mese"}
           value={formatOre(oreTotali)}
@@ -308,7 +310,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── GRAFICI ── */}
-      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10 }}>
 
         {/* Andamento temporale */}
         <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
@@ -358,7 +360,7 @@ export default function ReportPage() {
       </div>
 
       {/* ── TABELLE DETTAGLIO ── */}
-      <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
 
         {/* Tabella ore per utente — sticky left */}
         <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start' }}>

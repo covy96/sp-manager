@@ -5,6 +5,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 
@@ -359,6 +360,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectsPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   usePageTitleOnMount("Progetti");
   const navigate = useNavigate();
   const { teamMember, studioId, studioLoading } = useStudio();
@@ -740,7 +742,7 @@ export default function ProjectsPage() {
           {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
           {filteredProjects.map(project => (
             <ProjectCard
               key={project.id} project={project}

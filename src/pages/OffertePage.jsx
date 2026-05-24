@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 
 function currency(v) {
@@ -20,6 +21,7 @@ export default function OffertePage() {
   const navigate  = useNavigate();
   const { studioId } = useStudio();
   const { T } = useTheme();
+  const isMobile = useIsMobile();
 
   const [offerte, setOfferte]           = useState([]);
   const [progetti, setProgetti]         = useState([]);
@@ -257,7 +259,7 @@ export default function OffertePage() {
       </div>
 
       {/* KPI */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap:10 }}>
         {[
           { label:'In corso',    value:nOfferte,           sub:currency(valOfferte),   color:T.ink  },
           { label:'Accettate',   value:nAccettate,         sub:currency(valAccettate), color:T.green},
@@ -292,7 +294,7 @@ export default function OffertePage() {
       </div>
 
       {/* Lista offerte */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
         {visibili.length === 0 ? (
           <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', gridColumn:'1/-1' }}>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta</div>

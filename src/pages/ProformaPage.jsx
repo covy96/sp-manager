@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -50,6 +51,7 @@ function SortBtn({ field, label, sortField, sortDesc, onSort }) {
 
 export default function ProformaPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { studioId } = useStudio();
 
@@ -148,7 +150,7 @@ export default function ProformaPage() {
       </div>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
         <KpiCard label="Totale proforma"  value={currency(stats.totale)}       note={`${proformaList.length} proforma`}                             color={T.navy} />
         <KpiCard label="Pagate"           value={currency(stats.pagato)}        note={`${proformaList.filter(p=>p.pagato).length} pagate`}            color={T.green} />
         <KpiCard label="Da incassare"     value={currency(stats.daIncassare)}   note={`${proformaList.filter(p=>!p.pagato).length} aperte`}           color={T.red} />
