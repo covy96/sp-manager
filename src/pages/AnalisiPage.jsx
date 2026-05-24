@@ -123,9 +123,11 @@ export default function AnalisiPage() {
         const d = c.data_commessa || c.created_at;
         return d && new Date(d).getFullYear() === annoFiltro;
       });
-      // Preferisci importo_totale → importo_offerta_base → importo_incassato come fallback
-      const valoreCommesse = commProj.reduce((s,c) => {
-        const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || Number(c.importo_incassato) || 0;
+      // Valore base = importo_offerta_base (sempre, senza IVA/contributi)
+      const valoreCommesse = commProj.reduce((s,c) => s + (Number(c.importo_offerta_base) || 0), 0);
+      // Valore totale = importo_totale (comprensivo di IVA e contributi) — solo per la vista dettaglio
+      const valoreTotale = commProj.reduce((s,c) => {
+        const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || 0;
         return s + v;
       }, 0);
 
@@ -152,7 +154,7 @@ export default function AnalisiPage() {
       const margine = valoreCommesse - costoTotale;
       const marginePerc = valoreCommesse > 0 ? (margine/valoreCommesse)*100 : null;
 
-      return { proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
+      return { proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, valoreTotale, incassato, margine, marginePerc, membroBreakdown, commProj };
     });
   }, [projects, timesheet, members, commesse, costiExtra, collab, ratePagate, costiInterni, editCosti, annoFiltro]);
 
@@ -219,22 +221,40 @@ export default function AnalisiPage() {
         </div>
 
         {/* KPI */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
-          {[
-            { label:'Valore commesse',  value:currency(stat.valoreCommesse), color:T.ink  },
-            { label:'Incassato',        value:currency(stat.incassato),      color:T.green,
-              sub: stat.valoreCommesse>0 ? `${((stat.incassato/stat.valoreCommesse)*100).toFixed(0)}% del valore` : null },
-            { label:'Costo ore interne',value:currency(stat.costoOre),       color:T.navy },
-            { label:'Costi esterni',    value:currency(stat.costoEsterni),   color:T.muted},
-            { label:'Margine stimato',  value:currency(stat.margine),        color:stat.margine>=0?T.green:T.red,
-              sub: stat.marginePerc!=null ? `${stat.marginePerc.toFixed(1)}%` : null },
-          ].map((k,i)=>(
-            <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
-              <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
-              <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
-              {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub} del valore</div>}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+          {/* Riga 1: valori economici */}
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ ...label, marginBottom:8 }}>Valore base offerta</div>
+            <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreCommesse)}</div>
+            <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>senza IVA / contributi</div>
+          </div>
+          {stat.valoreTotale !== stat.valoreCommesse && (
+            <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+              <div style={{ ...label, marginBottom:8 }}>Valore con IVA/contributi</div>
+              <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreTotale)}</div>
+              <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>importo totale commesse</div>
             </div>
-          ))}
+          )}
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ ...label, marginBottom:8 }}>Incassato</div>
+            <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.green }}>{currency(stat.incassato)}</div>
+            {stat.valoreCommesse>0 && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{((stat.incassato/stat.valoreCommesse)*100).toFixed(0)}% del valore base</div>}
+          </div>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ ...label, marginBottom:8 }}>Costo ore interne</div>
+            <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.navy }}>{currency(stat.costoOre)}</div>
+          </div>
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ ...label, marginBottom:8 }}>Costi esterni</div>
+            <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.muted }}>{currency(stat.costoEsterni)}</div>
+          </div>
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ ...label, marginBottom:8 }}>Margine stimato</div>
+            <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:stat.margine>=0?T.green:T.red }}>{currency(stat.margine)}</div>
+            {stat.marginePerc!=null && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{stat.marginePerc.toFixed(1)}%</div>}
+          </div>
         </div>
 
         {/* ── ANALISI 1: Costo ore interne ── */}
@@ -379,7 +399,8 @@ export default function AnalisiPage() {
           <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:16 }}>Riepilogo economico</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:400 }}>
             {[
-              ['Valore commesse', currency(stat.valoreCommesse), T.ink],
+              ['Valore base offerta', currency(stat.valoreCommesse), T.ink],
+              ...(stat.valoreTotale !== stat.valoreCommesse ? [['  + IVA / contributi', currency(stat.valoreTotale), T.muted]] : []),
               ['Incassato', currency(stat.incassato), T.green],
               ['− Costo ore interne', currency(stat.costoOre), T.navy],
               ['− Costi esterni', currency(stat.costoEsterni), T.muted],
