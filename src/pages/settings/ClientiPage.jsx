@@ -56,13 +56,17 @@ export default function ClientiPage() {
   const loadAll = async () => {
     setLoading(true); setError("");
     try {
-      const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
+      const [{ data:cts, error:cErr }, { data:projs }, { data:comms }, { data:pcLinks }] = await Promise.all([
         supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
         supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("archived",false),
         supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
+        // ID dei global_contacts usati come anagrafica di progetto — vanno esclusi dalla scheda clienti
+        supabase.from("project_contacts").select("global_contact_id").not("global_contact_id","is",null),
       ]);
       if (cErr) throw cErr;
-      setContacts(cts||[]);
+      // Escludi i contatti che sono anagrafica di un progetto specifico
+      const projectContactIds = new Set((pcLinks||[]).map(r => r.global_contact_id));
+      setContacts((cts||[]).filter(c => !projectContactIds.has(c.id)));
 
       // Raggruppa per nome cliente (case-insensitive)
       const pMap = {};

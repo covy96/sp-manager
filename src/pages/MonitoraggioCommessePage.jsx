@@ -116,7 +116,7 @@ export default function MonitoraggioCommessePage() {
   }, [studioId, studioLoading]);
 
   const rows = useMemo(() => commesse.map(item => {
-    const valoreContratto = Number(item.importo_offerta_base) || 0;
+    const valoreContratto = Number(item.importo_totale) || Number(item.importo_offerta_base) || Number(item.importo_incassato) || 0;
     const incassato = permissions.canViewFinancials
       ? (incassatoPerCommessa[item.id] || 0)
       : (Number(pagamentiByCommessa[item.id]) || 0);

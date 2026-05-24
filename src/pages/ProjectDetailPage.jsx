@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
+import AnagraficaPanel from '../components/AnagraficaPanel';
 import CommessePanel from '../components/CommessePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
@@ -505,6 +506,7 @@ export default function ProjectDetailPage() {
             {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
+            <AnagraficaPanel projectId={id} studioId={studioId} />
             <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{
