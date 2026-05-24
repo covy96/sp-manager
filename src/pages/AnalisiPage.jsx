@@ -158,6 +158,37 @@ export default function AnalisiPage() {
     });
   }, [projects, timesheet, members, commesse, costiExtra, collab, ratePagate, costiInterni, editCosti, annoFiltro]);
 
+  // ── COMMESSE ORFANE (project_id null o progetto non nel studio) ───
+  const projectIds = useMemo(() => new Set(projects.map(p => p.id)), [projects]);
+
+  const orphanStats = useMemo(() => {
+    const commProj = commesse.filter(c => {
+      if (c.project_id && projectIds.has(c.project_id)) return false; // ha un progetto valido → non orfana
+      if (annoFiltro === 0) return true;
+      const d = c.data_commessa || c.created_at;
+      return d && new Date(d).getFullYear() === annoFiltro;
+    });
+    if (commProj.length === 0) return null;
+
+    const valoreCommesse = commProj.reduce((s,c) => s + (Number(c.importo_offerta_base) || 0), 0);
+    const valoreTotale   = commProj.reduce((s,c) => { const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || 0; return s + v; }, 0);
+    const commIds = commProj.map(c => c.id);
+    const costExtra  = costiExtra.filter(c => commIds.includes(c.commessa_id)).reduce((s,c) => s + Number(c.importo||0), 0);
+    const costCollab = collab.filter(c => commIds.includes(c.commessa_id)).reduce((s,c) => s + Number(c.importo||0), 0);
+    const costoEsterni = costExtra + costCollab;
+    const costoInterno = costiInterni.filter(c => commProj.some(x => x.id === c.commessa_id)).reduce((s,c) => s + Number(c.importo||0), 0);
+    const incassato = commProj.reduce((s, c) => {
+      const base = Number(c.importo_offerta_base) || 0;
+      const paid = ratePagate.filter(r => r.commessa_id === c.id);
+      return s + paid.reduce((rs, r) => rs + (Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100)), 0);
+    }, 0);
+    const costoTotale = costoEsterni + costoInterno;
+    const margine = valoreCommesse - costoTotale;
+    const marginePerc = valoreCommesse > 0 ? (margine / valoreCommesse) * 100 : null;
+    const proj = { id: '__orphan__', name: '— Commesse senza progetto', client: null, archived: false };
+    return { proj, oreTotali: 0, costoOre: 0, costoEsterni, costoInterno, costoTotale, valoreCommesse, valoreTotale, incassato, margine, marginePerc, membroBreakdown: [], commProj };
+  }, [commesse, projectIds, costiExtra, collab, costiInterni, ratePagate, annoFiltro]);
+
   // ── SALVA COSTI ORARI ─────────────────────────────────────────────
   const handleSaveCosti = async () => {
     setSavingCosti(true);
@@ -448,10 +479,11 @@ export default function AnalisiPage() {
 
       {/* Totali KPI */}
       {projectStats.length > 0 && (() => {
-        const totOre = projectStats.reduce((s,p)=>s+p.oreTotali,0);
-        const totCosto = projectStats.reduce((s,p)=>s+p.costoTotale,0);
-        const totValore = projectStats.reduce((s,p)=>s+p.valoreCommesse,0);
-        const totIncassato = projectStats.reduce((s,p)=>s+p.incassato,0);
+        const allStats = orphanStats ? [...projectStats, orphanStats] : projectStats;
+        const totOre = allStats.reduce((s,p)=>s+p.oreTotali,0);
+        const totCosto = allStats.reduce((s,p)=>s+p.costoTotale,0);
+        const totValore = allStats.reduce((s,p)=>s+p.valoreCommesse,0);
+        const totIncassato = allStats.reduce((s,p)=>s+p.incassato,0);
         const totMargine = totValore - totCosto;
         return (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
@@ -491,17 +523,20 @@ export default function AnalisiPage() {
           <tbody>
             {projectStats.length === 0 ? (
               <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun progetto attivo</td></tr>
-            ) : projectStats.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => (
+            ) : [...projectStats, ...(orphanStats ? [orphanStats] : [])].map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
+              const isOrphan = proj.id === '__orphan__';
+              return (
               <tr key={proj.id}
                 onClick={()=>setSelectedProject(proj)}
-                style={{ cursor:'pointer' }}
+                style={{ cursor:'pointer', opacity: isOrphan ? 0.75 : 1 }}
                 onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
                 onMouseLeave={e=>e.currentTarget.style.background='transparent'}
               >
                 <td style={tdSt}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ fontWeight:600, color:T.ink }}>{proj.name}</div>
+                    <div style={{ fontWeight:600, color: isOrphan ? T.muted : T.ink }}>{proj.name}</div>
                     {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>archiviato</span>}
+                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>non collegato</span>}
                   </div>
                   {proj.client && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{proj.client}</div>}
                 </td>
@@ -518,7 +553,8 @@ export default function AnalisiPage() {
                 </td>
                 <td style={{ ...tdSt, ...mono, fontSize:10, color:T.navy }}>→</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
