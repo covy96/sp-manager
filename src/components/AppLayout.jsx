@@ -219,7 +219,7 @@ export default function AppLayout({ session, children }) {
   };
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
 
       {/* ── SIDEBAR — sempre scura ── */}
       <aside style={{ width:220, display:'flex', flexDirection:'column', background:T.sidebarBg, flexShrink:0 }}>
@@ -230,7 +230,7 @@ export default function AppLayout({ session, children }) {
           <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark"/>
         </button>
 
-        <nav style={{ padding:'10px 8px', flex:1, display:'flex', flexDirection:'column', gap:2 }}>
+        <nav style={{ padding:'10px 8px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
           {menuItems.map(item => (
             <NavLink key={item.path} to={item.path} style={({ isActive }) => ({
               display:'flex', alignItems:'center', gap:10, padding:'7px 10px',
@@ -257,7 +257,7 @@ export default function AppLayout({ session, children }) {
       </aside>
 
       {/* ── MAIN ── */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, overflow:'hidden' }}>
 
         {/* Header */}
         <header style={{
@@ -384,7 +384,6 @@ export default function AppLayout({ session, children }) {
 
                   <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
-                  <DropItem icon={UsersIcon}    label="Gestione Utenti"  onClick={() => goSettings("/impostazioni/utenti")}/>
                   <DropItem icon={SettingsIcon} label="Gestione Servizi" onClick={() => goSettings("/impostazioni/servizi")}/>
                   <DropItem icon={BellIcon}     label="Notifiche"        onClick={() => goSettings("/impostazioni/notifiche")}/>
                 </div>

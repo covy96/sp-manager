@@ -85,6 +85,9 @@ export default function ReportPage() {
   // Vista
   const [view, setView] = useState("progetto"); // "progetto" | "cliente" | "utente"
 
+  // Popup barra trend
+  const [barPopup, setBarPopup] = useState(null); // { label, users:[{name,hours}], x, y }
+
   // Dati
   const [rows, setRows]         = useState([]);
   const [allRows, setAllRows]   = useState([]); // per confronto anno/totale
@@ -188,7 +191,7 @@ export default function ReportPage() {
     const g={};
     rows.forEach(r=>{ const n=userName(r); if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].period+=Number(r.hours)||0; });
     allRows.forEach(r=>{ const n=userName(r); if(!g[n]) g[n]={name:n,period:0,year:0}; g[n].year+=Number(r.hours)||0; });
-    return Object.values(g).sort((a,b)=>b.period-a.period);
+    return Object.values(g).filter(r => r.name && r.name !== "—").sort((a,b)=>b.period-a.period);
   }, [rows, allRows, memberMap]);
 
   // Dati grafico corrente
@@ -219,6 +222,24 @@ export default function ReportPage() {
       return Object.values(weeks);
     }
   }, [rows, mode, weekRef]);
+
+  // ── CLICK BARRA TREND ────────────────────────────────────────
+  const handleBarClick = (data, _index, event) => {
+    let periodRows;
+    if (mode === "week") {
+      periodRows = rows.filter(r => r.date === data.date);
+    } else {
+      const wk = parseInt((data.label || "").replace("Sett. ", "")) || 0;
+      periodRows = rows.filter(r => Math.ceil(new Date(r.date).getDate() / 7) === wk);
+    }
+    const g = {};
+    periodRows.forEach(r => { const n = userName(r); g[n] = (g[n] || 0) + (Number(r.hours) || 0); });
+    const users = Object.entries(g).map(([name, hours]) => ({ name, hours })).sort((a, b) => b.hours - a.hours);
+    const rect = event?.target?.closest("svg")?.getBoundingClientRect();
+    const cx = rect ? rect.left + rect.width / 2 : (event?.clientX ?? 0);
+    const cy = rect ? rect.top : (event?.clientY ?? 0);
+    setBarPopup({ label: data.label, users, x: cx, y: cy });
+  };
 
   // ── EXPORT CSV ───────────────────────────────────────────────
   const exportCsv = () => {
@@ -270,8 +291,18 @@ export default function ReportPage() {
 
       {/* ── KPI ── */}
       <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
-        <KpiCard label={mode==="week"?"Ore settimana":"Ore del mese"} value={formatOre(oreTotali)} color={T.navy}/>
-        <KpiCard label="Ore anno in corso" value={formatOre(oreAnno)} color={T.muted}/>
+        <KpiCard
+          label={mode==="week"?"Ore settimana":"Ore del mese"}
+          value={formatOre(oreTotali)}
+          color={T.navy}
+          sub={oreTotali > 0 ? `≈ ${(oreTotali / 8).toFixed(1).replace(".",",")} giorni lavorativi` : undefined}
+        />
+        <KpiCard
+          label="Ore anno in corso"
+          value={formatOre(oreAnno)}
+          color={T.muted}
+          sub={oreAnno > 0 ? `≈ ${(oreAnno / 8).toFixed(1).replace(".",",")} giorni lavorativi` : undefined}
+        />
         <KpiCard label="Progetti nel periodo" value={new Set(rows.map(r=>projName(r)).filter(n=>n!=="Senza progetto")).size} color={T.green}/>
         <KpiCard label="Membri attivi" value={new Set(rows.map(r=>userName(r)).filter(n=>n!=="—")).size} color={T.ink}/>
       </div>
@@ -280,18 +311,19 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10 }}>
 
         {/* Andamento temporale */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
+            <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
           </div>
           <div style={{ height:220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trendData}>
+              <BarChart data={trendData} style={{ cursor:'pointer' }}>
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3"/>
                 <XAxis dataKey="label" {...axisSt} stroke="transparent"/>
                 <YAxis {...axisSt} stroke="transparent" tickFormatter={v=>formatOre(v)}/>
                 <Tooltip {...tooltipSt}/>
-                <Bar dataKey="hours" fill={T.navy} radius={[2,2,0,0]}/>
+                <Bar dataKey="hours" fill={T.navy} radius={[2,2,0,0]} onClick={handleBarClick}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -329,7 +361,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:window.innerWidth < 768 ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
 
         {/* Tabella ore per utente — sticky left */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:16, alignSelf:'start' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
@@ -398,6 +430,55 @@ export default function ReportPage() {
       {error && (
         <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
           {error}
+        </div>
+      )}
+
+      {/* ── POPUP DETTAGLIO BARRA ── */}
+      {barPopup && (
+        <div
+          onClick={() => setBarPopup(null)}
+          style={{ position:'fixed', inset:0, zIndex:60 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position:'fixed',
+              left: Math.min(barPopup.x - 120, window.innerWidth - 280),
+              top:  Math.max(barPopup.y - 20, 80),
+              width: 260,
+              background: T.surface,
+              border: `0.5px solid ${T.borderMd}`,
+              boxShadow: `0 8px 24px rgba(0,0,0,0.14)`,
+              zIndex: 61,
+            }}
+          >
+            {/* Header */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+                {barPopup.label} — per utente
+              </div>
+              <button onClick={() => setBarPopup(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16, lineHeight:1, padding:0 }}>×</button>
+            </div>
+            {/* Righe utenti */}
+            {barPopup.users.length === 0 ? (
+              <div style={{ padding:'16px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Nessun dato</div>
+            ) : (
+              <div>
+                {barPopup.users.map((u, i) => (
+                  <div key={u.name} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 14px', borderTop: i > 0 ? `0.5px solid ${T.border}` : 'none' }}>
+                    <span style={{ fontSize:12, color:T.ink, fontWeight: i === 0 ? 600 : 400 }}>{u.name}</span>
+                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: i === 0 ? T.navy : T.muted, fontWeight: i === 0 ? 600 : 400 }}>{formatOre(u.hours)}</span>
+                  </div>
+                ))}
+                <div style={{ padding:'8px 14px', borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'space-between', background:T.bg }}>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted }}>Totale</span>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:600, color:T.navy }}>
+                    {formatOre(barPopup.users.reduce((s, u) => s + u.hours, 0))}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

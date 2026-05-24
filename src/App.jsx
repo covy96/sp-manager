@@ -30,7 +30,6 @@ import TimesheetPage from "./pages/TimesheetPage";
 // Settings pages
 import ProfiloPage from "./pages/settings/ProfiloPage";
 import AspettoPage from "./pages/settings/AspettoPage";
-import GestioneUtentiPage from "./pages/settings/GestioneUtentiPage";
 import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
 import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
@@ -300,14 +299,7 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
-      <Route
-        path="/impostazioni/utenti"
-        element={
-          <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><GestioneUtentiPage /></OnboardingGuard>
-          </ProtectedLayout>
-        }
-      />
+      <Route path="/impostazioni/utenti" element={<Navigate to="/team" replace />} />
       <Route
         path="/impostazioni/servizi"
         element={

@@ -46,6 +46,7 @@ export default function ClientiPage() {
   const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
   const [expandedId, setExpandedId]       = useState(null);
   const [formError, setFormError]         = useState("");
+  const [searchQuery, setSearchQuery]     = useState("");
 
   useEffect(() => {
     if (!studioId) return;
@@ -110,26 +111,44 @@ export default function ClientiPage() {
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
-  return (
-    <div style={{maxWidth:700}}>
+  const filtered = searchQuery.trim()
+    ? contacts.filter(c => {
+        const q = (searchQuery).toLowerCase().trim();
+        return (c.full_name||"").toLowerCase().includes(q) || (c.company||"").toLowerCase().includes(q);
+      })
+    : contacts;
 
-      {/* Header con bottone in alto a destra */}
-      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24}}>
+  return (
+    <div>
+
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:16,flexWrap:'wrap'}}>
         <div>
-          <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',marginBottom:4}}>Clienti</div>
+          <div style={{fontSize:22,fontWeight:600,color:T.ink,letterSpacing:'-0.03em',marginBottom:3}}>Clienti</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
-            {contacts.length > 0
-              ? `${contacts.length} clienti — i clienti si aggiungono automaticamente dai progetti e commesse`
-              : "I clienti si aggiungono automaticamente quando crei progetti o commesse"
-            }
+            {filtered.length !== contacts.length ? `${filtered.length} di ${contacts.length} clienti` : `${contacts.length} clienti`}
           </div>
         </div>
-        <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <div style={{position:'relative'}}>
+            <svg style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',width:13,height:13,color:T.muted,pointerEvents:'none'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              type="text" placeholder="Cerca cliente..."
+              value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
+              style={{width:220,padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+            />
+            {searchQuery && (
+              <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
+            )}
+          </div>
+          <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
+        </div>
       </div>
 
       {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
 
-      {/* Lista vuota */}
       {contacts.length===0 ? (
         <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
@@ -137,9 +156,13 @@ export default function ClientiPage() {
             I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
           </div>
         </div>
+      ) : filtered.length === 0 ? (
+        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'32px 0',textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>
+          Nessun cliente trovato per "{searchQuery}"
+        </div>
       ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-          {contacts.map(c => {
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+          {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
             const comms  = getCommesse(c);
@@ -244,6 +267,7 @@ export default function ClientiPage() {
       )}
 
       {/* Modal aggiungi cliente */}
+
       {addModalOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
           <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>

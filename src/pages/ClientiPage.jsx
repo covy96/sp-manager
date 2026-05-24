@@ -52,6 +52,7 @@ export default function ClientiPage() {
   const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
   const [expandedId, setExpandedId]       = useState(null);
   const [formError, setFormError]         = useState("");
+  const [searchQuery, setSearchQuery]     = useState("");
 
   useEffect(() => { if (studioId) loadAll(); }, [studioId]);
 
@@ -124,21 +125,42 @@ export default function ClientiPage() {
   );
 
 
-  return (
-    <div style={{maxWidth:700}}>
+  const filtered = searchQuery.trim()
+    ? contacts.filter(c => { const q=nk(searchQuery); return nk(c.full_name).includes(q)||nk(c.company||"").includes(q); })
+    : contacts;
 
-      {/* Header con bottone in alto a destra */}
-      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24}}>
+  return (
+    <div>
+
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:12,marginBottom:16,flexWrap:'wrap'}}>
         <div>
-          <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',marginBottom:4}}>Clienti</div>
+          <div style={{fontSize:22,fontWeight:600,color:T.ink,letterSpacing:'-0.03em',marginBottom:3}}>Clienti</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
-            {contacts.length > 0
-              ? `${contacts.length} clienti — i clienti si aggiungono automaticamente dai progetti e commesse`
-              : "I clienti si aggiungono automaticamente quando crei progetti o commesse"
-            }
+            {filtered.length !== contacts.length
+              ? `${filtered.length} di ${contacts.length} clienti`
+              : `${contacts.length} clienti`}
           </div>
         </div>
-        <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
+        {/* Ricerca + Aggiungi */}
+        <div style={{display:'flex',gap:8,flex:'0 0 auto'}}>
+          <div style={{position:'relative'}}>
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:13,height:13,color:T.muted,pointerEvents:'none'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Cerca cliente..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{width:220,padding:'7px 28px 7px 30px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+            />
+            {searchQuery && (
+              <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
+            )}
+          </div>
+          <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
+        </div>
       </div>
 
       {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
@@ -152,8 +174,8 @@ export default function ClientiPage() {
           </div>
         </div>
       ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:6}}>
-          {contacts.map(c => {
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+          {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
             const comms  = getCommesse(c);
@@ -195,7 +217,7 @@ export default function ClientiPage() {
                 {/* Pannello espanso */}
                 {isOpen && (
                   <div style={{borderTop:`0.5px solid ${T.border}`,padding:'14px 16px',background:T.bg}}>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
 
                       {/* Progetti */}
                       <div>
