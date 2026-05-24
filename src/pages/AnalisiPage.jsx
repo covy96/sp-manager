@@ -29,7 +29,7 @@ export default function AnalisiPage() {
   const [commesse, setCommesse]     = useState([]);
   const [costiExtra, setCostiExtra] = useState([]);
   const [collab, setCollab]         = useState([]);
-  const [proforma, setProforma]     = useState([]);
+  const [ratePagate, setRatePagate] = useState([]);
   const [costiInterni, setCostiInterni] = useState([]);
   const [loading, setLoading]       = useState(true);
 
@@ -50,7 +50,8 @@ export default function AnalisiPage() {
         { data:comm },
         { data:ce },
         { data:co },
-        { data:pf },
+        { data:rp },
+        { data:ci },
       ] = await Promise.all([
         supabase.from("projects").select("id,name,client,archived").eq("studio",studioId).order("name"),
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
@@ -58,16 +59,17 @@ export default function AnalisiPage() {
         supabase.from("commesse").select("id,project_id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,data_commessa,created_at,archived").eq("studio",studioId),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
-        supabase.from("proforma").select("commessa_id,importo_totale,pagato").eq("studio",studioId).eq("pagato",true),
+        // Rate pagate — stesso metodo di calcolaIncassato (più preciso della tabella proforma)
+        supabase.from("suddivisione_pagamenti").select("commessa_id,percentuale,importo_fisso").eq("pagato",true),
+        supabase.from("costi_interni").select("*").eq("studio",studioId),
       ]);
-      const { data: ci } = await supabase.from('costi_interni').select('*').eq('studio', studioId);
       setProjects(proj??[]);
       setMembers(mem??[]);
       setTimesheet(ts??[]);
       setCommesse(comm??[]);
       setCostiExtra(ce??[]);
       setCollab(co??[]);
-      setProforma(pf??[]);
+      setRatePagate(rp??[]);
       setCostiInterni(ci??[]);
       // Init editCosti
       const map = {};
@@ -121,7 +123,11 @@ export default function AnalisiPage() {
         const d = c.data_commessa || c.created_at;
         return d && new Date(d).getFullYear() === annoFiltro;
       });
-      const valoreCommesse = commProj.reduce((s,c) => s + Number(c.importo_offerta_base || c.importo_totale || 0), 0);
+      // Preferisci importo_totale se disponibile, altrimenti importo_offerta_base
+      const valoreCommesse = commProj.reduce((s,c) => {
+        const v = Number(c.importo_totale) || Number(c.importo_offerta_base) || 0;
+        return s + v;
+      }, 0);
 
       // Costi extra e collaboratori
       const commIds = commProj.map(c=>c.id);
@@ -134,15 +140,21 @@ export default function AnalisiPage() {
         .reduce((s,c) => s + Number(c.importo||0), 0);
 
       const costoTotale = costoOre + costoEsterni + costoInterno;
-      const incassato = proforma
-        .filter(p => commProj.some(c => c.id === p.commessa_id))
-        .reduce((s,p) => s + Number(p.importo_totale||0), 0);
+
+      // Incassato: usa suddivisione_pagamenti con pagato=true (stesso metodo di calcolaIncassato)
+      const incassato = commProj.reduce((s, c) => {
+        const base = Number(c.importo_offerta_base) || 0;
+        const paid = ratePagate.filter(r => r.commessa_id === c.id);
+        const tot  = paid.reduce((rs, r) =>
+          rs + (Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100)), 0);
+        return s + tot;
+      }, 0);
       const margine = valoreCommesse - costoTotale;
       const marginePerc = valoreCommesse > 0 ? (margine/valoreCommesse)*100 : null;
 
       return { proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc, membroBreakdown, commProj };
     });
-  }, [projects, timesheet, members, commesse, costiExtra, collab, proforma, costiInterni, editCosti, annoFiltro]);
+  }, [projects, timesheet, members, commesse, costiExtra, collab, ratePagate, costiInterni, editCosti, annoFiltro]);
 
   // ── SALVA COSTI ORARI ─────────────────────────────────────────────
   const handleSaveCosti = async () => {
