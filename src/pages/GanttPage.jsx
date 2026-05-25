@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
+import * as XLSX from "xlsx";
 
 const ROW_H       = 44;
 const COL = { attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
@@ -104,23 +105,23 @@ function buildTimeHeaders(startDate, totalDays, dayW) {
 
 // ── EXPORT EXCEL ──────────────────────────────────────────────────
 function exportExcel(lavorazioni, projectName) {
-  const rows = [
-    ['Attività','Impresa','Data inizio','Data fine','Durata (gg)','% Completamento'],
-    ...lavorazioni.map(l=>[
-      l.descrizione||'',
-      l.operatore||'',
-      l.data_inizio||'',
-      l.data_fine||'',
-      l.durata_giorni||'',
-      l.percentuale_completamento||0,
-    ])
+  const data = [
+    ['Attività', 'Impresa', 'Data inizio', 'Data fine', 'Durata (gg)', '% Completamento'],
+    ...lavorazioni.map(l => [
+      l.descrizione || '',
+      l.operatore || '',
+      l.data_inizio || '',
+      l.data_fine || '',
+      Number(l.durata_giorni) || 0,
+      Number(l.percentuale_completamento) || 0,
+    ]),
   ];
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href=url; a.download=`gantt-${projectName.replace(/\s+/g,'-')}.csv`; a.click();
-  URL.revokeObjectURL(url);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  // Larghezze colonne
+  ws['!cols'] = [{ wch: 35 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Gantt');
+  XLSX.writeFile(wb, `gantt-${projectName.replace(/\s+/g, '-')}.xlsx`);
 }
 
 // ── EXPORT PDF ────────────────────────────────────────────────────
