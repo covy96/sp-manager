@@ -682,7 +682,7 @@ export default function ProjectsPage() {
           </div>
 
           {/* Controlli filtro + bottone nuovo */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: isMobile ? 'wrap' : 'nowrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
             {/* Search bar */}
             <input
               type="text"
