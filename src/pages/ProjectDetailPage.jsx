@@ -527,12 +527,20 @@ export default function ProjectDetailPage() {
                 width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 160, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
                     Modifica
                   </button>
-                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
+                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, letterSpacing: '0.05em' }}>
                     {archiving ? "Archiviazione..." : "Archivia progetto"}
+                  </button>
+                  <button onClick={async () => {
+                    if (!window.confirm(`Eliminare il progetto "${project?.name}"? Verrà spostato nel cestino.`)) return;
+                    setMenuOpen(false);
+                    await supabase.from('projects').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+                    navigate('/progetti');
+                  }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
+                    Elimina progetto
                   </button>
                 </div>
               )}

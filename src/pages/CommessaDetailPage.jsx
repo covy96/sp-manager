@@ -382,8 +382,9 @@ export default function CommessaDetailPage() {
     setEditRataModal(false); setEditRataData(null); await loadData(); setEditRataSaving(false);
   };
   const handleDeleteRata = async id => {
-    if (!window.confirm("Eliminare questa rata?")) return;
-    await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    if (!window.confirm("Eliminare questa rata? Verrà spostata nel cestino.")) return;
+    const { error: dErr } = await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    if (dErr) { alert("Errore eliminazione: " + dErr.message); return; }
     setOpenMenuId(null); await loadData();
   };
 
@@ -559,9 +560,10 @@ export default function CommessaDetailPage() {
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 190, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
-                  <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display:'flex', alignItems:'center', width:'100%', padding:'7px 14px', background:'none', border:'none', cursor:'pointer', color:T.muted, fontFamily:"'Space Grotesk',sans-serif", fontSize:13, textAlign:'left' }}>Archivia commessa</button>
+                  <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; setMenuOpen(false); await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Archivia commessa</button>
+                  <button onClick={async()=>{ if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.')) return; setMenuOpen(false); await supabase.from('commesse').update({deleted_at:new Date().toISOString()}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>Elimina commessa</button>
                 </div>
               )}
             </div>
