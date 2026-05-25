@@ -7,7 +7,8 @@ export default function RegisterPage({ session }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [conferma, setConferma] = useState("");
-  const [accepted, setAccepted] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedDpa, setAcceptedDpa] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,14 @@ export default function RegisterPage({ session }) {
       email: email.trim(),
       password,
       options: {
-        data: { full_name: nome.trim(), terms_accepted: true, terms_accepted_at: termsAt },
+        data: {
+          full_name: nome.trim(),
+          terms_accepted: true,
+          terms_accepted_at: termsAt,
+          dpa_accepted: true,
+          dpa_accepted_at: termsAt,
+          dpa_version: "1.0",
+        },
       },
     });
 
@@ -51,6 +59,9 @@ export default function RegisterPage({ session }) {
         id: data.user.id,
         terms_accepted: true,
         terms_accepted_at: termsAt,
+        dpa_accepted: true,
+        dpa_accepted_at: termsAt,
+        dpa_version: "1.0",
       }, { onConflict: "id", ignoreDuplicates: false }).then(() => {});
     }
 
@@ -136,8 +147,8 @@ export default function RegisterPage({ session }) {
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
               <input
                 type="checkbox"
-                checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
                 style={{ marginTop: 2, accentColor: "#0a84ff", width: 15, height: 15, flexShrink: 0 }}
               />
               <span className="text-sm text-white/60" style={{ lineHeight: 1.5 }}>
@@ -153,9 +164,26 @@ export default function RegisterPage({ session }) {
               </span>
             </label>
 
+            {/* Accettazione DPA */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={acceptedDpa}
+                onChange={(e) => setAcceptedDpa(e.target.checked)}
+                style={{ marginTop: 2, accentColor: "#0a84ff", width: 15, height: 15, flexShrink: 0 }}
+              />
+              <span className="text-sm text-white/60" style={{ lineHeight: 1.5 }}>
+                Ho letto e accetto il{" "}
+                <a href="/dpa" target="_blank" rel="noopener noreferrer" className="text-[#0a84ff] hover:underline">
+                  Data Processing Agreement (DPA)
+                </a>
+                {" "}di ASM relativo al trattamento dei dati personali dei miei clienti.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={!accepted || loading}
+              disabled={!acceptedTerms || !acceptedDpa || loading}
               className="w-full rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Registrazione in corso..." : "Registrati"}
