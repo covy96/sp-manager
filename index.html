@@ -3,23 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>SP Manager</title>
+    <title>ASM</title>
 
-    <!-- PWA iOS (standalone mode — impedisce apertura in Safari) -->
+    <!-- ── PWA iOS ────────────────────────────────────────────────── -->
+    <!-- standalone: apre come app nativa, NON apre Safari           -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="SP Manager" />
+    <meta name="apple-mobile-web-app-title" content="ASM" />
 
-    <!-- PWA Android / Chrome -->
+    <!-- Icona per "Aggiungi a Home" e notifiche iOS -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180.png" />
+
+    <!-- ── PWA Android / Chrome / Windows ────────────────────────── -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#13315C" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Icone touch iOS -->
-    <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
-    <link rel="apple-touch-icon" sizes="167x167" href="/icon-192.png" />
+    <!-- Icona standard (favicon browser / notifiche web push) -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
   </head>
   <body>
     <div id="root"></div>
