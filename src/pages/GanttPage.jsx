@@ -138,15 +138,15 @@ function exportPDF(lavorazioni, projectName) {
   const todayISO   = toISO(new Date());
 
   // Dimensioni — ROW e HDR uguali per tabella e SVG (allineamento perfetto)
-  const ROW = 28;
-  const HDR = 40;
+  const ROW = 30;
+  const HDR = 44;
   const H   = HDR + valid.length * ROW;
 
-  // SVG usa viewBox + width:100% → si adatta alla larghezza disponibile
-  // dayW serve per calcolare le proporzioni interne
-  const REF_W = 900; // larghezza di riferimento per il viewBox
-  const dayW  = Math.max(4, Math.floor(REF_W / totalDays));
-  const W     = totalDays * dayW;
+  // A3 landscape usabile ≈ 1496px totali, tabella sinistra ≈ 380px → SVG ≈ 1116px
+  // dayW calcolato per far sì che W ≈ containerWidth → nessuno stretching
+  const SVG_TARGET_W = 1100;
+  const dayW = Math.max(10, Math.round(SVG_TARGET_W / totalDays));
+  const W    = totalDays * dayW;
 
   // Mappa colori imprese
   const cMap = {};
@@ -166,8 +166,8 @@ function exportPDF(lavorazioni, projectName) {
       if (prevMKey !== null) {
         const [y, m] = prevMKey.split('-');
         const mW = i * dayW - prevMStart;
-        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="20" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-        monthSvg += `<text x="${prevMStart + 5}" y="14" font-family="Arial" font-size="8" font-weight="700" fill="#333" letter-spacing="0.08">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
+        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+        monthSvg += `<text x="${prevMStart + 7}" y="15" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
       }
       prevMKey = mKey; prevMStart = i * dayW;
     }
@@ -175,16 +175,16 @@ function exportPDF(lavorazioni, projectName) {
   if (prevMKey) {
     const [y, m] = prevMKey.split('-');
     const mW = W - prevMStart;
-    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="20" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-    monthSvg += `<text x="${prevMStart + 5}" y="14" font-family="Arial" font-size="8" font-weight="700" fill="#333" letter-spacing="0.08">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
+    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+    monthSvg += `<text x="${prevMStart + 7}" y="15" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
   }
 
-  // ── SETTIMANE (numeri giorno) ──
+  // ── NUMERI GIORNO (ogni lunedì) ──
   let weekSvg = '';
   for (let i = 0; i < totalDays; i++) {
     const d = addDays(chartStart, i);
     if (d.getDay() === 1 || i === 0) {
-      weekSvg += `<text x="${i * dayW + 2}" y="33" font-family="Arial" font-size="7" fill="#999">${d.getDate()}</text>`;
+      weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#999">${d.getDate()}</text>`;
     }
   }
 
@@ -192,18 +192,18 @@ function exportPDF(lavorazioni, projectName) {
   let bgSvg = '';
   for (let i = 0; i < totalDays; i++) {
     const d = addDays(chartStart, i);
-    const isWE  = d.getDay() === 0 || d.getDay() === 6;
-    const isOdd = Math.floor(i / 7) % 2 === 1;
+    const isWE    = d.getDay() === 0 || d.getDay() === 6;
+    const isOdd   = Math.floor(i / 7) % 2 === 1;
     const isToday = toISO(d) === todayISO;
-    const fill = isToday ? 'rgba(19,49,92,0.12)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
+    const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
     bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
-    if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="20" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
+    if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="22" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
   }
 
   // ── LINEA OGGI ──
   const tX = dX(todayISO);
   const todayLine = (tX >= 0 && tX <= W)
-    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.75"/>`
+    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.6" stroke-dasharray="4,3"/>`
     : '';
 
   // ── BARRE ──
@@ -215,17 +215,15 @@ function exportPDF(lavorazioni, projectName) {
     rowsSvg += `<line x1="0" y1="${y+ROW}" x2="${W}" y2="${y+ROW}" stroke="#eee" stroke-width="0.5"/>`;
     if (!lav.data_inizio) return;
     const bX = dX(lav.data_inizio);
-    const bW = Math.max(Number(lav.durata_giorni || 1) * dayW, 4);
+    const bW = Math.max(Number(lav.durata_giorni || 1) * dayW, 6);
     const bY = y + ROW * 0.18;
     const bH = ROW * 0.64;
-    const pct = Number(lav.percentuale_completamento) || 0;
     const color = getColor(lav);
     barsSvg += `<rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" fill="${color}" rx="3"/>`;
-    if (pct > 0) barsSvg += `<rect x="${bX}" y="${bY}" width="${bW*pct/100}" height="${bH}" fill="rgba(255,255,255,0.28)" rx="3"/>`;
-    if (bW > 36 && lav.descrizione) {
+    if (bW > 40 && lav.descrizione) {
       const cId = `c${i}`;
-      clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+4}" y="${bY}" width="${bW-8}" height="${bH}"/></clipPath>`);
-      barsSvg += `<text x="${bX+6}" y="${bY+bH*0.69}" font-family="Arial" font-size="8" fill="white" clip-path="url(#${cId})">${lav.descrizione}</text>`;
+      clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+5}" y="${bY}" width="${bW-10}" height="${bH}"/></clipPath>`);
+      barsSvg += `<text x="${bX+7}" y="${bY+bH*0.69}" font-family="'IBM Plex Mono', monospace" font-size="9" fill="white" clip-path="url(#${cId})">${lav.descrizione}</text>`;
     }
   });
 
@@ -242,7 +240,7 @@ function exportPDF(lavorazioni, projectName) {
     arrowsSvg += `<path d="M${x1} ${y1} C${x1+16} ${y1} ${x2-16} ${y2} ${x2} ${y2}" fill="none" stroke="#bbb" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
   });
 
-  // SVG finale — usa viewBox + preserveAspectRatio:none per riempire tutta la larghezza
+  // SVG — W calcolato ≈ containerWidth → preserveAspectRatio:none non distorce
   const svgHtml = `
     <svg xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 ${W} ${H}"
@@ -265,8 +263,8 @@ function exportPDF(lavorazioni, projectName) {
       ${arrowsSvg}
     </svg>`;
 
-  // ── TABELLA SINISTRA (HTML, stessa altezza righe del SVG) ──
-  const thSt = `style="padding:0 8px; height:${HDR}px; font-size:8px; letter-spacing:0.12em; text-transform:uppercase; color:#555; border-bottom:2px solid #ccc; background:#EEF1F6; text-align:left; white-space:nowrap;"`;
+  // ── TABELLA SINISTRA — senza colonna % ──
+  const thSt = `style="padding:0 8px; height:${HDR}px; font-size:8px; letter-spacing:0.12em; text-transform:uppercase; color:#555; border-bottom:2px solid #ccc; background:#EEF1F6; text-align:left; white-space:nowrap; font-family:'IBM Plex Mono', monospace;"`;
   const tableHeader = `
     <tr>
       <th ${thSt}>Attività</th>
@@ -274,46 +272,43 @@ function exportPDF(lavorazioni, projectName) {
       <th ${thSt}>Inizio</th>
       <th ${thSt}>Fine</th>
       <th ${thSt}>Dur.</th>
-      <th ${thSt}>%</th>
     </tr>`;
   const tableRows = valid.map((lav, i) => {
     const color = getColor(lav);
-    const tdSt = `style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; white-space:nowrap;"`;
+    const bg = i % 2 ? '#fafafa' : 'white';
+    const tdBase = `padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${bg}; vertical-align:middle; white-space:nowrap; font-family:'IBM Plex Mono', monospace;`;
     return `<tr>
-      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; max-width:160px; overflow:hidden;">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:5px;vertical-align:middle;flex-shrink:0;"></span>
-        <span style="font-weight:600; font-size:10px;">${lav.descrizione||'—'}</span>
+      <td style="${tdBase} max-width:180px; overflow:hidden;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;flex-shrink:0;"></span>
+        <span style="font-weight:600; font-size:10px; font-family:'Space Grotesk', sans-serif;">${lav.descrizione||'—'}</span>
       </td>
-      <td ${tdSt}>${lav.operatore||'—'}</td>
-      <td ${tdSt}>${lav.data_inizio||'—'}</td>
-      <td ${tdSt}>${lav.data_fine||'—'}</td>
-      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; text-align:center;">${lav.durata_giorni||'—'}gg</td>
-      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; text-align:center;">${lav.percentuale_completamento||0}%</td>
+      <td style="${tdBase}">${lav.operatore||'—'}</td>
+      <td style="${tdBase}">${lav.data_inizio||'—'}</td>
+      <td style="${tdBase}">${lav.data_fine||'—'}</td>
+      <td style="${tdBase} text-align:center;">${lav.durata_giorni||'—'}gg</td>
     </tr>`;
   }).join('');
 
-  // ── LEGENDA IMPRESE ──
+  // ── LEGENDA IMPRESE (senza "Oggi") ──
   const legendHtml = uniqueImprese.length ? `
-    <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:14px; padding:8px 12px; background:#f8f8f8; border:1px solid #eee;">
-      <span style="font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:Arial; margin-right:4px;">Imprese:</span>
+    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:14px; padding:8px 14px; background:#f8f8f8; border:1px solid #eee;">
+      <span style="font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:'IBM Plex Mono', monospace; margin-right:2px;">Imprese:</span>
       ${uniqueImprese.map(imp => `
-        <span style="display:inline-flex; align-items:center; gap:5px;">
-          <span style="display:inline-block; width:12px; height:12px; background:${cMap[imp]||'#13315C'}; border-radius:2px;"></span>
-          <span style="font-size:10px; font-family:Arial; color:#333;">${imp}</span>
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:13px; height:13px; background:${cMap[imp]||'#13315C'}; border-radius:2px; flex-shrink:0;"></span>
+          <span style="font-size:11px; font-family:'Space Grotesk', sans-serif; font-weight:600; color:#333;">${imp}</span>
         </span>`).join('')}
-      <span style="display:inline-flex; align-items:center; gap:5px; margin-left:6px; border-left:1px solid #ddd; padding-left:14px;">
-        <span style="display:inline-block; width:18px; height:2px; background:#13315C; opacity:0.7; vertical-align:middle;"></span>
-        <span style="font-size:10px; font-family:Arial; color:#13315C;">Oggi</span>
-      </span>
     </div>` : '';
 
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Gantt — ${projectName}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Arial, sans-serif; font-size: 11px; padding: 18px; color: #0E0E0D; background: white; }
-      @page { size: A4 landscape; margin: 12mm; }
+      body { font-family: 'Space Grotesk', sans-serif; font-size: 11px; padding: 18px; color: #0E0E0D; background: white; }
+      @page { size: A3 landscape; margin: 12mm; }
       @media print {
         body { padding: 0; }
         -webkit-print-color-adjust: exact;
@@ -322,18 +317,16 @@ function exportPDF(lavorazioni, projectName) {
     </style></head>
     <body>
       <!-- Header -->
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; border-bottom:2px solid #13315C; padding-bottom:8px;">
-        <div>
-          <div style="font-size:18px; font-weight:700; letter-spacing:-0.02em; color:#0E0E0D;">Gantt — ${projectName}</div>
-        </div>
-        <div style="font-family:monospace; font-size:9px; color:#999;">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; border-bottom:2px solid #13315C; padding-bottom:8px;">
+        <div style="font-size:20px; font-weight:700; letter-spacing:-0.02em; color:#0E0E0D; font-family:'Space Grotesk', sans-serif;">Gantt — ${projectName}</div>
+        <div style="font-family:'IBM Plex Mono', monospace; font-size:9px; color:#999;">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
       </div>
 
       <!-- Legenda -->
       ${legendHtml}
 
       <!-- Layout principale: tabella sx + calendario dx -->
-      <div style="display:flex; border:1px solid #ccc; border-collapse:collapse;">
+      <div style="display:flex; border:1px solid #ccc;">
 
         <!-- Tabella attività (sinistra, larghezza fissa) -->
         <div style="flex-shrink:0; border-right:2px solid #ccc;">
