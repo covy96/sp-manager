@@ -199,7 +199,7 @@ export default function CommessaDetailPage() {
     const [cR, costiR, suddR, collabR] = await Promise.all([
       supabase.from("commesse").select("*").eq("id", commessaId).maybeSingle(),
       supabase.from("costi_extra").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
-      supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).order("numero_rata", { ascending: true }).order("created_at", { ascending: true }),
+      supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).is("deleted_at", null).order("numero_rata", { ascending: true }).order("created_at", { ascending: true }),
       supabase.from("collaboratori_esterni").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
     ]);
     if (cR.error) { setError(cR.error.message); setLoading(false); return; }

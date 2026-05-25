@@ -148,7 +148,7 @@ function ScrollBox({ children, maxHeight = 160 }) {
 }
 
 // ── PROJECT CARD ─────────────────────────────────────────────────
-function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers, onEdit, onArchive, navigate }) {
+function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers, onEdit, onArchive, onDelete, navigate }) {
   const { T } = useTheme();
   const hours = timesheetByProject[project.id] || 0;
   const tasks = tasksByProject[project.id] || { total: 0, completed: 0 };
@@ -195,9 +195,15 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
             <button onClick={e => { e.stopPropagation(); onArchive(project, e); }} style={{
               display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red,
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted,
               letterSpacing: '0.05em',
             }}>Archivia</button>
+            <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete(project); }} style={{
+              display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red,
+              letterSpacing: '0.05em',
+            }}>Elimina</button>
           </div>
         )}
       </div>
@@ -436,7 +442,7 @@ export default function ProjectsPage() {
     if (!studioId) return;
     setLoading(true); setError("");
     try {
-      const { data: projectsData, error: pErr } = await supabase.from("projects").select("*").eq("studio", studioId).eq("archived", false).order("created_at", { ascending: false });
+      const { data: projectsData, error: pErr } = await supabase.from("projects").select("*").eq("studio", studioId).eq("archived", false).is("deleted_at", null).order("created_at", { ascending: false });
       if (pErr) throw pErr;
       setProjects(projectsData ?? []);
 
@@ -609,6 +615,12 @@ export default function ProjectsPage() {
   };
 
   const openArchiveModal = (project, e) => { e.stopPropagation(); setProjectToArchive(project); setArchiveModalOpen(true); };
+
+  const handleDeleteProject = async (project) => {
+    if (!window.confirm(`Eliminare il progetto "${project.name}"? Verrà spostato nel cestino.`)) return;
+    await supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", project.id);
+    setProjects(prev => prev.filter(p => p.id !== project.id));
+  };
   const handleArchiveProject = async () => {
     if (!projectToArchive) return;
     setArchiveLoading(true);
@@ -753,7 +765,7 @@ export default function ProjectsPage() {
               key={project.id} project={project}
               timesheetByProject={timesheetByProject} tasksByProject={tasksByProject}
               teamMembers={teamMembers} onEdit={openEditModal}
-              onArchive={openArchiveModal} navigate={navigate}
+              onArchive={openArchiveModal} onDelete={handleDeleteProject} navigate={navigate}
             />
           ))}
         </div>

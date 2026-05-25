@@ -66,7 +66,7 @@ function CheckRow({ checked, onChange, label }) {
 }
 
 // ── COMMESSA CARD ─────────────────────────────────────────────────
-function CommessaCard({ commessa, incassato, onClick, onArchive }) {
+function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
   const { T } = useTheme();
   const isMobile = useIsMobile();
   const base=Number(commessa.importo_offerta_base)||0, pagato=incassato||0, residuo=base-pagato;
@@ -99,6 +99,9 @@ function CommessaCard({ commessa, incassato, onClick, onArchive }) {
               <div style={{position:'absolute',right:0,top:'100%',zIndex:20,background:T.surface,border:`0.5px solid ${T.borderMd}`,minWidth:160,boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
                 <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
                   Archivia
+                </button>
+                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.'))return;await onDelete(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:'#ff453a',fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
+                  Elimina
                 </button>
               </div>
             )}
@@ -168,7 +171,7 @@ export default function CommessePage() {
     if (!studioId) return;
     setLoading(true); setError("");
     try {
-      const { data, error:dErr } = await supabase.from("commesse").select("*").eq("studio",studioId).eq("archived",false).order("created_at",{ascending:false});
+      const { data, error:dErr } = await supabase.from("commesse").select("*").eq("studio",studioId).eq("archived",false).is("deleted_at",null).order("created_at",{ascending:false});
       if (dErr) throw dErr;
       setCommesse(data??[]);
       const ids=(data??[]).map(c=>c.id);
@@ -384,7 +387,7 @@ export default function CommessePage() {
       ) : (
         <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(
-            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }}/>
+            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }} onDelete={async(id)=>{ await supabase.from('commesse').update({deleted_at:new Date().toISOString()}).eq('id',id); await loadData(); }}/>
           ))}
         </div>
       )}
