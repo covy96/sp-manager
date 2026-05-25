@@ -83,9 +83,9 @@ function Panel({ children, style = {} }) {
 function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '14px 16px' }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
+    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '10px 10px', minWidth: 0, overflow: 'hidden' }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+      <div style={{ fontSize: 'clamp(13px, 3.5vw, 20px)', fontWeight: 600, letterSpacing: '-0.02em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
     </div>
   );
 }
@@ -540,7 +540,7 @@ export default function CommessaDetailPage() {
   const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0, width: '100%' }}>
 
       {/* HEADER */}
       <Panel>
@@ -714,7 +714,7 @@ export default function CommessaDetailPage() {
       <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:14, marginTop:14 }}>
 
         {/* COLLABORATORI ESTERNI */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, minWidth:0, overflow:'hidden' }}>
           <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Collaboratori esterni</div>
@@ -756,16 +756,16 @@ export default function CommessaDetailPage() {
                 <Input value={newCollab.ruolo} onChange={e=>setNewCollab(p=>({...p,ruolo:e.target.value}))} placeholder="Ruolo"/>
                 <Input value={newCollab.nome_cognome} onChange={e=>setNewCollab(p=>({...p,nome_cognome:e.target.value}))} placeholder="Nome e cognome" required/>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8 }}>
-                <Input type="number" value={newCollab.importo} onChange={e=>setNewCollab(p=>({...p,importo:e.target.value}))} placeholder="Importo €"/>
-                <BtnPrimary type="submit" disabled={savingCollab}>+ Aggiungi</BtnPrimary>
+              <div style={{ display:'flex', gap:8 }}>
+                <Input type="number" value={newCollab.importo} onChange={e=>setNewCollab(p=>({...p,importo:e.target.value}))} placeholder="Importo €" style={{ flex:1, minWidth:0 }}/>
+                <BtnPrimary type="submit" disabled={savingCollab} style={{ flexShrink:0 }}>+ Aggiungi</BtnPrimary>
               </div>
             </form>
           </div>
         </div>
 
         {/* COSTI INTERNI */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, minWidth:0, overflow:'hidden' }}>
           <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div>
               <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Costi interni</div>
@@ -821,15 +821,15 @@ export default function CommessaDetailPage() {
                 <input type='date' value={newCostoInterno.data} onChange={e=>setNewCostoInterno(p=>({...p,data:e.target.value}))}
                   style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr auto', gap:8 }}>
+              <div style={{ display:'flex', gap:8 }}>
                 <input type='text' value={newCostoInterno.descrizione} onChange={e=>setNewCostoInterno(p=>({...p,descrizione:e.target.value}))}
                   onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
                   placeholder='Descrizione spesa...'
-                  style={{ padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }}/>
+                  style={{ flex:'2 1 0', minWidth:0, padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }}/>
                 <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e=>setNewCostoInterno(p=>({...p,importo:e.target.value}))}
                   onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
                   placeholder='€'
-                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
+                  style={{ flex:'1 1 0', minWidth:0, padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
                 <button onClick={handleAddCostoInterno} disabled={savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo}
                   style={{ background:T.navy, border:'none', color:'#EEF1F6', cursor:'pointer', padding:'0 14px', fontSize:18, opacity:savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo?0.4:1 }}>
                   +
