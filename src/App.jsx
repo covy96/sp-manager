@@ -97,6 +97,11 @@ function OnboardingGuard({ session, children }) {
 export default function App({ session }) {
   const navigate = useNavigate();
 
+  // Su mobile (PWA), se non c'è sessione salta la landing e vai direttamente al login
+  const isPwa    = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isMobile = window.innerWidth < 768;
+  const skipLanding = (isPwa || isMobile) && !session;
+
   return (
     <ThemeProvider>
     <Routes>
@@ -105,11 +110,13 @@ export default function App({ session }) {
         element={
           session
             ? <Navigate to="/dashboard" replace />
-            : <LandingPage
-                onLogin={() => navigate("/login")}
-                onRegister={() => navigate("/crea-studio")}
-                onJoin={() => navigate("/unisciti")}
-              />
+            : skipLanding
+              ? <Navigate to="/login" replace />
+              : <LandingPage
+                  onLogin={() => navigate("/login")}
+                  onRegister={() => navigate("/crea-studio")}
+                  onJoin={() => navigate("/unisciti")}
+                />
         }
       />
       <Route path="/login" element={<LoginPage session={session} />} />

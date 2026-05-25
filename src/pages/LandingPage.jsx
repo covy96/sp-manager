@@ -143,10 +143,13 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         <AsmSeal size="sm" showBorder={false} showBottom={false} theme={activeSection===0?'dark':'light'}/>
 
         {isMobile ? (
-          /* Mobile: hamburger + Crea Studio */
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          /* Mobile: Accedi + hamburger */
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button onClick={onLogin} style={{ background:'transparent', border:`1px solid ${activeSection===0?'rgba(238,241,246,0.5)':'rgba(14,14,13,0.3)'}`, color:activeSection===0?'#EEF1F6':C.ink, padding:'7px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+              Accedi
+            </button>
             <button onClick={onRegister} style={{ background:C.brass, border:'none', color:C.ink, padding:'7px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', fontWeight:700 }}>
-              Crea Studio →
+              Registrati
             </button>
             <button onClick={()=>setMenuOpen(!menuOpen)} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', gap:4, padding:4 }}>
               {[0,1,2].map(i=>(
@@ -232,12 +235,20 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               Progettato per architetti, non per contabili.
             </p>
             <div style={{ display:'flex', flexDirection:isMobile?'column':'row', gap:12, justifyContent:'center', alignItems:'center' }}>
+              {/* Mobile: Accedi come CTA principale */}
+              {isMobile && (
+                <button onClick={onLogin} style={{ background:'#EEF1F6', border:'none', color:C.ink, padding:'14px 28px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', fontWeight:700, width:'100%' }}>
+                  Accedi all'app →
+                </button>
+              )}
               <button onClick={onRegister} style={{ background:C.brass, border:'none', color:C.ink, padding:isMobile?'12px 28px':'14px 36px', ...mono, fontSize:isMobile?11:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', fontWeight:700, width:isMobile?'100%':'auto' }}>
-                Crea il tuo studio →
+                {isMobile ? 'Crea un nuovo studio →' : 'Crea il tuo studio →'}
               </button>
-              <button onClick={()=>scrollTo(1)} style={{ background:'transparent', border:'0.5px solid rgba(238,241,246,0.3)', color:'rgba(238,241,246,0.7)', padding:isMobile?'12px 28px':'14px 36px', ...mono, fontSize:isMobile?11:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', width:isMobile?'100%':'auto' }}>
-                Scopri di più ↓
-              </button>
+              {!isMobile && (
+                <button onClick={()=>scrollTo(1)} style={{ background:'transparent', border:'0.5px solid rgba(238,241,246,0.3)', color:'rgba(238,241,246,0.7)', padding:'14px 36px', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer' }}>
+                  Scopri di più ↓
+                </button>
+              )}
             </div>
             <div style={{ marginTop:14 }}>
               <button onClick={onJoin} style={{ background:'none', border:'none', color:'rgba(238,241,246,0.4)', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3 }}>
