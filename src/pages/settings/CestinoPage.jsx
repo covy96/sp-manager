@@ -5,36 +5,37 @@ import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { supabase } from '../../lib/supabase';
 
 const TABELLE = [
-  { id:'projects',              label:'Progetti',     nome:'name'          },
-  { id:'commesse',              label:'Commesse',     nome:'nome_commessa' },
-  { id:'offerte',               label:'Offerte',      nome:'nome_offerta'  },
-  { id:'proforma',              label:'Proforma',     nome:'numero_proforma'},
-  { id:'suddivisione_pagamenti',label:'Rate',         nome:'numero_rata'   },
-  { id:'costi_extra',           label:'Costi extra',  nome:'descrizione'   },
-  { id:'lavorazioni_gantt',     label:'Lavorazioni',  nome:'descrizione'   },
+  { id:'projects',               label:'Progetti',     nome:'name',           icon:'📁' },
+  { id:'commesse',               label:'Commesse',     nome:'nome_commessa',  icon:'📋' },
+  { id:'offerte',                label:'Offerte',      nome:'nome_offerta',   icon:'📄' },
+  { id:'proforma',               label:'Proforma',     nome:'numero_proforma',icon:'🧾' },
+  { id:'suddivisione_pagamenti', label:'Rate',         nome:'numero_rata',    icon:'💳' },
+  { id:'costi_extra',            label:'Costi extra',  nome:'descrizione',    icon:'💰' },
+  { id:'lavorazioni_gantt',      label:'Gantt',        nome:'descrizione',    icon:'📊' },
 ];
 
 export default function CestinoPage() {
   usePageTitleOnMount('Cestino');
   const { studioId } = useStudio();
   const { T } = useTheme();
-  const [items, setItems]     = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [restoring, setRestoring] = useState(null);
+  const [byCategory, setByCategory] = useState({});
+  const [loading, setLoading]        = useState(true);
+  const [restoring, setRestoring]    = useState(null);
+  const [collapsed, setCollapsed]    = useState({});
 
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
 
   const loadAll = async () => {
     setLoading(true);
-    const all = [];
+    const result = {};
     for (const t of TABELLE) {
       const q = supabase.from(t.id).select('id, '+t.nome+', deleted_at').not('deleted_at','is',null);
       if (t.id !== 'tasks') q.eq('studio', studioId);
       const { data } = await q.order('deleted_at', { ascending:false }).limit(50);
-      (data??[]).forEach(r => all.push({ ...r, _tabella:t.id, _label:t.label, _nome:r[t.nome]||'—' }));
+      const rows = (data ?? []).map(r => ({ ...r, _tabella:t.id, _label:t.label, _icon:t.icon, _nome:r[t.nome]||'—' }));
+      if (rows.length > 0) result[t.id] = { meta: t, items: rows };
     }
-    all.sort((a,b) => new Date(b.deleted_at)-new Date(a.deleted_at));
-    setItems(all);
+    setByCategory(result);
     setLoading(false);
   };
 
@@ -55,8 +56,12 @@ export default function CestinoPage() {
     await loadAll();
   };
 
+  const toggleCollapse = (id) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
+
+  const totalItems = Object.values(byCategory).reduce((s, c) => s + c.items.length, 0);
+
   return (
-    <div style={{ maxWidth:680 }}>
+    <div style={{ maxWidth:700 }}>
       <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', marginBottom:4 }}>Cestino</div>
         <div style={{ ...mono, fontSize:10, color:T.muted }}>Elementi eliminati di recente — puoi ripristinarli entro 30 giorni</div>
@@ -64,34 +69,63 @@ export default function CestinoPage() {
 
       {loading ? (
         <div style={{ ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>
-      ) : items.length === 0 ? (
+      ) : totalItems === 0 ? (
         <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center' }}>
           <div style={{ fontSize:32, marginBottom:12 }}>🗑</div>
           <div style={{ ...mono, fontSize:11, color:T.muted }}>Il cestino è vuoto</div>
         </div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          {items.map(item => (
-            <div key={item.id+'_'+item._tabella} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:T.surface, border:`0.5px solid ${T.border}` }}>
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:2 }}>
-                  <span style={{ ...mono, fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, background:T.surface2, padding:'2px 6px', border:`0.5px solid ${T.border}` }}>{item._label}</span>
-                  <span style={{ fontSize:13, fontWeight:600, color:T.ink }}>{item._nome}</span>
-                </div>
-                <div style={{ ...mono, fontSize:9, color:T.muted }}>
-                  Eliminato il {new Date(item.deleted_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
-                </div>
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={()=>handleRestore(item)} disabled={restoring===item.id} style={{ border:`0.5px solid ${T.green}`, background:'transparent', color:T.green, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer' }}>
-                  Ripristina
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          {TABELLE.filter(t => byCategory[t.id]).map(t => {
+            const cat = byCategory[t.id];
+            const isOpen = !collapsed[t.id];
+            return (
+              <div key={t.id} style={{ border:`0.5px solid ${T.border}`, background:T.surface, overflow:'hidden' }}>
+
+                {/* Header categoria */}
+                <button
+                  onClick={() => toggleCollapse(t.id)}
+                  style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:T.bg, border:'none', cursor:'pointer', borderBottom: isOpen ? `0.5px solid ${T.border}` : 'none' }}
+                >
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <span style={{ fontSize:16 }}>{t.icon}</span>
+                    <span style={{ fontSize:13, fontWeight:600, color:T.ink }}>{t.label}</span>
+                    <span style={{ ...mono, fontSize:9, color:T.muted, background:T.surface2, border:`0.5px solid ${T.border}`, padding:'2px 7px' }}>
+                      {cat.items.length}
+                    </span>
+                  </div>
+                  <span style={{ ...mono, fontSize:11, color:T.muted }}>{isOpen ? '▲' : '▼'}</span>
                 </button>
-                <button onClick={()=>handleDeleteForever(item)} disabled={restoring===item.id} style={{ border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer' }}>
-                  Elimina
-                </button>
+
+                {/* Righe elementi */}
+                {isOpen && (
+                  <div>
+                    {cat.items.map((item, idx) => (
+                      <div key={item.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderTop: idx > 0 ? `0.5px solid ${T.border}` : 'none', background: idx % 2 === 0 ? T.surface : T.surface2 }}>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>{item._nome}</div>
+                          <div style={{ ...mono, fontSize:9, color:T.muted }}>
+                            Eliminato il {new Date(item.deleted_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
+                          </div>
+                        </div>
+                        <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                          <button onClick={()=>handleRestore(item)} disabled={restoring===item.id}
+                            style={{ border:`0.5px solid ${T.green}`, background:'transparent', color:T.green, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer', opacity: restoring===item.id ? 0.5 : 1 }}>
+                            Ripristina
+                          </button>
+                          <button onClick={()=>handleDeleteForever(item)} disabled={restoring===item.id}
+                            style={{ border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer', opacity: restoring===item.id ? 0.5 : 1 }}>
+                            Elimina
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
