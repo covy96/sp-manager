@@ -128,184 +128,227 @@ function exportExcel(lavorazioni, projectName) {
 function exportPDF(lavorazioni, projectName) {
   const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine);
 
-  // Calcola range date dal contenuto reale
+  // Range date
   const allISO = valid.flatMap(l => [l.data_inizio, l.data_fine]);
   const minISO = allISO.length ? allISO.reduce((a, b) => a < b ? a : b) : toISO(new Date());
   const maxISO = allISO.length ? allISO.reduce((a, b) => a > b ? a : b) : toISO(addDays(new Date(), 60));
-  const chartStart = addDays(parseDate(minISO), -3);
-  const chartEnd   = addDays(parseDate(maxISO), 6);
+  const chartStart = addDays(parseDate(minISO), -2);
+  const chartEnd   = addDays(parseDate(maxISO), 5);
   const totalDays  = diffDays(chartStart, chartEnd) + 1;
+  const todayISO   = toISO(new Date());
 
-  // Adatta larghezza colonna giorno per stare in ~900px
-  const dayW = Math.max(5, Math.min(24, Math.floor(900 / totalDays)));
-  const ROW  = 30;
-  const HDR  = 46;
-  const W    = totalDays * dayW;
-  const H    = HDR + valid.length * ROW + 4;
-  const todayISO = toISO(new Date());
+  // Dimensioni — ROW e HDR uguali per tabella e SVG (allineamento perfetto)
+  const ROW = 28;
+  const HDR = 40;
+  const H   = HDR + valid.length * ROW;
+
+  // SVG usa viewBox + width:100% → si adatta alla larghezza disponibile
+  // dayW serve per calcolare le proporzioni interne
+  const REF_W = 900; // larghezza di riferimento per il viewBox
+  const dayW  = Math.max(4, Math.floor(REF_W / totalDays));
+  const W     = totalDays * dayW;
 
   // Mappa colori imprese
   const cMap = {};
   valid.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, cMap, '#13315C'); });
   const getColor = l => l.colore || (l.operatore ? (cMap[l.operatore] || '#13315C') : '#13315C');
+  const uniqueImprese = [...new Set(valid.map(l => l.operatore).filter(Boolean))];
 
   const dX = iso => diffDays(chartStart, parseDate(iso)) * dayW;
 
-  // ── HEADER MESI ──
-  let monthDefs = '', prevMKey = null, prevMStart = 0;
+  // ── MESI ──
   const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  let monthSvg = '', prevMKey = null, prevMStart = 0;
   for (let i = 0; i <= totalDays; i++) {
     const d = addDays(chartStart, i);
     const mKey = `${d.getFullYear()}-${d.getMonth()}`;
     if (mKey !== prevMKey) {
       if (prevMKey !== null) {
         const [y, m] = prevMKey.split('-');
-        const lbl = `${MONTH_NAMES[+m]} ${y}`;
         const mW = i * dayW - prevMStart;
-        monthDefs += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-        monthDefs += `<text x="${prevMStart + 5}" y="15" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#444" letter-spacing="0.08em" text-transform="uppercase">${lbl.toUpperCase()}</text>`;
+        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="20" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+        monthSvg += `<text x="${prevMStart + 5}" y="14" font-family="Arial" font-size="8" font-weight="700" fill="#333" letter-spacing="0.08">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
       }
       prevMKey = mKey; prevMStart = i * dayW;
     }
   }
-  // ultima month
   if (prevMKey) {
     const [y, m] = prevMKey.split('-');
-    const lbl = `${MONTH_NAMES[+m]} ${y}`;
-    const mW = totalDays * dayW - prevMStart;
-    monthDefs += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-    monthDefs += `<text x="${prevMStart + 5}" y="15" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#444">${lbl.toUpperCase()}</text>`;
+    const mW = W - prevMStart;
+    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="20" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+    monthSvg += `<text x="${prevMStart + 5}" y="14" font-family="Arial" font-size="8" font-weight="700" fill="#333" letter-spacing="0.08">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
   }
 
-  // ── SETTIMANE / GIORNI header ──
-  let weekDefs = '';
+  // ── SETTIMANE (numeri giorno) ──
+  let weekSvg = '';
   for (let i = 0; i < totalDays; i++) {
     const d = addDays(chartStart, i);
     if (d.getDay() === 1 || i === 0) {
-      weekDefs += `<text x="${i * dayW + 2}" y="37" font-family="Arial,sans-serif" font-size="7" fill="#888">${d.getDate()}</text>`;
+      weekSvg += `<text x="${i * dayW + 2}" y="33" font-family="Arial" font-size="7" fill="#999">${d.getDate()}</text>`;
     }
   }
 
-  // ── COLONNE DI SFONDO ──
-  let bgCols = '';
+  // ── SFONDO COLONNE ──
+  let bgSvg = '';
   for (let i = 0; i < totalDays; i++) {
     const d = addDays(chartStart, i);
-    const isWE = d.getDay() === 0 || d.getDay() === 6;
+    const isWE  = d.getDay() === 0 || d.getDay() === 6;
     const isOdd = Math.floor(i / 7) % 2 === 1;
     const isToday = toISO(d) === todayISO;
-    const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f3f3f3' : isOdd ? 'rgba(19,49,92,0.025)' : 'white';
-    bgCols += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
-    if (d.getDay() === 1) bgCols += `<line x1="${i * dayW}" y1="${HDR}" x2="${i * dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
+    const fill = isToday ? 'rgba(19,49,92,0.12)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
+    bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
+    if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="20" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
   }
 
   // ── LINEA OGGI ──
   const tX = dX(todayISO);
-  const todayLine = tX >= 0 && tX <= W
-    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.7"/>`
+  const todayLine = (tX >= 0 && tX <= W)
+    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.75"/>`
     : '';
 
-  // ── RIGHE + BARRE ──
-  let rowBg = '', bars = '';
+  // ── BARRE ──
+  let rowsSvg = '', barsSvg = '';
   const clipDefs = [];
   valid.forEach((lav, i) => {
     const y = HDR + i * ROW;
-    rowBg += `<rect x="0" y="${y}" width="${W}" height="${ROW}" fill="${i % 2 ? '#fafafa' : 'white'}" opacity="0.6"/>`;
-    rowBg += `<line x1="0" y1="${y + ROW}" x2="${W}" y2="${y + ROW}" stroke="#eee" stroke-width="0.5"/>`;
-
+    rowsSvg += `<rect x="0" y="${y}" width="${W}" height="${ROW}" fill="${i % 2 ? '#fafafa' : 'white'}" opacity="0.5"/>`;
+    rowsSvg += `<line x1="0" y1="${y+ROW}" x2="${W}" y2="${y+ROW}" stroke="#eee" stroke-width="0.5"/>`;
     if (!lav.data_inizio) return;
     const bX = dX(lav.data_inizio);
     const bW = Math.max(Number(lav.durata_giorni || 1) * dayW, 4);
-    const bY = y + ROW * 0.2;
-    const bH = ROW * 0.6;
+    const bY = y + ROW * 0.18;
+    const bH = ROW * 0.64;
     const pct = Number(lav.percentuale_completamento) || 0;
     const color = getColor(lav);
-
-    bars += `<rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" fill="${color}" rx="3"/>`;
-    if (pct > 0) bars += `<rect x="${bX}" y="${bY}" width="${bW * pct / 100}" height="${bH}" fill="rgba(255,255,255,0.3)" rx="3"/>`;
-
-    if (bW > 40 && lav.descrizione) {
-      const clipId = `c${i}`;
-      clipDefs.push(`<clipPath id="${clipId}"><rect x="${bX + 4}" y="${bY}" width="${bW - 8}" height="${bH}"/></clipPath>`);
-      bars += `<text x="${bX + 6}" y="${bY + bH * 0.68}" font-family="Arial,sans-serif" font-size="8" fill="white" clip-path="url(#${clipId})">${lav.descrizione}</text>`;
+    barsSvg += `<rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" fill="${color}" rx="3"/>`;
+    if (pct > 0) barsSvg += `<rect x="${bX}" y="${bY}" width="${bW*pct/100}" height="${bH}" fill="rgba(255,255,255,0.28)" rx="3"/>`;
+    if (bW > 36 && lav.descrizione) {
+      const cId = `c${i}`;
+      clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+4}" y="${bY}" width="${bW-8}" height="${bH}"/></clipPath>`);
+      barsSvg += `<text x="${bX+6}" y="${bY+bH*0.69}" font-family="Arial" font-size="8" fill="white" clip-path="url(#${cId})">${lav.descrizione}</text>`;
     }
   });
 
-  // ── FRECCE DIPENDENZE ──
-  let arrows = '';
+  // ── DIPENDENZE ──
+  let arrowsSvg = '';
   valid.forEach(lav => {
     if (!lav.dipendenza_id) return;
     const dep = valid.find(d => d.id === lav.dipendenza_id);
-    if (!dep || !dep.data_inizio || !lav.data_inizio) return;
-    const x1 = dX(dep.data_inizio) + Number(dep.durata_giorni || 1) * dayW;
-    const y1 = HDR + valid.indexOf(dep) * ROW + ROW / 2;
+    if (!dep?.data_inizio || !lav.data_inizio) return;
+    const x1 = dX(dep.data_inizio) + Number(dep.durata_giorni||1)*dayW;
+    const y1 = HDR + valid.indexOf(dep)*ROW + ROW/2;
     const x2 = dX(lav.data_inizio);
-    const y2 = HDR + valid.indexOf(lav) * ROW + ROW / 2;
-    arrows += `<path d="M${x1} ${y1} C${x1 + 18} ${y1} ${x2 - 18} ${y2} ${x2} ${y2}" fill="none" stroke="#aaa" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
+    const y2 = HDR + valid.indexOf(lav)*ROW + ROW/2;
+    arrowsSvg += `<path d="M${x1} ${y1} C${x1+16} ${y1} ${x2-16} ${y2} ${x2} ${y2}" fill="none" stroke="#bbb" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
   });
 
+  // SVG finale — usa viewBox + preserveAspectRatio:none per riempire tutta la larghezza
   const svgHtml = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="display:block;border:1px solid #ddd;max-width:100%">
+    <svg xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 ${W} ${H}"
+      preserveAspectRatio="none"
+      style="display:block; width:100%; height:${H}px;"
+    >
       <defs>
         <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 Z" fill="#aaa"/>
+          <path d="M0,0 L6,3 L0,6 Z" fill="#bbb"/>
         </marker>
         ${clipDefs.join('')}
       </defs>
-      <!-- mesi -->
-      ${monthDefs}
-      <!-- settimane -->
-      ${weekDefs}
-      <!-- header bottom border -->
+      ${monthSvg}
+      ${weekSvg}
       <line x1="0" y1="${HDR}" x2="${W}" y2="${HDR}" stroke="#ccc" stroke-width="1"/>
-      <!-- sfondo colonne -->
-      ${bgCols}
-      <!-- righe -->
-      ${rowBg}
-      <!-- linea oggi -->
+      ${bgSvg}
+      ${rowsSvg}
       ${todayLine}
-      <!-- barre -->
-      ${bars}
-      <!-- dipendenze -->
-      ${arrows}
+      ${barsSvg}
+      ${arrowsSvg}
     </svg>`;
 
-  // ── TABELLA ──
-  const tableRows = lavorazioni.map(l => `
+  // ── TABELLA SINISTRA (HTML, stessa altezza righe del SVG) ──
+  const thSt = `style="padding:0 8px; height:${HDR}px; font-size:8px; letter-spacing:0.12em; text-transform:uppercase; color:#555; border-bottom:2px solid #ccc; background:#EEF1F6; text-align:left; white-space:nowrap;"`;
+  const tableHeader = `
     <tr>
-      <td>${l.descrizione || '—'}</td>
-      <td>${l.operatore || '—'}</td>
-      <td>${l.data_inizio || '—'}</td>
-      <td>${l.data_fine || '—'}</td>
-      <td>${l.durata_giorni || '—'} gg</td>
-      <td>${l.percentuale_completamento || 0}%</td>
-    </tr>`).join('');
+      <th ${thSt}>Attività</th>
+      <th ${thSt}>Impresa</th>
+      <th ${thSt}>Inizio</th>
+      <th ${thSt}>Fine</th>
+      <th ${thSt}>Dur.</th>
+      <th ${thSt}>%</th>
+    </tr>`;
+  const tableRows = valid.map((lav, i) => {
+    const color = getColor(lav);
+    const tdSt = `style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; white-space:nowrap;"`;
+    return `<tr>
+      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; max-width:160px; overflow:hidden;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:5px;vertical-align:middle;flex-shrink:0;"></span>
+        <span style="font-weight:600; font-size:10px;">${lav.descrizione||'—'}</span>
+      </td>
+      <td ${tdSt}>${lav.operatore||'—'}</td>
+      <td ${tdSt}>${lav.data_inizio||'—'}</td>
+      <td ${tdSt}>${lav.data_fine||'—'}</td>
+      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; text-align:center;">${lav.durata_giorni||'—'}gg</td>
+      <td ${tdSt} style="padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${i%2?'#fafafa':'white'}; vertical-align:middle; text-align:center;">${lav.percentuale_completamento||0}%</td>
+    </tr>`;
+  }).join('');
+
+  // ── LEGENDA IMPRESE ──
+  const legendHtml = uniqueImprese.length ? `
+    <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin-bottom:14px; padding:8px 12px; background:#f8f8f8; border:1px solid #eee;">
+      <span style="font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:Arial; margin-right:4px;">Imprese:</span>
+      ${uniqueImprese.map(imp => `
+        <span style="display:inline-flex; align-items:center; gap:5px;">
+          <span style="display:inline-block; width:12px; height:12px; background:${cMap[imp]||'#13315C'}; border-radius:2px;"></span>
+          <span style="font-size:10px; font-family:Arial; color:#333;">${imp}</span>
+        </span>`).join('')}
+      <span style="display:inline-flex; align-items:center; gap:5px; margin-left:6px; border-left:1px solid #ddd; padding-left:14px;">
+        <span style="display:inline-block; width:18px; height:2px; background:#13315C; opacity:0.7; vertical-align:middle;"></span>
+        <span style="font-size:10px; font-family:Arial; color:#13315C;">Oggi</span>
+      </span>
+    </div>` : '';
 
   const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Gantt — ${projectName}</title>
     <style>
-      * { box-sizing: border-box; }
-      body { font-family: Arial, sans-serif; font-size: 12px; padding: 24px; color: #0E0E0D; margin: 0; }
-      h1 { font-size: 18px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
-      .sub { color: #8a847b; font-size: 10px; margin-bottom: 20px; font-family: monospace; }
-      .chart-wrap { overflow-x: auto; margin-bottom: 28px; }
-      table { width: 100%; border-collapse: collapse; font-size: 11px; }
-      th { background: #EEF1F6; padding: 7px 10px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid #ccc; }
-      td { padding: 7px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
-      tr:nth-child(even) td { background: #fafafa; }
-      @media print { .chart-wrap { overflow: visible; } svg { max-width: 100% !important; } }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; font-size: 11px; padding: 18px; color: #0E0E0D; background: white; }
+      @page { size: A4 landscape; margin: 12mm; }
+      @media print {
+        body { padding: 0; }
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     </style></head>
     <body>
-      <h1>Gantt — ${projectName}</h1>
-      <div class="sub">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
-      <div class="chart-wrap">${svgHtml}</div>
-      <table>
-        <thead><tr>
-          <th>Attività</th><th>Impresa</th><th>Data inizio</th>
-          <th>Data fine</th><th>Durata</th><th>% Completamento</th>
-        </tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+      <!-- Header -->
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; border-bottom:2px solid #13315C; padding-bottom:8px;">
+        <div>
+          <div style="font-size:18px; font-weight:700; letter-spacing:-0.02em; color:#0E0E0D;">Gantt — ${projectName}</div>
+        </div>
+        <div style="font-family:monospace; font-size:9px; color:#999;">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
+      </div>
+
+      <!-- Legenda -->
+      ${legendHtml}
+
+      <!-- Layout principale: tabella sx + calendario dx -->
+      <div style="display:flex; border:1px solid #ccc; border-collapse:collapse;">
+
+        <!-- Tabella attività (sinistra, larghezza fissa) -->
+        <div style="flex-shrink:0; border-right:2px solid #ccc;">
+          <table style="border-collapse:collapse; width:100%;">
+            <thead>${tableHeader}</thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+
+        <!-- Calendario SVG (destra, larghezza piena) -->
+        <div style="flex:1; min-width:0; overflow:hidden;">
+          ${svgHtml}
+        </div>
+
+      </div>
     </body></html>`);
   win.document.close();
   win.print();
