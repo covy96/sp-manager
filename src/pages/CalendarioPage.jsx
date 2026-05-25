@@ -6,7 +6,6 @@ import { useIsMobile } from "../hooks/useIsMobile";
 
 const MONTHS   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-const WEEKDAYS_FULL = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
 
 // ── HELPERS DATE ──────────────────────────────────────────────────
 function toISO(date) {
@@ -74,11 +73,12 @@ function TaskPill({ task, today, onClick }) {
   );
 }
 
-// ── TASK DETAIL SIDEBAR ───────────────────────────────────────────
-function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today }) {
+// ── TASK DETAIL — sidebar desktop / bottom sheet mobile ───────────
+function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, isMobile }) {
   const { T } = useTheme();
-  return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
+
+  const content = (
+    <>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:4 }}>Task del giorno</div>
@@ -86,10 +86,9 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today })
             {date ? fmtDay(new Date(date)) : "Seleziona un giorno"}
           </div>
         </div>
-        {date && <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, padding:'3px 8px', textTransform:'uppercase', letterSpacing:'0.08em' }}>×</button>}
+        <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, padding:'3px 10px', lineHeight:1 }}>×</button>
       </div>
-      {!date && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Clicca su un giorno</div>}
-      {date && tasks.length===0 && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
+      {tasks.length===0 && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {tasks.map(task=>{
           const {bg,color}=getTaskBg(task,today,T);
@@ -108,6 +107,33 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today })
           );
         })}
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Backdrop */}
+        <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:48, background:'rgba(0,0,0,0.3)' }}/>
+        {/* Bottom sheet */}
+        <div style={{
+          position:'fixed', bottom:64, left:0, right:0, zIndex:49,
+          background:T.surface, borderRadius:'16px 16px 0 0',
+          padding:'16px 18px 24px',
+          maxHeight:'55vh', overflowY:'auto',
+          boxShadow:'0 -4px 24px rgba(0,0,0,0.18)',
+        }}>
+          {/* Handle */}
+          <div style={{ width:36, height:4, borderRadius:2, background:T.ink20, margin:'0 auto 14px' }}/>
+          {content}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
+      {content}
     </div>
   );
 }
@@ -120,13 +146,10 @@ export default function CalendarioPage() {
   const now = new Date();
   const todayISO = toISO(now);
 
-  // Vista
-  const [viewMode, setViewMode] = useState("month"); // month|week|3days|today
+  // Vista — su mobile default "3days", su desktop "month"
+  const [viewMode, setViewMode] = useState(() => window.innerWidth < 768 ? "3days" : "month");
 
-  // Riferimento data di navigazione
   const [refDate, setRefDate] = useState(new Date(now));
-
-  // Dati
   const [tasks, setTasks]             = useState([]);
   const [projectsById, setProjectsById] = useState({});
   const [membersById, setMembersById] = useState({});
@@ -134,16 +157,11 @@ export default function CalendarioPage() {
   const [currentMemberId, setCurrentMemberId] = useState(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
-
-  // Filtri
-  const [selectedMembers, setSelectedMembers] = useState([]); // vuoto = tutti
+  const [selectedMembers, setSelectedMembers] = useState([]);
   const [showMemberFilter, setShowMemberFilter] = useState(false);
   const filterRef = useRef(null);
-
-  // Selezione giorno (sidebar)
   const [selectedDay, setSelectedDay] = useState(null);
 
-  // Range di caricamento
   const loadRange = useMemo(() => {
     if (viewMode==="month") {
       return getMonthRange(refDate.getFullYear(), refDate.getMonth());
@@ -155,11 +173,9 @@ export default function CalendarioPage() {
     if (viewMode==="3days") {
       return { start:toISO(refDate), end:toISO(addDays(refDate,2)) };
     }
-    // today
     return { start:todayISO, end:todayISO };
   }, [viewMode, refDate]);
 
-  // Carica dati
   useEffect(() => {
     if (!studioId||studioId==="null") return;
     const load = async () => {
@@ -194,14 +210,12 @@ export default function CalendarioPage() {
     load();
   }, [studioId, loadRange]);
 
-  // Chiudi filtro su click esterno
   useEffect(() => {
     function h(e) { if(filterRef.current&&!filterRef.current.contains(e.target)) setShowMemberFilter(false); }
     document.addEventListener("mousedown",h);
     return ()=>document.removeEventListener("mousedown",h);
   }, []);
 
-  // Task filtrate per membro
   const visibleTasks = useMemo(() => {
     const filtered = selectedMembers.length>0
       ? tasks.filter(t=>selectedMembers.includes(t.assigned_member))
@@ -221,7 +235,6 @@ export default function CalendarioPage() {
 
   const selectedDayTasks = selectedDay ? (tasksByDay[selectedDay]??[]) : [];
 
-  // ── NAVIGAZIONE ───────────────────────────────────────────────
   const goBack = () => {
     if(viewMode==="month") setRefDate(d=>addMonths(d,-1));
     else if(viewMode==="week") setRefDate(d=>addWeeks(d,-1));
@@ -236,7 +249,6 @@ export default function CalendarioPage() {
   };
   const goToday = () => { setRefDate(new Date(now)); };
 
-  // ── LABEL PERIODO ──────────────────────────────────────────────
   const periodLabel = useMemo(() => {
     if(viewMode==="month") return `${MONTHS[refDate.getMonth()]} ${refDate.getFullYear()}`;
     if(viewMode==="week") {
@@ -248,117 +260,168 @@ export default function CalendarioPage() {
     return fmtDay(now);
   }, [viewMode, refDate]);
 
-  // ── TOGGLE MEMBRO ─────────────────────────────────────────────
   const toggleMember = id => setSelectedMembers(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
 
-  // ── RENDER VISTE ──────────────────────────────────────────────
-
-  // Vista MESE
   const monthDays = useMemo(()=>getMonthDays(refDate.getFullYear(),refDate.getMonth()),[refDate]);
 
-  const renderMonth = () => (
-    <div style={{ overflowX:isMobile?'auto':'visible' }}>
-    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:isMobile?560:undefined }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
-        {WEEKDAYS.map(d=>(
-          <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
-        ))}
-      </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
-        {monthDays.map(day=>{
-          const dayTasks=tasksByDay[day.iso]??[];
-          const visible=dayTasks.slice(0,3);
-          const hidden=Math.max(dayTasks.length-3,0);
-          const isToday=day.iso===todayISO;
-          const isSel=day.iso===selectedDay;
-          return (
-            <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
-              minHeight:90, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
-              padding:'5px 6px', textAlign:'left', cursor:'pointer',
-              background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
-              outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
-            }}
-              onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
-              onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg;}}
-            >
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.muted, fontWeight:isToday?600:400, marginBottom:3 }}>
-                {day.date.getDate()}
-              </div>
-              {visible.map(t=><TaskPill key={t.id} task={t} today={todayISO}/>)}
-              {hidden>0&&<div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>+{hidden}</div>}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </div>
-  );
+  // ── VISTA MESE ────────────────────────────────────────────────
+  const renderMonth = () => {
+    if (isMobile) {
+      // Versione mobile: celle compatte con pallini colorati
+      return (
+        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
+            {WEEKDAYS.map(d=>(
+              <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
+            {monthDays.map(day=>{
+              const dayTasks=tasksByDay[day.iso]??[];
+              const isToday=day.iso===todayISO;
+              const isSel=day.iso===selectedDay;
+              // Raggruppa task per colore (completate=grigio, scadute=rosso, attive=navy)
+              const dots = [];
+              const active = dayTasks.filter(t=>t.status!=="completed"&&t.data_pianificata>=todayISO);
+              const overdue = dayTasks.filter(t=>t.status!=="completed"&&t.data_pianificata<todayISO);
+              const done = dayTasks.filter(t=>t.status==="completed");
+              if(overdue.length>0) dots.push(T.red);
+              if(active.length>0) dots.push(T.navy);
+              if(done.length>0) dots.push(T.muted);
+              return (
+                <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
+                  minHeight:48, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                  padding:'4px 2px', textAlign:'center', cursor:'pointer',
+                  background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
+                  outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'space-between',
+                  border:'none', borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                }}>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.ink20, fontWeight:isToday?700:400 }}>
+                    {day.date.getDate()}
+                  </div>
+                  {dots.length>0 && (
+                    <div style={{ display:'flex', gap:2, justifyContent:'center', paddingBottom:2 }}>
+                      {dots.slice(0,3).map((c,i)=>(
+                        <div key={i} style={{ width:5, height:5, borderRadius:'50%', background:c }}/>
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
 
-  // Vista SETTIMANA e 3 GIORNI (colonne per giorno)
+    // Desktop: versione originale con scroll
+    return (
+      <div style={{ overflowX:'auto' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:560 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
+            {WEEKDAYS.map(d=>(
+              <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
+            {monthDays.map(day=>{
+              const dayTasks=tasksByDay[day.iso]??[];
+              const visible=dayTasks.slice(0,3);
+              const hidden=Math.max(dayTasks.length-3,0);
+              const isToday=day.iso===todayISO;
+              const isSel=day.iso===selectedDay;
+              return (
+                <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
+                  minHeight:90, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                  padding:'5px 6px', textAlign:'left', cursor:'pointer',
+                  background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
+                  outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
+                  border:'none', borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                }}
+                  onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg;}}
+                >
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.muted, fontWeight:isToday?600:400, marginBottom:3 }}>
+                    {day.date.getDate()}
+                  </div>
+                  {visible.map(t=><TaskPill key={t.id} task={t} today={todayISO}/>)}
+                  {hidden>0&&<div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>+{hidden}</div>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── VISTA SETTIMANA / 3 GIORNI ────────────────────────────────
   const renderMultiDay = (count) => {
     const startDate = count===7 ? getMondayOf(refDate) : new Date(refDate);
     const days = getWeekDays(startDate, count);
     const minW = count === 7 ? 560 : 320;
     return (
-      <div style={{ overflowX:isMobile?'auto':'visible' }}>
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:isMobile?minW:undefined }}>
-        {/* Header giorni */}
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
-          {days.map((d,i)=>{
-            const iso=toISO(d);
-            const isToday=iso===todayISO;
-            return (
-              <div key={i} style={{ padding:'10px 8px', textAlign:'center', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none' }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
-                  {WEEKDAYS[i%7]}
+      <div style={{ overflowX: (!isMobile || count===7) && count!==3 ? 'auto' : 'visible' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth: isMobile && count<=3 ? undefined : minW }}>
+          {/* Header giorni */}
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
+            {days.map((d,i)=>{
+              const iso=toISO(d);
+              const isToday=iso===todayISO;
+              return (
+                <div key={i} style={{ padding: isMobile ? '8px 4px' : '10px 8px', textAlign:'center', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none' }}>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 7 : 8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, marginBottom:3 }}>
+                    {WEEKDAYS[(i + (count===7 ? 0 : new Date(startDate).getDay() === 0 ? 6 : new Date(startDate).getDay() - 1)) % 7]}
+                  </div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 20 : 18, fontWeight:600, color:isToday?T.navy:T.ink, width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
+                    {fmtDayNum(d)}
+                  </div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 8 : 8, color:T.muted, marginTop:2 }}>
+                    {d.toLocaleDateString('it-IT',{month:'short'})}
+                  </div>
                 </div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:18, fontWeight:600, color:isToday?T.navy:T.ink, width:32, height:32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
-                  {fmtDayNum(d)}
+              );
+            })}
+          </div>
+          {/* Colonne task */}
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, minHeight: isMobile ? 200 : 300 }}>
+            {days.map((d,i)=>{
+              const iso=toISO(d);
+              const dayTasks=tasksByDay[iso]??[];
+              const isToday=iso===todayISO;
+              const isSel=iso===selectedDay;
+              return (
+                <div key={i} onClick={()=>setSelectedDay(isSel?null:iso)} style={{
+                  padding: isMobile ? '6px 4px' : '8px 6px',
+                  borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none',
+                  background:isSel?T.navyLight:isToday?T.surface2:T.surface,
+                  cursor:'pointer', minHeight: isMobile ? 120 : 200,
+                }}
+                  onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
+                  onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:isToday?T.surface2:T.surface;}}
+                >
+                  {dayTasks.length===0 ? (
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.ink10, padding:'8px 0', textAlign:'center' }}>—</div>
+                  ) : dayTasks.map(t=>(
+                    <TaskPill key={t.id} task={t} today={todayISO} onClick={()=>setSelectedDay(iso)}/>
+                  ))}
                 </div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginTop:2 }}>
-                  {d.toLocaleDateString('it-IT',{month:'short'})}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-        {/* Colonne task */}
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, minHeight:300 }}>
-          {days.map((d,i)=>{
-            const iso=toISO(d);
-            const dayTasks=tasksByDay[iso]??[];
-            const isToday=iso===todayISO;
-            const isSel=iso===selectedDay;
-            return (
-              <div key={i} onClick={()=>setSelectedDay(isSel?null:iso)} style={{
-                padding:'8px 6px', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none',
-                background:isSel?T.navyLight:isToday?T.surface2:T.surface,
-                cursor:'pointer', minHeight:200,
-              }}
-                onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
-                onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:isToday?T.surface2:T.surface;}}
-              >
-                {dayTasks.length===0 ? (
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.ink10, padding:'8px 0', textAlign:'center' }}>—</div>
-                ) : dayTasks.map(t=>(
-                  <TaskPill key={t.id} task={t} today={todayISO} onClick={()=>setSelectedDay(iso)}/>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
       </div>
     );
   };
 
-  // Vista OGGI
+  // ── VISTA OGGI ────────────────────────────────────────────────
   const renderToday = () => {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'20px 24px' }}>
-        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
-          Oggi — {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding: isMobile ? '16px' : '20px 24px' }}>
+        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
+          {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>
         {dayTasks.length===0 ? (
           <div style={{ textAlign:'center', padding:'48px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
@@ -371,15 +434,15 @@ export default function CalendarioPage() {
               return (
                 <div key={task.id} style={{ background:bg, border:`0.5px solid ${color}33`, padding:'12px 16px', display:'flex', alignItems:'flex-start', gap:12 }}>
                   <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0, marginTop:4 }}/>
-                  <div style={{ flex:1 }}>
+                  <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:4 }}>{task.title||"Task"}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, display:'flex', gap:12 }}>
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, display:'flex', flexWrap:'wrap', gap: isMobile ? 6 : 12 }}>
                       <span>Progetto: <span style={{color:T.ink}}>{projectsById[task.project_id]||"—"}</span></span>
                       <span>Membro: <span style={{color:T.ink}}>{membersById[task.assigned_member]||"—"}</span></span>
                       {task.categoria&&<span>Cat: <span style={{color:T.ink}}>{task.categoria}</span></span>}
                     </div>
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0 }}>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.06em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>
                     {task.status==="completed"?"Fatto":task.data_pianificata<todayISO?"Scaduta":"In attesa"}
                   </div>
                 </div>
@@ -400,111 +463,130 @@ export default function CalendarioPage() {
     <div style={{ border:`0.5px solid ${T.ink10}`, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
   );
 
+  // Viste disponibili
+  const VIEWS_DESKTOP = [["month","Mese"],["week","Settimana"],["3days","3 Giorni"],["today","Oggi"]];
+  const VIEWS_MOBILE  = [["3days","3 Giorni"],["month","Mese"],["today","Oggi"]];
+  const views = isMobile ? VIEWS_MOBILE : VIEWS_DESKTOP;
+
   const showSidebar = viewMode==="month" || viewMode==="week" || viewMode==="3days";
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding: isMobile ? '10px 14px' : '12px 18px', display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent:'space-between', gap:10 }}>
 
-        {/* Toggle vista */}
-        <div style={{ display:'flex', border:`0.5px solid ${T.ink20}`, overflow:'hidden' }}>
-          {[["month","Mese"],["week","Settimana"],["3days","3 Giorni"],["today","Oggi"]].map(([m,label])=>(
-            <button key={m} onClick={()=>{setViewMode(m);if(m==="today")setRefDate(new Date(now));}} style={{
-              padding:'6px 14px', border:'none', background:viewMode===m?T.navy:'transparent',
-              color:viewMode===m?T.bg:T.muted,
-              fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-              cursor:'pointer',
-            }}>{label}</button>
-          ))}
+        {/* Riga 1 mobile: toggle vista + filtro utenti */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+          {/* Toggle vista */}
+          <div style={{ display:'flex', border:`0.5px solid ${T.ink20}`, overflow:'hidden', flex: isMobile ? 1 : 'none' }}>
+            {views.map(([m,label])=>(
+              <button key={m} onClick={()=>{setViewMode(m);if(m==="today")setRefDate(new Date(now));}} style={{
+                flex: isMobile ? 1 : 'none',
+                padding: isMobile ? '7px 0' : '6px 14px',
+                border:'none', background:viewMode===m?T.navy:'transparent',
+                color:viewMode===m?T.bg:T.muted,
+                fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 10 : 10,
+                letterSpacing:'0.06em', textTransform:'uppercase',
+                cursor:'pointer', textAlign:'center',
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {/* Filtro utenti — sempre visibile */}
+          <div ref={filterRef} style={{ position:'relative', flexShrink:0 }}>
+            <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
+              display:'flex', alignItems:'center', gap:5,
+              border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`,
+              background:selectedMembers.length>0?T.navyLight:'transparent',
+              padding:'6px 10px', cursor:'pointer',
+              fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase',
+              color:selectedMembers.length>0?T.navy:T.muted,
+              height: isMobile ? 34 : 'auto',
+            }}>
+              {selectedMembers.length>0 ? (
+                <div style={{ display:'flex', gap:2 }}>
+                  {selectedMembers.slice(0,2).map(id=>{
+                    const m=teamMembers.find(x=>x.id===id);
+                    return m ? (
+                      <div key={id} style={{ width:18,height:18,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:600,color:'#fff' }}>
+                        {getInitials(m.user_name||m.user_email)}
+                      </div>
+                    ) : null;
+                  })}
+                  {selectedMembers.length>2&&<span style={{fontSize:9,color:T.navy}}>+{selectedMembers.length-2}</span>}
+                </div>
+              ) : "👤"}
+              {!isMobile && <span style={{ fontSize:10 }}>▾</span>}
+            </button>
+
+            {showMemberFilter && (
+              <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`0.5px solid ${T.ink20}`, zIndex:30 }}>
+                <div style={{ padding:'8px 12px', maxHeight:240, overflowY:'auto' }}>
+                  {teamMembers.map(m=>(
+                    <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
+                      <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
+                      <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:'#fff',flexShrink:0 }}>
+                        {getInitials(m.user_name||m.user_email)}
+                      </div>
+                      <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedMembers.length>0&&(
+                  <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.ink10}` }}>
+                    <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
+                      Rimuovi filtri
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Navigazione */}
+        {/* Riga 2 mobile / inline desktop: navigazione periodo */}
         {viewMode!=="today" && (
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
-            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', minWidth:200, textAlign:'center' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent: isMobile ? 'space-between' : 'flex-start' }}>
+            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
+            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', flex: isMobile ? 1 : 'none', textAlign:'center', minWidth: isMobile ? 0 : 180 }}>
               {periodLabel}
             </div>
-            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
           </div>
         )}
-
-        {/* Filtro utenti */}
-        <div ref={filterRef} style={{ position:'relative' }}>
-          <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
-            display:'flex', alignItems:'center', gap:6,
-            border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`,
-            background:selectedMembers.length>0?T.navyLight:'transparent',
-            padding:'6px 12px', cursor:'pointer',
-            fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-            color:selectedMembers.length>0?T.navy:T.muted,
-          }}>
-            {/* Avatars selezionati */}
-            {selectedMembers.length>0 ? (
-              <div style={{ display:'flex', gap:2 }}>
-                {selectedMembers.slice(0,3).map(id=>{
-                  const m=teamMembers.find(x=>x.id===id);
-                  return m ? (
-                    <div key={id} style={{ width:18,height:18,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:600,color:T.surface }}>
-                      {getInitials(m.user_name||m.user_email)}
-                    </div>
-                  ) : null;
-                })}
-                {selectedMembers.length>3&&<span style={{fontSize:9,color:T.navy}}>+{selectedMembers.length-3}</span>}
-              </div>
-            ) : "Utenti"}
-            <span style={{ fontSize:10 }}>▾</span>
-          </button>
-
-          {showMemberFilter && (
-            <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`0.5px solid ${T.ink20}`, zIndex:30 }}>
-              <div style={{ padding:'8px 12px', maxHeight:240, overflowY:'auto' }}>
-                {teamMembers.map(m=>(
-                  <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
-                    <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
-                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:T.surface,flexShrink:0 }}>
-                      {getInitials(m.user_name||m.user_email)}
-                    </div>
-                    <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>
-                  </label>
-                ))}
-              </div>
-              {selectedMembers.length>0&&(
-                <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.ink10}` }}>
-                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
-                    Rimuovi filtri
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ── CONTENUTO ── */}
       {viewMode==="today" ? (
         renderToday()
       ) : (
-        <div style={{ display:'grid', gridTemplateColumns:showSidebar&&selectedDay?'1fr 300px':'1fr', gap:10, alignItems:'start' }}>
-          <div>
-            {viewMode==="month" && renderMonth()}
-            {viewMode==="week"  && renderMultiDay(7)}
-            {viewMode==="3days" && renderMultiDay(3)}
-          </div>
-          {showSidebar && selectedDay && (
-            <TaskSidebar
-              tasks={selectedDayTasks}
-              date={selectedDay}
-              projectsById={projectsById}
-              membersById={membersById}
-              onClose={()=>setSelectedDay(null)}
-              today={todayISO}
-            />
+        <>
+          {/* Desktop: griglia con sidebar laterale */}
+          {!isMobile ? (
+            <div style={{ display:'grid', gridTemplateColumns:showSidebar&&selectedDay?'1fr 300px':'1fr', gap:10, alignItems:'start' }}>
+              <div>
+                {viewMode==="month" && renderMonth()}
+                {viewMode==="week"  && renderMultiDay(7)}
+                {viewMode==="3days" && renderMultiDay(3)}
+              </div>
+              {showSidebar && selectedDay && (
+                <TaskSidebar tasks={selectedDayTasks} date={selectedDay} projectsById={projectsById} membersById={membersById} onClose={()=>setSelectedDay(null)} today={todayISO} isMobile={false}/>
+              )}
+            </div>
+          ) : (
+            // Mobile: calendario fullwidth + bottom sheet
+            <div>
+              {viewMode==="month" && renderMonth()}
+              {viewMode==="week"  && renderMultiDay(7)}
+              {viewMode==="3days" && renderMultiDay(3)}
+              {selectedDay && (
+                <TaskSidebar tasks={selectedDayTasks} date={selectedDay} projectsById={projectsById} membersById={membersById} onClose={()=>setSelectedDay(null)} today={todayISO} isMobile={true}/>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
     </div>
