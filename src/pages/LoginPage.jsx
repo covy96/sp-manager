@@ -12,6 +12,8 @@ export default function LoginPage({ session }) {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
+  const confirmed = searchParams.get("confirmed") === "1";
+
   if (session) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -56,6 +58,15 @@ export default function LoginPage({ session }) {
         <p className="mt-1 text-sm text-white/60">
           Accedi al gestionale del tuo studio di architettura.
         </p>
+
+        {confirmed && (
+          <div className="mt-4 rounded-lg border border-[#30d158]/40 bg-[#30d158]/10 p-3">
+            <p className="text-sm font-medium text-[#30d158]">✅ Email confermata!</p>
+            <p className="mt-0.5 text-xs text-white/60">
+              Il tuo account è attivo. Inserisci la password per accedere.
+            </p>
+          </div>
+        )}
 
         <form className="mt-6 space-y-4" onSubmit={handleLogin}>
           <div>

@@ -133,7 +133,9 @@ export default function AuthCallbackPage() {
         }
       }
 
-      navigate("/dashboard", { replace: true });
+      // Sign out so the user must explicitly log in → redirect to login with confirmation banner
+      await supabase.auth.signOut();
+      navigate(`/login?confirmed=1&email=${encodeURIComponent(user.email)}`, { replace: true });
     };
 
     handleCallback();
