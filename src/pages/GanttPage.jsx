@@ -549,7 +549,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
-  const totalH = Math.max((lavorazioni.length+1)*ROW_H, 400);
+  const totalH = Math.max((lavorazioni.length+1)*ROW_H, window.innerHeight);
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
