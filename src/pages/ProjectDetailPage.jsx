@@ -7,6 +7,7 @@ import AnagraficaPanel from '../components/AnagraficaPanel';
 import CommessePanel from '../components/CommessePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -246,6 +247,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { id: projectId } = useParams();
   const { studioId, teamMember } = useStudio();
@@ -602,19 +604,28 @@ export default function ProjectDetailPage() {
       ) : (
         <div style={{
           display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden',
-          width: 'calc(100vw - 220px)', height: 'calc(100vh - 180px)',
-          gap: 10, paddingBottom: 8,
+          width: isMobile ? '100%' : 'calc(100vw - 220px)',
+          height: isMobile ? 'auto' : 'calc(100vh - 180px)',
+          scrollSnapType: isMobile ? 'x mandatory' : 'none',
+          WebkitOverflowScrolling: 'touch',
+          gap: 10, paddingBottom: isMobile ? 16 : 8,
+          paddingLeft: isMobile ? 16 : 0,
+          paddingRight: isMobile ? 16 : 0,
+          boxSizing: 'border-box',
         }}>
           {groupedTasks.map(group => {
             const catDone = Boolean(completedCategories[group.category]);
             return (
               <div key={group.category} style={{
-                flex: '0 0 calc((100vw - 220px - 50px) / 3)',
-                minWidth: 'calc((100vw - 220px - 50px) / 3)',
-                maxWidth: 'calc((100vw - 220px - 50px) / 3)',
+                flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 50px) / 3)',
+                minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 50px) / 3)',
+                maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 50px) / 3)',
+                scrollSnapAlign: isMobile ? 'start' : 'none',
                 display: 'flex', flexDirection: 'column',
                 background: T.surface, border: `0.5px solid ${T.border}`,
-                overflow: 'hidden', height: '100%',
+                overflow: 'hidden',
+                height: isMobile ? 'auto' : '100%',
+                maxHeight: isMobile ? 'none' : '100%',
                 opacity: catDone ? 0.5 : 1,
               }}>
                 {/* Column header */}
@@ -659,7 +670,7 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {/* Task list */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: 10, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ flex: isMobile ? '0 0 auto' : 1, overflowY: isMobile ? 'visible' : 'auto', padding: 10, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {group.tasks.map(task => (
                     <TaskRow
                       key={task.id ?? `${group.category}-${task.title}`}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -111,6 +112,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function CommessaDetailPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { id: commessaId } = useParams();
   const { studioId } = useStudio();
@@ -568,7 +570,7 @@ export default function CommessaDetailPage() {
       </Panel>
 
       {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 10 }}>
         <KpiCard label="Importo Base"  value={currency(importoBase)} />
         <KpiCard label="Pagato"        value={currency(importoPagato)}  color={T.green} />
         <KpiCard label="Residuo"       value={currency(residuo)}         color={residuo > 0 ? T.navy : T.muted} />
@@ -588,6 +590,7 @@ export default function CommessaDetailPage() {
         {proforma.filter(p => !p.pagato).length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Da pagare</div>
+            <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>{['N°','Data','Importo','Note',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
@@ -608,11 +611,13 @@ export default function CommessaDetailPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         {proforma.filter(p => p.pagato).length > 0 && (
           <div>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.green, marginBottom: 8 }}>Pagate</div>
+            <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>{['N°','Fattura','Data pag.','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
@@ -634,18 +639,19 @@ export default function CommessaDetailPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
         {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>Nessuna proforma</div>}
       </Panel>
 
       {/* GRID COSTI + RATE */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
         <Panel>
           <SectionHeader title="Costi Extra" action={<BtnPrimary onClick={() => { setCostoForm({}); setCostoError(""); setCostoModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }}>+ Aggiungi</BtnPrimary>} />
           {costiExtra.length === 0
             ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessun costo extra</div>
-            : <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>{['Tipo','Importo','Stato',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
                 <tbody>
                   {costiExtra.map(c => (
@@ -668,7 +674,7 @@ export default function CommessaDetailPage() {
                   ))}
                 </tbody>
                 <tfoot><tr><td style={{ ...tdSt, ...monoSt, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</td><td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(totCostiExtra)}</td><td /></tr></tfoot>
-              </table>
+              </table></div>
           }
         </Panel>
 
@@ -676,7 +682,7 @@ export default function CommessaDetailPage() {
           <SectionHeader title="Suddivisione Pagamenti" action={<BtnPrimary onClick={() => { setRataStep("config"); setRataModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }}>+ Rate</BtnPrimary>} />
           {suddivisione.length === 0
             ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessuna rata</div>
-            : <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>{['Rata','Importo','Stato',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
                 <tbody>
                   {suddivisione.map((r, i) => {
@@ -699,13 +705,13 @@ export default function CommessaDetailPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
           }
         </Panel>
       </div>
 
       {/* ── COLLABORATORI + COSTI INTERNI affiancati ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginTop:14 }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:14, marginTop:14 }}>
 
         {/* COLLABORATORI ESTERNI */}
         <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
