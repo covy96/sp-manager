@@ -7,6 +7,7 @@ export default function RegisterPage({ session }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [conferma, setConferma] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,13 +36,23 @@ export default function RegisterPage({ session }) {
 
     setLoading(true);
 
+    const termsAt = new Date().toISOString();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        data: { full_name: nome.trim() },
+        data: { full_name: nome.trim(), terms_accepted: true, terms_accepted_at: termsAt },
       },
     });
+
+    // Salva anche nella tabella profiles (se esiste)
+    if (!signUpError && data?.user?.id) {
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        terms_accepted: true,
+        terms_accepted_at: termsAt,
+      }, { onConflict: "id", ignoreDuplicates: false }).then(() => {});
+    }
 
     if (signUpError) {
       setError(signUpError.message);
@@ -121,9 +132,30 @@ export default function RegisterPage({ session }) {
 
             {error ? <p className="text-sm text-[#ff453a]">{error}</p> : null}
 
+            {/* Accettazione termini */}
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                style={{ marginTop: 2, accentColor: "#0a84ff", width: 15, height: 15, flexShrink: 0 }}
+              />
+              <span className="text-sm text-white/60" style={{ lineHeight: 1.5 }}>
+                Ho letto e accetto i{" "}
+                <a href="/termini" target="_blank" rel="noopener noreferrer" className="text-[#0a84ff] hover:underline">
+                  Termini e Condizioni
+                </a>
+                {" "}e la{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#0a84ff] hover:underline">
+                  Privacy Policy
+                </a>
+                {" "}di ASM.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={!accepted || loading}
               className="w-full rounded-lg bg-[#0a84ff] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? "Registrazione in corso..." : "Registrati"}

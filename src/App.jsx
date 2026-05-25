@@ -44,6 +44,9 @@ import CommessaArchiviataRecapPage from "./pages/settings/CommessaArchiviataReca
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import CreateStudioPage from "./pages/CreateStudioPage";
 import JoinStudioPage from "./pages/JoinStudioPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TerminiPage from "./pages/TerminiPage";
+import CookieBanner from "./components/CookieBanner";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -104,6 +107,7 @@ export default function App({ session }) {
 
   return (
     <ThemeProvider>
+    <CookieBanner />
     <Routes>
       <Route
         path="/"
@@ -387,6 +391,8 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/termini" element={<TerminiPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
     </ThemeProvider>
