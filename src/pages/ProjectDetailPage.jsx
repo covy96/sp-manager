@@ -315,12 +315,22 @@ export default function ProjectDetailPage() {
   }, [projectId, studioId]);
 
   const selectedServices = useMemo(() => {
+    // Deduplicazione case-insensitive: mantieni la prima occorrenza per ogni nome normalizzato
+    const dedup = (arr) => {
+      const seen = new Map();
+      return arr.filter(s => {
+        const key = s.trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.set(key, true);
+        return true;
+      });
+    };
     // Prima usa servizi_selezionati salvati nel progetto
     if (Array.isArray(project?.servizi_selezionati) && project.servizi_selezionati.length > 0) {
-      return project.servizi_selezionati;
+      return dedup(project.servizi_selezionati);
     }
     // Fallback: ricava le categorie dalle task esistenti
-    const cats = [...new Set(tasks.map(t => t.categoria).filter(Boolean))];
+    const cats = dedup([...new Set(tasks.map(t => t.categoria).filter(Boolean))]);
     // Se ci sono anche task senza categoria, aggiungi un bucket generico
     const hasUncategorized = tasks.some(t => !t.categoria);
     if (hasUncategorized) cats.push("__uncategorized__");
@@ -329,9 +339,10 @@ export default function ProjectDetailPage() {
 
   const groupedTasks = useMemo(() => selectedServices.map(category => {
     const isUncategorized = category === "__uncategorized__";
+    // Confronto case-insensitive + trim: "Design" e "DESIGN" vanno nella stessa colonna
     const catTasks = isUncategorized
       ? tasks.filter(t => !t.categoria)
-      : tasks.filter(t => (t.categoria ?? "") === category);
+      : tasks.filter(t => (t.categoria ?? "").trim().toLowerCase() === category.trim().toLowerCase());
     const visible = catTasks.filter(t => !hideCompletedTasks || t.status !== "completed");
     return {
       category,
