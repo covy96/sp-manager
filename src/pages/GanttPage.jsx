@@ -125,40 +125,187 @@ function exportExcel(lavorazioni, projectName) {
 
 // ── EXPORT PDF ────────────────────────────────────────────────────
 function exportPDF(lavorazioni, projectName) {
-  const win = window.open('','_blank');
-  const rows = lavorazioni.map(l=>`
+  const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine);
+
+  // Calcola range date dal contenuto reale
+  const allISO = valid.flatMap(l => [l.data_inizio, l.data_fine]);
+  const minISO = allISO.length ? allISO.reduce((a, b) => a < b ? a : b) : toISO(new Date());
+  const maxISO = allISO.length ? allISO.reduce((a, b) => a > b ? a : b) : toISO(addDays(new Date(), 60));
+  const chartStart = addDays(parseDate(minISO), -3);
+  const chartEnd   = addDays(parseDate(maxISO), 6);
+  const totalDays  = diffDays(chartStart, chartEnd) + 1;
+
+  // Adatta larghezza colonna giorno per stare in ~900px
+  const dayW = Math.max(5, Math.min(24, Math.floor(900 / totalDays)));
+  const ROW  = 30;
+  const HDR  = 46;
+  const W    = totalDays * dayW;
+  const H    = HDR + valid.length * ROW + 4;
+  const todayISO = toISO(new Date());
+
+  // Mappa colori imprese
+  const cMap = {};
+  valid.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, cMap, '#13315C'); });
+  const getColor = l => l.colore || (l.operatore ? (cMap[l.operatore] || '#13315C') : '#13315C');
+
+  const dX = iso => diffDays(chartStart, parseDate(iso)) * dayW;
+
+  // ── HEADER MESI ──
+  let monthDefs = '', prevMKey = null, prevMStart = 0;
+  const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  for (let i = 0; i <= totalDays; i++) {
+    const d = addDays(chartStart, i);
+    const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+    if (mKey !== prevMKey) {
+      if (prevMKey !== null) {
+        const [y, m] = prevMKey.split('-');
+        const lbl = `${MONTH_NAMES[+m]} ${y}`;
+        const mW = i * dayW - prevMStart;
+        monthDefs += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+        monthDefs += `<text x="${prevMStart + 5}" y="15" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#444" letter-spacing="0.08em" text-transform="uppercase">${lbl.toUpperCase()}</text>`;
+      }
+      prevMKey = mKey; prevMStart = i * dayW;
+    }
+  }
+  // ultima month
+  if (prevMKey) {
+    const [y, m] = prevMKey.split('-');
+    const lbl = `${MONTH_NAMES[+m]} ${y}`;
+    const mW = totalDays * dayW - prevMStart;
+    monthDefs += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+    monthDefs += `<text x="${prevMStart + 5}" y="15" font-family="Arial,sans-serif" font-size="9" font-weight="600" fill="#444">${lbl.toUpperCase()}</text>`;
+  }
+
+  // ── SETTIMANE / GIORNI header ──
+  let weekDefs = '';
+  for (let i = 0; i < totalDays; i++) {
+    const d = addDays(chartStart, i);
+    if (d.getDay() === 1 || i === 0) {
+      weekDefs += `<text x="${i * dayW + 2}" y="37" font-family="Arial,sans-serif" font-size="7" fill="#888">${d.getDate()}</text>`;
+    }
+  }
+
+  // ── COLONNE DI SFONDO ──
+  let bgCols = '';
+  for (let i = 0; i < totalDays; i++) {
+    const d = addDays(chartStart, i);
+    const isWE = d.getDay() === 0 || d.getDay() === 6;
+    const isOdd = Math.floor(i / 7) % 2 === 1;
+    const isToday = toISO(d) === todayISO;
+    const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f3f3f3' : isOdd ? 'rgba(19,49,92,0.025)' : 'white';
+    bgCols += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
+    if (d.getDay() === 1) bgCols += `<line x1="${i * dayW}" y1="${HDR}" x2="${i * dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
+  }
+
+  // ── LINEA OGGI ──
+  const tX = dX(todayISO);
+  const todayLine = tX >= 0 && tX <= W
+    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.7"/>`
+    : '';
+
+  // ── RIGHE + BARRE ──
+  let rowBg = '', bars = '';
+  const clipDefs = [];
+  valid.forEach((lav, i) => {
+    const y = HDR + i * ROW;
+    rowBg += `<rect x="0" y="${y}" width="${W}" height="${ROW}" fill="${i % 2 ? '#fafafa' : 'white'}" opacity="0.6"/>`;
+    rowBg += `<line x1="0" y1="${y + ROW}" x2="${W}" y2="${y + ROW}" stroke="#eee" stroke-width="0.5"/>`;
+
+    if (!lav.data_inizio) return;
+    const bX = dX(lav.data_inizio);
+    const bW = Math.max(Number(lav.durata_giorni || 1) * dayW, 4);
+    const bY = y + ROW * 0.2;
+    const bH = ROW * 0.6;
+    const pct = Number(lav.percentuale_completamento) || 0;
+    const color = getColor(lav);
+
+    bars += `<rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" fill="${color}" rx="3"/>`;
+    if (pct > 0) bars += `<rect x="${bX}" y="${bY}" width="${bW * pct / 100}" height="${bH}" fill="rgba(255,255,255,0.3)" rx="3"/>`;
+
+    if (bW > 40 && lav.descrizione) {
+      const clipId = `c${i}`;
+      clipDefs.push(`<clipPath id="${clipId}"><rect x="${bX + 4}" y="${bY}" width="${bW - 8}" height="${bH}"/></clipPath>`);
+      bars += `<text x="${bX + 6}" y="${bY + bH * 0.68}" font-family="Arial,sans-serif" font-size="8" fill="white" clip-path="url(#${clipId})">${lav.descrizione}</text>`;
+    }
+  });
+
+  // ── FRECCE DIPENDENZE ──
+  let arrows = '';
+  valid.forEach(lav => {
+    if (!lav.dipendenza_id) return;
+    const dep = valid.find(d => d.id === lav.dipendenza_id);
+    if (!dep || !dep.data_inizio || !lav.data_inizio) return;
+    const x1 = dX(dep.data_inizio) + Number(dep.durata_giorni || 1) * dayW;
+    const y1 = HDR + valid.indexOf(dep) * ROW + ROW / 2;
+    const x2 = dX(lav.data_inizio);
+    const y2 = HDR + valid.indexOf(lav) * ROW + ROW / 2;
+    arrows += `<path d="M${x1} ${y1} C${x1 + 18} ${y1} ${x2 - 18} ${y2} ${x2} ${y2}" fill="none" stroke="#aaa" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
+  });
+
+  const svgHtml = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="display:block;border:1px solid #ddd;max-width:100%">
+      <defs>
+        <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#aaa"/>
+        </marker>
+        ${clipDefs.join('')}
+      </defs>
+      <!-- mesi -->
+      ${monthDefs}
+      <!-- settimane -->
+      ${weekDefs}
+      <!-- header bottom border -->
+      <line x1="0" y1="${HDR}" x2="${W}" y2="${HDR}" stroke="#ccc" stroke-width="1"/>
+      <!-- sfondo colonne -->
+      ${bgCols}
+      <!-- righe -->
+      ${rowBg}
+      <!-- linea oggi -->
+      ${todayLine}
+      <!-- barre -->
+      ${bars}
+      <!-- dipendenze -->
+      ${arrows}
+    </svg>`;
+
+  // ── TABELLA ──
+  const tableRows = lavorazioni.map(l => `
     <tr>
-      <td>${l.descrizione||'—'}</td>
-      <td>${l.operatore||'—'}</td>
-      <td>${l.data_inizio||'—'}</td>
-      <td>${l.data_fine||'—'}</td>
-      <td>${l.durata_giorni||'—'} gg</td>
-      <td>${l.percentuale_completamento||0}%</td>
-    </tr>
-  `).join('');
+      <td>${l.descrizione || '—'}</td>
+      <td>${l.operatore || '—'}</td>
+      <td>${l.data_inizio || '—'}</td>
+      <td>${l.data_fine || '—'}</td>
+      <td>${l.durata_giorni || '—'} gg</td>
+      <td>${l.percentuale_completamento || 0}%</td>
+    </tr>`).join('');
+
+  const win = window.open('', '_blank');
   win.document.write(`
     <html><head><title>Gantt — ${projectName}</title>
     <style>
-      body { font-family: Arial, sans-serif; font-size: 12px; padding: 24px; color: #0E0E0D; }
-      h1 { font-size: 20px; margin-bottom: 4px; }
-      p { color: #8a847b; font-size: 11px; margin-bottom: 20px; }
-      table { width: 100%; border-collapse: collapse; }
-      th { background: #EEF1F6; padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #ccc; }
-      td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+      * { box-sizing: border-box; }
+      body { font-family: Arial, sans-serif; font-size: 12px; padding: 24px; color: #0E0E0D; margin: 0; }
+      h1 { font-size: 18px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+      .sub { color: #8a847b; font-size: 10px; margin-bottom: 20px; font-family: monospace; }
+      .chart-wrap { overflow-x: auto; margin-bottom: 28px; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      th { background: #EEF1F6; padding: 7px 10px; text-align: left; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid #ccc; }
+      td { padding: 7px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
       tr:nth-child(even) td { background: #fafafa; }
+      @media print { .chart-wrap { overflow: visible; } svg { max-width: 100% !important; } }
     </style></head>
     <body>
       <h1>Gantt — ${projectName}</h1>
-      <p>Esportato il ${new Date().toLocaleDateString('it-IT')}</p>
+      <div class="sub">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
+      <div class="chart-wrap">${svgHtml}</div>
       <table>
         <thead><tr>
           <th>Attività</th><th>Impresa</th><th>Data inizio</th>
           <th>Data fine</th><th>Durata</th><th>% Completamento</th>
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${tableRows}</tbody>
       </table>
-    </body></html>
-  `);
+    </body></html>`);
   win.document.close();
   win.print();
 }
