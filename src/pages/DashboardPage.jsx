@@ -26,6 +26,20 @@ function getMonday(d) {
   return new Date(d.setDate(diff));
 }
 
+// Restituisce il prossimo giorno lavorativo:
+// venerdì/sabato/domenica → lunedì prossimo, altrimenti domani
+function getNextWorkday() {
+  const today = new Date();
+  const day = today.getDay(); // 0=dom, 1=lun...5=ven, 6=sab
+  let daysToAdd = 1;
+  if (day === 5) daysToAdd = 3; // ven → lun
+  if (day === 6) daysToAdd = 2; // sab → lun
+  if (day === 0) daysToAdd = 1; // dom → lun
+  const next = new Date(today);
+  next.setDate(today.getDate() + daysToAdd);
+  return next;
+}
+
 // ── SUB-COMPONENTS ────────────────────────────────────────────────
 
 function KpiCard({ label, value, note, valueColor }) {
@@ -202,9 +216,17 @@ export default function DashboardPage() {
   const [weekHours, setWeekHours]             = useState(0);
   const [creditToCollect, setCreditToCollect] = useState(0);
 
-  const [todayTasks, setTodayTasks]     = useState([]);
-  const [overdueTasks, setOverdueTasks] = useState([]);
-  const [recentProjects, setRecentProjects] = useState([]);
+  const [todayTasks, setTodayTasks]       = useState([]);
+  const [overdueTasks, setOverdueTasks]   = useState([]);
+  const [tomorrowTasks, setTomorrowTasks] = useState([]);
+
+  const nextWorkday     = useMemo(() => getNextWorkday(), [todayStr]);
+  const nextWorkdayStr  = useMemo(() => nextWorkday.toISOString().slice(0, 10), [nextWorkday]);
+  const isWeekend       = useMemo(() => { const d = new Date().getDay(); return d === 5 || d === 6 || d === 0; }, [todayStr]);
+  const nextWorkdayLabel = useMemo(() => {
+    if (isWeekend) return "Lunedì";
+    return nextWorkday.toLocaleDateString("it-IT", { weekday: "long" });
+  }, [isWeekend, nextWorkday]);
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -274,27 +296,17 @@ export default function DashboardPage() {
           setOverdueTasks(overdue || []);
         }
 
-        // 6. Progetti recenti — filtrati per utente se scope=mine
-        let projsQ = supabase.from("projects").select("id, name, client, created_at, updated_at")
-          .eq("studio", studioId).eq("archived", false)
-          .order("updated_at", { ascending: false }).limit(5);
-        if (!isAll && memberId) projsQ = projsQ.contains("assigned_users", [memberId]);
-        const { data: projs } = await projsQ;
-
-        const projectsWithProgress = await Promise.all(
-          (projs || []).map(async p => {
-            const taskBase = supabase.from("tasks").select("*", { count: "exact", head: true })
-              .eq("project_id", p.id).is("parent_task_id", null);
-            const [{ count: total }, { count: completed }] = await Promise.all([
-              taskBase,
-              supabase.from("tasks").select("*", { count: "exact", head: true })
-                .eq("project_id", p.id).eq("status", "completed").is("parent_task_id", null),
-            ]);
-            const tot = total || 0, comp = completed || 0;
-            return { ...p, totalTasks: tot, completedTasks: comp, progress: tot > 0 ? Math.round((comp / tot) * 100) : 0 };
-          })
-        );
-        setRecentProjects(projectsWithProgress);
+        // 6. Task di domani (o lunedì se weekend) — sempre personali
+        if (memberId) {
+          const nwDay = getNextWorkday().toISOString().slice(0, 10);
+          const { data: tmTasks } = await supabase
+            .from("tasks").select("*, projects(name)")
+            .eq("studio", studioId).eq("assigned_member", memberId)
+            .eq("data_pianificata", nwDay)
+            .neq("status", "completed")
+            .order("created_at", { ascending: true });
+          setTomorrowTasks(tmTasks || []);
+        }
       }
       setLoading(false);
     };
@@ -310,6 +322,7 @@ export default function DashboardPage() {
         prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t)
             .filter(t => t.status !== "completed")
       );
+      setTomorrowTasks(prev => prev.filter(t => t.id !== task.id));
     }
   };
 
@@ -411,14 +424,15 @@ export default function DashboardPage() {
           )}
         </Panel>
 
-        {/* Progetti recenti */}
-        <Panel title={scope === "all" ? "Progetti recenti — studio" : "I miei progetti"}>
-          {recentProjects.length === 0
-            ? <EmptyState label={scope === "all" ? "Nessun progetto" : "Nessun progetto assegnato"} />
-            : recentProjects.map(proj => (
-                <ProjectRow key={proj.id} proj={proj} />
-              ))
-          }
+        {/* Task di domani / lunedì */}
+        <Panel title={`Le mie task di ${nextWorkdayLabel}`}>
+          {tomorrowTasks.length === 0 ? (
+            <EmptyState label={`Nessuna task pianificata per ${nextWorkdayLabel.toLowerCase()}`} />
+          ) : (
+            tomorrowTasks.map(task => (
+              <TaskRow key={task.id} task={task} onToggle={toggleTaskStatus} overdue={false} />
+            ))
+          )}
         </Panel>
 
       </div>
