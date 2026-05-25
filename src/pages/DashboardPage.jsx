@@ -220,22 +220,20 @@ export default function DashboardPage() {
   const [overdueTasks, setOverdueTasks]   = useState([]);
   const [tomorrowTasks, setTomorrowTasks] = useState([]);
 
-  const nextWorkday     = useMemo(() => getNextWorkday(), [todayStr]);
-  const nextWorkdayStr  = useMemo(() => nextWorkday.toISOString().slice(0, 10), [nextWorkday]);
-  const isWeekend       = useMemo(() => { const d = new Date().getDay(); return d === 5 || d === 6 || d === 0; }, [todayStr]);
-  const nextWorkdayLabel = useMemo(() => {
-    if (isWeekend) return "Lunedì";
-    return nextWorkday.toLocaleDateString("it-IT", { weekday: "long" });
-  }, [isWeekend, nextWorkday]);
-
-  const greeting = useMemo(() => {
+  const greeting    = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return "Buongiorno";
     if (h < 18) return "Buon pomeriggio";
     return "Buonasera";
   }, []);
+  const todayStr    = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const nextWorkday      = useMemo(() => getNextWorkday(), [todayStr]);
+  const isWeekend        = useMemo(() => { const d = new Date().getDay(); return d === 5 || d === 6 || d === 0; }, [todayStr]);
+  const nextWorkdayLabel = useMemo(() => {
+    if (isWeekend) return "Lunedì";
+    return nextWorkday.toLocaleDateString("it-IT", { weekday: "long" });
+  }, [isWeekend, nextWorkday]);
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
