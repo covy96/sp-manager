@@ -421,6 +421,7 @@ function ProjectGantt({ project, studioId, onBack }) {
   const loadData = useCallback(async () => {
     const { data } = await supabase.from("lavorazioni_gantt").select("*")
       .eq("studio", studioId).eq("project_id", project.id)
+      .is("deleted_at", null)
       .order("order", {ascending:true});
     setLavorazioni(data??[]);
     setLoading(false);
@@ -502,7 +503,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     if (['data_inizio', 'data_fine', 'durata_giorni'].includes(field)) {
       const propagate = async (parentId, parentDataFine) => {
         const { data: allLav } = await supabase.from('lavorazioni_gantt')
-          .select('*').eq('studio', studioId).eq('project_id', project.id);
+          .select('*').eq('studio', studioId).eq('project_id', project.id).is('deleted_at', null);
         const deps = (allLav ?? []).filter(l => l.dipendenza_id === parentId);
         for (const dep of deps) {
           // Il figlio parte SEMPRE il giorno lavorativo dopo la fine del parent
@@ -551,7 +552,7 @@ function ProjectGantt({ project, studioId, onBack }) {
 
         // Propaga alle dipendenti
         const propagate = async (parentId, deltaGiorni) => {
-          const res = await supabase.from('lavorazioni_gantt').select('*').eq('studio', studioId).eq('project_id', project.id);
+          const res = await supabase.from('lavorazioni_gantt').select('*').eq('studio', studioId).eq('project_id', project.id).is('deleted_at', null);
           const deps = (res.data ?? []).filter(l => l.dipendenza_id === parentId);
           for (const dep of deps) {
             const ns = toISO(addDays(parseDate(dep.data_inizio), deltaGiorni));
