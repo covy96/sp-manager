@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
@@ -28,6 +28,7 @@ export default function ProgettiArchiviatiPage() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
   const [restoring, setRestoring]     = useState(null);
+  const [search, setSearch]           = useState("");
 
   useEffect(() => { if (studioId) loadData(); }, [studioId]);
 
@@ -46,6 +47,15 @@ export default function ProgettiArchiviatiPage() {
 
   const getMemberById = id => teamMembers.find(m => m.id === id);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return projects;
+    return projects.filter(p =>
+      (p.name || "").toLowerCase().includes(q) ||
+      (p.client || "").toLowerCase().includes(q)
+    );
+  }, [projects, search]);
+
   const handleUnarchive = async id => {
     setRestoring(id);
     const { error: e } = await supabase.from("projects").update({ archived: false }).eq("id", id);
@@ -58,10 +68,25 @@ export default function ProgettiArchiviatiPage() {
   );
 
   return (
-    <div style={{ maxWidth: 700 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Progetti Archiviati</div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Progetti archiviati non più attivi</div>
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Progetti Archiviati</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            {projects.length} {projects.length === 1 ? 'progetto archiviato' : 'progetti archiviati'}
+          </div>
+        </div>
+        {/* Barra di ricerca */}
+        {projects.length > 0 && (
+          <input
+            type="text"
+            placeholder="Cerca per nome o cliente..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', width: 220, boxSizing: 'border-box' }}
+          />
+        )}
       </div>
 
       {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 14 }}>{error}</div>}
@@ -71,9 +96,13 @@ export default function ProgettiArchiviatiPage() {
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, marginBottom: 16 }}>Nessun progetto archiviato.</div>
           <button onClick={() => navigate("/progetti")} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>Vai ai Progetti</button>
         </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '32px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+          Nessun risultato per "{search}"
+        </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {projects.map(project => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+          {filtered.map(project => {
             const assignedMembers = (project.assigned_users || []).map(id => getMemberById(id)).filter(Boolean);
             return (
               <div key={project.id} style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
@@ -86,7 +115,6 @@ export default function ProgettiArchiviatiPage() {
                 {project.address && (
                   <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 8 }}>{project.address}</div>
                 )}
-                {/* Avatars */}
                 {assignedMembers.length > 0 && (
                   <div style={{ display: 'flex', marginBottom: 14 }}>
                     {assignedMembers.slice(0, 5).map((m, i) => (
