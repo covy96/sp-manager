@@ -367,8 +367,195 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   win.print();
 }
 
+// ── VERSIONI GANTT ────────────────────────────────────────────────
+function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
+  const { T } = useTheme();
+  const [versions, setVersions]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [creating, setCreating]   = useState(false);
+
+  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+
+  const loadVersions = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('gantt_versions')
+      .select('*, lavorazioni_gantt(count)')
+      .eq('studio', studioId)
+      .eq('project_id', project.id)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true });
+    setVersions(data ?? []);
+
+    // Auto-migrazione: se esistono lavorazioni senza version_id, le raccoglie in "Versione 1"
+    if ((data ?? []).length === 0) {
+      const { data: orphans } = await supabase
+        .from('lavorazioni_gantt')
+        .select('id')
+        .eq('studio', studioId)
+        .eq('project_id', project.id)
+        .is('version_id', null)
+        .is('deleted_at', null)
+        .limit(1);
+      if ((orphans ?? []).length > 0) {
+        const { data: v1 } = await supabase
+          .from('gantt_versions')
+          .insert({ studio: studioId, project_id: project.id, name: 'Versione 1' })
+          .select().single();
+        if (v1) {
+          await supabase.from('lavorazioni_gantt')
+            .update({ version_id: v1.id })
+            .eq('studio', studioId).eq('project_id', project.id).is('version_id', null);
+          setVersions([v1]);
+        }
+      }
+    }
+    setLoading(false);
+  }, [studioId, project.id]);
+
+  useEffect(() => { loadVersions(); }, [loadVersions]);
+
+  const handleNewVersion = async () => {
+    setCreating(true);
+    const n = versions.length + 1;
+    const { data: v } = await supabase
+      .from('gantt_versions')
+      .insert({ studio: studioId, project_id: project.id, name: `Versione ${n}` })
+      .select().single();
+    setCreating(false);
+    if (v) onSelectVersion(v);
+  };
+
+  const handleCopyLast = async () => {
+    if (!versions.length) return;
+    setCreating(true);
+    const last = versions[versions.length - 1];
+    const n    = versions.length + 1;
+
+    // Crea nuova versione
+    const { data: newV } = await supabase
+      .from('gantt_versions')
+      .insert({ studio: studioId, project_id: project.id, name: `Versione ${n}` })
+      .select().single();
+    if (!newV) { setCreating(false); return; }
+
+    // Copia lavorazioni dalla versione precedente
+    const { data: rows } = await supabase
+      .from('lavorazioni_gantt')
+      .select('*')
+      .eq('version_id', last.id)
+      .is('deleted_at', null)
+      .order('order', { ascending: true });
+
+    if (rows?.length) {
+      // Remap IDs per mantenere dipendenze coerenti
+      const idMap = {};
+      const newRows = rows.map(r => {
+        const { id, created_at, ...rest } = r;
+        const newId = crypto.randomUUID();
+        idMap[id] = newId;
+        return { ...rest, id: newId, version_id: newV.id, deleted_at: null };
+      });
+      // Aggiorna dipendenza_id con nuovi ID
+      newRows.forEach(r => {
+        if (r.dipendenza_id) r.dipendenza_id = idMap[r.dipendenza_id] ?? null;
+      });
+      await supabase.from('lavorazioni_gantt').insert(newRows);
+    }
+
+    setCreating(false);
+    await loadVersions();
+    onSelectVersion(newV);
+  };
+
+  const handleDeleteVersion = async (v) => {
+    if (!confirm(`Eliminare "${v.name}"? Le lavorazioni associate saranno rimosse.`)) return;
+    await supabase.from('gantt_versions').update({ deleted_at: new Date().toISOString() }).eq('id', v.id);
+    await loadVersions();
+  };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:0, minHeight:'calc(100vh - 120px)' }}>
+
+      {/* Toolbar */}
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Gantt</button>
+          <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{project.name}</div>
+          {project.client && <div style={{ ...mono, fontSize:10, color:T.muted }}>{project.client}</div>}
+        </div>
+        <div style={{ display:'flex', gap:8 }}>
+          {versions.length > 0 && (
+            <button onClick={handleCopyLast} disabled={creating}
+              style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
+              ⎘ Copia ultima
+            </button>
+          )}
+          <button onClick={handleNewVersion} disabled={creating}
+            style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'6px 16px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
+            + Nuova versione
+          </button>
+        </div>
+      </div>
+
+      {/* Contenuto */}
+      <div style={{ padding:'28px 0' }}>
+        {loading ? (
+          <div style={{ ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>
+        ) : versions.length === 0 ? (
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'56px 0', textAlign:'center' }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
+            <div style={{ ...mono, fontSize:11, color:T.muted, marginBottom:8 }}>Nessuna versione salvata</div>
+            <div style={{ ...mono, fontSize:10, color:T.muted }}>Crea la prima versione per iniziare</div>
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {[...versions].reverse().map((v, idx) => {
+              const count = v.lavorazioni_gantt?.[0]?.count ?? 0;
+              const isLatest = idx === 0;
+              return (
+                <div key={v.id}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', background:T.surface, border:`0.5px solid ${isLatest ? T.navy : T.border}`, cursor:'pointer', transition:'border-color 0.15s' }}
+                  onClick={() => onSelectVersion(v)}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = T.navy}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = isLatest ? T.navy : T.border}
+                >
+                  <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                    <div style={{ width:36, height:36, background: isLatest ? T.navy : T.surface2, border:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
+                      📊
+                    </div>
+                    <div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                        <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>{v.name}</span>
+                        {isLatest && <span style={{ ...mono, fontSize:8, letterSpacing:'0.12em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>Ultima</span>}
+                      </div>
+                      <div style={{ ...mono, fontSize:9, color:T.muted }}>
+                        {new Date(v.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
+                        {' · '}
+                        {count} {count === 1 ? 'lavorazione' : 'lavorazioni'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeleteVersion(v); }}
+                      style={{ background:'none', border:`0.5px solid ${T.border}`, cursor:'pointer', color:T.muted, padding:'5px 10px', ...mono, fontSize:10 }}
+                      title="Elimina versione"
+                    >×</button>
+                    <span style={{ ...mono, fontSize:11, color:T.navy }}>Apri →</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── PROJECT GANTT ─────────────────────────────────────────────────
-function ProjectGantt({ project, studioId, onBack }) {
+function ProjectGantt({ project, studioId, onBack, version }) {
   const { T } = useTheme();
   const [lavorazioni, setLavorazioni] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -419,13 +606,14 @@ function ProjectGantt({ project, studioId, onBack }) {
   };
 
   const loadData = useCallback(async () => {
-    const { data } = await supabase.from("lavorazioni_gantt").select("*")
+    const q = supabase.from("lavorazioni_gantt").select("*")
       .eq("studio", studioId).eq("project_id", project.id)
-      .is("deleted_at", null)
-      .order("order", {ascending:true});
+      .is("deleted_at", null);
+    if (version?.id) q.eq("version_id", version.id);
+    const { data } = await q.order("order", {ascending:true});
     setLavorazioni(data??[]);
     setLoading(false);
-  }, [studioId, project.id]);
+  }, [studioId, project.id, version?.id]);
 
   useEffect(()=>{ loadData(); }, [loadData]);
 
@@ -459,6 +647,7 @@ function ProjectGantt({ project, studioId, onBack }) {
     const payload = {
       studio: studioId,
       project_id: project.id,
+      version_id: version?.id || null,
       descrizione: newRow.descrizione.trim(),
       operatore: newRow.operatore || null,
       data_inizio: dataInizio || null,
@@ -502,8 +691,10 @@ function ProjectGantt({ project, studioId, onBack }) {
     // Propaga SEMPRE a tutte le dipendenti — non solo se delta != 0
     if (['data_inizio', 'data_fine', 'durata_giorni'].includes(field)) {
       const propagate = async (parentId, parentDataFine) => {
-        const { data: allLav } = await supabase.from('lavorazioni_gantt')
+        const q2 = supabase.from('lavorazioni_gantt')
           .select('*').eq('studio', studioId).eq('project_id', project.id).is('deleted_at', null);
+        if (version?.id) q2.eq('version_id', version.id);
+        const { data: allLav } = await q2;
         const deps = (allLav ?? []).filter(l => l.dipendenza_id === parentId);
         for (const dep of deps) {
           // Il figlio parte SEMPRE il giorno lavorativo dopo la fine del parent
@@ -552,7 +743,9 @@ function ProjectGantt({ project, studioId, onBack }) {
 
         // Propaga alle dipendenti
         const propagate = async (parentId, deltaGiorni) => {
-          const res = await supabase.from('lavorazioni_gantt').select('*').eq('studio', studioId).eq('project_id', project.id).is('deleted_at', null);
+          const q3 = supabase.from('lavorazioni_gantt').select('*').eq('studio', studioId).eq('project_id', project.id).is('deleted_at', null);
+          if (version?.id) q3.eq('version_id', version.id);
+          const res = await q3;
           const deps = (res.data ?? []).filter(l => l.dipendenza_id === parentId);
           for (const dep of deps) {
             const ns = toISO(addDays(parseDate(dep.data_inizio), deltaGiorni));
@@ -615,8 +808,9 @@ function ProjectGantt({ project, studioId, onBack }) {
       {/* Toolbar */}
       <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Gantt</button>
+          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Versioni</button>
           <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>{project.name}</div>
+          {version&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,border:`0.5px solid ${T.navy}`,padding:'2px 8px'}}>{version.name}</div>}
           {project.client&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{project.client}</div>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -928,6 +1122,7 @@ export default function GanttPage() {
   const { studioId } = useStudio();
   const [projects, setProjects]               = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(null);
   const [loading, setLoading]                 = useState(true);
 
   useEffect(()=>{
@@ -939,8 +1134,24 @@ export default function GanttPage() {
       .then(({data})=>{ setProjects(data??[]); setLoading(false); });
   }, [studioId]);
 
+  // Progetto + Versione → Gantt editor
+  if (selectedProject && selectedVersion) return (
+    <ProjectGantt
+      project={selectedProject}
+      studioId={studioId}
+      version={selectedVersion}
+      onBack={() => setSelectedVersion(null)}
+    />
+  );
+
+  // Progetto senza versione → lista versioni
   if (selectedProject) return (
-    <ProjectGantt project={selectedProject} studioId={studioId} onBack={()=>setSelectedProject(null)}/>
+    <GanttVersionsList
+      project={selectedProject}
+      studioId={studioId}
+      onSelectVersion={v => setSelectedVersion(v)}
+      onBack={() => setSelectedProject(null)}
+    />
   );
 
   if (loading) return (
