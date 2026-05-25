@@ -671,31 +671,26 @@ export default function ProjectsPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        {/* Titolo + bottone nuovo */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div>
+        {/* Riga unica: titolo | filtri + nuovo (desktop) — due righe su mobile */}
+        <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          {/* Titolo */}
+          <div style={{ flexShrink: 0 }}>
             <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em' }}>
               Panoramica dei progetti attivi
             </div>
           </div>
-          {permissions.canCreateProjects && (
-            <div>
-              <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
-            </div>
-          )}
-        </div>
-        {/* Controlli filtro — si wrappano su mobile */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Search bar */}
-          <input
-            type="text"
-            placeholder="Cerca progetto o cliente..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{ flex: isMobile ? '1 1 100%' : '0 0 200px', padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
-          />
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+
+          {/* Controlli filtro + bottone nuovo */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
+            {/* Search bar */}
+            <input
+              type="text"
+              placeholder="Cerca progetto o cliente..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ flex: isMobile ? '1 1 100%' : '0 0 200px', padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+            />
             {/* Year filter */}
             <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
               style={{ padding: '6px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
@@ -703,7 +698,7 @@ export default function ProjectsPage() {
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>
-            {/* Filter dropdown */}
+            {/* Filter dropdown utenti */}
             <div ref={filterRef} style={{ position: 'relative' }}>
               <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>
                 Utenti ({selectedUserIds.length})
@@ -729,6 +724,10 @@ export default function ProjectsPage() {
                 </div>
               )}
             </div>
+            {/* Bottone nuovo */}
+            {permissions.canCreateProjects && (
+              <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
+            )}
           </div>
         </div>
         {permissions.canCreateProjects && !canAddProject(projects.length) && (
