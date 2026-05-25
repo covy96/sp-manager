@@ -214,6 +214,7 @@ export default function ScrivaniaPage() {
   const [updatingTaskId, setUpdatingTaskId]   = useState(null);
   const [taskTab, setTaskTab]                 = useState("active");
   const [creatingNote, setCreatingNote]       = useState(false);
+  const [collapsedProjects, setCollapsedProjects] = useState(new Set());
 
   const loadData = async () => {
     setLoading(true); setError("");
@@ -354,19 +355,45 @@ export default function ScrivaniaPage() {
               <div style={{ textAlign:'center', padding:'32px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
                 Nessuna task attiva assegnata.
               </div>
-            ) : Object.entries(groupedActive).map(([pid, tasks]) => (
-              <div key={pid} style={{ marginBottom:16 }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>
-                  {projectsById[pid] || "Senza progetto"}
+            ) : Object.entries(groupedActive).map(([pid, tasks]) => {
+              const isCollapsed = collapsedProjects.has(pid);
+              const toggleCollapse = () => setCollapsedProjects(prev => {
+                const next = new Set(prev);
+                next.has(pid) ? next.delete(pid) : next.add(pid);
+                return next;
+              });
+              return (
+                <div key={pid} style={{ marginBottom: isCollapsed ? 8 : 16 }}>
+                  {/* Header progetto cliccabile */}
+                  <button onClick={toggleCollapse} style={{
+                    display:'flex', alignItems:'center', justifyContent:'space-between',
+                    width:'100%', background:'none', border:'none', cursor:'pointer',
+                    padding:'4px 0', marginBottom: isCollapsed ? 0 : 6,
+                  }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
+                        {projectsById[pid] || "Senza progetto"}
+                      </span>
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>
+                        {tasks.length}
+                      </span>
+                    </div>
+                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1 }}>
+                      {isCollapsed ? '▸' : '▾'}
+                    </span>
+                  </button>
+                  {/* Lista task */}
+                  {!isCollapsed && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                      {tasks.map(t => (
+                        <TaskRow key={t.id} task={t} projectName={projectsById[t.project_id]||"—"}
+                          onToggle={toggleTask} updating={updatingTaskId === t.id} done={false}/>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                  {tasks.map(t => (
-                    <TaskRow key={t.id} task={t} projectName={projectsById[t.project_id]||"—"}
-                      onToggle={toggleTask} updating={updatingTaskId === t.id} done={false}/>
-                  ))}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {taskTab === "completed" && (
