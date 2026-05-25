@@ -125,7 +125,7 @@ function exportExcel(lavorazioni, projectName) {
 }
 
 // ── EXPORT PDF ────────────────────────────────────────────────────
-function exportPDF(lavorazioni, projectName) {
+function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine);
 
   // Range date
@@ -139,13 +139,14 @@ function exportPDF(lavorazioni, projectName) {
 
   // Dimensioni — ROW e HDR uguali per tabella e SVG (allineamento perfetto)
   const ROW = 30;
-  const HDR = 44;
+  // Vista mesi: solo riga mesi (HDR 26) — Vista settimane: mesi + giorni (HDR 44)
+  const HDR = viewMode === 'month' ? 26 : 44;
   const H   = HDR + valid.length * ROW;
 
   // A3 landscape usabile ≈ 1496px totali, tabella sinistra ≈ 380px → SVG ≈ 1116px
   // dayW calcolato per far sì che W ≈ containerWidth → nessuno stretching
   const SVG_TARGET_W = 1100;
-  const dayW = Math.max(10, Math.round(SVG_TARGET_W / totalDays));
+  const dayW = Math.max(viewMode === 'month' ? 6 : 10, Math.round(SVG_TARGET_W / totalDays));
   const W    = totalDays * dayW;
 
   // Mappa colori imprese
@@ -158,6 +159,7 @@ function exportPDF(lavorazioni, projectName) {
 
   // ── MESI ──
   const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const mHdrH = HDR; // header mesi occupa tutto HDR in entrambe le viste
   let monthSvg = '', prevMKey = null, prevMStart = 0;
   for (let i = 0; i <= totalDays; i++) {
     const d = addDays(chartStart, i);
@@ -166,8 +168,11 @@ function exportPDF(lavorazioni, projectName) {
       if (prevMKey !== null) {
         const [y, m] = prevMKey.split('-');
         const mW = i * dayW - prevMStart;
-        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-        monthSvg += `<text x="${prevMStart + 7}" y="15" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
+        const mRowH = viewMode === 'month' ? HDR : 22;
+        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="${mRowH}" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+        const fSize = viewMode === 'month' ? 13 : 11;
+        const fY    = viewMode === 'month' ? HDR / 2 + 5 : 15;
+        monthSvg += `<text x="${prevMStart + 8}" y="${fY}" font-family="'Space Grotesk', sans-serif" font-size="${fSize}" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
       }
       prevMKey = mKey; prevMStart = i * dayW;
     }
@@ -175,16 +180,21 @@ function exportPDF(lavorazioni, projectName) {
   if (prevMKey) {
     const [y, m] = prevMKey.split('-');
     const mW = W - prevMStart;
-    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="22" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-    monthSvg += `<text x="${prevMStart + 7}" y="15" font-family="'Space Grotesk', sans-serif" font-size="11" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
+    const mRowH = viewMode === 'month' ? HDR : 22;
+    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="${mRowH}" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
+    const fSize = viewMode === 'month' ? 13 : 11;
+    const fY    = viewMode === 'month' ? HDR / 2 + 5 : 15;
+    monthSvg += `<text x="${prevMStart + 8}" y="${fY}" font-family="'Space Grotesk', sans-serif" font-size="${fSize}" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
   }
 
-  // ── NUMERI GIORNO (ogni lunedì) ──
+  // ── NUMERI GIORNO (solo in vista settimane, ogni lunedì) ──
   let weekSvg = '';
-  for (let i = 0; i < totalDays; i++) {
-    const d = addDays(chartStart, i);
-    if (d.getDay() === 1 || i === 0) {
-      weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#999">${d.getDate()}</text>`;
+  if (viewMode === 'week') {
+    for (let i = 0; i < totalDays; i++) {
+      const d = addDays(chartStart, i);
+      if (d.getDay() === 1 || i === 0) {
+        weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#999">${d.getDate()}</text>`;
+      }
     }
   }
 
@@ -195,9 +205,19 @@ function exportPDF(lavorazioni, projectName) {
     const isWE    = d.getDay() === 0 || d.getDay() === 6;
     const isOdd   = Math.floor(i / 7) % 2 === 1;
     const isToday = toISO(d) === todayISO;
-    const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
-    bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
-    if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="22" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
+    if (viewMode === 'month') {
+      // Vista mesi: sfondo alternato per settimana, linee solo a inizio mese
+      if (i % 7 === 0) {
+        const fill = isOdd ? 'rgba(19,49,92,0.04)' : 'white';
+        bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${Math.min(7 * dayW, (totalDays - i) * dayW)}" height="${valid.length * ROW}" fill="${fill}"/>`;
+      }
+      if (d.getDate() === 1 && i > 0) bgSvg += `<line x1="${i*dayW}" y1="0" x2="${i*dayW}" y2="${H}" stroke="#bbb" stroke-width="1"/>`;
+    } else {
+      // Vista settimane: sfondo per giorno, linee ogni lunedì
+      const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
+      bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
+      if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="22" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
+    }
   }
 
   // ── LINEA OGGI ──
@@ -603,7 +623,7 @@ function ProjectGantt({ project, studioId, onBack }) {
           <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
