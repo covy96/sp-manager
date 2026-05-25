@@ -3,6 +3,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const NOTE_COLORS = [
   '#FFF9C4','#F8BBD0','#C8E6C9','#BBDEFB','#E1BEE7','#FFE0B2','#FFFFFF',
@@ -200,6 +201,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function ScrivaniaPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   usePageTitleOnMount("Scrivania");
   const { studioId } = useStudio();
 
@@ -333,8 +335,8 @@ export default function ScrivaniaPage() {
         </button>
       </div>
 
-      {/* Layout 50/50 */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
+      {/* Layout 50/50 — colonna singola su mobile */}
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:20, alignItems:'start' }}>
 
         {/* ── COLONNA TASK ── */}
         <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>

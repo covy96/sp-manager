@@ -197,7 +197,7 @@ export default function ProformaPage() {
                     <td style={{ ...tdSt, ...monoSt }}>{formatDate(p.data_creazione)}</td>
                     <td style={{ ...tdSt, ...monoSt, color: scaduta ? T.red : T.muted }}>{formatDate(p.data_scadenza)}</td>
                     <td style={tdSt}>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `0.5px solid ${stato.color}`, padding: '2px 7px' }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `0.5px solid ${stato.color}`, padding: '2px 7px', whiteSpace: 'nowrap', display: 'inline-block' }}>
                         {stato.label}
                       </span>
                     </td>

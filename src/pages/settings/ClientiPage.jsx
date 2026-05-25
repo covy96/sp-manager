@@ -5,6 +5,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { backfillContacts } from "../../utils/backfillContacts";
 import { useTheme } from '../../contexts/ThemeContext';
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
@@ -32,6 +33,7 @@ function FieldLabel({ children }) {
 
 export default function ClientiPage() {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
   const navigate = useNavigate();
@@ -126,28 +128,29 @@ export default function ClientiPage() {
     <div>
 
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:16,flexWrap:'wrap'}}>
-        <div>
-          <div style={{fontSize:22,fontWeight:600,color:T.ink,letterSpacing:'-0.03em',marginBottom:3}}>Clienti</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
-            {filtered.length !== contacts.length ? `${filtered.length} di ${contacts.length} clienti` : `${contacts.length} clienti`}
-          </div>
-        </div>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <div style={{position:'relative'}}>
-            <svg style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',width:13,height:13,color:T.muted,pointerEvents:'none'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input
-              type="text" placeholder="Cerca cliente..."
-              value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
-              style={{width:220,padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
-            />
-            {searchQuery && (
-              <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
-            )}
+      <div style={{marginBottom:16}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:10}}>
+          <div>
+            <div style={{fontSize:22,fontWeight:600,color:T.ink,letterSpacing:'-0.03em',marginBottom:3}}>Clienti</div>
+            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
+              {filtered.length !== contacts.length ? `${filtered.length} di ${contacts.length} clienti` : `${contacts.length} clienti`}
+            </div>
           </div>
           <BtnPrimary onClick={()=>{ setFormError(""); setAddModalOpen(true); }}>+ Aggiungi</BtnPrimary>
+        </div>
+        {/* Search — full width su mobile */}
+        <div style={{position:'relative'}}>
+          <svg style={{position:'absolute',left:9,top:'50%',transform:'translateY(-50%)',width:13,height:13,color:T.muted,pointerEvents:'none'}} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            type="text" placeholder="Cerca cliente..."
+            value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
+            style={{width:'100%',boxSizing:'border-box',padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+          />
+          {searchQuery && (
+            <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
+          )}
         </div>
       </div>
 
@@ -165,7 +168,7 @@ export default function ClientiPage() {
           Nessun cliente trovato per "{searchQuery}"
         </div>
       ) : (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+        <div style={{display:'grid',gridTemplateColumns: isMobile ? '1fr' : 'repeat(2,1fr)',gap:8}}>
           {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
