@@ -160,8 +160,8 @@ export default function MobileLayout({ session, children }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", transition:'background 0.2s, color 0.2s' }}>
 
-      {/* ── HEADER ── */}
-      <header style={{ position:'sticky', top:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', height:52, padding:'0 16px', background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
+      {/* ── HEADER — altezza 52px + safe-area-inset-top per notch iOS ── */}
+      <header style={{ position:'sticky', top:0, zIndex:40, display:'flex', alignItems:'flex-end', justifyContent:'space-between', minHeight:52, paddingTop:'max(12px, env(safe-area-inset-top))', paddingBottom:10, paddingLeft:16, paddingRight:16, background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
         <button onClick={()=>navigate('/dashboard')} style={{ background:'none', border:'none', cursor:'pointer', padding:0 }}>
           <div style={{ fontSize:15, fontWeight:700, letterSpacing:'-0.02em', color:'#EEF1F6' }}>{studioName||'SP Manager'}</div>
         </button>
@@ -177,7 +177,7 @@ export default function MobileLayout({ session, children }) {
             </button>
 
             {settingsOpen && (
-              <div style={{ position:'fixed', top:52, right:0, width:240, background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.5':'0.15'})`, borderRadius:'0 0 12px 12px' }}>
+              <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 52px)', right:0, width:240, background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.5':'0.15'})`, borderRadius:'0 0 12px 12px' }}>
                 {/* User info */}
                 <div style={{ padding:'14px 16px', borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -245,7 +245,7 @@ export default function MobileLayout({ session, children }) {
       {/* ── SEARCH OVERLAY ── */}
       {searchOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:60, background:T.sidebarBg, display:'flex', flexDirection:'column' }}>
-          <div style={{ padding:'12px 16px', display:'flex', alignItems:'center', gap:12, borderBottom:`0.5px solid rgba(255,255,255,0.1)` }}>
+          <div style={{ paddingTop:'max(12px, env(safe-area-inset-top))', paddingBottom:12, paddingLeft:16, paddingRight:16, display:'flex', alignItems:'center', gap:12, borderBottom:`0.5px solid rgba(255,255,255,0.1)` }}>
             <div style={{ flex:1, display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.08)', borderRadius:10, padding:'0 12px' }}>
               <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={18}/>
               <input ref={searchRef} autoFocus type="text" placeholder="Cerca progetti, task, commesse..." value={query} onChange={e=>setQuery(e.target.value)}
