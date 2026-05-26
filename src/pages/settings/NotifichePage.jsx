@@ -95,11 +95,11 @@ export default function NotifichePage() {
         : null;
       if (!teamMember?.id) { setPushError("Utente non trovato."); setPushLoading(false); return; }
       if (token) {
+        const prevToken = localStorage.getItem('asm-fcm-token');
         localStorage.setItem('asm-fcm-token', token);
-        // Leggi i token esistenti e aggiungi quello corrente (evita duplicati)
         const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
-        const existing = tm?.fcm_tokens ?? [];
-        const updated = existing.includes(token) ? existing : [...existing, token];
+        const existing = (tm?.fcm_tokens ?? []).filter(t => t !== prevToken && t !== token);
+        const updated = [...existing, token];
         const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
         if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
       }
