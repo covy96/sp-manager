@@ -490,7 +490,7 @@ export default function AppLayout({ session, children }) {
 
               {/* Aggiungi account */}
               <div style={{ height:'0.5px', background:T.border, margin:'4px 0' }}/>
-              <button onClick={() => { setShowAccountPicker(false); navigate('/login'); }} style={{
+              <button onClick={async () => { setShowAccountPicker(false); await supabase.auth.signOut(); navigate('/login'); }} style={{
                 padding:'10px 16px', background:'transparent',
                 border:`0.5px solid ${T.border}`, cursor:'pointer',
                 fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
