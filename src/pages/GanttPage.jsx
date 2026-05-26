@@ -663,6 +663,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [savingNew, setSavingNew] = useState(false);
   const [onlyChart, setOnlyChart] = useState(false);
   const [rowDragState, setRowDragState] = useState(null);
+  const [impresaSuggest, setImpresaSuggest] = useState(null); // { rowId: string|'new' }
   const chartRef     = useRef(null);
   const leftRef      = useRef(null);
   const rowDivsRef   = useRef([]);
@@ -1061,14 +1062,27 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       rows={1}
                       style={{...inputSt,fontWeight:600,fontSize:12,fontFamily:"'Space Grotesk', sans-serif",resize:'none',overflow:'hidden',lineHeight:'1.4',padding:'0',height:'auto'}}/>
                   </div>
-                  {/* Impresa — con autocomplete */}
-                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
+                  {/* Impresa — autocomplete custom */}
+                  <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
                     <input value={lav.operatore||''}
-                      list={`imprese-opts-${version?.id||'v'}`}
-                      onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,operatore:e.target.value}:l))}
-                      onBlur={e=>handleInlineEdit(lav,'operatore',e.target.value)}
+                      onChange={e=>{setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,operatore:e.target.value}:l));setImpresaSuggest({rowId:lav.id});}}
+                      onFocus={()=>setImpresaSuggest({rowId:lav.id})}
+                      onBlur={e=>{handleInlineEdit(lav,'operatore',e.target.value);setTimeout(()=>setImpresaSuggest(null),150);}}
                       onKeyDown={e=>{ if(e.key==='Enter') e.target.blur(); }}
                       style={{...inputSt,fontSize:10}}/>
+                    {impresaSuggest?.rowId===lav.id && Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).length>0 && (
+                      <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                        {Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).map(opt=>(
+                          <div key={opt} onMouseDown={()=>{handleInlineEdit(lav,'operatore',opt);setImpresaSuggest(null);}}
+                            style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}
+                            onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
+                            onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                            <span style={{width:7,height:7,borderRadius:'50%',background:impresaColorMap[opt]||T.navy,flexShrink:0,display:'inline-block'}}/>
+                            {opt}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* Dipende da */}
                   <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
@@ -1122,14 +1136,28 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                   placeholder="+ Nuova lavorazione..."
                   style={{...inputSt,fontSize:12,fontFamily:"'Space Grotesk', sans-serif",color:T.muted}}/>
               </div>
-              {/* Impresa */}
-              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
+              {/* Impresa nuova riga — autocomplete custom */}
+              <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
                 <input value={newRow.operatore}
-                  list={`imprese-opts-${version?.id||'v'}`}
-                  onChange={e=>updateNewRow('operatore',e.target.value)}
+                  onChange={e=>{updateNewRow('operatore',e.target.value);setImpresaSuggest({rowId:'new'});}}
+                  onFocus={()=>setImpresaSuggest({rowId:'new'})}
+                  onBlur={()=>setTimeout(()=>setImpresaSuggest(null),150)}
                   onKeyDown={e=>{ if(e.key==='Enter') handleSaveNew(); }}
                   placeholder="Impresa..."
                   style={{...inputSt,fontSize:10,color:T.muted}}/>
+                {impresaSuggest?.rowId==='new' && Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).length>0 && (
+                  <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                    {Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).map(opt=>(
+                      <div key={opt} onMouseDown={()=>{updateNewRow('operatore',opt);setImpresaSuggest(null);}}
+                        style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}
+                        onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
+                        onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                        <span style={{width:7,height:7,borderRadius:'50%',background:impresaColorMap[opt]||T.navy,flexShrink:0,display:'inline-block'}}/>
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* Dipende da */}
               <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
@@ -1321,10 +1349,6 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         </div>
       </div>
 
-      {/* Datalist imprese per autocomplete */}
-      <datalist id={`imprese-opts-${version?.id||'v'}`}>
-        {Object.keys(impresaColorMap).map(imp => <option key={imp} value={imp}/>)}
-      </datalist>
     </div>
   );
 }
