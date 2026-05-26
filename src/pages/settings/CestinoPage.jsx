@@ -4,14 +4,41 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { supabase } from '../../lib/supabase';
 
+const mkCtx = (commesse, projects) => {
+  const p = projects?.name;
+  const c = commesse?.nome_commessa;
+  return [p, c].filter(Boolean).join(' · ') || null;
+};
+
 const TABELLE = [
-  { id:'projects',               label:'Progetti',     nome:'name',           icon:'📁' },
-  { id:'commesse',               label:'Commesse',     nome:'nome_commessa',  icon:'📋' },
-  { id:'offerte',                label:'Offerte',      nome:'nome_offerta',   icon:'📄' },
-  { id:'proforma',               label:'Proforma',     nome:'numero_proforma',icon:'🧾' },
-  { id:'suddivisione_pagamenti', label:'Rate',         nome:'numero_rata',    icon:'💳' },
-  { id:'costi_extra',            label:'Costi extra',  nome:'descrizione',    icon:'💰' },
-  { id:'lavorazioni_gantt',      label:'Gantt',        nome:'descrizione',    icon:'📊' },
+  { id:'projects',               label:'Progetti',    icon:'📁',
+    select:'id, name, deleted_at',
+    getNome: r => r.name || '—',
+    getContext: () => null },
+  { id:'commesse',               label:'Commesse',    icon:'📋',
+    select:'id, nome_commessa, deleted_at, projects(name)',
+    getNome: r => r.nome_commessa || '—',
+    getContext: r => r.projects?.name || null },
+  { id:'offerte',                label:'Offerte',     icon:'📄',
+    select:'id, nome_offerta, deleted_at',
+    getNome: r => r.nome_offerta || '—',
+    getContext: () => null },
+  { id:'proforma',               label:'Proforma',    icon:'🧾',
+    select:'id, numero_proforma, deleted_at, commesse(nome_commessa, projects(name))',
+    getNome: r => r.numero_proforma || '—',
+    getContext: r => mkCtx(r.commesse, r.commesse?.projects) },
+  { id:'suddivisione_pagamenti', label:'Rate',        icon:'💳',
+    select:'id, numero_rata, deleted_at, commesse(nome_commessa, projects(name))',
+    getNome: r => r.numero_rata != null ? `Rata ${r.numero_rata}` : '—',
+    getContext: r => mkCtx(r.commesse, r.commesse?.projects) },
+  { id:'costi_extra',            label:'Costi extra', icon:'💰',
+    select:'id, description, deleted_at, commesse(nome_commessa, projects(name))',
+    getNome: r => r.description || '—',
+    getContext: r => mkCtx(r.commesse, r.commesse?.projects) },
+  { id:'lavorazioni_gantt',      label:'Gantt',       icon:'📊',
+    select:'id, descrizione, deleted_at, projects(name)',
+    getNome: r => r.descrizione || '—',
+    getContext: r => r.projects?.name || null },
 ];
 
 export default function CestinoPage() {
@@ -29,10 +56,10 @@ export default function CestinoPage() {
     setLoading(true);
     const result = {};
     for (const t of TABELLE) {
-      const q = supabase.from(t.id).select('id, '+t.nome+', deleted_at').not('deleted_at','is',null);
+      const q = supabase.from(t.id).select(t.select).not('deleted_at','is',null);
       if (t.id !== 'tasks') q.eq('studio', studioId);
       const { data } = await q.order('deleted_at', { ascending:false }).limit(50);
-      const rows = (data ?? []).map(r => ({ ...r, _tabella:t.id, _label:t.label, _icon:t.icon, _nome:r[t.nome]||'—' }));
+      const rows = (data ?? []).map(r => ({ ...r, _tabella:t.id, _label:t.label, _icon:t.icon, _nome:t.getNome(r), _context:t.getContext(r) }));
       if (rows.length > 0) result[t.id] = { meta: t, items: rows };
     }
     setByCategory(result);
@@ -104,6 +131,9 @@ export default function CestinoPage() {
                       <div key={item.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderTop: idx > 0 ? `0.5px solid ${T.border}` : 'none', background: idx % 2 === 0 ? T.surface : T.surface2 }}>
                         <div>
                           <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:2 }}>{item._nome}</div>
+                          {item._context && (
+                            <div style={{ ...mono, fontSize:9, color:T.ink60, marginBottom:2, letterSpacing:'0.04em' }}>{item._context}</div>
+                          )}
                           <div style={{ ...mono, fontSize:9, color:T.muted }}>
                             Eliminato il {new Date(item.deleted_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
                           </div>
