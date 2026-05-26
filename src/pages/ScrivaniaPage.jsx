@@ -75,9 +75,23 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   const [showMenu, setShowMenu]     = useState(false);
   const [saving, setSaving]         = useState(false);
   const saveTimer = useRef(null);
+  const taRef = useRef(null);
 
   const isOwn = note.author_id === currentMemberId;
+  const canEdit = isOwn || sharedWith.includes(currentMemberId);
   const authorName = teamMembers.find(m => m.id === note.author_id)?.user_name || 'Membro';
+
+  // Sync from real-time updates — skip content if textarea is focused
+  useEffect(() => {
+    if (document.activeElement !== taRef.current) {
+      setContent(note.content || '');
+    }
+  }, [note.content]);
+  useEffect(() => {
+    setSharedWith(note.shared_with || []);
+    setIsPrivate(note.is_private !== false);
+    setColor(note.color || '#FFF9C4');
+  }, [note.shared_with, note.is_private, note.color]);
 
   const saveContent = (val) => {
     clearTimeout(saveTimer.current);
@@ -101,11 +115,14 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
     const sw = next ? [] : sharedWith;
     setSharedWith(sw);
     saveField({ is_private: next, shared_with: sw });
+    if (!next) setShowShare(true);
   };
   const handleSharedWith = (memberId) => {
     const next = sharedWith.includes(memberId) ? sharedWith.filter(id => id !== memberId) : [...sharedWith, memberId];
     setSharedWith(next);
-    saveField({ shared_with: next });
+    const updates = { shared_with: next };
+    if (next.length > 0 && isPrivate) { setIsPrivate(false); updates.is_private = false; }
+    saveField(updates);
   };
 
   return (
@@ -143,12 +160,10 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
               <button onClick={() => setShowMenu(!showMenu)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:14, lineHeight:1, padding:'0 2px' }}>···</button>
               {showMenu && (
                 <div style={{ position:'absolute', right:0, top:'100%', background: T.surface, border:`0.5px solid ${T.borderMd}`, width:160, zIndex:30, marginTop:2 }}>
-                  {!isPrivate && (
-                    <button onClick={() => { setShowShare(!showShare); setShowMenu(false); }}
-                      style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink }}>
-                      Condivisione
-                    </button>
-                  )}
+                  <button onClick={() => { setShowShare(!showShare); setShowMenu(false); }}
+                    style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink }}>
+                    Condivisione
+                  </button>
                   <button onClick={() => { onDelete(note.id); setShowMenu(false); }}
                     style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red }}>
                     Elimina
@@ -161,7 +176,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
       </div>
 
       {/* Pannello condivisione */}
-      {showShare && !isPrivate && isOwn && (
+      {showShare && isOwn && (
         <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background:'rgba(255,255,255,0.4)' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginBottom:6, letterSpacing:'0.1em', textTransform:'uppercase' }}>Condividi con:</div>
           {teamMembers.filter(m => m.id !== currentMemberId).map(m => (
@@ -175,24 +190,25 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
 
       {/* Area testo */}
       <textarea
+        ref={taRef}
         value={content}
-        onChange={e => { if (!isOwn) return; setContent(e.target.value); saveContent(e.target.value); }}
-        readOnly={!isOwn}
-        placeholder={isOwn ? "Inizia a scrivere..." : ""}
+        onChange={e => { if (!canEdit) return; setContent(e.target.value); saveContent(e.target.value); }}
+        readOnly={!canEdit}
+        placeholder={canEdit ? "Inizia a scrivere..." : ""}
         style={{
           flex:1, width:'100%', minHeight:120,
           padding:'12px 14px', boxSizing:'border-box',
           background:'transparent', border:'none', outline:'none',
           fontSize:13, fontFamily:"'Space Grotesk', sans-serif",
           color:T.ink, lineHeight:1.7, resize:'vertical',
-          cursor: isOwn ? 'text' : 'default',
+          cursor: canEdit ? 'text' : 'default',
         }}
       />
 
       {/* Footer data */}
       <div style={{ padding:'4px 10px 6px', fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, borderTop:`0.5px solid ${T.border}` }}>
         {new Date(note.updated_at || note.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short' })}
-        {!isPrivate && sharedWith.length > 0 && ` · condivisa con ${sharedWith.length}`}
+        {sharedWith.length > 0 && ` · condivisa con ${sharedWith.length}`}
       </div>
     </div>
   );
@@ -233,7 +249,7 @@ export default function ScrivaniaPage() {
       supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id),
       supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId),
       supabase.from("notes").select("*").eq("studio", studioId)
-        .or(`author_id.eq.${tm.id},and(is_private.eq.false,shared_with.cs.{${tm.id}})`)
+        .or(`author_id.eq.${tm.id},shared_with.cs.{${tm.id}}`)
         .order("updated_at", { ascending: false }),
     ]);
 
@@ -259,6 +275,32 @@ export default function ScrivaniaPage() {
   };
 
   useEffect(() => { if (studioId) loadData(); }, [studioId]);
+
+  // Real-time notes sync
+  useEffect(() => {
+    if (!studioId || !currentMemberId) return;
+    const channel = supabase.channel(`notes-rt-${studioId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `studio=eq.${studioId}` },
+        ({ eventType, new: newRow, old: oldRow }) => {
+          if (eventType === 'INSERT') {
+            const visible = newRow.author_id === currentMemberId || (newRow.shared_with || []).includes(currentMemberId);
+            if (visible) setNotes(p => [newRow, ...p]);
+          } else if (eventType === 'UPDATE') {
+            setNotes(p => {
+              const exists = p.some(n => n.id === newRow.id);
+              const visible = newRow.author_id === currentMemberId || (newRow.shared_with || []).includes(currentMemberId);
+              if (!exists && visible) return [newRow, ...p];
+              if (exists && !visible) return p.filter(n => n.id !== newRow.id);
+              if (exists && visible) return p.map(n => n.id === newRow.id ? { ...n, ...newRow } : n);
+              return p;
+            });
+          } else if (eventType === 'DELETE') {
+            setNotes(p => p.filter(n => n.id !== oldRow.id));
+          }
+        })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [studioId, currentMemberId]);
 
   const groupedActive = useMemo(() => activeTasks.reduce((acc, t) => {
     const key = t.project_id || "senza-progetto";
