@@ -10,6 +10,7 @@ import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
 import { getUnreadNotifications, markAllRead } from "../lib/notifications";
+import { messaging, onMessage } from "../lib/firebase";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
@@ -119,6 +120,24 @@ export default function AppLayout({ session, children }) {
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Registra service worker all'avvio (necessario per notifiche background)
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
+    }
+  }, []);
+
+  // Notifiche in foreground (app aperta)
+  useEffect(() => {
+    if (!messaging) return;
+    return onMessage(messaging, (payload) => {
+      const { title, body } = payload.notification ?? {};
+      if (Notification.permission === 'granted') {
+        new Notification(title ?? 'SP Manager', { body: body ?? '', icon: '/icon-192.png' });
+      }
+    });
   }, []);
 
   // Carica notifiche non lette
