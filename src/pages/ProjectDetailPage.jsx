@@ -154,7 +154,7 @@ function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onD
 }
 
 // ── TASK ROW ──────────────────────────────────────────────────────
-function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtaskAssignment, subtaskDate, onToggle, onUpdateTask, onDeleteTask, onSubtaskInputChange, onSubtaskAssignmentChange, onSubtaskDateChange, onCreateSubtask, isUpdating, isCreatingSubtask }) {
+function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtaskAssignment, subtaskDate, onToggle, onUpdateTask, onDeleteTask, onSubtaskInputChange, onSubtaskAssignmentChange, onSubtaskDateChange, onCreateSubtask, isUpdating, isCreatingSubtask, currentMemberId }) {
   const { T } = useTheme();
   const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
@@ -219,9 +219,9 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
             <input type="text" value={subtaskInput ?? ""} onChange={e => onSubtaskInputChange(task.id, e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onCreateSubtask(task); } }}
               placeholder="Aggiungi subtask..." style={{ ...inputSt, flex: 1, minWidth: 0 }} />
-            <div style={miniBtn} aria-label="Assegna membro subtask">
+            <div style={miniBtn} aria-label="Assegna membro subtask" title={teamMembers.find(m=>m.id===(subtaskAssignment??currentMemberId))?.user_name || 'Assegna'}>
               <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
-              <select value={subtaskAssignment ?? ""} onChange={e => onSubtaskAssignmentChange(task.id, e.target.value)}
+              <select value={subtaskAssignment ?? (currentMemberId ?? "")} onChange={e => onSubtaskAssignmentChange(task.id, e.target.value)}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
                 <option value="">Non assegnato</option>
                 {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
@@ -452,13 +452,19 @@ export default function ProjectDetailPage() {
     const title = (newTaskInputs[category] ?? "").trim();
     if (!title || creatingCategory) return;
     setCreatingCategory(category);
-    const memberId = newTaskAssignments[category] || null;
+    // Default: assegna al creatore; se l'utente ha scelto esplicitamente usa quella scelta
+    const memberId = category in newTaskAssignments
+      ? (newTaskAssignments[category] || null)
+      : (teamMember?.id || null);
     const member = teamMembers.find(m => m.id === memberId);
     const plannedDate = newTaskDates[category] || null;
     const optimisticId = `tmp-${Date.now()}`;
     const dbCategoria = category === "__uncategorized__" ? null : category;
     setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: dbCategoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, order: 0, created_at: new Date().toISOString() }]);
-    setNewTaskInputs(p => ({ ...p, [category]: "" })); setNewTaskAssignments(p => ({ ...p, [category]: "" })); setNewTaskDates(p => ({ ...p, [category]: "" }));
+    // Reset: elimina la chiave così il prossimo task torna a defaultare al creatore
+    setNewTaskInputs(p => ({ ...p, [category]: "" }));
+    setNewTaskAssignments(p => { const n = {...p}; delete n[category]; return n; });
+    setNewTaskDates(p => ({ ...p, [category]: "" }));
     const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: dbCategoria, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else { setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus(); }
@@ -469,12 +475,16 @@ export default function ProjectDetailPage() {
     const title = (subtaskInputs[parentTask.id] ?? "").trim();
     if (!title || creatingSubtaskId) return;
     setCreatingSubtaskId(parentTask.id);
-    const memberId = subtaskAssignments[parentTask.id] || null;
+    const memberId = parentTask.id in subtaskAssignments
+      ? (subtaskAssignments[parentTask.id] || null)
+      : (teamMember?.id || null);
     const member = teamMembers.find(m => m.id === memberId);
     const plannedDate = subtaskDates[parentTask.id] || null;
     const optimisticId = `tmp-subtask-${Date.now()}`;
     setTasks(p => p.map(t => t.id === parentTask.id ? { ...t, status: "todo" } : t).concat({ id: optimisticId, project_id: id, parent_task_id: parentTask.id, title, categoria: parentTask.categoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, created_at: new Date().toISOString() }));
-    setSubtaskInputs(p => ({ ...p, [parentTask.id]: "" })); setSubtaskAssignments(p => ({ ...p, [parentTask.id]: "" })); setSubtaskDates(p => ({ ...p, [parentTask.id]: "" }));
+    setSubtaskInputs(p => ({ ...p, [parentTask.id]: "" }));
+    setSubtaskAssignments(p => { const n = {...p}; delete n[parentTask.id]; return n; });
+    setSubtaskDates(p => ({ ...p, [parentTask.id]: "" }));
     const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, parent_task_id: parentTask.id || null, title, categoria: parentTask.categoria || null, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, studio: studioId || null }).select("*").single();
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else {
@@ -668,9 +678,9 @@ export default function ProjectDetailPage() {
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); createTaskForCategory(group.category); } }}
                       placeholder="Aggiungi task..."
                       style={{ ...inputSt, fontSize: 11 }} />
-                    <div style={miniBtn}>
+                    <div style={miniBtn} title={teamMembers.find(m=>m.id===(newTaskAssignments[group.category]??teamMember?.id))?.user_name || 'Assegna'}>
                       <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
-                      <select value={newTaskAssignments[group.category] ?? ""} onChange={e => setNewTaskAssignments(p => ({ ...p, [group.category]: e.target.value }))}
+                      <select value={newTaskAssignments[group.category] ?? (teamMember?.id ?? "")} onChange={e => setNewTaskAssignments(p => ({ ...p, [group.category]: e.target.value }))}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
                         <option value="">Non assegnato</option>
                         {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
@@ -703,6 +713,7 @@ export default function ProjectDetailPage() {
                       onCreateSubtask={createSubtask}
                       isUpdating={updatingTaskId === task.id}
                       isCreatingSubtask={creatingSubtaskId === task.id}
+                      currentMemberId={teamMember?.id ?? null}
                     />
                   ))}
                 </div>
