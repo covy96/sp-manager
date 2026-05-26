@@ -98,8 +98,9 @@ export default function NotifichePage() {
         const prevToken = localStorage.getItem('asm-fcm-token');
         localStorage.setItem('asm-fcm-token', token);
         const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
-        const existing = (tm?.fcm_tokens ?? []).filter(t => t !== prevToken && t !== token);
-        const updated = [...existing, token];
+        // Rimuove solo il vecchio token di QUESTO dispositivo, lascia intatti gli altri
+        const existing = (tm?.fcm_tokens ?? []).filter(t => prevToken ? t !== prevToken : true);
+        const updated = existing.includes(token) ? existing : [...existing, token];
         const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
         if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
       }
