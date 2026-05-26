@@ -26,7 +26,7 @@ export async function createNotification({ studioId, userEmail, type, title, mes
   // Se ha le preferenze e il tipo è disabilitato, non inviare
   if (member?.notification_preferences && member.notification_preferences[type] === false) return;
 
-  const { error } = await supabase.from("notifications").insert({
+  const { data: notif, error } = await supabase.from("notifications").insert({
     studio: studioId,
     user_email: userEmail,
     type,
@@ -36,9 +36,15 @@ export async function createNotification({ studioId, userEmail, type, title, mes
     project_id: projectId || null,
     task_id: taskId || null,
     read: false,
-  });
+  }).select("id").single();
 
-  if (error) console.error("Errore creazione notifica:", error.message);
+  if (error) { console.error("Errore creazione notifica:", error.message); return; }
+
+  if (member?.fcm_token) {
+    supabase.functions.invoke("send-push-notification", {
+      body: { fcm_token: member.fcm_token, title, message, link: link || "/", notification_id: notif?.id || "" },
+    }).catch(e => console.warn("Push send error:", e.message));
+  }
 }
 
 /**

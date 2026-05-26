@@ -8,6 +8,7 @@ import CommessePanel from '../components/CommessePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { notifyTaskAssigned } from '../lib/notifications';
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -389,7 +390,14 @@ export default function ProjectDetailPage() {
     const prev = tasks; setUpdatingTaskId(task.id);
     setTasks(p => p.map(i => i.id === task.id ? { ...i, ...updates } : i));
     const { error: uErr } = await supabase.from("tasks").update(updates).eq("id", task.id);
-    if (uErr) { setTasks(prev); setError(uErr.message); } else setError("");
+    if (uErr) { setTasks(prev); setError(uErr.message); }
+    else {
+      setError("");
+      if (updates.assigned_member && updates.assigned_member !== task.assigned_member && updates.assigned_member !== teamMember?.id) {
+        const assignedMember = teamMembers.find(m => m.id === updates.assigned_member);
+        if (assignedMember?.user_email) notifyTaskAssigned({ studioId, assignedEmail: assignedMember.user_email, taskTitle: task.title, projectName: project?.name || "", taskId: task.id, projectId: task.project_id || null });
+      }
+    }
     setUpdatingTaskId(null);
   };
 
@@ -467,7 +475,13 @@ export default function ProjectDetailPage() {
     setNewTaskDates(p => ({ ...p, [category]: "" }));
     const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: dbCategoria, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
-    else { setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus(); }
+    else {
+      setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus();
+      if (memberId && memberId !== teamMember?.id) {
+        const assignedMember = teamMembers.find(m => m.id === memberId);
+        if (assignedMember?.user_email) notifyTaskAssigned({ studioId, assignedEmail: assignedMember.user_email, taskTitle: title, projectName: project?.name || "", taskId: data.id, projectId: projectId || null });
+      }
+    }
     setCreatingCategory("");
   };
 
@@ -490,6 +504,10 @@ export default function ProjectDetailPage() {
     else {
       await supabase.from("tasks").update({ status: "todo" }).eq("id", parentTask.id);
       setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError("");
+      if (memberId && memberId !== teamMember?.id) {
+        const assignedMember = teamMembers.find(m => m.id === memberId);
+        if (assignedMember?.user_email) notifyTaskAssigned({ studioId, assignedEmail: assignedMember.user_email, taskTitle: title, projectName: project?.name || "", taskId: data.id, projectId: projectId || null });
+      }
     }
     setCreatingSubtaskId(null);
   };

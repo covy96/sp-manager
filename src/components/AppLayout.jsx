@@ -9,6 +9,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
+import { getUnreadNotifications, markAllRead } from "../lib/notifications";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
@@ -89,10 +90,13 @@ export default function AppLayout({ session, children }) {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [savedAccounts, setSavedAccounts]   = useState([]);
   const [switchingAccount, setSwitchingAccount] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState([]);
+  const [bellOpen, setBellOpen]         = useState(false);
 
-  const settingsRef = useRef(null);
-  const searchRef   = useRef(null);
+  const settingsRef    = useRef(null);
+  const searchRef      = useRef(null);
   const searchInputRef = useRef(null);
+  const bellRef        = useRef(null);
 
   // Ricerca globale
   const { query, setQuery, results, loading: searchLoading, clear } = useGlobalSearch(studioId);
@@ -109,14 +113,30 @@ export default function AppLayout({ session, children }) {
   // Chiudi dropdown su click esterno
   useEffect(() => {
     function handler(e) {
-      if (settingsRef.current && !settingsRef.current.contains(e.target)) {
-        setSettingsOpen(false);
-      }
+      if (settingsRef.current && !settingsRef.current.contains(e.target)) setSettingsOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchFocused(false);
+      if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Carica notifiche non lette
+  useEffect(() => {
+    if (!studioId || !session?.user?.email) return;
+    getUnreadNotifications(studioId, session.user.email).then(setUnreadNotifs);
+  }, [studioId, session?.user?.email]);
+
+  // Real-time: nuove notifiche
+  useEffect(() => {
+    if (!studioId || !session?.user?.email) return;
+    const email = session.user.email;
+    const ch = supabase.channel(`notifs-${studioId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `studio=eq.${studioId}` },
+        ({ new: row }) => { if (row.user_email === email && !row.read) setUnreadNotifs(p => [row, ...p]); })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [studioId, session?.user?.email]);
 
   // ⌘K shortcut
   useEffect(() => {
@@ -347,6 +367,66 @@ export default function AppLayout({ session, children }) {
                     </div>
                   </>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Campanella notifiche */}
+          <div ref={bellRef} style={{ position:'relative', flexShrink:0, marginRight:8 }}>
+            <button onClick={() => setBellOpen(p => !p)} style={{
+              position:'relative', width:32, height:32, background:'none', border:'none',
+              cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:T.muted,
+            }}>
+              <BellIcon style={{ width:18, height:18 }}/>
+              {unreadNotifs.length > 0 && (
+                <span style={{
+                  position:'absolute', top:4, right:3, minWidth:14, height:14, borderRadius:7,
+                  background:T.red, color:'#fff', fontSize:8, fontWeight:700,
+                  fontFamily:"'IBM Plex Mono', monospace",
+                  display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px',
+                }}>
+                  {unreadNotifs.length > 9 ? '9+' : unreadNotifs.length}
+                </span>
+              )}
+            </button>
+            {bellOpen && (
+              <div style={{
+                position:'absolute', right:0, top:'calc(100% + 8px)', width:320,
+                background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50,
+                boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.08'})`,
+                maxHeight:400, display:'flex', flexDirection:'column',
+              }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+                    {unreadNotifs.length > 0 ? `${unreadNotifs.length} non lette` : 'Notifiche'}
+                  </span>
+                  {unreadNotifs.length > 0 && (
+                    <button onClick={() => { markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
+                      style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, letterSpacing:'0.05em' }}>
+                      Segna tutto letto
+                    </button>
+                  )}
+                </div>
+                <div style={{ overflowY:'auto', flex:1 }}>
+                  {unreadNotifs.length === 0 ? (
+                    <div style={{ padding:'32px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+                      Nessuna notifica non letta
+                    </div>
+                  ) : unreadNotifs.map(n => (
+                    <button key={n.id}
+                      onClick={() => { if (n.link) navigate(n.link); setBellOpen(false); markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
+                      style={{ display:'block', width:'100%', padding:'12px 14px', textAlign:'left', background:'none', border:'none', cursor: n.link ? 'pointer' : 'default', borderBottom:`0.5px solid ${T.border}` }}
+                      onMouseEnter={e => e.currentTarget.style.background=T.border}
+                      onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                    >
+                      <div style={{ fontSize:12, fontWeight:600, color:T.ink, marginBottom:3 }}>{n.title}</div>
+                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:4, lineHeight:1.4 }}>{n.message}</div>
+                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>
+                        {new Date(n.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
