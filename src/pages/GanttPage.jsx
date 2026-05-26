@@ -386,9 +386,12 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
 // ── VERSIONI GANTT ────────────────────────────────────────────────
 function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
   const { T } = useTheme();
-  const [versions, setVersions]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [creating, setCreating]   = useState(false);
+  const [versions, setVersions]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [creating, setCreating]     = useState(false);
+  const [contextMenu, setContextMenu] = useState(null); // { id, x, y }
+  const [renamingId, setRenamingId]   = useState(null);
+  const [renamingName, setRenamingName] = useState('');
 
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
 
@@ -490,6 +493,34 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
     await loadVersions();
   };
 
+  const handleContextMenu = (e, v) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ id: v.id, x: e.clientX, y: e.clientY });
+  };
+
+  const handleRenameStart = (v) => {
+    setRenamingId(v.id);
+    setRenamingName(v.name);
+    setContextMenu(null);
+  };
+
+  const handleRenameSave = async (v) => {
+    const trimmed = renamingName.trim();
+    setRenamingId(null);
+    if (!trimmed || trimmed === v.name) return;
+    await supabase.from('gantt_versions').update({ name: trimmed }).eq('id', v.id);
+    setVersions(prev => prev.map(ver => ver.id === v.id ? { ...ver, name: trimmed } : ver));
+  };
+
+  // Chiude il context menu al click fuori
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [contextMenu]);
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:0, minHeight:'calc(100vh - 120px)' }}>
 
@@ -529,10 +560,12 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
             {[...versions].reverse().map((v, idx) => {
               const count = v.lavorazioni_gantt?.[0]?.count ?? 0;
               const isLatest = idx === 0;
+              const isRenaming = renamingId === v.id;
               return (
                 <div key={v.id}
-                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', background:T.surface, border:`0.5px solid ${isLatest ? T.navy : T.border}`, cursor:'pointer', transition:'border-color 0.15s' }}
-                  onClick={() => onSelectVersion(v)}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', background:T.surface, border:`0.5px solid ${isLatest ? T.navy : T.border}`, cursor: isRenaming ? 'default' : 'pointer', transition:'border-color 0.15s' }}
+                  onClick={() => { if (!isRenaming) onSelectVersion(v); }}
+                  onContextMenu={e => handleContextMenu(e, v)}
                   onMouseEnter={e => e.currentTarget.style.borderColor = T.navy}
                   onMouseLeave={e => e.currentTarget.style.borderColor = isLatest ? T.navy : T.border}
                 >
@@ -542,7 +575,22 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                     </div>
                     <div>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
-                        <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>{v.name}</span>
+                        {isRenaming ? (
+                          <input
+                            autoFocus
+                            value={renamingName}
+                            onChange={e => setRenamingName(e.target.value)}
+                            onBlur={() => handleRenameSave(v)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { e.preventDefault(); handleRenameSave(v); }
+                              if (e.key === 'Escape') { setRenamingId(null); }
+                            }}
+                            onClick={e => e.stopPropagation()}
+                            style={{ fontSize:14, fontWeight:600, color:T.ink, background:T.surface2, border:`1px solid ${T.navy}`, padding:'2px 8px', outline:'none', fontFamily:"'Space Grotesk', sans-serif", borderRadius:2, minWidth:160 }}
+                          />
+                        ) : (
+                          <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>{v.name}</span>
+                        )}
                         {isLatest && <span style={{ ...mono, fontSize:8, letterSpacing:'0.12em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>Ultima</span>}
                       </div>
                       <div style={{ ...mono, fontSize:9, color:T.muted }}>
@@ -566,6 +614,35 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
           </div>
         )}
       </div>
+
+      {/* Context menu tasto destro */}
+      {contextMenu && (() => {
+        const ver = versions.find(v => v.id === contextMenu.id);
+        return (
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ position:'fixed', left:contextMenu.x, top:contextMenu.y, zIndex:9999, background:T.surface, border:`0.5px solid ${T.borderMd}`, boxShadow:'0 4px 16px rgba(0,0,0,0.14)', minWidth:160 }}
+          >
+            <button
+              onClick={() => handleRenameStart(ver)}
+              style={{ width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', textAlign:'left', color:T.ink, ...mono, fontSize:11, display:'flex', alignItems:'center', gap:10 }}
+              onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              ✏ Rinomina
+            </button>
+            <div style={{ height:'0.5px', background:T.border }}/>
+            <button
+              onClick={() => { setContextMenu(null); handleDeleteVersion(ver); }}
+              style={{ width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', textAlign:'left', color:'#c0392b', ...mono, fontSize:11, display:'flex', alignItems:'center', gap:10 }}
+              onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              × Elimina
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }
