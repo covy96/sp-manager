@@ -314,7 +314,7 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
     const bg = i % 2 ? '#fafafa' : 'white';
     const tdBase = `padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${bg}; vertical-align:middle; white-space:nowrap; font-family:'IBM Plex Mono', monospace;`;
     return `<tr>
-      <td style="${tdBase} max-width:180px; overflow:hidden;">
+      <td style="padding:0 8px; min-height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${bg}; vertical-align:middle; white-space:normal; word-break:break-word; max-width:180px; font-family:'IBM Plex Mono', monospace;">
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;flex-shrink:0;"></span>
         <span style="font-weight:600; font-size:10px; font-family:'Space Grotesk', sans-serif;">${lav.descrizione||'—'}</span>
       </td>
@@ -663,8 +663,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [savingNew, setSavingNew] = useState(false);
   const [onlyChart, setOnlyChart] = useState(false);
   const [rowDragState, setRowDragState] = useState(null);
-  const chartRef = useRef(null);
-  const leftRef  = useRef(null);
+  const chartRef     = useRef(null);
+  const leftRef      = useRef(null);
+  const rowDivsRef   = useRef([]);
+  const [measuredHeights, setMeasuredHeights] = useState([]);
 
   const dayW = viewMode==='week' ? DAY_W_WEEK : DAY_W_MONTH;
 
@@ -674,6 +676,21 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     lavorazioni.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, map, T.navy); });
     return map;
   }, [lavorazioni]);
+
+  // Altezze cumulative righe per allineamento chart
+  const rowTops = useMemo(() => {
+    const tops = [];
+    let y = 0;
+    lavorazioni.forEach((_, i) => { tops.push(y); y += measuredHeights[i] ?? ROW_H; });
+    return tops;
+  }, [measuredHeights, lavorazioni.length]);
+
+  const newRowTop = useMemo(() =>
+    lavorazioni.reduce((s, _, i) => s + (measuredHeights[i] ?? ROW_H), 0),
+  [measuredHeights, lavorazioni.length]);
+
+  const getRowTop = useCallback((i) => rowTops[i] ?? i * ROW_H, [rowTops]);
+  const getRowH   = useCallback((i) => measuredHeights[i] ?? ROW_H, [measuredHeights]);
 
   const updateNewRow = (field, value) => {
     setNewRow(prev => {
@@ -710,6 +727,24 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   }, [studioId, project.id, version?.id]);
 
   useEffect(()=>{ loadData(); }, [loadData]);
+
+  // Misura l'altezza reale di ogni riga dopo il render (per allineamento chart)
+  useEffect(() => {
+    rowDivsRef.current.forEach(div => {
+      if (!div) return;
+      const ta = div.querySelector('textarea.desc-ta');
+      if (!ta) return;
+      ta.style.height = '0';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+    const heights = lavorazioni.map((_, i) => {
+      const div = rowDivsRef.current[i];
+      return div ? Math.max(ROW_H, Math.round(div.getBoundingClientRect().height)) : ROW_H;
+    });
+    setMeasuredHeights(prev =>
+      prev.length === heights.length && heights.every((h, i) => h === prev[i]) ? prev : heights
+    );
+  }, [lavorazioni]);
 
   // Range: 2 settimane fa → 1 anno avanti
   const startDate = useMemo(()=>getMondayOf(addDays(new Date(),-14)), []);
@@ -831,7 +866,13 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       if (!leftRef.current) return;
       const rect = leftRef.current.getBoundingClientRect();
       const relY = ev.clientY - rect.top + leftRef.current.scrollTop;
-      const targetIdx = Math.max(0, Math.min(lavorazioni.length, Math.round(relY / ROW_H)));
+      // Trova l'insertion point in base alle altezze reali
+      let targetIdx = 0;
+      for (let k = 0; k < rowTops.length; k++) {
+        const midY = rowTops[k] + (measuredHeights[k] ?? ROW_H) / 2;
+        if (relY > midY) targetIdx = k + 1;
+      }
+      targetIdx = Math.max(0, Math.min(lavorazioni.length, targetIdx));
       dragOverIdx = targetIdx;
       setRowDragState({ dragId, dragOverIdx: targetIdx, groupIds });
     };
@@ -863,7 +904,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-  }, [lavorazioni]);
+  }, [lavorazioni, rowTops, measuredHeights]);
 
   // ── DRAG BAR ──────────────────────────────────────────────────────
   const onBarMouseDown = useCallback((e, lav) => {
@@ -944,7 +985,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
-  const totalH = Math.max((lavorazioni.length+1)*ROW_H, window.innerHeight);
+  const totalH = Math.max(newRowTop + ROW_H, window.innerHeight);
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
@@ -994,27 +1035,36 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           <div ref={leftRef} style={{flex:1,overflowY:'hidden',position:'relative'}}>
             {/* Linea di inserimento durante il drag */}
             {rowDragState && (
-              <div style={{position:'absolute',left:0,right:0,top:rowDragState.dragOverIdx*ROW_H-1,height:2,background:T.navy,zIndex:20,pointerEvents:'none',borderRadius:1}}/>
+              <div style={{position:'absolute',left:0,right:0,top:(rowDragState.dragOverIdx < lavorazioni.length ? getRowTop(rowDragState.dragOverIdx) : newRowTop)-1,height:2,background:T.navy,zIndex:20,pointerEvents:'none',borderRadius:1}}/>
             )}
             {lavorazioni.map((lav,i)=>{
               const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
               const isDragging = rowDragState?.groupIds?.has(lav.id);
               return (
-                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,opacity:isDragging?0.35:1,transition:'opacity 0.1s'}}>
+                <div key={lav.id}
+                  ref={el => { rowDivsRef.current[i] = el; }}
+                  style={{minHeight:ROW_H,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,opacity:isDragging?0.35:1,transition:'opacity 0.1s'}}>
                   {/* Drag handle */}
                   <div onMouseDown={e=>onRowDragStart(e,lav,i)} style={{display:'flex',alignItems:'center',justifyContent:'center',cursor:'grab',borderRight:`0.5px solid ${T.border}`,color:T.muted,fontSize:11,userSelect:'none',flexShrink:0}}>⠿</div>
-                  {/* Nome */}
-                  <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
-                    <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
-                    <input value={lav.descrizione||''}
-                      onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,descrizione:e.target.value}:l))}
+                  {/* Nome — textarea auto-height */}
+                  <div style={{padding:'4px 8px',display:'flex',alignItems:'flex-start',gap:6,borderRight:`0.5px solid ${T.border}`}}>
+                    <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0,marginTop:5}}/>
+                    <textarea className="desc-ta"
+                      value={lav.descrizione||''}
+                      onChange={e=>{
+                        e.target.style.height='0';
+                        e.target.style.height=e.target.scrollHeight+'px';
+                        setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,descrizione:e.target.value}:l));
+                      }}
                       onBlur={e=>handleInlineEdit(lav,'descrizione',e.target.value)}
-                      onKeyDown={e=>{ if(e.key==='Enter') { e.target.blur(); } }}
-                      style={{...inputSt,fontWeight:600,fontSize:12,fontFamily:"'Space Grotesk', sans-serif"}}/>
+                      onKeyDown={e=>{ if(e.key==='Enter'){e.preventDefault();e.target.blur();} }}
+                      rows={1}
+                      style={{...inputSt,fontWeight:600,fontSize:12,fontFamily:"'Space Grotesk', sans-serif",resize:'none',overflow:'hidden',lineHeight:'1.4',padding:'0',height:'auto'}}/>
                   </div>
-                  {/* Impresa */}
+                  {/* Impresa — con autocomplete */}
                   <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                     <input value={lav.operatore||''}
+                      list={`imprese-opts-${version?.id||'v'}`}
                       onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,operatore:e.target.value}:l))}
                       onBlur={e=>handleInlineEdit(lav,'operatore',e.target.value)}
                       onKeyDown={e=>{ if(e.key==='Enter') e.target.blur(); }}
@@ -1075,6 +1125,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               {/* Impresa */}
               <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`}}>
                 <input value={newRow.operatore}
+                  list={`imprese-opts-${version?.id||'v'}`}
                   onChange={e=>updateNewRow('operatore',e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter') handleSaveNew(); }}
                   placeholder="Impresa..."
@@ -1190,9 +1241,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               <div style={{position:'absolute',left:todayX,top:0,width:2,height:totalH,background:T.navy,opacity:0.8,pointerEvents:'none',zIndex:5}}/>
 
               {/* Linee orizzontali righe */}
-              {Array.from({length:lavorazioni.length+1},(_,i)=>(
-                <div key={i} style={{position:'absolute',left:0,top:i*ROW_H,right:0,height:ROW_H,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
+              {lavorazioni.map((_,i)=>(
+                <div key={i} style={{position:'absolute',left:0,top:getRowTop(i),right:0,height:getRowH(i),borderBottom:`0.5px solid ${T.border}`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
               ))}
+              <div style={{position:'absolute',left:0,top:newRowTop,right:0,height:ROW_H,borderBottom:`0.5px solid ${T.border}`,pointerEvents:'none'}}/>
 
               {/* SVG dipendenze */}
               <svg style={{position:'absolute',top:0,left:0,width:totalW,height:totalH,pointerEvents:'none',overflow:'visible',zIndex:3}}>
@@ -1204,10 +1256,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                 {lavorazioni.filter(l=>l.dipendenza_id).map((lav)=>{
                   const dep=lavorazioni.find(d=>d.id===lav.dipendenza_id);
                   if (!dep||!dep.data_inizio||!lav.data_inizio) return null;
+                  const di=lavorazioni.indexOf(dep); const li=lavorazioni.indexOf(lav);
                   const x1=dateToX(dep.data_inizio)+Number(dep.durata_giorni||1)*dayW;
-                  const y1=lavorazioni.indexOf(dep)*ROW_H+ROW_H/2;
+                  const y1=getRowTop(di)+getRowH(di)/2;
                   const x2=dateToX(lav.data_inizio);
-                  const y2=lavorazioni.indexOf(lav)*ROW_H+ROW_H/2;
+                  const y2=getRowTop(li)+getRowH(li)/2;
                   return (
                     <path key={lav.id} d={`M${x1} ${y1} C${x1+30} ${y1} ${x2-30} ${y2} ${x2} ${y2}`}
                       fill="none" stroke={T.muted} strokeWidth={1.5} strokeDasharray="4,3" markerEnd="url(#arr)"/>
@@ -1217,19 +1270,21 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 
               {/* Barre lavorazioni */}
               {lavorazioni.map((lav,i)=>{
+                const rH  = getRowH(i);
+                const rTop = getRowTop(i);
                 if (!lav.data_inizio) return (
-                  <div key={lav.id} style={{position:'absolute',top:i*ROW_H,left:0,right:0,height:ROW_H}}/>
+                  <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH}}/>
                 );
                 const barX  = dateToX(lav.data_inizio);
                 const barW  = Math.max(Number(lav.durata_giorni||1)*dayW, 8);
                 const pct   = Number(lav.percentuale_completamento)||0;
                 const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
                 return (
-                  <div key={lav.id} style={{position:'absolute',top:i*ROW_H,left:0,right:0,height:ROW_H,zIndex:4}}>
+                  <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH,zIndex:4}}>
                     <div
                       onMouseDown={e=>onBarMouseDown(e,lav)}
                       style={{
-                        position:'absolute', left:barX, top:ROW_H*0.18, height:ROW_H*0.64,
+                        position:'absolute', left:barX, top:rH*0.18, height:rH*0.64,
                         width:barW, background:color, cursor:'grab', borderRadius:4,
                         overflow:'hidden', userSelect:'none',
                         boxShadow:'0 2px 6px rgba(0,0,0,0.18)',
@@ -1255,7 +1310,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               })}
 
               {/* Riga nuova — preview barra */}
-              <div style={{position:'absolute',top:lavorazioni.length*ROW_H,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
+              <div style={{position:'absolute',top:newRowTop,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
                 {newRow.data_inizio&&(
                   <div style={{position:'absolute',left:dateToX(newRow.data_inizio),top:ROW_H*0.18,height:ROW_H*0.64,width:Math.max(Number(newRow.durata_giorni||7)*dayW,8),background:T.navy,opacity:0.25,borderRadius:4}}/>
                 )}
@@ -1265,6 +1320,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           </div>
         </div>
       </div>
+
+      {/* Datalist imprese per autocomplete */}
+      <datalist id={`imprese-opts-${version?.id||'v'}`}>
+        {Object.keys(impresaColorMap).map(imp => <option key={imp} value={imp}/>)}
+      </datalist>
     </div>
   );
 }
