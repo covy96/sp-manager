@@ -5,8 +5,8 @@ import { supabase } from "../lib/supabase";
 import * as XLSX from "xlsx";
 
 const ROW_H       = 44;
-const COL = { attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
-const LEFT_W = Object.values(COL).reduce((s,v)=>s+v, 0); // = 615
+const COL = { drag:20, attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
+const LEFT_W = Object.values(COL).reduce((s,v)=>s+v, 0); // = 635
 const DAY_W_WEEK  = 28;
 const DAY_W_MONTH = 12;
 
@@ -79,6 +79,22 @@ function ricalcolaDipendenti(lavId, lavorazioni, updates = {}) {
     ricalcolaDipendenti(dep.id, lavorazioni, updates);
   });
   return updates;
+}
+
+// Raccoglie una lavorazione e tutti i suoi dipendenti (transitivi), in ordine originale
+function getDependentGroup(rootId, lavorazioni) {
+  const result = [];
+  const visited = new Set();
+  function collect(id) {
+    if (visited.has(id)) return;
+    visited.add(id);
+    const row = lavorazioni.find(l => l.id === id);
+    if (row) result.push(row);
+    lavorazioni.filter(l => l.dipendenza_id === id).forEach(dep => collect(dep.id));
+  }
+  collect(rootId);
+  result.sort((a, b) => lavorazioni.indexOf(a) - lavorazioni.indexOf(b));
+  return result;
 }
 
 function buildTimeHeaders(startDate, totalDays, dayW) {
@@ -569,6 +585,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   });
   const [savingNew, setSavingNew] = useState(false);
   const [onlyChart, setOnlyChart] = useState(false);
+  const [rowDragState, setRowDragState] = useState(null);
   const chartRef = useRef(null);
   const leftRef  = useRef(null);
 
@@ -721,6 +738,56 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     loadData();
   };
 
+  // ── DRAG ROW (riordino righe) ─────────────────────────────────────
+  const onRowDragStart = useCallback((e, lav, lavIdx) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dragId = lav.id;
+    const group = getDependentGroup(dragId, lavorazioni);
+    const groupIds = new Set(group.map(l => l.id));
+    let dragOverIdx = lavIdx;
+
+    setRowDragState({ dragId, dragOverIdx, groupIds });
+    document.body.style.cursor = 'grabbing';
+
+    const onMove = (ev) => {
+      if (!leftRef.current) return;
+      const rect = leftRef.current.getBoundingClientRect();
+      const relY = ev.clientY - rect.top + leftRef.current.scrollTop;
+      const targetIdx = Math.max(0, Math.min(lavorazioni.length, Math.round(relY / ROW_H)));
+      dragOverIdx = targetIdx;
+      setRowDragState({ dragId, dragOverIdx: targetIdx, groupIds });
+    };
+
+    const onUp = async () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      setRowDragState(null);
+
+      const groupIdxs = group.map(l => lavorazioni.indexOf(l));
+      const minG = Math.min(...groupIdxs);
+      const maxG = Math.max(...groupIdxs);
+      if (dragOverIdx >= minG && dragOverIdx <= maxG + 1) return;
+
+      const without = lavorazioni.filter(l => !groupIds.has(l.id));
+      const cutpoint = lavorazioni.slice(0, dragOverIdx).filter(l => !groupIds.has(l.id)).length;
+      const newList = [
+        ...without.slice(0, cutpoint),
+        ...group,
+        ...without.slice(cutpoint),
+      ];
+      const withOrder = newList.map((l, i) => ({ ...l, order: i }));
+      setLavorazioni(withOrder);
+      await Promise.all(withOrder.map(l =>
+        supabase.from('lavorazioni_gantt').update({ order: l.order }).eq('id', l.id)
+      ));
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [lavorazioni]);
+
   // ── DRAG BAR ──────────────────────────────────────────────────────
   const onBarMouseDown = useCallback((e, lav) => {
     e.preventDefault(); e.stopPropagation();
@@ -841,17 +908,24 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         {!onlyChart && (
         <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.border}`,display:'flex',flexDirection:'column'}}>
           {/* Header colonne */}
-          <div style={{height:52,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
-            {['Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
-              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<6?`0.5px solid ${T.border}`:'none'}}>{h}</div>
+          <div style={{height:52,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
+            {['','Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
+              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<7?`0.5px solid ${T.border}`:'none'}}>{h}</div>
             ))}
           </div>
           {/* Righe */}
-          <div ref={leftRef} style={{flex:1,overflowY:'hidden'}}>
+          <div ref={leftRef} style={{flex:1,overflowY:'hidden',position:'relative'}}>
+            {/* Linea di inserimento durante il drag */}
+            {rowDragState && (
+              <div style={{position:'absolute',left:0,right:0,top:rowDragState.dragOverIdx*ROW_H-1,height:2,background:T.navy,zIndex:20,pointerEvents:'none',borderRadius:1}}/>
+            )}
             {lavorazioni.map((lav,i)=>{
               const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+              const isDragging = rowDragState?.groupIds?.has(lav.id);
               return (
-                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2}}>
+                <div key={lav.id} style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,opacity:isDragging?0.35:1,transition:'opacity 0.1s'}}>
+                  {/* Drag handle */}
+                  <div onMouseDown={e=>onRowDragStart(e,lav,i)} style={{display:'flex',alignItems:'center',justifyContent:'center',cursor:'grab',borderRight:`0.5px solid ${T.border}`,color:T.muted,fontSize:11,userSelect:'none',flexShrink:0}}>⠿</div>
                   {/* Nome */}
                   <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
                     <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0}}/>
@@ -909,7 +983,9 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             })}
 
             {/* Riga nuova lavorazione */}
-            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:T.navyLight}}>
+            <div style={{height:ROW_H,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:T.navyLight}}>
+              {/* Drag handle vuoto */}
+              <div style={{borderRight:`0.5px solid ${T.border}`}}/>
               {/* Descrizione */}
               <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
