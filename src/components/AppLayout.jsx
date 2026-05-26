@@ -129,14 +129,20 @@ export default function AppLayout({ session, children }) {
     }
   }, []);
 
-  // Notifiche in foreground (app aperta)
+  // Notifiche in foreground (app aperta) — usa SW per bypassare la soppressione macOS
   useEffect(() => {
     if (!messaging) return;
     return onMessage(messaging, (payload) => {
       const { title, body } = payload.notification ?? {};
-      if (Notification.permission === 'granted') {
-        new Notification(title ?? 'SP Manager', { body: body ?? '', icon: '/icon-192.png' });
-      }
+      const link = payload.data?.link || '/';
+      if (Notification.permission !== 'granted') return;
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title ?? 'SP Manager', {
+          body: body ?? '',
+          icon: '/icon-192.png',
+          data: { url: link },
+        });
+      });
     });
   }, []);
 
