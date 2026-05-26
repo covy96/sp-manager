@@ -95,7 +95,12 @@ export default function NotifichePage() {
         : null;
       if (!teamMember?.id) { setPushError("Utente non trovato."); setPushLoading(false); return; }
       if (token) {
-        const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember.id);
+        localStorage.setItem('asm-fcm-token', token);
+        // Leggi i token esistenti e aggiungi quello corrente (evita duplicati)
+        const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
+        const existing = tm?.fcm_tokens ?? [];
+        const updated = existing.includes(token) ? existing : [...existing, token];
+        const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
         if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
       }
     } catch (e) { alert("Errore: " + e.message); }
@@ -104,7 +109,13 @@ export default function NotifichePage() {
 
   const handleDisablePush = async () => {
     setPushLoading(true); setPushError("");
-    if (teamMember?.id) await supabase.from("team_members").update({ fcm_token: null }).eq("id", teamMember.id);
+    if (teamMember?.id) {
+      const currentToken = localStorage.getItem('asm-fcm-token');
+      const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
+      const updated = (tm?.fcm_tokens ?? []).filter(t => t !== currentToken);
+      await supabase.from("team_members").update({ fcm_token: null, fcm_tokens: updated }).eq("id", teamMember.id);
+      localStorage.removeItem('asm-fcm-token');
+    }
     setPushEnabled(false); setPushLoading(false);
   };
 
