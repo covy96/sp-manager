@@ -77,15 +77,27 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   const saveTimer = useRef(null);
   const taRef = useRef(null);
   const lastLocalEdit = useRef(0);
+  const applyTimer = useRef(null);
 
   const isOwn = note.author_id === currentMemberId;
   const canEdit = isOwn || sharedWith.includes(currentMemberId);
   const authorName = teamMembers.find(m => m.id === note.author_id)?.user_name || 'Membro';
 
-  // Sync from real-time updates — skip only if user typed in the last 1.5s
+  // Sync from real-time updates.
+  // Se l'utente ha scritto di recente, aspetta la fine del periodo protetto
+  // prima di applicare la modifica remota (evita di sovrascrivere mentre si digita).
+  // Senza questo, se il remote update arriva durante la finestra, viene ignorato per sempre.
   useEffect(() => {
-    if (Date.now() - lastLocalEdit.current < 1500) return;
-    setContent(note.content || '');
+    clearTimeout(applyTimer.current);
+    const elapsed = Date.now() - lastLocalEdit.current;
+    if (elapsed >= 1500) {
+      setContent(note.content || '');
+    } else {
+      applyTimer.current = setTimeout(() => {
+        setContent(note.content || '');
+      }, 1500 - elapsed + 50);
+    }
+    return () => clearTimeout(applyTimer.current);
   }, [note.content]);
   useEffect(() => {
     setSharedWith(note.shared_with || []);
@@ -95,6 +107,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
 
   const saveContent = (val) => {
     lastLocalEdit.current = Date.now();
+    clearTimeout(applyTimer.current); // annulla apply remoto in sospeso se si sta digitando
     clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = setTimeout(async () => {
