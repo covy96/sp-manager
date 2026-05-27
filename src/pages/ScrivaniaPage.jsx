@@ -78,6 +78,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   const taRef = useRef(null);
   const lastLocalEdit = useRef(0);
   const applyTimer = useRef(null);
+  const editBaseUpdatedAt = useRef(null); // updated_at della nota quando l'utente ha iniziato a scrivere
 
   const isOwn = note.author_id === currentMemberId;
   const canEdit = isOwn || sharedWith.includes(currentMemberId);
@@ -106,13 +107,30 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   }, [note.shared_with, note.is_private, note.color]);
 
   const saveContent = (val) => {
+    // Cattura l'updated_at corrente al primo tasto della sessione di modifica
+    if (!editBaseUpdatedAt.current) {
+      editBaseUpdatedAt.current = note.updated_at;
+    }
     lastLocalEdit.current = Date.now();
     clearTimeout(applyTimer.current); // annulla apply remoto in sospeso se si sta digitando
     clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = setTimeout(async () => {
-      await supabase.from('notes').update({ content: val, updated_at: new Date().toISOString() }).eq('id', note.id);
-      onUpdate(note.id, { content: val });
+      const newUpdatedAt = new Date().toISOString();
+      // Salva SOLO se nessun altro ha modificato la nota dopo che abbiamo iniziato a scrivere.
+      // Se updated_at nel DB è cambiato, qualcun altro ha salvato per primo → non sovrascrivere.
+      const { data } = await supabase
+        .from('notes')
+        .update({ content: val, updated_at: newUpdatedAt })
+        .eq('id', note.id)
+        .eq('updated_at', editBaseUpdatedAt.current)
+        .select('id');
+      if (data && data.length > 0) {
+        onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
+      }
+      // Se data è vuoto → il DB aveva un updated_at diverso (modifica concorrente):
+      // non sovrascriviamo, la real-time subscription mostrerà il contenuto aggiornato.
+      editBaseUpdatedAt.current = null;
       setSaving(false);
     }, 700);
   };
