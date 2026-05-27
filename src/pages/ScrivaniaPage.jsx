@@ -76,16 +76,16 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   const [saving, setSaving]         = useState(false);
   const saveTimer = useRef(null);
   const taRef = useRef(null);
+  const lastLocalEdit = useRef(0);
 
   const isOwn = note.author_id === currentMemberId;
   const canEdit = isOwn || sharedWith.includes(currentMemberId);
   const authorName = teamMembers.find(m => m.id === note.author_id)?.user_name || 'Membro';
 
-  // Sync from real-time updates — skip content if textarea is focused
+  // Sync from real-time updates — skip only if user typed in the last 1.5s
   useEffect(() => {
-    if (document.activeElement !== taRef.current) {
-      setContent(note.content || '');
-    }
+    if (Date.now() - lastLocalEdit.current < 1500) return;
+    setContent(note.content || '');
   }, [note.content]);
   useEffect(() => {
     setSharedWith(note.shared_with || []);
@@ -94,6 +94,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   }, [note.shared_with, note.is_private, note.color]);
 
   const saveContent = (val) => {
+    lastLocalEdit.current = Date.now();
     clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = setTimeout(async () => {
