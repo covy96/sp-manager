@@ -403,7 +403,7 @@ export default function ProjectDetailPage() {
 
   const handleDeleteTask = async task => {
     if (!task?.id) return;
-    const { error: dErr } = await supabase.from("tasks").update({ deleted_at: new Date().toISOString() }).eq("id", task.id);
+    const { error: dErr } = await supabase.rpc('elimina_task', { p_task_id: task.id });
     if (dErr) setError(dErr.message);
     else { setTasks(p => p.filter(t => t.id !== task.id)); setError(""); }
   };
