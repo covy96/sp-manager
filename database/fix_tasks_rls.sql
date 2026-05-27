@@ -22,10 +22,17 @@ ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
 -- ── STEP 3: ricrea le policy pulite ──────────────────────────────────────────
 
--- SELECT: vedi solo i task non eliminati (nessun filtro auth — retrocompatibilità)
+-- SELECT: task attive visibili a tutti; task eliminate visibili solo ai membri del proprio studio
 CREATE POLICY "tasks_select"
 ON tasks FOR SELECT
-USING (deleted_at IS NULL);
+USING (
+  deleted_at IS NULL
+  OR
+  studio IN (
+    SELECT tm.studio FROM team_members tm
+    WHERE tm.user_account = auth.uid() AND tm.studio IS NOT NULL
+  )
+);
 
 -- INSERT: solo per membri autenticati del proprio studio
 CREATE POLICY "tasks_insert"
