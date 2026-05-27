@@ -39,6 +39,10 @@ const TABELLE = [
     select:'id, descrizione, deleted_at, projects(name)',
     getNome: r => r.descrizione || '—',
     getContext: r => r.projects?.name || null },
+  { id:'tasks',                  label:'Task',        icon:'✅',
+    select:'id, title, deleted_at, projects(name)',
+    getNome: r => r.title || '—',
+    getContext: r => r.projects?.name || null },
 ];
 
 export default function CestinoPage() {
