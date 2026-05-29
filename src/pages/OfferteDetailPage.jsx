@@ -85,7 +85,8 @@ export default function OfferteDetailPage() {
 
   const handleElimina = async () => {
     if (!confirm(`Spostare "${offerta?.nome_offerta}" nel cestino?`)) return;
-    await supabase.from("offerte").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await supabase.rpc('elimina_offerta', { p_offerta_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
     navigate('/offerte');
   };
 
