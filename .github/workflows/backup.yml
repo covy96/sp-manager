@@ -1,0 +1,27 @@
+name: Daily Database Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # ogni giorno alle 03:00 UTC (04:00 ora italiana)
+  workflow_dispatch:       # permette di lanciarlo manualmente dal tab Actions
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump database
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          pg_dump "$DB_URL" \
+            --no-owner \
+            --no-acl \
+            --format=custom \
+            --file=backup-$(date +%Y-%m-%d).dump
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: "*.dump"
+          retention-days: 30
