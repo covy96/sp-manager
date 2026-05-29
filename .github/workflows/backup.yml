@@ -21,7 +21,7 @@ jobs:
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
         run: |
-          pg_dump "$DB_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
             --no-owner \
             --no-acl \
             --format=plain \
