@@ -3,12 +3,20 @@ name: Daily Database Backup
 on:
   schedule:
     - cron: '0 3 * * *'  # ogni giorno alle 03:00 UTC (04:00 ora italiana)
-  workflow_dispatch:       # permette di lanciarlo manualmente dal tab Actions
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get install -y gnupg curl
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
       - name: Dump database
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
