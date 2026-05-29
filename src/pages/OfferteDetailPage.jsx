@@ -83,6 +83,12 @@ export default function OfferteDetailPage() {
     await loadData();
   };
 
+  const handleElimina = async () => {
+    if (!confirm(`Spostare "${offerta?.nome_offerta}" nel cestino?`)) return;
+    await supabase.from("offerte").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    navigate('/offerte');
+  };
+
   const openAccetta = () => {
     setAccettaForm({
       nome_commessa: offerta.nome_offerta,
@@ -189,6 +195,7 @@ export default function OfferteDetailPage() {
           {offerta.stato==='rifiutata' && (
             <button onClick={handleRipristina} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Ripristina</button>
           )}
+          <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>🗑 Elimina</button>
         </div>
       </div>
 

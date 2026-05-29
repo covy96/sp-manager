@@ -50,7 +50,7 @@ export default function OffertePage() {
   const loadData = async () => {
     if (!studioId) return;
     const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }] = await Promise.all([
-      supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).order("created_at",{ascending:false}),
+      supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).is("deleted_at",null).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
       supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
       supabase.from("global_contacts").select("id,full_name").eq("studio",studioId).order("full_name",{ascending:true}),
@@ -210,6 +210,12 @@ export default function OffertePage() {
     await loadData();
   };
 
+  const handleElimina = async (offerta) => {
+    if (!confirm(`Spostare "${offerta.nome_offerta}" nel cestino?`)) return;
+    await supabase.from("offerte").update({ deleted_at: new Date().toISOString() }).eq("id", offerta.id);
+    await loadData();
+  };
+
   const anniDisponibili = useMemo(() => {
     const anni = new Set();
     anni.add(new Date().getFullYear());
@@ -354,6 +360,9 @@ export default function OffertePage() {
                     Ripristina
                   </button>
                 )}
+                <button onClick={()=>handleElimina(o)} style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  🗑
+                </button>
               </div>
             </div>
           );
