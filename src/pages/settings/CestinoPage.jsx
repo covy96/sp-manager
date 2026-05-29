@@ -60,9 +60,10 @@ export default function CestinoPage() {
     setLoading(true);
     const result = {};
     for (const t of TABELLE) {
-      const q = supabase.from(t.id).select(t.select).not('deleted_at','is',null);
-      if (t.id !== 'tasks') q.eq('studio', studioId);
-      const { data } = await q.order('deleted_at', { ascending:false }).limit(50);
+      let q = supabase.from(t.id).select(t.select).not('deleted_at','is',null);
+      if (t.id !== 'tasks') q = q.eq('studio', studioId);
+      const { data, error } = await q.order('deleted_at', { ascending:false }).limit(50);
+      if (error) console.error(`Cestino ${t.id}:`, error.message);
       const rows = (data ?? []).map(r => ({ ...r, _tabella:t.id, _label:t.label, _icon:t.icon, _nome:t.getNome(r), _context:t.getContext(r) }));
       if (rows.length > 0) result[t.id] = { meta: t, items: rows };
     }
