@@ -11,17 +11,17 @@ jobs:
     steps:
       - name: Dump database
         env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DB_URL: ${{ secrets.SUPABASE_DB_POOLER_URL }}
         run: |
           pg_dump "$DB_URL" \
             --no-owner \
             --no-acl \
-            --format=custom \
-            --file=backup-$(date +%Y-%m-%d).dump
+            --format=plain \
+            --file=backup-$(date +%Y-%m-%d).sql
 
       - name: Upload backup as artifact
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ github.run_id }}-${{ github.run_attempt }}
-          path: "*.dump"
+          path: "*.sql"
           retention-days: 30
