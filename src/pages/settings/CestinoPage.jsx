@@ -86,7 +86,13 @@ export default function CestinoPage() {
 
   const handleRestore = async (item) => {
     setRestoring(item.id);
-    const { error } = await supabase.rpc('ripristina_item', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId });
+    let error;
+    if (item._cat === 'commesse') {
+      // Cascata: ripristina commessa + tutti i figli eliminati insieme
+      ({ error } = await supabase.rpc('ripristina_commessa', { p_commessa_id: item.id }));
+    } else {
+      ({ error } = await supabase.rpc('ripristina_item', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId }));
+    }
     if (error) alert('Errore ripristino: ' + error.message);
     setRestoring(null);
     await loadAll();
