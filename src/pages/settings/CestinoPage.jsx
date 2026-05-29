@@ -10,15 +10,8 @@ const mkCtx = (commesse, projects) => {
   return [p, c].filter(Boolean).join(' · ') || null;
 };
 
+// Tabelle che usano query diretta
 const TABELLE = [
-  { id:'projects',               label:'Progetti',    icon:'📁',
-    select:'id, name, deleted_at',
-    getNome: r => r.name || '—',
-    getContext: () => null },
-  { id:'commesse',               label:'Commesse',    icon:'📋',
-    select:'id, nome_commessa, deleted_at, projects!project_id(name)',
-    getNome: r => r.nome_commessa || '—',
-    getContext: r => r.projects?.name || null },
   { id:'offerte',                label:'Offerte',     icon:'📄',
     select:'id, nome_offerta, deleted_at',
     getNome: r => r.nome_offerta || '—',
@@ -59,6 +52,20 @@ export default function CestinoPage() {
   const loadAll = async () => {
     setLoading(true);
     const result = {};
+
+    // Progetti (RPC per bypassare RLS su deleted_at)
+    const { data: projData, error: projErr } = await supabase.rpc('cestino_projects', { p_studio_id: studioId });
+    if (projErr) console.error('Cestino projects:', projErr.message);
+    const projRows = (projData ?? []).map(r => ({ ...r, _tabella:'projects', _label:'Progetti', _icon:'📁', _nome:r.name||'—', _context:null }));
+    if (projRows.length > 0) result['projects'] = { meta:{ id:'projects', label:'Progetti', icon:'📁' }, items: projRows };
+
+    // Commesse (RPC per bypassare RLS su deleted_at + join ambiguo)
+    const { data: commData, error: commErr } = await supabase.rpc('cestino_commesse', { p_studio_id: studioId });
+    if (commErr) console.error('Cestino commesse:', commErr.message);
+    const commRows = (commData ?? []).map(r => ({ ...r, _tabella:'commesse', _label:'Commesse', _icon:'📋', _nome:r.nome_commessa||'—', _context:r.project_name||null }));
+    if (commRows.length > 0) result['commesse'] = { meta:{ id:'commesse', label:'Commesse', icon:'📋' }, items: commRows };
+
+    // Tutte le altre tabelle via query diretta
     for (const t of TABELLE) {
       let q = supabase.from(t.id).select(t.select).not('deleted_at','is',null);
       if (t.id !== 'tasks') q = q.eq('studio', studioId);
@@ -108,15 +115,16 @@ export default function CestinoPage() {
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-          {TABELLE.filter(t => byCategory[t.id]).map(t => {
-            const cat = byCategory[t.id];
-            const isOpen = !collapsed[t.id];
+          {['projects','commesse',...TABELLE.map(t=>t.id)].filter((id,i,a)=>a.indexOf(id)===i&&byCategory[id]).map(id => {
+            const cat = byCategory[id];
+            const t = cat.meta;
+            const isOpen = !collapsed[id];
             return (
-              <div key={t.id} style={{ border:`0.5px solid ${T.border}`, background:T.surface, overflow:'hidden' }}>
+              <div key={id} style={{ border:`0.5px solid ${T.border}`, background:T.surface, overflow:'hidden' }}>
 
                 {/* Header categoria */}
                 <button
-                  onClick={() => toggleCollapse(t.id)}
+                  onClick={() => toggleCollapse(id)}
                   style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', background:T.bg, border:'none', cursor:'pointer', borderBottom: isOpen ? `0.5px solid ${T.border}` : 'none' }}
                 >
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
