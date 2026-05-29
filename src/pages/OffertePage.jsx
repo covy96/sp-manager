@@ -238,12 +238,17 @@ export default function OffertePage() {
     return list;
   }, [offerte, filtroStato, annoFiltro]);
 
-  // KPI
-  const nOfferte   = offerte.filter(o=>o.stato==='offerta').length;
-  const nAccettate = offerte.filter(o=>o.stato==='accettata').length;
-  const nRifiutate = offerte.filter(o=>o.stato==='rifiutata').length;
-  const valOfferte = offerte.filter(o=>o.stato==='offerta').reduce((s,o)=>s+Number(o.importo_totale||o.importo_offerta_base||0),0);
-  const valAccettate = offerte.filter(o=>o.stato==='accettata').reduce((s,o)=>s+Number(o.importo_totale||o.importo_offerta_base||0),0);
+  // KPI — filtrati per anno selezionato
+  const offerteAnno = annoFiltro === 0 ? offerte : offerte.filter(o => {
+    const d = o.data_offerta || o.created_at;
+    return d && new Date(d).getFullYear() === annoFiltro;
+  });
+  const nOfferte    = offerteAnno.filter(o=>o.stato==='offerta').length;
+  const nAccettate  = offerteAnno.filter(o=>o.stato==='accettata').length;
+  const nRifiutate  = offerteAnno.filter(o=>o.stato==='rifiutata').length;
+  const valOfferte  = offerteAnno.filter(o=>o.stato==='offerta').reduce((s,o)=>s+Number(o.importo_totale||o.importo_offerta_base||0),0);
+  const valAccettate= offerteAnno.filter(o=>o.stato==='accettata').reduce((s,o)=>s+Number(o.importo_totale||o.importo_offerta_base||0),0);
+  const totaleAnno  = offerteAnno.length;
 
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
   const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
@@ -266,12 +271,13 @@ export default function OffertePage() {
       </div>
 
       {/* KPI */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap:10 }}>
         {[
-          { label:'In corso',    value:nOfferte,           sub:currency(valOfferte),   color:T.ink  },
-          { label:'Accettate',   value:nAccettate,         sub:currency(valAccettate), color:T.green},
-          { label:'Rifiutate',   value:nRifiutate,         sub:'',                     color:T.muted},
-          { label:'Tasso accettazione', value: offerte.length>0?`${Math.round((nAccettate/offerte.length)*100)}%`:'—', sub:'', color:T.navy },
+          { label:'Totale',      value:totaleAnno,         sub:`${offerte.length} in totale`, color:T.ink  },
+          { label:'In corso',    value:nOfferte,           sub:currency(valOfferte),          color:T.ink  },
+          { label:'Accettate',   value:nAccettate,         sub:currency(valAccettate),        color:T.green},
+          { label:'Rifiutate',   value:nRifiutate,         sub:'',                            color:T.muted},
+          { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy },
         ].map((k,i)=>(
           <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
             <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{k.label}</div>
