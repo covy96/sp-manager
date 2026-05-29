@@ -85,7 +85,8 @@ export default function CestinoPage() {
 
   const handleRestore = async (item) => {
     setRestoring(item.id);
-    await supabase.from(item._tabella).update({ deleted_at: null }).eq('id', item.id);
+    const { error } = await supabase.rpc('ripristina_item', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId });
+    if (error) alert('Errore ripristino: ' + error.message);
     setRestoring(null);
     await loadAll();
   };
@@ -93,7 +94,8 @@ export default function CestinoPage() {
   const handleDeleteForever = async (item) => {
     if (!confirm(`Eliminare definitivamente "${item._nome}"? Questa azione è irreversibile.`)) return;
     setRestoring(item.id);
-    await supabase.from(item._tabella).delete().eq('id', item.id);
+    const { error } = await supabase.rpc('elimina_definitivo', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId });
+    if (error) alert('Errore eliminazione: ' + error.message);
     setRestoring(null);
     await loadAll();
   };

@@ -78,3 +78,62 @@ LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   WHERE t.studio = p_studio_id AND t.deleted_at IS NOT NULL
   ORDER BY t.deleted_at DESC LIMIT 50;
 $$;
+
+-- ── Funzioni ripristino (UPDATE deleted_at = NULL) ───────────────
+CREATE OR REPLACE FUNCTION ripristina_item(p_tabella text, p_id uuid, p_studio_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_tabella = 'projects' THEN
+    UPDATE projects SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'commesse' THEN
+    UPDATE commesse SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'offerte' THEN
+    UPDATE offerte SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'proforma' THEN
+    UPDATE proforma SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'suddivisione_pagamenti' THEN
+    UPDATE suddivisione_pagamenti SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'costi_extra' THEN
+    UPDATE costi_extra SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'lavorazioni_gantt' THEN
+    UPDATE lavorazioni_gantt SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'tasks' THEN
+    UPDATE tasks SET deleted_at = NULL WHERE id = p_id AND studio = p_studio_id;
+  ELSE
+    RAISE EXCEPTION 'Tabella non supportata: %', p_tabella;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION elimina_definitivo(p_tabella text, p_id uuid, p_studio_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_tabella = 'projects' THEN
+    DELETE FROM projects WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'commesse' THEN
+    DELETE FROM commesse WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'offerte' THEN
+    DELETE FROM offerte WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'proforma' THEN
+    DELETE FROM proforma WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'suddivisione_pagamenti' THEN
+    DELETE FROM suddivisione_pagamenti WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'costi_extra' THEN
+    DELETE FROM costi_extra WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'lavorazioni_gantt' THEN
+    DELETE FROM lavorazioni_gantt WHERE id = p_id AND studio = p_studio_id;
+  ELSIF p_tabella = 'tasks' THEN
+    DELETE FROM tasks WHERE id = p_id AND studio = p_studio_id;
+  ELSE
+    RAISE EXCEPTION 'Tabella non supportata: %', p_tabella;
+  END IF;
+END;
+$$;
