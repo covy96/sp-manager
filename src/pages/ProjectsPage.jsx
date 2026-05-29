@@ -349,8 +349,6 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
                     key={m.id}
                     checked={(data.selectedMembers || []).includes(m.id)}
                     onChange={() => onToggleMember(m.id)}
-                    disabled={isMe}
-                    dim={isMe}
                     label={`${m.user_name || m.user_email}${isMe ? ' (tu)' : ''}`}
                     avatar={{ bg: avatarColor(m), initials: getInitials(m.user_name || m.user_email) }}
                   />
