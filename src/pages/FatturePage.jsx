@@ -56,7 +56,7 @@ export default function FatturePage() {
     if (!studioId) return;
     setLoading(true);
     const [{ data:fatt }, { data:comm }, { data:profPagate }] = await Promise.all([
-      supabase.from("fatture").select("*").eq("studio",studioId).order("data_emissione",{ascending:false}),
+      supabase.from("fatture").select("*").eq("studio",studioId).is("deleted_at",null).order("data_emissione",{ascending:false}),
       supabase.from("commesse").select("id,nome_commessa,cliente").eq("studio",studioId),
       supabase.from("proforma").select("*").eq("studio",studioId).eq("pagato",true).order("data_pagamento",{ascending:false}),
     ]);
@@ -165,8 +165,9 @@ export default function FatturePage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Eliminare questa fattura?")) return;
-    await supabase.from("fatture").delete().eq("id",id);
+    if (!confirm("Eliminare questa fattura? Verrà spostata nel cestino.")) return;
+    const { error } = await supabase.rpc('elimina_fattura', { p_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
     setFatture(p=>p.filter(x=>x.id!==id));
   };
 

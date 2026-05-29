@@ -219,7 +219,7 @@ export default function CommessaDetailPage() {
     setProforma(allProf);
     setCollaboratori(collabR.data ?? []);
 
-    const { data: ci } = await supabase.from('costi_interni').select('*').eq('commessa_id', commessaId).order('data', { ascending:false });
+    const { data: ci } = await supabase.from('costi_interni').select('*').eq('commessa_id', commessaId).is('deleted_at', null).order('data', { ascending:false });
     setCostiInterni(ci ?? []);
     const { data: tm } = await supabase.from('team_members').select('id, user_name, user_email').eq('studio', studioId).eq('active', true);
     setTeamMembers(tm ?? []);
@@ -416,8 +416,9 @@ export default function CommessaDetailPage() {
     setEditCollabModal(false); await loadData(); setEditCollabSaving(false);
   };
   const handleDeleteCollab = async id => {
-    if (!window.confirm("Eliminare questo collaboratore?")) return;
-    await supabase.from("collaboratori_esterni").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    if (!window.confirm("Eliminare questo collaboratore? Verrà spostato nel cestino.")) return;
+    const { error } = await supabase.rpc('elimina_collaboratore', { p_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
     setOpenMenuId(null); await loadData();
   };
 
@@ -440,8 +441,9 @@ export default function CommessaDetailPage() {
   };
 
   const handleDeleteCostoInterno = async (id) => {
-    if (!confirm('Eliminare questo costo interno?')) return;
-    await supabase.from('costi_interni').delete().eq('id', id);
+    if (!confirm('Eliminare questo costo interno? Verrà spostato nel cestino.')) return;
+    const { error } = await supabase.rpc('elimina_costo_interno', { p_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
     await loadData();
   };
 
@@ -496,7 +498,8 @@ export default function CommessaDetailPage() {
         .update({ pagato: false })
         .in("id", proformaToDelete.costo_extra_ids);
     }
-    await supabase.from("proforma").delete().eq("id", proformaToDelete.id);
+    const { error: pErr } = await supabase.rpc('elimina_proforma', { p_id: proformaToDelete.id });
+    if (pErr) { alert('Errore: ' + pErr.message); return; }
     setOpenMenuId(null); await loadData();
   };
 

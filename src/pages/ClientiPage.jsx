@@ -60,7 +60,7 @@ export default function ClientiPage() {
     setLoading(true); setError("");
     try {
       const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
-        supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
+        supabase.from("global_contacts").select("*").eq("studio",studioId).is("deleted_at",null).order("full_name",{ascending:true}),
         supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId),
         supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
       ]);
@@ -112,10 +112,10 @@ export default function ClientiPage() {
   };
 
   const handleDelete = async id => {
-    if (!confirm("Eliminare questo cliente?")) return;
-    const { error:dErr } = await supabase.from("global_contacts").delete().eq("id",id);
-    if (dErr) alert("Errore: "+dErr.message);
-    else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
+    if (!confirm("Eliminare questo cliente? Verrà spostato nel cestino.")) return;
+    const { error:dErr } = await supabase.rpc('elimina_contatto', { p_id: id });
+    if (dErr) { alert("Errore: "+dErr.message); return; }
+    setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null);
   };
 
   const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };

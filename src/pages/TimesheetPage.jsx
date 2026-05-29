@@ -175,9 +175,9 @@ export default function TimesheetPage() {
 
   const handleDeleteEntry = async () => {
     if (!editingEntry || !confirm("Sei sicuro di voler eliminare questa registrazione?")) return;
-    const { error: dErr } = await supabase.from("timesheet").delete().eq("id", editingEntry.id);
-    if (dErr) alert("Errore: " + dErr.message);
-    else { setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null); }
+    const { error: dErr } = await supabase.rpc('elimina_timesheet', { p_id: editingEntry.id });
+    if (dErr) { alert("Errore: " + dErr.message); return; }
+    setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null);
   };
 
   const totalHours = useMemo(() => entries.reduce((s, en) => s + (Number(en.hours) || 0), 0), [entries]);

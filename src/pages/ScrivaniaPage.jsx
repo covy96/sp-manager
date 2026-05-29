@@ -280,7 +280,7 @@ export default function ScrivaniaPage() {
     const [tasksRes, membersRes, notesRes] = await Promise.all([
       supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id),
       supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId),
-      supabase.from("notes").select("*").eq("studio", studioId)
+      supabase.from("notes").select("*").eq("studio", studioId).is("deleted_at", null)
         .or(`author_id.eq.${tm.id},shared_with.cs.{${tm.id}}`)
         .order("updated_at", { ascending: false }),
     ]);
@@ -370,8 +370,9 @@ export default function ScrivaniaPage() {
 
   const handleNoteUpdate = (id, updates) => setNotes(p => p.map(n => n.id === id ? { ...n, ...updates } : n));
   const handleNoteDelete = async (id) => {
-    if (!confirm("Eliminare questa nota?")) return;
-    await supabase.from("notes").delete().eq("id", id);
+    if (!confirm("Eliminare questa nota? Verrà spostata nel cestino.")) return;
+    const { error } = await supabase.rpc('elimina_nota', { p_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
     setNotes(p => p.filter(n => n.id !== id));
   };
 
