@@ -565,7 +565,8 @@ export default function ProjectDetailPage() {
                   <button onClick={async () => {
                     if (!window.confirm(`Eliminare il progetto "${project?.name}"? Verrà spostato nel cestino.`)) return;
                     setMenuOpen(false);
-                    await supabase.from('projects').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+                    const { error: dErr } = await supabase.rpc('elimina_progetto', { p_project_id: id });
+                    if (dErr) { alert('Errore: ' + dErr.message); return; }
                     navigate('/progetti');
                   }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
                     Elimina progetto

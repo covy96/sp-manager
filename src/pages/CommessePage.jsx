@@ -387,7 +387,7 @@ export default function CommessePage() {
       ) : (
         <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(
-            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }} onDelete={async(id)=>{ await supabase.from('commesse').update({deleted_at:new Date().toISOString()}).eq('id',id); await loadData(); }}/>
+            <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }} onDelete={async(id)=>{ const {error}=await supabase.rpc('elimina_commessa',{p_commessa_id:id}); if(error){alert('Errore: '+error.message);return;} await loadData(); }}/>
           ))}
         </div>
       )}
