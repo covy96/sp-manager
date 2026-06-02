@@ -404,8 +404,11 @@ export default function AppLayout({ session, children }) {
             )}
           </div>
 
+          {/* Campanella + Avatar */}
+          <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+
           {/* Campanella notifiche */}
-          <div ref={bellRef} style={{ position:'relative', flexShrink:0, marginRight:8 }}>
+          <div ref={bellRef} style={{ position:'relative' }}>
             <button onClick={() => setBellOpen(p => !p)} style={{
               position:'relative', width:32, height:32, background:'none', border:'none',
               cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:T.muted,
@@ -465,7 +468,7 @@ export default function AppLayout({ session, children }) {
           </div>
 
           {/* Avatar + dropdown */}
-          <div ref={settingsRef} style={{ position:'relative' }}>
+          <div ref={settingsRef} style={{ position:'relative', flexShrink:0 }}>
             <button onClick={() => setSettingsOpen(!settingsOpen)} style={{
               width:32, height:32, borderRadius:'50%', background:memberColor,
               border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
@@ -520,6 +523,7 @@ export default function AppLayout({ session, children }) {
               </div>
             )}
           </div>
+          </div>{/* end Campanella + Avatar wrapper */}
         </header>
 
         {/* Content */}
