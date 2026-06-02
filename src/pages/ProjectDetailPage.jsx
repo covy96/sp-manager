@@ -652,7 +652,7 @@ export default function ProjectDetailPage() {
       ) : (
         <div style={{
           display: 'flex', flexDirection: 'row', overflowX: 'auto', overflowY: 'hidden',
-          width: isMobile ? '100%' : 'calc(100vw - 220px)',
+          width: isMobile ? '100%' : 'calc(100vw - 220px - 56px)',
           height: isMobile ? 'auto' : 'calc(100vh - 180px)',
           scrollSnapType: isMobile ? 'x mandatory' : 'none',
           WebkitOverflowScrolling: 'touch',
@@ -665,9 +665,9 @@ export default function ProjectDetailPage() {
             const catDone = Boolean(completedCategories[group.category]);
             return (
               <div key={group.category} style={{
-                flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 50px) / 3)',
-                minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 50px) / 3)',
-                maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 50px) / 3)',
+                flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
+                minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+                maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
                 scrollSnapAlign: isMobile ? 'start' : 'none',
                 display: 'flex', flexDirection: 'column',
                 background: T.surface, border: `0.5px solid ${T.border}`,
