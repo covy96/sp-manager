@@ -39,7 +39,6 @@ export const PLANS = {
       "Report avanzati",
       "Monitoraggio commesse",
       "Monitoraggio, proforma e fatture",
-      "Supporto prioritario",
     ],
   },
   pro: {
@@ -58,8 +57,7 @@ export const PLANS = {
       "Commesse illimitate",
       "Tutto di Studio",
       "Gantt avanzato",
-      "Account manager dedicato",
-      "Backup su richiesta",
+      "Analisi economica avanzata",
     ],
   },
 };
