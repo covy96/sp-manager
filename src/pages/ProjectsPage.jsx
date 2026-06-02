@@ -33,7 +33,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none',
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-      letterSpacing: '0.08em', textTransform: 'uppercase',
+      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
       padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
@@ -46,7 +46,7 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
       background: 'transparent', border: `0.5px solid ${danger ? T.red : T.borderMd}`,
       color: danger ? T.red : T.ink,
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-      letterSpacing: '0.08em', textTransform: 'uppercase',
+      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
       padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
