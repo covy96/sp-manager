@@ -372,9 +372,18 @@ export default function ScrivaniaPage() {
   const handleNoteUpdate = (id, updates) => setNotes(p => p.map(n => n.id === id ? { ...n, ...updates } : n));
   const handleNoteDelete = async (id) => {
     if (!confirm("Eliminare questa nota? Verrà spostata nel cestino.")) return;
-    const { error } = await supabase.rpc('elimina_nota', { p_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    // Rimuovi subito dallo stato locale (ottimistico)
     setNotes(p => p.filter(n => n.id !== id));
+    const { error } = await supabase.rpc('delete_note_by_member', {
+      p_note_id:   id,
+      p_member_id: currentMemberId,
+    });
+    if (error) {
+      alert('Errore: ' + error.message);
+      // Ripristina ricaricando dal DB
+      const mid = currentMemberIdRef.current;
+      if (mid) reloadNotesRef.current(mid, studioId);
+    }
   };
 
   const tabSt = (active) => ({
