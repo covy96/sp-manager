@@ -347,29 +347,29 @@ export default function OffertePage() {
               )}
 
               {/* Azioni */}
-              <div style={{ display:'flex', gap:6, marginTop:4, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <button onClick={()=>navigate(`/offerte/${o.id}`)} style={{ flex:1, padding:'7px 0', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
-                  Dettaglio
+              <div style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:4, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                <button onClick={()=>navigate(`/offerte/${o.id}`)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  Dettagli
                 </button>
                 {o.stato==='offerta' && <>
-                  <button onClick={()=>openAccetta(o)} style={{ flex:1, padding:'7px 0', border:'none', background:T.green, color:'#fff', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
                   </button>
-                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, padding:'7px 0', border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Rifiuta
                   </button>
                 </>}
                 {o.stato==='accettata' && o.commessa_id && (
-                  <button onClick={()=>navigate(`/commesse/${o.commessa_id}`)} style={{ flex:1, padding:'7px 0', border:`0.5px solid ${T.navy}`, background:'transparent', color:T.navy, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  <button onClick={()=>navigate(`/commesse/${o.commessa_id}`)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.navy}`, background:'transparent', color:T.navy, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Vai a commessa
                   </button>
                 )}
                 {o.stato==='rifiutata' && (
-                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, padding:'7px 0', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.muted, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.muted, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Ripristina
                   </button>
                 )}
-                <button onClick={()=>handleElimina(o)} style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer' }}>
+                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`0.5px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
                   🗑
                 </button>
               </div>
