@@ -76,30 +76,19 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   const [saving, setSaving]         = useState(false);
   const saveTimer = useRef(null);
   const taRef = useRef(null);
-  const lastLocalEdit = useRef(0);
-  const applyTimer = useRef(null);
-  const editBaseUpdatedAt = useRef(null); // updated_at della nota quando l'utente ha iniziato a scrivere
+  const isTyping = useRef(false); // true mentre l'utente sta digitando (debounce attivo)
 
   const isOwn = note.author_id === currentMemberId;
   const canEdit = isOwn || sharedWith.includes(currentMemberId);
   const authorName = teamMembers.find(m => m.id === note.author_id)?.user_name || 'Membro';
 
-  // Sync from real-time updates.
-  // Se l'utente ha scritto di recente, aspetta la fine del periodo protetto
-  // prima di applicare la modifica remota (evita di sovrascrivere mentre si digita).
-  // Senza questo, se il remote update arriva durante la finestra, viene ignorato per sempre.
+  // Sync contenuto da remoto: si applica solo se l'utente non sta digitando in questo momento
   useEffect(() => {
-    clearTimeout(applyTimer.current);
-    const elapsed = Date.now() - lastLocalEdit.current;
-    if (elapsed >= 1500) {
+    if (!isTyping.current) {
       setContent(note.content || '');
-    } else {
-      applyTimer.current = setTimeout(() => {
-        setContent(note.content || '');
-      }, 1500 - elapsed + 50);
     }
-    return () => clearTimeout(applyTimer.current);
-  }, [note.content]);
+  }, [note.content, note.updated_at]);
+
   useEffect(() => {
     setSharedWith(note.shared_with || []);
     setIsPrivate(note.is_private !== false);
@@ -107,30 +96,18 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
   }, [note.shared_with, note.is_private, note.color]);
 
   const saveContent = (val) => {
-    // Cattura l'updated_at corrente al primo tasto della sessione di modifica
-    if (!editBaseUpdatedAt.current) {
-      editBaseUpdatedAt.current = note.updated_at;
-    }
-    lastLocalEdit.current = Date.now();
-    clearTimeout(applyTimer.current); // annulla apply remoto in sospeso se si sta digitando
+    isTyping.current = true;
     clearTimeout(saveTimer.current);
     setSaving(true);
     saveTimer.current = setTimeout(async () => {
       const newUpdatedAt = new Date().toISOString();
-      // Salva SOLO se nessun altro ha modificato la nota dopo che abbiamo iniziato a scrivere.
-      // Se updated_at nel DB è cambiato, qualcun altro ha salvato per primo → non sovrascrivere.
-      const { data } = await supabase
+      // Salva sempre — nessun lock ottimistico che causa silent fail su note condivise
+      await supabase
         .from('notes')
         .update({ content: val, updated_at: newUpdatedAt })
-        .eq('id', note.id)
-        .eq('updated_at', editBaseUpdatedAt.current)
-        .select('id');
-      if (data && data.length > 0) {
-        onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
-      }
-      // Se data è vuoto → il DB aveva un updated_at diverso (modifica concorrente):
-      // non sovrascriviamo, la real-time subscription mostrerà il contenuto aggiornato.
-      editBaseUpdatedAt.current = null;
+        .eq('id', note.id);
+      onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
+      isTyping.current = false;
       setSaving(false);
     }, 700);
   };
