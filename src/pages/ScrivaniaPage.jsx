@@ -65,7 +65,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
 }
 
 // ── NOTA CARD ─────────────────────────────────────────────────────
-function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
+function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh }) {
   const { T, isDark } = useTheme();
   const [content, setContent]       = useState(note.content || '');
   const [color, setColor]           = useState(note.color || '#FFF9C4');
@@ -206,6 +206,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
       <textarea
         ref={taRef}
         value={content}
+        onFocus={() => { if (!isTyping.current && onRefresh) onRefresh(); }}
         onChange={e => { if (!canEdit) return; setContent(e.target.value); saveContent(e.target.value); }}
         readOnly={!canEdit}
         placeholder={canEdit ? "Inizia a scrivere..." : ""}
@@ -318,6 +319,17 @@ export default function ScrivaniaPage() {
         })
       .subscribe();
     return () => supabase.removeChannel(channel);
+  }, [studioId]);
+
+  // Polling di fallback ogni 8s per garantire sync delle note condivise
+  // indipendentemente da eventuali problemi RLS con postgres_changes real-time
+  useEffect(() => {
+    if (!studioId) return;
+    const interval = setInterval(() => {
+      const mid = currentMemberIdRef.current;
+      if (mid) reloadNotesRef.current(mid, studioId);
+    }, 8000);
+    return () => clearInterval(interval);
   }, [studioId]);
 
   const groupedActive = useMemo(() => activeTasks.reduce((acc, t) => {
@@ -488,6 +500,7 @@ export default function ScrivaniaPage() {
               teamMembers={teamMembers}
               onDelete={handleNoteDelete}
               onUpdate={handleNoteUpdate}
+              onRefresh={() => reloadNotesRef.current(currentMemberIdRef.current, studioId)}
             />
           ))}
         </div>
