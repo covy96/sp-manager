@@ -80,11 +80,13 @@ export default function OrePanel({ projectId, studioId }) {
     setLoading(false);
   };
 
-  // Risolve il nome: prima user_name salvato, poi lookup via team_member id
-  const resolveName = (e) =>
-    (e.user_name && e.user_name.trim()) ? e.user_name.trim()
-    : e.team_member ? (memberMap[e.team_member] || "Utente")
-    : "Sconosciuto";
+  // Risolve il nome: prima user_name salvato, poi lookup via team_member id.
+  // Ritorna null se il record è storico senza identità risolvibile (viene escluso dalla lista).
+  const resolveName = (e) => {
+    if (e.user_name && e.user_name.trim()) return e.user_name.trim();
+    if (e.team_member && memberMap[e.team_member]) return memberMap[e.team_member];
+    return null; // record storico non identificabile — contato nel totale ma non mostrato
+  };
 
   const totalOre = useMemo(() => entries.reduce((s, e) => s + (Number(e.hours) || 0), 0), [entries]);
 
@@ -96,7 +98,8 @@ export default function OrePanel({ projectId, studioId }) {
       if (!map[key]) map[key] = { key, label, total: 0, members: {} };
       map[key].total += Number(e.hours) || 0;
       const name = resolveName(e);
-      map[key].members[name] = (map[key].members[name] || 0) + (Number(e.hours) || 0);
+      if (name) map[key].members[name] = (map[key].members[name] || 0) + (Number(e.hours) || 0);
+      // se name è null: ore storiche non identificabili — sommate al totale ma non mostrate per membro
     }
     return Object.values(map).sort((a, b) => b.key.localeCompare(a.key));
   };
