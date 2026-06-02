@@ -280,9 +280,7 @@ export default function ScrivaniaPage() {
     const [tasksRes, membersRes, notesRes] = await Promise.all([
       supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id),
       supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId),
-      supabase.from("notes").select("*").eq("studio", studioId).is("deleted_at", null)
-        .or(`author_id.eq.${tm.id},shared_with.cs.{${tm.id}}`)
-        .order("updated_at", { ascending: false }),
+      supabase.rpc("get_notes_for_member", { p_studio_id: studioId, p_member_id: tm.id }),
     ]);
 
     const combined = tasksRes.data ?? [];
@@ -308,26 +306,26 @@ export default function ScrivaniaPage() {
 
   useEffect(() => { if (studioId) loadData(); }, [studioId]);
 
-  // Real-time notes sync
+  // Real-time notes sync — usa RPC per bypassare RLS anche sui refresh real-time
+  const reloadNotes = async (membId, stdId) => {
+    const { data } = await supabase.rpc("get_notes_for_member", {
+      p_studio_id: stdId ?? studioId,
+      p_member_id: membId ?? currentMemberId,
+    });
+    if (data) setNotes(data);
+  };
+
   useEffect(() => {
     if (!studioId || !currentMemberId) return;
     const channel = supabase.channel(`notes-rt-${studioId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `studio=eq.${studioId}` },
         ({ eventType, new: newRow, old: oldRow }) => {
-          if (eventType === 'INSERT') {
-            const visible = newRow.author_id === currentMemberId || (newRow.shared_with || []).includes(currentMemberId);
-            if (visible) setNotes(p => [newRow, ...p]);
-          } else if (eventType === 'UPDATE') {
-            setNotes(p => {
-              const exists = p.some(n => n.id === newRow.id);
-              const visible = newRow.author_id === currentMemberId || (newRow.shared_with || []).includes(currentMemberId);
-              if (!exists && visible) return [newRow, ...p];
-              if (exists && !visible) return p.filter(n => n.id !== newRow.id);
-              if (exists && visible) return p.map(n => n.id === newRow.id ? { ...n, ...newRow } : n);
-              return p;
-            });
-          } else if (eventType === 'DELETE') {
+          if (eventType === 'DELETE') {
             setNotes(p => p.filter(n => n.id !== oldRow.id));
+          } else {
+            // INSERT o UPDATE: ricarica via RPC per avere visibilità corretta
+            // anche sulle note condivise (RLS non lo permetterebbe inline)
+            reloadNotes(currentMemberId, studioId);
           }
         })
       .subscribe();
