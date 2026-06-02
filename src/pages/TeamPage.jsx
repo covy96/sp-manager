@@ -315,10 +315,10 @@ export default function TeamPage() {
             </div>
           ) : cards.map(({ member:m, stats:s, progress }) => (
             <div key={m.id}
-              onClick={() => openMember(m)}
-              style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', cursor:'pointer', transition:'border-color 0.1s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = T.navy}
-              onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
+              onClick={() => canEditRoles ? openMember(m) : undefined}
+              style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s' }}
+              onMouseEnter={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.navy; }}
+              onMouseLeave={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.border; }}
             >
               {/* Avatar + info */}
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:18 }}>
