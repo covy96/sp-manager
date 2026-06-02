@@ -314,6 +314,7 @@ export default function ScrivaniaPage() {
   useEffect(() => { if (studioId) loadData(); }, [studioId]);
 
   // Real-time notes sync — usa RPC per bypassare RLS anche sui refresh real-time
+  const reloadNotesRef = useRef(null);
   const reloadNotes = async (membId, stdId) => {
     const { data } = await supabase.rpc("get_notes_for_member", {
       p_studio_id: stdId ?? studioId,
@@ -321,6 +322,8 @@ export default function ScrivaniaPage() {
     });
     if (data) setNotes(data);
   };
+  // Mantieni sempre aggiornato il ref alla funzione per evitare stale closure nel canale RT
+  reloadNotesRef.current = reloadNotes;
 
   useEffect(() => {
     if (!studioId) return;
@@ -330,11 +333,10 @@ export default function ScrivaniaPage() {
           if (eventType === 'DELETE') {
             setNotes(p => p.filter(n => n.id !== oldRow.id));
           } else {
-            // INSERT o UPDATE: ricarica via RPC per avere visibilità corretta.
-            // Usa il ref per evitare stale closure (il memberId potrebbe non essere ancora
-            // nello state al momento della sottoscrizione).
+            // INSERT o UPDATE: usa ref per avere sempre la versione fresca di reloadNotes
+            // e currentMemberIdRef per il memberId aggiornato (evita doppia stale closure)
             const mid = currentMemberIdRef.current;
-            if (mid) reloadNotes(mid, studioId);
+            if (mid) reloadNotesRef.current(mid, studioId);
           }
         })
       .subscribe();
