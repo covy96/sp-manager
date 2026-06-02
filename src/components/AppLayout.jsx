@@ -14,21 +14,23 @@ import { messaging, onMessage } from "../lib/firebase";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
+// divider: true = linea separatrice (non è una voce di menu)
 const ALL_MENU_ITEMS = [
   { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all",   minPlan:"free"   },
   { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all",   minPlan:"free"   },
-  { label:"Progetti",     path:"/progetti",              num:"03", roles:"all",   minPlan:"free"   },
-  { label:"Timesheet",    path:"/timesheet",             num:"04", roles:"all",   minPlan:"free"   },
-  { label:"Calendario",   path:"/calendario",            num:"05", roles:"all",   minPlan:"free"   },
+  { label:"Timesheet",    path:"/timesheet",             num:"03", roles:"all",   minPlan:"free"   },
+  { divider: true },
+  { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
+  { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },
   { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
-  { label:"Offerte",      path:"/offerte",               num:"07", roles:"pm",    minPlan:"free"   },
-  { label:"Team",         path:"/team",                  num:"08", roles:"all",   minPlan:"studio" },
-  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"09", roles:"pm",    minPlan:"studio" },
-  { label:"Proforma",     path:"/proforma",              num:"10", roles:"pm",    minPlan:"studio" },
-  { label:"Fatture",      path:"/fatture",               num:"11", roles:"pm",    minPlan:"studio" },
-  { label:"Report",       path:"/report",                num:"12", roles:"pm",    minPlan:"studio" },
-  { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
-  { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"pro"    },
+  { label:"Monitoraggio", path:"/monitoraggio-commesse", num:"07", roles:"pm",    minPlan:"studio" },
+  { label:"Proforma",     path:"/proforma",              num:"08", roles:"pm",    minPlan:"studio" },
+  { label:"Fatture",      path:"/fatture",               num:"09", roles:"pm",    minPlan:"studio" },
+  { divider: true },
+  { label:"Team",         path:"/team",                  num:"10", roles:"all",   minPlan:"studio" },
+  { label:"Report",       path:"/report",                num:"11", roles:"pm",    minPlan:"studio" },
+  { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm",    minPlan:"studio" },
+  { label:"Analisi",      path:"/analisi",               num:"13", roles:"owner", minPlan:"pro"    },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
@@ -176,6 +178,7 @@ export default function AppLayout({ session, children }) {
   useEffect(() => { setShowMac(navigator.platform.toUpperCase().includes("MAC")); }, []);
 
   const menuItems = useMemo(() => ALL_MENU_ITEMS.filter(item => {
+    if (item.divider) return true; // i divider passano sempre, verranno gestiti nel render
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
@@ -276,22 +279,27 @@ export default function AppLayout({ session, children }) {
         </button>
 
         <nav style={{ padding:'10px 8px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
-          {menuItems.map(item => (
-            <NavLink key={item.path} to={item.path} style={({ isActive }) => ({
-              display:'flex', alignItems:'center', gap:10, padding:'7px 10px',
-              borderRadius:2, textDecoration:'none',
-              background: isActive ? T.sidebarActive : 'transparent',
-              transition:'background 0.12s',
-            })}
-              onMouseEnter={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='rgba(255,255,255,0.05)'; }}
-              onMouseLeave={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='transparent'; }}
-            >
-              {({ isActive }) => (<>
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{item.num}</span>
-                <span style={{ fontSize:12, color: isActive ? '#EEF1F6' : T.sidebarText, letterSpacing:'0.01em' }}>{item.label}</span>
-              </>)}
-            </NavLink>
-          ))}
+          {menuItems.map((item, idx) => {
+            if (item.divider) return (
+              <div key={`div-${idx}`} style={{ margin:'6px 12px', height:'0.5px', background:'rgba(255,255,255,0.1)' }}/>
+            );
+            return (
+              <NavLink key={item.path} to={item.path} style={({ isActive }) => ({
+                display:'flex', alignItems:'center', gap:10, padding:'7px 10px',
+                borderRadius:2, textDecoration:'none',
+                background: isActive ? T.sidebarActive : 'transparent',
+                transition:'background 0.12s',
+              })}
+                onMouseEnter={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='rgba(255,255,255,0.05)'; }}
+                onMouseLeave={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='transparent'; }}
+              >
+                {({ isActive }) => (<>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{item.num}</span>
+                  <span style={{ fontSize:12, color: isActive ? '#EEF1F6' : T.sidebarText, letterSpacing:'0.01em' }}>{item.label}</span>
+                </>)}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div style={{ padding:'10px 16px', borderTop:`0.5px solid ${T.sidebarBorder}` }}>
