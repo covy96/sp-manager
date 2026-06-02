@@ -26,6 +26,14 @@ export default function PianoPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading]           = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [stripeCustomerId, setStripeCustomerId] = useState(null);
+
+  // Carica stripe_customer_id per sapere se esiste un abbonamento Stripe attivo
+  useEffect(() => {
+    if (!studioId) return;
+    supabase.from("studios").select("stripe_customer_id").eq("id", studioId).single()
+      .then(({ data }) => setStripeCustomerId(data?.stripe_customer_id ?? null));
+  }, [studioId]);
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -144,9 +152,9 @@ export default function PianoPage() {
 
               {/* CTA */}
               {isCurrent ? (
-                pid !== "free" ? (
+                pid !== "free" && stripeCustomerId ? (
                   <button onClick={handleManageSubscription} disabled={loading} style={{ width:'100%', padding:'9px 0', background:'transparent', border:`0.5px solid ${T.navy}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', opacity:loading?0.6:1 }}>
-                    Gestisci abbonamento
+                    {loading ? "Caricamento..." : "Gestisci abbonamento"}
                   </button>
                 ) : (
                   <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`0.5px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
