@@ -101,12 +101,15 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
     setSaving(true);
     saveTimer.current = setTimeout(async () => {
       const newUpdatedAt = new Date().toISOString();
-      // Salva sempre — nessun lock ottimistico che causa silent fail su note condivise
-      await supabase
-        .from('notes')
-        .update({ content: val, updated_at: newUpdatedAt })
-        .eq('id', note.id);
-      onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
+      // Usa RPC SECURITY DEFINER per bypassare la RLS UPDATE che blocca i non-autori
+      // (i membri in shared_with hanno diritto di scrivere ma non sono author_id)
+      const { error } = await supabase.rpc('update_note_content', {
+        p_note_id:    note.id,
+        p_member_id:  currentMemberId,
+        p_content:    val,
+        p_updated_at: newUpdatedAt,
+      });
+      if (!error) onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
       isTyping.current = false;
       setSaving(false);
     }, 700);
