@@ -281,6 +281,10 @@ export default function CommessaDetailPage() {
   }, [proforma]);
 
   const rateGiaUsate = useMemo(() => new Set(Object.keys(proformaPerRata)), [proformaPerRata]);
+
+  // Business logic rate
+  const hasAnyRates  = suddivisione.length > 0;
+  const hasPaidRates = suddivisione.some(r => r.pagato);
   const costiGiaUsati = useMemo(() => new Set(Object.keys(proformaPerCosto)), [proformaPerCosto]);
 
   const importoProformaSelezionata = useMemo(() => {
@@ -684,7 +688,17 @@ export default function CommessaDetailPage() {
         </Panel>
 
         <Panel>
-          <SectionHeader title="Suddivisione Pagamenti" action={<BtnPrimary onClick={() => { setRataStep("config"); setRataModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }}>+ Rate</BtnPrimary>} />
+          <SectionHeader title="Suddivisione Pagamenti" action={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hasAnyRates && !hasPaidRates && (
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>elimina le rate esistenti per modificare</span>
+              )}
+              {hasAnyRates && hasPaidRates && (
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>rate con pagamenti registrati</span>
+              )}
+              <BtnPrimary onClick={() => { setRataStep("config"); setRataModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }} disabled={hasAnyRates}>+ Rate</BtnPrimary>
+            </div>
+          } />
           {suddivisione.length === 0
             ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessuna rata</div>
             : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -705,7 +719,13 @@ export default function CommessaDetailPage() {
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: r.pagato ? T.green : T.muted }}>{r.pagato ? '✓ Pagata' : 'In attesa'}</span>
                           {r.data_pagamento && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{new Date(r.data_pagamento).toLocaleDateString('it-IT')}</div>}
                         </td>
-                        <td style={tdSt}><RowMenu open={openMenuId === `rata-${r.id}`} onOpen={() => setOpenMenuId(`rata-${r.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditRata(r) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteRata(r.id) }]} /></td>
+                        <td style={tdSt}>
+                          {r.pagato ? (
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, padding: '2px 8px' }}>—</span>
+                          ) : (
+                            <RowMenu open={openMenuId === `rata-${r.id}`} onOpen={() => setOpenMenuId(`rata-${r.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditRata(r) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteRata(r.id) }]} />
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -1039,15 +1059,25 @@ export default function CommessaDetailPage() {
       </Modal>
 
       <Modal open={editRataModal} onClose={() => setEditRataModal(false)} title="Modifica Rata" width={420}>
-        <form onSubmit={handleSaveRata} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><FieldLabel>Percentuale</FieldLabel><Input type="number" value={editRataForm.percentuale ?? ""} onChange={e => setEditRataForm(p => ({ ...p, percentuale: e.target.value }))} /></div>
-          <div><FieldLabel>Importo fisso</FieldLabel><Input type="number" value={editRataForm.importo_fisso ?? ""} onChange={e => setEditRataForm(p => ({ ...p, importo_fisso: e.target.value }))} /></div>
-          <div><FieldLabel>Data pagamento</FieldLabel><Input type="date" value={editRataForm.data_pagamento ?? ""} onChange={e => setEditRataForm(p => ({ ...p, data_pagamento: e.target.value }))} /></div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
-            <input type="checkbox" checked={editRataForm.pagato ?? false} onChange={e => setEditRataForm(p => ({ ...p, pagato: e.target.checked }))} style={{ accentColor: T.navy }} />Segna come pagata
-          </label>
-          <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditRataModal(false)} disabled={editRataSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editRataSaving}>{editRataSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
-        </form>
+        {editRataData?.pagato ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, background: T.surface2, border: `0.5px solid ${T.border}`, padding: '12px 14px', lineHeight: 1.7 }}>
+              Questa rata è già stata pagata e non può essere modificata.<br />
+              Per apportare modifiche, annulla prima il pagamento dalla proforma associata.
+            </div>
+            <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end' }}><BtnGhost onClick={() => setEditRataModal(false)}>Chiudi</BtnGhost></div>
+          </div>
+        ) : (
+          <form onSubmit={handleSaveRata} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div><FieldLabel>Percentuale</FieldLabel><Input type="number" value={editRataForm.percentuale ?? ""} onChange={e => setEditRataForm(p => ({ ...p, percentuale: e.target.value }))} /></div>
+            <div><FieldLabel>Importo fisso</FieldLabel><Input type="number" value={editRataForm.importo_fisso ?? ""} onChange={e => setEditRataForm(p => ({ ...p, importo_fisso: e.target.value }))} /></div>
+            <div><FieldLabel>Data pagamento</FieldLabel><Input type="date" value={editRataForm.data_pagamento ?? ""} onChange={e => setEditRataForm(p => ({ ...p, data_pagamento: e.target.value }))} /></div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+              <input type="checkbox" checked={editRataForm.pagato ?? false} onChange={e => setEditRataForm(p => ({ ...p, pagato: e.target.checked }))} style={{ accentColor: T.navy }} />Segna come pagata
+            </label>
+            <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditRataModal(false)} disabled={editRataSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editRataSaving}>{editRataSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
+          </form>
+        )}
       </Modal>
 
       <Modal open={editCostoModal} onClose={() => setEditCostoModal(false)} title="Modifica Costo Extra" width={420}>
