@@ -192,6 +192,22 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
         </div>
       </div>
 
+      {/* Titolo nota condivisa */}
+      {sharedWith.length > 0 && (
+        <div style={{
+          padding:'5px 12px', borderBottom:`0.5px solid ${T.border}`,
+          fontFamily:"'IBM Plex Mono', monospace", fontSize:9,
+          letterSpacing:'0.18em', textTransform:'uppercase',
+          color: isDark ? T.navy : '#1a3a5c',
+          background: isDark ? 'transparent' : 'rgba(0,0,0,0.04)',
+        }}>
+          {isOwn
+            ? `nota con ${sharedWith.map(id => teamMembers.find(m => m.id === id)?.user_name || 'Membro').join(', ')}`
+            : `nota di ${authorName}`
+          }
+        </div>
+      )}
+
       {/* Pannello condivisione */}
       {showShare && isOwn && (
         <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background: isDark ? T.surface2 : 'rgba(255,255,255,0.4)' }}>
