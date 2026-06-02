@@ -179,6 +179,7 @@ function mapTask(r) {
     title:           r.title || "—",
     description:     r.description || null,
     status:          r.status || "todo",
+    categoria:       r.categoria || null,
     assigned_member: assignedMember,
     assigned_to_name: r.assigned_to_name || null,
     data_pianificata: date(r.data_pianificata),
@@ -394,7 +395,7 @@ async function main() {
     fetchAll("Proforma"),
     fetchAll("Fattura"),
     fetchAll("Offerta"),
-    fetchAll("CollabotatoreEsterno"),
+    fetchAll("CollaboratoreEsterno"),
     fetchAll("CostoExtra"),
     fetchAll("CostoInterno"),
     fetchAll("PraticaEdilizia"),
@@ -457,9 +458,11 @@ async function main() {
     if (error) console.warn(`  ⚠ Could not clear project_contacts: ${error.message}`);
     else console.log(`  ✓ Cleared project_contacts`);
   }
+  // Also clean any orphaned project_contacts with null project_id from previous failed runs
+  await supabase.from("project_contacts").delete().is("project_id", null);
   // Tables with studio column — delete by studio (now safe, no FK blockers)
   const studioTables = [
-    "lavorazioni_gantt","costi_extra",
+    "lavorazioni_gantt","collaboratori_esterni","costi_extra",
     "pagamenti","proforma","timesheet","tasks","projects","commesse","global_contacts",
   ];
   for (const t of studioTables) {
@@ -543,8 +546,16 @@ async function main() {
     if (s.commessa_id && !validCommessaIds.has(s.commessa_id)) s.commessa_id = null;
     return s;
   }), "SuddivisionePagamento");
-  await upsertAll("collaboratori_esterni", collaboratoriEsterni.map(mapCollaboratoreEsterno), "CollabotatoreEsterno");
-  await upsertAll("collaboratori_esterni", aziendeEsterne.map(mapAziendaEsterna),        "AziendaEsterna");
+  await upsertAll("collaboratori_esterni", collaboratoriEsterni.map(r => {
+    const c = mapCollaboratoreEsterno(r);
+    if (c.commessa_id && !validCommessaIds.has(c.commessa_id)) c.commessa_id = null;
+    return c;
+  }), "CollaboratoreEsterno");
+  await upsertAll("collaboratori_esterni", aziendeEsterne.map(r => {
+    const c = mapAziendaEsterna(r);
+    if (c.commessa_id && !validCommessaIds.has(c.commessa_id)) c.commessa_id = null;
+    return c;
+  }), "AziendaEsterna");
   await upsertAll("costi_extra", costiExtra.map(r => {
     const c = mapCostoExtra(r);
     if (c.commessa_id && !validCommessaIds.has(c.commessa_id)) c.commessa_id = null;
@@ -560,6 +571,24 @@ async function main() {
   if (projectContacts.length > 0) {
     await upsertAll("project_contacts", projectContacts.map(mapProjectContact), "ProjectContact");
   }
+
+  // ── Deriva servizi_selezionati per ogni progetto dai categoria distinti dei suoi task ──
+  // In Base44, servizi_selezionati è un array di ID (non stringhe), quindi non mappabile
+  // direttamente. Deriviamo i servizi attivi dai categoria reali delle task migrate.
+  console.log("🗂  Aggiornamento servizi_selezionati sui progetti...");
+  let svcOk = 0, svcSkip = 0;
+  for (const proj of projects) {
+    const projId = mid(proj.id);
+    const projTasks = tasks.filter(t => t.project_id === proj.id);
+    const cats = [...new Set(projTasks.map(t => t.categoria).filter(Boolean))];
+    if (cats.length > 0) {
+      const { error } = await supabase.from("projects").update({ servizi_selezionati: cats }).eq("id", projId);
+      if (error) { console.error(`  ✗ Project servizi [${projId}]: ${error.message}`); } else svcOk++;
+    } else {
+      svcSkip++;
+    }
+  }
+  console.log(`  ✓ ${svcOk} progetti aggiornati con servizi${svcSkip ? `, ${svcSkip} senza task/categorie` : ""}`);
 
   // ── PHASE 3: Sincronizza pagato sulle rate delle proforma pagate ──
   // L'app, quando marca una proforma come pagata, aggiorna anche le
