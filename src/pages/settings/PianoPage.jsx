@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { usePlan, PLANS } from "../../hooks/usePlan";
+import { usePermissions } from "../../hooks/usePermissions";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -12,6 +13,15 @@ export default function PianoPage() {
   usePageTitleOnMount("Piano");
   const navigate = useNavigate();
   const { teamMember, studioId } = useStudio();
+  const permissions = usePermissions();
+
+  // Solo Owner e Partner possono vedere questa pagina
+  const role = teamMember?.role_internal;
+  useEffect(() => {
+    if (role && role !== "Owner" && role !== "Partner") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [role]);
   const { pianoId, plan: currentPlanData } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading]           = useState(false);

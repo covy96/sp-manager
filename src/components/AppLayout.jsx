@@ -486,7 +486,9 @@ export default function AppLayout({ session, children }) {
                 {/* Account */}
                 <div style={{ padding:'6px 4px' }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Account</div>
-                  <DropItem icon={CardIcon}     label="Piano"          onClick={() => goSettings("/impostazioni/piano")}/>
+                  {(teamMember?.role_internal === 'Owner' || teamMember?.role_internal === 'Partner') && (
+                    <DropItem icon={CardIcon} label="Piano" onClick={() => goSettings("/impostazioni/piano")}/>
+                  )}
                   <DropItem icon={UserIcon}     label="Profilo"        onClick={() => goSettings("/impostazioni/profilo")}/>
                   <DropItem icon={BuildingIcon} label="Profilo Studio" onClick={() => goSettings("/impostazioni/profilo-studio")}/>
                 </div>
