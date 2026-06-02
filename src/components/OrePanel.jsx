@@ -1,0 +1,216 @@
+import { useEffect, useState, useMemo } from "react";
+import { supabase } from "../lib/supabase";
+import { useTheme } from "../contexts/ThemeContext";
+import { formatOre } from "../lib/utils";
+
+// Colore avatar deterministico
+function avatarColor(name = "") {
+  const colors = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (name.charCodeAt(i) + ((h << 5) - h)) | 0;
+  return colors[Math.abs(h) % colors.length];
+}
+
+function Avatar({ name, size = 22 }) {
+  const initials = (name || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || "").join("");
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%",
+      background: avatarColor(name), flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.38, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em",
+    }}>
+      {initials || "?"}
+    </div>
+  );
+}
+
+// Ritorna lunedì della settimana di una data
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay(); // 0=dom
+  const diff = (day === 0 ? -6 : 1 - day);
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0, 0, 0, 0);
+  return dt;
+}
+
+function weekLabel(monday) {
+  const end = new Date(monday);
+  end.setDate(end.getDate() + 6);
+  const fmt = (d) => d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  return `${fmt(monday)} – ${fmt(end)}`;
+}
+
+export default function OrePanel({ projectId, studioId }) {
+  const { T, isDark } = useTheme();
+  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+
+  const [open, setOpen]       = useState(false);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView]       = useState("mese"); // "mese" | "settimana"
+
+  useEffect(() => {
+    if (!projectId || !studioId) return;
+    loadEntries();
+  }, [projectId, studioId]);
+
+  const loadEntries = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("timesheet")
+      .select("id, date, hours, user_name, team_member")
+      .eq("project_id", projectId)
+      .order("date", { ascending: false });
+    setEntries(data || []);
+    setLoading(false);
+  };
+
+  const totalOre = useMemo(() => entries.reduce((s, e) => s + (Number(e.hours) || 0), 0), [entries]);
+
+  // Raggruppa per mese
+  const byMonth = useMemo(() => {
+    const map = {};
+    for (const e of entries) {
+      const d = new Date(e.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+      if (!map[key]) map[key] = { key, label, total: 0, members: {} };
+      map[key].total += Number(e.hours) || 0;
+      const name = e.user_name || "—";
+      map[key].members[name] = (map[key].members[name] || 0) + (Number(e.hours) || 0);
+    }
+    return Object.values(map).sort((a, b) => b.key.localeCompare(a.key));
+  }, [entries]);
+
+  // Raggruppa per settimana
+  const byWeek = useMemo(() => {
+    const map = {};
+    for (const e of entries) {
+      const monday = getMonday(e.date);
+      const key = monday.toISOString().slice(0, 10);
+      const label = weekLabel(monday);
+      if (!map[key]) map[key] = { key, label, total: 0, members: {} };
+      map[key].total += Number(e.hours) || 0;
+      const name = e.user_name || "—";
+      map[key].members[name] = (map[key].members[name] || 0) + (Number(e.hours) || 0);
+    }
+    return Object.values(map).sort((a, b) => b.key.localeCompare(a.key));
+  }, [entries]);
+
+  const groups = view === "mese" ? byMonth : byWeek;
+
+  const btnBase = {
+    ...mono, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase",
+    padding: "4px 10px", cursor: "pointer", border: `0.5px solid ${T.borderMd}`,
+  };
+
+  return (
+    <>
+      {/* Trigger button */}
+      <button
+        onClick={() => { setOpen(true); loadEntries(); }}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "7px 13px", border: `0.5px solid ${T.borderMd}`,
+          background: "transparent", color: T.ink, cursor: "pointer",
+          ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        {loading ? "…" : `${formatOre(totalOre)} h`}
+      </button>
+
+      {/* Modal */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 60,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 540,
+              background: T.surface, border: `0.5px solid ${T.borderMd}`,
+              maxHeight: "80vh", display: "flex", flexDirection: "column",
+              boxShadow: `0 8px 32px rgba(0,0,0,${isDark ? "0.5" : "0.14"})`,
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 20px", borderBottom: `0.5px solid ${T.border}`,
+            }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: "-0.01em" }}>
+                  Ore lavorate
+                </div>
+                <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
+                  Totale: <strong style={{ color: T.navy }}>{formatOre(totalOre)} h</strong>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Vista toggle */}
+                <div style={{ display: "flex", gap: 0 }}>
+                  <button
+                    onClick={() => setView("mese")}
+                    style={{ ...btnBase, background: view === "mese" ? T.navy : "transparent", color: view === "mese" ? "#fff" : T.muted, borderRight: "none" }}
+                  >Mese</button>
+                  <button
+                    onClick={() => setView("settimana")}
+                    style={{ ...btnBase, background: view === "settimana" ? T.navy : "transparent", color: view === "settimana" ? "#fff" : T.muted }}
+                  >Settimana</button>
+                </div>
+                <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1, padding: "0 4px" }}>×</button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
+              {loading ? (
+                <div style={{ ...mono, fontSize: 11, color: T.muted, padding: "32px 0", textAlign: "center" }}>Caricamento…</div>
+              ) : groups.length === 0 ? (
+                <div style={{ ...mono, fontSize: 11, color: T.muted, padding: "48px 0", textAlign: "center" }}>Nessuna ora registrata per questo progetto.</div>
+              ) : groups.map(g => (
+                <div key={g.key} style={{ marginBottom: 16 }}>
+                  {/* Intestazione periodo */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "7px 12px", background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 6,
+                  }}>
+                    <span style={{ ...mono, fontSize: 10, color: T.ink, fontWeight: 600, textTransform: "capitalize" }}>{g.label}</span>
+                    <span style={{ ...mono, fontSize: 11, color: T.navy, fontWeight: 700 }}>{formatOre(g.total)} h</span>
+                  </div>
+                  {/* Righe per membro */}
+                  {Object.entries(g.members)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, ore]) => (
+                      <div key={name} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "6px 12px", borderBottom: `0.5px solid ${T.border}`,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Avatar name={name} size={22} />
+                          <span style={{ ...mono, fontSize: 10, color: T.ink }}>{name}</span>
+                        </div>
+                        <span style={{ ...mono, fontSize: 10, color: T.muted }}>{formatOre(ore)} h</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
