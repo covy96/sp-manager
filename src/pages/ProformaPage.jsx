@@ -116,10 +116,16 @@ export default function ProformaPage() {
   }, [proformaList, mostraPagate, annoFiltro, sortField, sortDesc, commesseMap]);
 
   const stats = useMemo(() => {
-    const totale = proformaList.reduce((s, p) => s + (Number(p.importo_totale)||0), 0);
-    const pagato = proformaList.filter(p => p.pagato).reduce((s, p) => s + (Number(p.importo_totale)||0), 0);
-    return { totale, pagato, daIncassare: totale - pagato };
-  }, [proformaList]);
+    const base = annoFiltro === 0
+      ? proformaList
+      : proformaList.filter(p => {
+          const d = p.data_emissione || p.created_at;
+          return d && new Date(d).getFullYear() === annoFiltro;
+        });
+    const totale = base.reduce((s, p) => s + (Number(p.importo_totale)||0), 0);
+    const pagato = base.filter(p => p.pagato).reduce((s, p) => s + (Number(p.importo_totale)||0), 0);
+    return { totale, pagato, daIncassare: totale - pagato, count: base.length, countPagate: base.filter(p=>p.pagato).length, countAperte: base.filter(p=>!p.pagato).length };
+  }, [proformaList, annoFiltro]);
 
   const handleSort = field => {
     if (sortField === field) { setSortDesc(p => !p); return; }
@@ -151,9 +157,9 @@ export default function ProformaPage() {
 
       {/* KPI */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
-        <KpiCard label="Totale proforma"  value={currency(stats.totale)}       note={`${proformaList.length} proforma`}                             color={T.navy} />
-        <KpiCard label="Pagate"           value={currency(stats.pagato)}        note={`${proformaList.filter(p=>p.pagato).length} pagate`}            color={T.green} />
-        <KpiCard label="Da incassare"     value={currency(stats.daIncassare)}   note={`${proformaList.filter(p=>!p.pagato).length} aperte`}           color={T.red} />
+        <KpiCard label="Totale proforma"  value={currency(stats.totale)}       note={`${stats.count} proforma`}           color={T.navy} />
+        <KpiCard label="Pagate"           value={currency(stats.pagato)}        note={`${stats.countPagate} pagate`}       color={T.green} />
+        <KpiCard label="Da incassare"     value={currency(stats.daIncassare)}   note={`${stats.countAperte} aperte`}       color={T.red} />
       </div>
 
       {/* Tabella */}
