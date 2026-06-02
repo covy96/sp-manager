@@ -38,6 +38,7 @@ export default function AnalisiPage() {
   const [editCosti, setEditCosti]             = useState({}); // memberId → costo_orario
   const [savingCosti, setSavingCosti]         = useState(false);
   const [annoFiltro, setAnnoFiltro]           = useState(0); // default: tutti gli anni
+  const [search, setSearch]                   = useState("");
 
   // ── LOAD ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -466,6 +467,19 @@ export default function AnalisiPage() {
           <div style={{ ...mono, fontSize:10, color:T.muted }}>Costi, margini e redditività per progetto — visibile solo al titolare</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ position:'relative' }}>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Cerca progetto..."
+              style={{ padding:'6px 10px 6px 30px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:180 }}
+            />
+            <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', color:T.muted, fontSize:12, pointerEvents:'none' }}>⌕</span>
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position:'absolute', right:6, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:14, lineHeight:1, padding:0 }}>×</button>
+            )}
+          </div>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
             style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
@@ -523,7 +537,18 @@ export default function AnalisiPage() {
           <tbody>
             {projectStats.length === 0 ? (
               <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun progetto attivo</td></tr>
-            ) : [...projectStats, ...(orphanStats ? [orphanStats] : [])].map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
+            ) : (() => {
+              const q = search.trim().toLowerCase();
+              const filtered = projectStats.filter(({ proj }) =>
+                !q ||
+                (proj.name||'').toLowerCase().includes(q) ||
+                (proj.client||'').toLowerCase().includes(q)
+              );
+              const withOrphan = [...filtered, ...(orphanStats && (!q || '— commesse senza progetto'.includes(q)) ? [orphanStats] : [])];
+              if (withOrphan.length === 0) return (
+                <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun risultato per "{search}"</td></tr>
+              );
+              return withOrphan.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
               const isOrphan = proj.id === '__orphan__';
               return (
               <tr key={proj.id}
@@ -554,7 +579,8 @@ export default function AnalisiPage() {
                 <td style={{ ...tdSt, ...mono, fontSize:10, color:T.navy }}>→</td>
               </tr>
               );
-            })}
+            });
+            })()}
           </tbody>
         </table>
       </div>
