@@ -14,7 +14,7 @@ function Input({ value, onChange, type = "text", placeholder, disabled }) {
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.borderMd}`, background: disabled ? T.bg : '#fff', color: disabled ? T.muted : T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.borderMd}`, background: disabled ? T.bg : T.inputBg, color: disabled ? T.muted : T.inputText, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
   );
 }
 function BtnPrimary({ children, type = "button", onClick, disabled }) {
