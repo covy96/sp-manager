@@ -81,7 +81,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
   },[]);
   return (
     <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative'}}>
+      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div onClick={onClick} style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
@@ -111,7 +111,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
       <div style={{height:2,background:T.border,marginBottom:10}}>
         <div style={{height:2,background:T.navy,width:`${pct}%`,transition:'width 0.3s'}}/>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'1fr 1fr 1fr',gap:8}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'1fr 1fr 1fr',gap:8,marginTop:'auto'}}>
         {[
           {label:'Pagato',value:currency(pagato),color:T.green},
           {label:'Residuo',value:currency(residuo),color:residuo>0?T.navy:T.muted},
