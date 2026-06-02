@@ -167,7 +167,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
 
   return (
     <div style={{
-      background: hover ? '#f8f7f4' : T.surface,
+      background: hover ? T.surface2 : T.surface,
       border: `0.5px solid ${T.border}`,
       padding: 20, position: 'relative', transition: 'background 0.12s',
     }}
@@ -700,7 +700,7 @@ export default function ProjectsPage() {
               placeholder="Cerca progetto o cliente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: isMobile ? '1 1 100%' : '0 0 200px', padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
             />
             {/* Year filter */}
             <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
