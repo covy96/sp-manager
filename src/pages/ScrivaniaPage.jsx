@@ -259,6 +259,7 @@ export default function ScrivaniaPage() {
   const { studioId } = useStudio();
 
   const [currentMemberId, setCurrentMemberId] = useState(null);
+  const currentMemberIdRef = useRef(null); // ref per evitare stale closure nel real-time handler
   const [activeTasks, setActiveTasks]         = useState([]);
   const [completedToday, setCompletedToday]   = useState([]);
   const [projectsById, setProjectsById]       = useState({});
@@ -281,6 +282,7 @@ export default function ScrivaniaPage() {
     try { tm = await getOrCreateTeamMember(authData.user); }
     catch(e) { setError(e.message); setLoading(false); return; }
     setCurrentMemberId(tm.id);
+    currentMemberIdRef.current = tm.id;
 
     const [tasksRes, membersRes, notesRes] = await Promise.all([
       supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id),
@@ -321,21 +323,23 @@ export default function ScrivaniaPage() {
   };
 
   useEffect(() => {
-    if (!studioId || !currentMemberId) return;
+    if (!studioId) return;
     const channel = supabase.channel(`notes-rt-${studioId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `studio=eq.${studioId}` },
-        ({ eventType, new: newRow, old: oldRow }) => {
+        ({ eventType, old: oldRow }) => {
           if (eventType === 'DELETE') {
             setNotes(p => p.filter(n => n.id !== oldRow.id));
           } else {
-            // INSERT o UPDATE: ricarica via RPC per avere visibilità corretta
-            // anche sulle note condivise (RLS non lo permetterebbe inline)
-            reloadNotes(currentMemberId, studioId);
+            // INSERT o UPDATE: ricarica via RPC per avere visibilità corretta.
+            // Usa il ref per evitare stale closure (il memberId potrebbe non essere ancora
+            // nello state al momento della sottoscrizione).
+            const mid = currentMemberIdRef.current;
+            if (mid) reloadNotes(mid, studioId);
           }
         })
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [studioId, currentMemberId]);
+  }, [studioId]);
 
   const groupedActive = useMemo(() => activeTasks.reduce((acc, t) => {
     const key = t.project_id || "senza-progetto";
