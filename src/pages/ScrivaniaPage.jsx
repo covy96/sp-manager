@@ -66,7 +66,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
 
 // ── NOTA CARD ─────────────────────────────────────────────────────
 function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
-  const { T } = useTheme();
+  const { T, isDark } = useTheme();
   const [content, setContent]       = useState(note.content || '');
   const [color, setColor]           = useState(note.color || '#FFF9C4');
   const [isPrivate, setIsPrivate]   = useState(note.is_private !== false);
@@ -157,8 +157,13 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
     saveField(updates);
   };
 
+  // In dark mode: sfondo scuro con bordo sinistro colorato (i pastelli su nero sono illeggibili)
+  const cardStyle = isDark
+    ? { background: T.surface, border:`0.5px solid ${T.border}`, borderLeft:`3px solid ${color}`, display:'flex', flexDirection:'column' }
+    : { background: color, border:`0.5px solid ${T.border}`, display:'flex', flexDirection:'column' };
+
   return (
-    <div style={{ background: color, border:`0.5px solid ${T.border}`, display:'flex', flexDirection:'column' }}>
+    <div style={cardStyle}>
       {/* Toolbar */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', borderBottom:`0.5px solid ${T.border}` }}>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -209,7 +214,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate }) {
 
       {/* Pannello condivisione */}
       {showShare && isOwn && (
-        <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background:'rgba(255,255,255,0.4)' }}>
+        <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background: isDark ? T.surface2 : 'rgba(255,255,255,0.4)' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginBottom:6, letterSpacing:'0.1em', textTransform:'uppercase' }}>Condividi con:</div>
           {teamMembers.filter(m => m.id !== currentMemberId).map(m => (
             <label key={m.id} style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', padding:'2px 0' }}>
