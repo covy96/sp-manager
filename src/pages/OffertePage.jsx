@@ -318,7 +318,7 @@ export default function OffertePage() {
           const st = STATI[o.stato]||STATI.offerta;
           const valore = Number(o.importo_totale||o.importo_offerta_base||0);
           return (
-            <div key={o.id} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10 }}>
+            <div key={o.id} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%' }}>
               {/* Header card */}
               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -347,7 +347,7 @@ export default function OffertePage() {
               )}
 
               {/* Azioni */}
-              <div style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:4, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+              <div style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
                 <button onClick={()=>navigate(`/offerte/${o.id}`)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                   Dettagli
                 </button>
