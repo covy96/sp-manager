@@ -81,7 +81,7 @@ async function urlToBase64(url) {
 
 // ── PDF generator ─────────────────────────────────────────────────────────────
 // Usa lo snapshot salvato nel report se disponibile, altrimenti le impostazioni correnti
-async function generatePdf({ report, project, studio }) {
+async function generatePdf({ report, project, studio, fotos = [] }) {
   const s = report.header_snapshot ? { ...studio, ...report.header_snapshot } : studio;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 20, mr = 20, cw = W - ml - mr;
@@ -240,6 +240,44 @@ async function generatePdf({ report, project, studio }) {
     });
   }
 
+  // ── Foto — griglia 2 per riga ─────────────────────────────────────
+  if (fotos.length > 0) {
+    newPageIfNeeded(20);
+    y += 6;
+    setF("regular","header"); doc.setFontSize(9); doc.setTextColor(19, 49, 92);
+    doc.text("FOTO", ml, y);
+    y += 6;
+
+    const imgW = (cw - 6) / 2;   // larghezza foto (2 per riga, gap 6mm)
+    const imgH = imgW * 0.67;     // proporzione 3:2
+
+    for (let i = 0; i < fotos.length; i += 2) {
+      if (newPageIfNeeded(imgH + 4)) { /* nuova pagina */ }
+      const left  = fotos[i];
+      const right = fotos[i + 1];
+
+      // Foto sinistra
+      const b64L = await urlToBase64(left.url);
+      if (b64L) {
+        try { doc.addImage(b64L, "AUTO", ml, y, imgW, imgH, undefined, "FAST"); } catch {}
+      } else {
+        doc.setDrawColor(220,220,220); doc.rect(ml, y, imgW, imgH);
+      }
+
+      // Foto destra
+      if (right) {
+        const b64R = await urlToBase64(right.url);
+        if (b64R) {
+          try { doc.addImage(b64R, "AUTO", ml + imgW + 6, y, imgW, imgH, undefined, "FAST"); } catch {}
+        } else {
+          doc.setDrawColor(220,220,220); doc.rect(ml + imgW + 6, y, imgW, imgH);
+        }
+      }
+
+      y += imgH + 5;
+    }
+  }
+
   // ── Footer personalizzato su ogni pagina ──────────────────────────
   const fLeft   = s?.report_footer_left   || "";
   const fCenter = s?.report_footer_center || "";
@@ -319,6 +357,11 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [headerMsg, setHeaderMsg]     = useState("");
   const [confirmUpdateAll, setConfirmUpdateAll] = useState(false);
 
+  // ── Foto ─────────────────────────────────────────────────────────
+  const [fotos, setFotos]           = useState([]);   // { id, url, ordine }
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  const fotoInputRef = useRef(null);
+
   // ── load ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!projectId || !studioId) return;
@@ -357,6 +400,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   // Carica tutto quando si apre il modal
   useEffect(() => { if (open) load(); }, [open, load]);
 
+  const loadFotos = async (reportId) => {
+    const { data } = await supabase.from("report_cantiere_foto")
+      .select("*").eq("report_id", reportId).order("ordine", { ascending:true });
+    setFotos(data || []);
+  };
+
   // ── nuovo report ─────────────────────────────────────────────────
   const openNew = () => {
     const nextNum = (reports[0]?.numero ?? 0) + 1;
@@ -366,7 +415,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
     });
     setForm({ ...base, _numero:nextNum });
-    setEditingId(null); setSaveError(""); setView("form");
+    setEditingId(null); setSaveError(""); setFotos([]); setView("form");
   };
 
   const openEdit = (r) => {
@@ -380,6 +429,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       _numero:      r.numero,
     });
     setEditingId(r.id); setSaveError(""); setView("form");
+    loadFotos(r.id);
   };
 
   // ── salva report ─────────────────────────────────────────────────
@@ -408,11 +458,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
         report_footer_font:   studio?.report_footer_font   ?? "helvetica",
       }}),
     };
-    let err;
+    let err, newId = editingId;
     if (editingId) {
       ({ error:err } = await supabase.from("report_cantiere").update(payload).eq("id",editingId));
     } else {
-      ({ error:err } = await supabase.from("report_cantiere").insert(payload));
+      const { data:ins, error:insErr } = await supabase.from("report_cantiere").insert(payload).select("id").single();
+      err = insErr; newId = ins?.id;
     }
     setSaving(false);
     if (err) { setSaveError(err.message); return; }
@@ -423,6 +474,35 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const handleDelete = async (id) => {
     await supabase.rpc("elimina_report_cantiere", { p_id:id });
     setConfirmDel(null); load();
+  };
+
+  // ── upload foto ──────────────────────────────────────────────────
+  const handleFotoUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !editingId) return;
+    setUploadingFoto(true);
+    for (const file of files) {
+      const ext  = file.name.split(".").pop().toLowerCase();
+      const path = `${studioId}/${editingId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("report-foto").upload(path, file, { upsert:false });
+      if (upErr) continue;
+      const { data:{ publicUrl } } = supabase.storage.from("report-foto").getPublicUrl(path);
+      await supabase.from("report_cantiere_foto").insert({
+        studio: studioId, report_id: editingId,
+        url: publicUrl, ordine: fotos.length,
+      });
+    }
+    await loadFotos(editingId);
+    setUploadingFoto(false);
+    if (fotoInputRef.current) fotoInputRef.current.value = "";
+  };
+
+  const handleFotoDelete = async (foto) => {
+    await supabase.from("report_cantiere_foto").delete().eq("id", foto.id);
+    // Rimuovi anche dallo storage
+    const path = foto.url.split("/report-foto/")[1]?.split("?")[0];
+    if (path) await supabase.storage.from("report-foto").remove([path]);
+    setFotos(f => f.filter(x => x.id !== foto.id));
   };
 
   // ── salva intestazione ───────────────────────────────────────────
@@ -611,7 +691,10 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                               </>
                             ) : (
                               <>
-                                <button onClick={()=>generatePdf({report:r,project,studio})}
+                                <button onClick={async ()=>{
+                                  const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",r.id).order("ordine",{ascending:true});
+                                  generatePdf({report:r,project,studio,fotos:rf||[]});
+                                }}
                                   style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
@@ -925,6 +1008,47 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                   rows={10} style={{ ...inputSt, resize:'vertical', minHeight:180, lineHeight:1.6 }}/>
               </div>
 
+              {/* ── Foto ── */}
+              <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                  <FL>Foto</FL>
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    {!editingId && (
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+                        Salva il report per aggiungere foto
+                      </span>
+                    )}
+                    {editingId && (
+                      <>
+                        <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoUpload} style={{ display:'none' }}/>
+                        <button onClick={()=>fotoInputRef.current?.click()} disabled={uploadingFoto}
+                          style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'5px 12px', cursor:'pointer' }}>
+                          {uploadingFoto ? "Caricamento..." : "+ Aggiungi foto"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {fotos.length === 0 ? (
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'12px 0' }}>
+                    {editingId ? "Nessuna foto ancora — clicca \"+ Aggiungi foto\"" : ""}
+                  </div>
+                ) : (
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10 }}>
+                    {fotos.map(foto => (
+                      <div key={foto.id} style={{ position:'relative', aspect:'square' }}>
+                        <img src={foto.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', display:'block', border:`0.5px solid ${T.border}` }}/>
+                        <button onClick={()=>handleFotoDelete(foto)}
+                          style={{ position:'absolute', top:4, right:4, width:22, height:22, borderRadius:'50%', background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:12, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {saveError && (
                 <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c' }}>
                   ⚠ Errore: {saveError}
@@ -932,7 +1056,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
               )}
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <Btn ghost onClick={()=>{ setView("list"); setEditingId(null); }}>← Indietro</Btn>
+                <Btn ghost onClick={()=>{ setView("list"); setEditingId(null); setFotos([]); }}>← Indietro</Btn>
                 <Btn onClick={handleSave} disabled={saving || (!form.nome_interno.trim() && !form.titolo.trim())}>
                   {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Salva report"}
                 </Btn>
