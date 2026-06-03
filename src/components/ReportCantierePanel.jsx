@@ -179,28 +179,42 @@ async function generatePdf({ report, project, studio }) {
   });
   y += 4;
 
-  // ── Tabella presenti ─────────────────────────────────────────────
+  // ── Tabella presenti — stile minimal ─────────────────────────────
   const presenti = Array.isArray(report.presenti) ? report.presenti : [];
   if (presenti.length > 0) {
-    setF("regular"); doc.setFontSize(9); doc.setTextColor(19, 49, 92);
-    doc.text("PRESENTI", ml, y);
-    y += 4;
-    const tblFont = bodyEnabled ? gBook : "helvetica";
-    const tblHFont = bodyEnabled ? gBold : "helvetica";
+    const tblFont  = bodyEnabled   ? gBook    : "helvetica";
+    const tblLFont = headerEnabled ? gRegular : "helvetica"; // etichette colonna
     autoTable(doc, {
       startY: y,
+      theme: "plain",
       margin: { left: ml, right: mr },
-      head: [["Figura professionale", "Azienda / Referente", "Email", "Telefono"]],
+      head: [["FIGURA", "AZIENDA / REFERENTE", "EMAIL", "TELEFONO"]],
       body: presenti.map(p => [
         p.figura || "—",
         [p.azienda, p.referente].filter(Boolean).join(" / ") || "—",
         p.email || "—",
         p.telefono || "—",
       ]),
-      headStyles: { fillColor:[19,49,92], textColor:[255,255,255], fontStyle:"bold", fontSize:8, cellPadding:3, font: tblHFont },
-      bodyStyles: { fontSize:8, cellPadding:3, textColor:[30,30,30], font: tblFont },
-      alternateRowStyles: { fillColor:[245,247,250] },
-      tableLineWidth:0.1, tableLineColor:[200,200,200],
+      headStyles: {
+        font: tblLFont,
+        fontStyle: "normal",
+        fontSize: 7,
+        textColor: [160, 160, 160],
+        cellPadding: { top: 3, bottom: 5, left: 2, right: 2 },
+        lineWidth: { bottom: 0.4 },
+        lineColor: [200, 200, 200],
+      },
+      bodyStyles: {
+        font: tblFont,
+        fontStyle: "normal",
+        fontSize: 9,
+        textColor: [30, 30, 30],
+        cellPadding: { top: 5, bottom: 5, left: 2, right: 2 },
+        lineWidth: { bottom: 0.2 },
+        lineColor: [230, 230, 230],
+      },
+      alternateRowStyles: {},   // nessun riempimento alternato
+      tableLineWidth: 0,        // nessun bordo esterno
     });
     y = doc.lastAutoTable.finalY + 10;
   }
