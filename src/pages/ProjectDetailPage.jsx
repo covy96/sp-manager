@@ -547,8 +547,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Barra pulsanti — scrollabile su mobile */}
-        <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling:'touch', marginBottom: isMobile ? 4 : 0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:'max-content' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap: isMobile ? 'nowrap' : 'wrap', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? 4 : 0 }}>
             {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
@@ -581,7 +580,6 @@ export default function ProjectDetailPage() {
                 </div>
               )}
             </div>
-          </div>
         </div>
 
         {/* Meta */}
