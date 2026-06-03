@@ -135,6 +135,21 @@ export default function MobileLayout({ session, children }) {
     return ()=>document.removeEventListener('mousedown', h);
   }, []);
 
+  // Blocca lo scroll del body quando un overlay è aperto
+  useEffect(()=>{
+    if (settingsOpen || menuOpen || searchOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return ()=>{
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [settingsOpen, menuOpen, searchOpen]);
+
   // Close menu on navigation
   useEffect(()=>{ setMenuOpen(false); }, [loc.pathname]);
 
@@ -169,6 +184,9 @@ export default function MobileLayout({ session, children }) {
             </button>
 
             {settingsOpen && (
+              <>
+                {/* Backdrop — chiude il popup e blocca touch sull'app */}
+                <div onClick={()=>setSettingsOpen(false)} style={{ position:'fixed', inset:0, zIndex:49 }}/>
               <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 58px)', right:8, left:8, maxWidth:360, margin:'0 auto', background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.5':'0.15'})`, borderRadius:14, maxHeight:'80vh', overflowY:'auto' }}>
                 {/* User info */}
                 <div style={{ padding:'14px 16px', borderBottom:`0.5px solid ${T.border}` }}>
@@ -232,6 +250,7 @@ export default function MobileLayout({ session, children }) {
                   </button>
                 </div>
               </div>
+              </>
             )}
           </div>
         </div>
