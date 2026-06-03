@@ -33,6 +33,8 @@ const CATEGORIE = [
     getNome: r => r.full_name || '—',                getContext: () => null },
   { id: 'note',          label: 'Note',               icon: '📝', rpc: 'cestino_note',
     getNome: r => (r.content || '').slice(0, 60) || '—', getContext: () => null },
+  { id: 'report_cantiere', label: 'Report di Cantiere', icon: '📐', rpc: 'cestino_report_cantiere',
+    getNome: r => r.nome_interno || r.titolo || `Report #${r.numero}`, getContext: r => r.project_name || null },
 ];
 
 const TABELLA_REALE = {
@@ -50,6 +52,7 @@ const TABELLA_REALE = {
   fatture:       'fatture',
   contatti:      'global_contacts',
   note:          'notes',
+  report_cantiere: 'report_cantiere',
 };
 
 export default function CestinoPage() {

@@ -165,7 +165,17 @@ async function generatePdf({ report, project, studio }) {
   }
 
   // ── Contenuto ────────────────────────────────────────────────────
+  const FOOTER_H = 15; // spazio riservato al footer (mm)
+  const PAGE_H   = 297;
+  const maxY     = PAGE_H - FOOTER_H - 10; // margine inferiore contenuto
+
+  const newPageIfNeeded = (neededH = 6) => {
+    if (y + neededH > maxY) { doc.addPage(); y = 20; return true; }
+    return false;
+  };
+
   if (report.contenuto?.trim()) {
+    newPageIfNeeded(14);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(19, 49, 92);
@@ -175,18 +185,21 @@ async function generatePdf({ report, project, studio }) {
     doc.setFontSize(9.5);
     doc.setTextColor(30, 30, 30);
     doc.splitTextToSize(report.contenuto, cw).forEach(line => {
-      if (y > 270) { doc.addPage(); y = 20; }
+      newPageIfNeeded(6);
       doc.text(line, ml, y); y += 5.5;
     });
   }
 
-  // ── Footer ───────────────────────────────────────────────────────
+  // ── Footer su ogni pagina ─────────────────────────────────────────
   const tot = doc.getNumberOfPages();
   for (let i = 1; i <= tot; i++) {
     doc.setPage(i);
+    // Linea footer
+    doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+    doc.line(ml, PAGE_H - FOOTER_H, W - mr, PAGE_H - FOOTER_H);
     doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(160,160,160);
-    doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, 290);
-    doc.text(`Pagina ${i} di ${tot}`, W - mr, 290, { align:"right" });
+    doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, PAGE_H - FOOTER_H + 5);
+    doc.text(`Pagina ${i} di ${tot}`, W - mr, PAGE_H - FOOTER_H + 5, { align:"right" });
   }
 
   const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\- ]/g,"").trim() || "report";
@@ -321,7 +334,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setTimeout(() => setHeaderMsg(""), 3000);
   };
 
-  // ── upload logo ──────────────────────────────────────────────────
+  // ── upload logo + auto-save ──────────────────────────────────────
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -331,7 +344,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const { error: upErr } = await supabase.storage.from("report-logos").upload(path, file, { upsert:true });
     if (upErr) { setHeaderMsg("Errore upload: " + upErr.message); setUploadingLogo(false); return; }
     const { data:{ publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
-    setHeaderForm(h => ({ ...h, report_logo_url: publicUrl + "?t=" + Date.now() }));
+    const newUrl = publicUrl + "?t=" + Date.now();
+    setHeaderForm(h => ({ ...h, report_logo_url: newUrl }));
+    // Auto-save logo subito
+    const { error: saveErr } = await supabase.from("studios").update({ report_logo_url: newUrl }).eq("id", studioId);
+    if (saveErr) { setHeaderMsg("Upload OK ma salvataggio fallito: " + saveErr.message); }
+    else { setStudio(s => ({ ...s, report_logo_url: newUrl })); setHeaderMsg("Logo salvato!"); setTimeout(()=>setHeaderMsg(""),3000); }
     setUploadingLogo(false);
   };
 
