@@ -679,8 +679,9 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                         value={headerForm[field]}
                         onChange={e=>setHeaderForm(h=>({...h,[field]:e.target.value}))}
                         rows={3}
+                        wrap="off"
                         placeholder=""
-                        style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
+                        style={{ ...inputSt, resize:'vertical', lineHeight:1.6, overflowX:'auto', whiteSpace:'pre', fontFamily:"'Space Grotesk', sans-serif" }}
                       />
                     </div>
                   ))}
