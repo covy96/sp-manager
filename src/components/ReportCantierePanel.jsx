@@ -87,9 +87,19 @@ async function generatePdf({ report, project, studio }) {
     const b64 = await urlToBase64(studio.report_logo_url);
     if (b64) {
       try {
-        // Dimensione max logo: 40×20mm, allineato a destra
-        doc.addImage(b64, "AUTO", W - mr - 40, y - 4, 40, 20, undefined, "FAST");
-        logoLoaded = true;
+        // Leggi dimensioni naturali per mantenere aspect ratio
+        const imgEl = await new Promise(res => {
+          const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null);
+          i.src = b64;
+        });
+        if (imgEl) {
+          const maxW = 45, maxH = 22;
+          const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
+          let w = maxW, h = maxW / ratio;
+          if (h > maxH) { h = maxH; w = maxH * ratio; }
+          doc.addImage(b64, "PNG", W - mr - w, y - 4, w, h, undefined, "FAST");
+          logoLoaded = true;
+        }
       } catch {}
     }
   }
