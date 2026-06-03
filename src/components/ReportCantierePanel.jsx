@@ -349,9 +349,9 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setUploadingLogo(true); setHeaderMsg("");
     const ext  = file.name.split(".").pop();
     const path = `${studioId}/logo.${ext}`;
-    const { error: upErr } = await supabase.storage.from("eport-logos").upload(path, file, { upsert:true });
+    const { error: upErr } = await supabase.storage.from("report-logos").upload(path, file, { upsert:true });
     if (upErr) { setHeaderMsg("Errore upload: " + upErr.message); setUploadingLogo(false); return; }
-    const { data:{ publicUrl } } = supabase.storage.from("eport-logos").getPublicUrl(path);
+    const { data:{ publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
     const newUrl = publicUrl + "?t=" + Date.now();
     setHeaderForm(h => ({ ...h, report_logo_url: newUrl }));
     // Auto-save logo subito
