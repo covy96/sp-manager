@@ -1,7 +1,4 @@
 -- ── REPORT DI CANTIERE ──────────────────────────────────────────────────────
--- Ogni report è legato a un progetto e contiene:
---   numero progressivo, titolo, sopralluogo N., luogo, data_ora, contenuto
---   presenti: JSONB array [ { figura, azienda, referente, email, telefono } ]
 
 CREATE TABLE IF NOT EXISTS report_cantiere (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -19,41 +16,39 @@ CREATE TABLE IF NOT EXISTS report_cantiere (
   deleted_at    timestamptz
 );
 
--- Indici
-CREATE INDEX IF NOT EXISTS idx_report_cantiere_project  ON report_cantiere(project_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_report_cantiere_studio   ON report_cantiere(studio)     WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_report_cantiere_project ON report_cantiere(project_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_report_cantiere_studio  ON report_cantiere(studio)     WHERE deleted_at IS NULL;
 
--- RLS
+-- RLS — usa solo user_account = auth.uid() nelle policy
+-- (il fallback email funziona solo nelle funzioni SECURITY DEFINER)
 ALTER TABLE report_cantiere ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "report_cantiere_select" ON report_cantiere;
+DROP POLICY IF EXISTS "report_cantiere_insert" ON report_cantiere;
+DROP POLICY IF EXISTS "report_cantiere_update" ON report_cantiere;
 
 CREATE POLICY "report_cantiere_select" ON report_cantiere FOR SELECT
   USING (
     studio IN (
-      SELECT studio FROM team_members
-      WHERE user_account = auth.uid()
-        OR user_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+      SELECT studio FROM team_members WHERE user_account = auth.uid()
     )
   );
 
 CREATE POLICY "report_cantiere_insert" ON report_cantiere FOR INSERT
   WITH CHECK (
     studio IN (
-      SELECT studio FROM team_members
-      WHERE user_account = auth.uid()
-        OR user_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+      SELECT studio FROM team_members WHERE user_account = auth.uid()
     )
   );
 
 CREATE POLICY "report_cantiere_update" ON report_cantiere FOR UPDATE
   USING (
     studio IN (
-      SELECT studio FROM team_members
-      WHERE user_account = auth.uid()
-        OR user_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+      SELECT studio FROM team_members WHERE user_account = auth.uid()
     )
   );
 
--- Funzione soft-delete
+-- Funzione soft-delete (SECURITY DEFINER — può accedere a auth.users)
 CREATE OR REPLACE FUNCTION elimina_report_cantiere(p_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_studio uuid;
