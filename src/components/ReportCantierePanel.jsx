@@ -54,17 +54,25 @@ const formatDt = (iso) => {
 };
 
 // Carica un'immagine da URL come base64 (per jsPDF)
+// Usa canvas per evitare problemi CORS con Supabase Storage
 async function urlToBase64(url) {
-  try {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch { return null; }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width  = img.naturalWidth  || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    // Cache-bust per forzare il re-fetch con crossOrigin
+    img.src = url.includes("?") ? url + "&_cb=" + Date.now() : url + "?_cb=" + Date.now();
+  });
 }
 
 // ── PDF generator ─────────────────────────────────────────────────────────────
@@ -341,9 +349,9 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setUploadingLogo(true); setHeaderMsg("");
     const ext  = file.name.split(".").pop();
     const path = `${studioId}/logo.${ext}`;
-    const { error: upErr } = await supabase.storage.from("report-logos").upload(path, file, { upsert:true });
+    const { error: upErr } = await supabase.storage.from("eport-logos").upload(path, file, { upsert:true });
     if (upErr) { setHeaderMsg("Errore upload: " + upErr.message); setUploadingLogo(false); return; }
-    const { data:{ publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
+    const { data:{ publicUrl } } = supabase.storage.from("eport-logos").getPublicUrl(path);
     const newUrl = publicUrl + "?t=" + Date.now();
     setHeaderForm(h => ({ ...h, report_logo_url: newUrl }));
     // Auto-save logo subito
