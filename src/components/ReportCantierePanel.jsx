@@ -204,6 +204,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]         = useState(emptyForm());
   const [saving, setSaving]     = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [confirmDel, setConfirmDel] = useState(null);
 
   // ── load ─────────────────────────────────────────────────────────
@@ -264,6 +265,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const handleSave = async () => {
     if (!form.titolo.trim()) return;
     setSaving(true);
+    setSaveError("");
     const payload = {
       studio:     studioId,
       project_id: projectId,
@@ -275,12 +277,17 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       presenti:   form.presenti,
       updated_at: new Date().toISOString(),
     };
+    let err;
     if (editingId) {
-      await supabase.from("report_cantiere").update(payload).eq("id", editingId);
+      ({ error: err } = await supabase.from("report_cantiere").update(payload).eq("id", editingId));
     } else {
-      await supabase.from("report_cantiere").insert(payload);
+      ({ error: err } = await supabase.from("report_cantiere").insert(payload));
     }
     setSaving(false);
+    if (err) {
+      setSaveError(err.message);
+      return;
+    }
     setView("list");
     setEditingId(null);
     load();
@@ -502,6 +509,13 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                   rows={10}
                   style={{ ...inputSt, resize:'vertical', minHeight:180, lineHeight:1.6 }} />
               </div>
+
+              {/* Errore salvataggio */}
+              {saveError && (
+                <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c', borderRadius:2 }}>
+                  ⚠ Errore: {saveError}
+                </div>
+              )}
 
               {/* Footer form */}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
