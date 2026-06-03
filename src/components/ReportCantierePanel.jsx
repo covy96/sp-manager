@@ -293,7 +293,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setStudio(st);
     setContacts(ctc || []);
     setHeaderForm({
-      report_header_name:   st?.report_header_name   || st?.name || "",
+      report_header_name:   st?.report_header_name   ?? "",
       report_header_text:   st?.report_header_text   || "",
       report_logo_url:      st?.report_logo_url      || "",
       report_footer_left:   st?.report_footer_left   || "",
