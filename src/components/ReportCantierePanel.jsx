@@ -127,12 +127,15 @@ async function generatePdf({ report, project, studio }) {
           i.src = b64;
         });
         if (imgEl) {
-          const maxW = 45, maxH = 25;
+          // Dimensione logo in base all'impostazione (default: medio = 25mm)
+          const logoSize = s?.report_logo_size || "medium";
+          const maxW = logoSize === "small" ? 16 : logoSize === "large" ? 35 : 25;
+          const maxH = logoSize === "small" ? 10 : logoSize === "large" ? 20 : 14;
           const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
           let w = maxW, h = maxW / ratio;
           if (h > maxH) { h = maxH; w = maxH * ratio; }
-          doc.addImage(b64, "PNG", W - mr - w, y - 4, w, h, undefined, "FAST");
-          logoBottomY = y - 4 + h;
+          doc.addImage(b64, "PNG", W - mr - w, y - 2, w, h, undefined, "FAST");
+          logoBottomY = y - 2 + h;
         }
       } catch {}
     }
@@ -306,7 +309,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   // Header + footer settings
   const [headerForm, setHeaderForm]   = useState({
     report_header_name:"",
-    report_header_text:"", report_logo_url:"",
+    report_header_text:"", report_logo_url:"", report_logo_size:"medium",
     report_footer_left:"", report_footer_center:"", report_footer_right:"",
     report_footer_font:"helvetica",
     report_body_font_enabled: false,
@@ -323,7 +326,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
       supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
-      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled").eq("id",studioId).single(),
+      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_logo_size,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
     ]);
     setReports(reps || []);
@@ -334,6 +337,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       report_header_name:   st?.report_header_name   ?? "",
       report_header_text:   st?.report_header_text   || "",
       report_logo_url:      st?.report_logo_url      || "",
+      report_logo_size:     st?.report_logo_size     || "medium",
       report_footer_left:   st?.report_footer_left   || "",
       report_footer_center: st?.report_footer_center || "",
       report_footer_right:  st?.report_footer_right  || "",
@@ -428,6 +432,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       report_header_name:   headerForm.report_header_name   || null,
       report_header_text:   headerForm.report_header_text   || null,
       report_logo_url:      headerForm.report_logo_url      || null,
+      report_logo_size:     headerForm.report_logo_size     || "medium",
       report_footer_left:   headerForm.report_footer_left   || null,
       report_footer_center: headerForm.report_footer_center || null,
       report_footer_right:  headerForm.report_footer_right  || null,
@@ -656,6 +661,17 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                       </button>
                     )}
                   </div>
+                  {headerForm.report_logo_url && (
+                    <div style={{ display:'flex', gap:4, marginTop:8 }}>
+                      {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl])=>(
+                        <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_logo_size:val}))}
+                          style={{ width:28, height:28, border:`0.5px solid ${headerForm.report_logo_size===val?T.navy:T.borderMd}`, background:headerForm.report_logo_size===val?T.navyLight:'transparent', color:headerForm.report_logo_size===val?T.navy:T.muted, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, fontWeight:600 }}>
+                          {lbl}
+                        </button>
+                      ))}
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, alignSelf:'center', marginLeft:4 }}>dimensione logo</span>
+                    </div>
+                  )}
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:5 }}>PNG consigliato · appare in alto a destra</div>
                 </div>
 
