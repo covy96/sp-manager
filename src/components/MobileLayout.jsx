@@ -77,17 +77,6 @@ const MENU_SECTIONS = [
       { label:'Analisi', path:'/analisi',         icon:'analisi', roles:'owner', minPlan:'free' },
     ],
   },
-  {
-    title: 'Impostazioni',
-    items: [
-      { label:'Profilo Studio', path:'/impostazioni/profilo-studio', icon:'settings', roles:'all', minPlan:'free' },
-      { label:'Aspetto',        path:'/impostazioni/aspetto',        icon:'aspetto',  roles:'all', minPlan:'free' },
-      { label:'Clienti',        path:'/impostazioni/clienti',        icon:'profilo',  roles:'all', minPlan:'free' },
-      { label:'Servizi',        path:'/impostazioni/servizi',        icon:'settings', roles:'all', minPlan:'free' },
-      { label:'Esporta dati',   path:'/impostazioni/esporta',        icon:'esporta',  roles:'all', minPlan:'free' },
-      { label:'Cestino',        path:'/impostazioni/cestino',        icon:'cestino',  roles:'all', minPlan:'free' },
-    ],
-  },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
@@ -180,7 +169,7 @@ export default function MobileLayout({ session, children }) {
             </button>
 
             {settingsOpen && (
-              <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 52px)', right:0, width:240, background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.5':'0.15'})`, borderRadius:'0 0 12px 12px' }}>
+              <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 58px)', right:8, left:8, maxWidth:360, margin:'0 auto', background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.5':'0.15'})`, borderRadius:14, maxHeight:'80vh', overflowY:'auto' }}>
                 {/* User info */}
                 <div style={{ padding:'14px 16px', borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -213,10 +202,13 @@ export default function MobileLayout({ session, children }) {
                 <div style={{ padding:'6px 0', borderTop:`0.5px solid ${T.border}` }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Studio</div>
                   {[
-                    { label:'Aspetto',    icon:'aspetto',  path:'/impostazioni/aspetto'         },
-                    { label:'Servizi',    icon:'settings', path:'/impostazioni/servizi'          },
-                    { label:'Notifiche', icon:'settings',  path:'/impostazioni/notifiche'        },
-                    { label:'Clienti',   icon:'profilo',   path:'/impostazioni/clienti'          },
+                    { label:'Profilo Studio', icon:'settings', path:'/impostazioni/profilo-studio' },
+                    { label:'Aspetto',        icon:'aspetto',  path:'/impostazioni/aspetto'        },
+                    { label:'Clienti',        icon:'profilo',  path:'/impostazioni/clienti'        },
+                    { label:'Servizi',        icon:'settings', path:'/impostazioni/servizi'        },
+                    { label:'Notifiche',      icon:'settings', path:'/impostazioni/notifiche'      },
+                    { label:'Esporta dati',   icon:'esporta',  path:'/impostazioni/esporta'        },
+                    { label:'Cestino',        icon:'cestino',  path:'/impostazioni/cestino'        },
                   ].map(item=>(
                     <button key={item.path} onClick={()=>{ navigate(item.path); setSettingsOpen(false); }}
                       style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
