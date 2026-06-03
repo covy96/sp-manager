@@ -6,6 +6,7 @@ import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
 import AnagraficaPanel from '../components/AnagraficaPanel';
 import OrePanel from '../components/OrePanel';
 import CommessePanel from '../components/CommessePanel';
+import ReportCantierePanel from '../components/ReportCantierePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -549,6 +550,7 @@ export default function ProjectDetailPage() {
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
             <OrePanel projectId={id} studioId={studioId} />
+            <ReportCantierePanel projectId={id} studioId={studioId} />
             <AnagraficaPanel projectId={id} studioId={studioId} />
             <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
