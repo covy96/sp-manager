@@ -550,7 +550,7 @@ export default function ProjectDetailPage() {
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
             <OrePanel projectId={id} studioId={studioId} />
-            <ReportCantierePanel projectId={id} studioId={studioId} />
+            {teamMember?.user_name === "Giacomo Coviello" && <ReportCantierePanel projectId={id} studioId={studioId} />}
             <AnagraficaPanel projectId={id} studioId={studioId} />
             <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
