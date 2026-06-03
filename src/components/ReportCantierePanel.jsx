@@ -116,9 +116,7 @@ async function generatePdf({ report, project, studio }) {
   const headerName = s?.report_header_name ?? "";
   if (headerName) { doc.text(headerName, ml, y); y += 5; }
 
-  const headerText = s?.report_header_text?.trim()
-    || [s?.indirizzo, s?.città, s?.cap].filter(Boolean).join(", ")
-    || "";
+  const headerText = s?.report_header_text?.trim() || "";
   if (headerText) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
@@ -692,13 +690,41 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 </div>
 
                 {/* Anteprima footer */}
-                <div style={{ marginTop:12, background:T.bg, border:`0.5px solid ${T.border}`, padding:'10px 14px' }}>
-                  <div style={{ height:1, background:'rgba(150,150,150,0.3)', marginBottom:8 }}/>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, color:T.muted,
-                    fontFamily: headerForm.report_footer_font==='times' ? 'Georgia, serif' : headerForm.report_footer_font==='courier' ? "'Courier New', monospace" : 'Arial, sans-serif' }}>
-                    <span style={{ flex:1, whiteSpace:'pre-line' }}>{(headerForm.report_footer_left||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
-                    <span style={{ flex:1, textAlign:'center', whiteSpace:'pre-line' }}>{(headerForm.report_footer_center||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
-                    <span style={{ flex:1, textAlign:'right', whiteSpace:'pre-line' }}>{(headerForm.report_footer_right||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
+                <div style={{ marginTop:12 }}>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
+                  <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'12px 14px' }}>
+                    <div style={{ height:1, background:'rgba(150,150,150,0.4)', marginBottom:10 }}/>
+                    <div style={{ display:'flex', gap:8, alignItems:'flex-start',
+                      fontFamily: headerForm.report_footer_font==='times' ? 'Georgia, serif' : headerForm.report_footer_font==='courier' ? "'Courier New', monospace" : 'Arial, sans-serif',
+                      fontSize:9, color:T.muted }}>
+                      {/* Sinistra */}
+                      <div style={{ flex:1, borderLeft:`2px solid ${T.border}`, paddingLeft:6 }}>
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, color:T.muted, marginBottom:3, opacity:0.6 }}>SINISTRA</div>
+                        {(headerForm.report_footer_left||"").split("\n").map((line,i)=>(
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:4, minHeight:14 }}>
+                            {line ? <span>{line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span> : <span style={{ opacity:0.3 }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Centro */}
+                      <div style={{ flex:1, borderLeft:`2px solid ${T.border}`, paddingLeft:6, textAlign:'center' }}>
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, color:T.muted, marginBottom:3, opacity:0.6 }}>CENTRO</div>
+                        {(headerForm.report_footer_center||"").split("\n").map((line,i)=>(
+                          <div key={i} style={{ minHeight:14 }}>
+                            {line ? line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") : <span style={{ opacity:0.3 }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Destra */}
+                      <div style={{ flex:1, borderLeft:`2px solid ${T.border}`, paddingLeft:6, textAlign:'right' }}>
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, color:T.muted, marginBottom:3, opacity:0.6 }}>DESTRA</div>
+                        {(headerForm.report_footer_right||"").split("\n").map((line,i)=>(
+                          <div key={i} style={{ minHeight:14 }}>
+                            {line ? line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") : <span style={{ opacity:0.3 }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
