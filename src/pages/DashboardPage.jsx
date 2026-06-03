@@ -346,7 +346,7 @@ export default function DashboardPage() {
             fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em',
             color: T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4,
           }}>
-            {greeting}{teamMember?.user_name ? `, ${teamMember.user_name}` : ""}
+            {greeting}{teamMember?.user_name ? `, ${teamMember.user_name.trim().split(/\s+/)[0]}` : ""}
           </h1>
           <p style={{
             fontFamily: "'IBM Plex Mono', monospace",
