@@ -503,9 +503,25 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     }
   };
 
-  // ── elimina report ───────────────────────────────────────────────
+  // ── elimina report + foto dallo storage ─────────────────────────
   const handleDelete = async (id) => {
-    await supabase.rpc("elimina_report_cantiere", { p_id:id });
+    // 1. Recupera tutte le foto del report
+    const { data: fotoList } = await supabase
+      .from("report_cantiere_foto").select("id, url").eq("report_id", id);
+
+    // 2. Elimina file dallo storage
+    if (fotoList?.length) {
+      const paths = fotoList
+        .map(f => f.url.split("/report-foto/")[1]?.split("?")[0])
+        .filter(Boolean);
+      if (paths.length) await supabase.storage.from("report-foto").remove(paths);
+
+      // 3. Elimina record foto dal DB
+      await supabase.from("report_cantiere_foto").delete().eq("report_id", id);
+    }
+
+    // 4. Soft-delete del report
+    await supabase.rpc("elimina_report_cantiere", { p_id: id });
     setConfirmDel(null); load();
   };
 
