@@ -111,8 +111,8 @@ async function generatePdf({ report, project, studio }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(19, 49, 92);
-  doc.text(studio?.report_header_name || studio?.name || "Studio", ml, y);
-  y += 5;
+  const headerName = studio?.report_header_name ?? "";
+  if (headerName) { doc.text(headerName, ml, y); y += 5; }
 
   const headerText = studio?.report_header_text?.trim()
     || [studio?.indirizzo, studio?.città, studio?.cap].filter(Boolean).join(", ")
@@ -228,7 +228,8 @@ async function generatePdf({ report, project, studio }) {
 
     // Fallback se tutti e tre vuoti
     if (!fLeft && !fCenter && !fRight) {
-      doc.text(`${studio?.report_header_name || studio?.name || ""} — Report di Cantiere`, ml, fy + 5);
+      const fn = studio?.report_header_name ?? studio?.name ?? "";
+      doc.text(`${fn}${fn ? " — " : ""}Report di Cantiere`, ml, fy + 5);
       doc.text(`Pagina ${i} di ${tot}`, W - mr, fy + 5, { align:"right" });
     }
   }
@@ -603,7 +604,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{headerForm.report_header_name || studio?.name || "Nome Studio"}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.navy, minHeight:20 }}>{headerForm.report_header_name || ""}</div>
                     <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>
                       {headerForm.report_header_text || ""}
                     </div>
