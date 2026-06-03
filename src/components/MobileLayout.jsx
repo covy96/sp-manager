@@ -47,42 +47,45 @@ const TAB_ITEMS = [
   { label:'Menu',      path:null,          icon:'menu'       },
 ];
 
-// Menu sections — each entry can have an icon
+// Menu sections — stesso ordine e raggruppamento della sidebar desktop
 const MENU_SECTIONS = [
   {
     title: 'Principale',
     items: [
-      { label:'Dashboard',    path:'/dashboard',         icon:'dashboard',  roles:'all', minPlan:'free'   },
-      { label:'Calendario',   path:'/calendario',        icon:'calendario', roles:'all', minPlan:'free'   },
-      { label:'Analisi',      path:'/analisi',           icon:'analisi',    roles:'owner', minPlan:'free' },
+      { label:'Dashboard',  path:'/dashboard',    icon:'dashboard',  roles:'all', minPlan:'free' },
+      { label:'Scrivania',  path:'/scrivania',    icon:'scrivania',  roles:'all', minPlan:'free' },
+      { label:'Timesheet',  path:'/timesheet',    icon:'timesheet',  roles:'all', minPlan:'free' },
     ],
   },
   {
-    title: 'Finanza',
+    title: 'Lavoro',
     items: [
-      { label:'Offerte',      path:'/offerte',                    icon:'offerte',     roles:'pm',  minPlan:'studio' },
-      { label:'Monitoraggio', path:'/monitoraggio-commesse',      icon:'monitoraggio',roles:'pm',  minPlan:'studio' },
-      { label:'Proforma',     path:'/proforma',                   icon:'proforma',    roles:'pm',  minPlan:'studio' },
-      { label:'Fatture',      path:'/fatture',                    icon:'fatture',     roles:'pm',  minPlan:'studio' },
+      { label:'Progetti',     path:'/progetti',               icon:'progetti',     roles:'all', minPlan:'free'   },
+      { label:'Offerte',      path:'/offerte',                icon:'offerte',      roles:'pm',  minPlan:'studio' },
+      { label:'Commesse',     path:'/commesse',               icon:'commesse',     roles:'all', minPlan:'free'   },
+      { label:'Monitoraggio', path:'/monitoraggio-commesse',  icon:'monitoraggio', roles:'pm',  minPlan:'studio' },
+      { label:'Proforma',     path:'/proforma',               icon:'proforma',     roles:'pm',  minPlan:'studio' },
+      { label:'Fatture',      path:'/fatture',                icon:'fatture',      roles:'pm',  minPlan:'studio' },
     ],
   },
   {
     title: 'Studio',
     items: [
-      { label:'Team',         path:'/team',                       icon:'team',    roles:'all', minPlan:'studio' },
-      { label:'Report',       path:'/report',                     icon:'report',  roles:'pm',  minPlan:'studio' },
-      { label:'Gantt',        path:'/gantt-progetti',             icon:'gantt',   roles:'pm',  minPlan:'studio' },
+      { label:'Team',    path:'/team',            icon:'team',    roles:'all', minPlan:'studio' },
+      { label:'Report',  path:'/report',          icon:'report',  roles:'pm',  minPlan:'studio' },
+      { label:'Gantt',   path:'/gantt-progetti',  icon:'gantt',   roles:'pm',  minPlan:'studio' },
+      { label:'Analisi', path:'/analisi',         icon:'analisi', roles:'owner', minPlan:'free' },
     ],
   },
   {
     title: 'Impostazioni',
     items: [
-      { label:'Profilo Studio', path:'/impostazioni/profilo-studio', icon:'settings',  roles:'all', minPlan:'free' },
-      { label:'Aspetto',        path:'/impostazioni/aspetto',         icon:'aspetto',   roles:'all', minPlan:'free' },
-      { label:'Clienti',        path:'/impostazioni/clienti',         icon:'profilo',   roles:'all', minPlan:'free' },
-      { label:'Servizi',        path:'/impostazioni/servizi',         icon:'settings',  roles:'all', minPlan:'free' },
-      { label:'Esporta dati',   path:'/impostazioni/esporta',         icon:'esporta',   roles:'all', minPlan:'free' },
-      { label:'Cestino',        path:'/impostazioni/cestino',         icon:'cestino',   roles:'all', minPlan:'free' },
+      { label:'Profilo Studio', path:'/impostazioni/profilo-studio', icon:'settings', roles:'all', minPlan:'free' },
+      { label:'Aspetto',        path:'/impostazioni/aspetto',        icon:'aspetto',  roles:'all', minPlan:'free' },
+      { label:'Clienti',        path:'/impostazioni/clienti',        icon:'profilo',  roles:'all', minPlan:'free' },
+      { label:'Servizi',        path:'/impostazioni/servizi',        icon:'settings', roles:'all', minPlan:'free' },
+      { label:'Esporta dati',   path:'/impostazioni/esporta',        icon:'esporta',  roles:'all', minPlan:'free' },
+      { label:'Cestino',        path:'/impostazioni/cestino',        icon:'cestino',  roles:'all', minPlan:'free' },
     ],
   },
 ];
