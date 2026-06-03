@@ -471,10 +471,26 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const { data:{ publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
     const newUrl = publicUrl + "?t=" + Date.now();
     setHeaderForm(h => ({ ...h, report_logo_url: newUrl }));
-    // Auto-save logo subito
+    // Auto-save logo su studios
     const { error: saveErr } = await supabase.from("studios").update({ report_logo_url: newUrl }).eq("id", studioId);
-    if (saveErr) { setHeaderMsg("Upload OK ma salvataggio fallito: " + saveErr.message); }
-    else { setStudio(s => ({ ...s, report_logo_url: newUrl })); setHeaderMsg("Logo salvato!"); setTimeout(()=>setHeaderMsg(""),3000); }
+    if (saveErr) { setHeaderMsg("Upload OK ma salvataggio fallito: " + saveErr.message); setUploadingLogo(false); return; }
+
+    // Aggiorna anche gli snapshot di tutti i report esistenti (solo il logo)
+    const { data: existingReports } = await supabase
+      .from("report_cantiere").select("id, header_snapshot")
+      .eq("studio", studioId).is("deleted_at", null);
+
+    if (existingReports?.length) {
+      await Promise.all(existingReports.map(r =>
+        supabase.from("report_cantiere").update({
+          header_snapshot: { ...(r.header_snapshot || {}), report_logo_url: newUrl }
+        }).eq("id", r.id)
+      ));
+    }
+
+    setStudio(s => ({ ...s, report_logo_url: newUrl }));
+    setHeaderMsg("Logo salvato e aggiornato su tutti i report!");
+    setTimeout(()=>setHeaderMsg(""), 3000);
     setUploadingLogo(false);
   };
 
