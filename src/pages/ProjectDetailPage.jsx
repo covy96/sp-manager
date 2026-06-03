@@ -10,6 +10,7 @@ import ReportCantierePanel from '../components/ReportCantierePanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { notifyTaskAssigned } from '../lib/notifications';
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
@@ -35,6 +36,7 @@ function sortTasksForColumn(tasks) {
 // ── TASK EDIT POPUP ───────────────────────────────────────────────
 function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClose, isSubtask }) {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const ref = useRef(null);
   const [form, setForm] = useState({
     title: task.title ?? task.name ?? "",
@@ -45,6 +47,8 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  useBodyScrollLock(true);
 
   useEffect(() => {
     const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -73,54 +77,61 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   };
   const labelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
 
-  return (
-    <div ref={ref} onClick={e => e.stopPropagation()} style={{
-      position: 'absolute', left: 0, top: '100%', zIndex: 50, marginTop: 4,
-      width: 280, background: T.surface, border: `0.5px solid ${T.borderMd}`,
-      padding: 14, boxShadow: `0 4px 16px ${T.border}`,
-    }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+  // Form condiviso tra mobile e desktop
+  const formContent = (
+    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      <div>
+        <label style={labelSt}>Nome</label>
+        <input type="text" value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))} style={inputSt} autoFocus/>
+      </div>
+      {!isSubtask && categories.length > 0 && (
         <div>
-          <label style={labelSt}>Nome</label>
-          <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} style={inputSt} autoFocus />
-        </div>
-        {!isSubtask && categories.length > 0 && (
-          <div>
-            <label style={labelSt}>Categoria</label>
-            <select value={form.categoria} onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))} style={inputSt}>
-              <option value="">Nessuna</option>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-        )}
-        <div>
-          <label style={labelSt}>Assegnato a</label>
-          <select value={form.assigned_member} onChange={e => setForm(p => ({ ...p, assigned_member: e.target.value }))} style={inputSt}>
-            <option value="">Non assegnato</option>
-            {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email || "Membro"}</option>)}
+          <label style={labelSt}>Categoria</label>
+          <select value={form.categoria} onChange={e=>setForm(p=>({...p,categoria:e.target.value}))} style={inputSt}>
+            <option value="">Nessuna</option>
+            {categories.map(c=><option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        <div>
-          <label style={labelSt}>Data pianificata</label>
-          <input type="date" value={form.data_pianificata} onChange={e => setForm(p => ({ ...p, data_pianificata: e.target.value }))} style={inputSt} />
-        </div>
-        <div>
-          <label style={labelSt}>Note</label>
-          <textarea rows={2} value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} style={{ ...inputSt, resize: 'vertical' }} />
-        </div>
-        <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
-          <button onClick={handleSave} disabled={saving || !form.title.trim()} style={{
-            flex: 1, padding: '7px 0', background: T.navy, color: T.bg,
-            border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 11,
-            fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.08em', opacity: saving ? 0.6 : 1,
-          }}>{saving ? "Salvo..." : "Salva"}</button>
-          <button onClick={handleDelete} disabled={deleting} style={{
-            padding: '7px 12px', background: T.red, color: T.surface,
-            border: 'none', cursor: 'pointer', fontSize: 11,
-            fontFamily: "'IBM Plex Mono', monospace",
-          }}>{deleting ? "..." : "Elimina"}</button>
-        </div>
+      )}
+      <div>
+        <label style={labelSt}>Assegnato a</label>
+        <select value={form.assigned_member} onChange={e=>setForm(p=>({...p,assigned_member:e.target.value}))} style={inputSt}>
+          <option value="">Non assegnato</option>
+          {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email||"Membro"}</option>)}
+        </select>
       </div>
+      <div>
+        <label style={labelSt}>Data pianificata</label>
+        <input type="date" value={form.data_pianificata} onChange={e=>setForm(p=>({...p,data_pianificata:e.target.value}))} style={inputSt}/>
+      </div>
+      <div>
+        <label style={labelSt}>Note</label>
+        <textarea rows={2} value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{...inputSt,resize:'vertical'}}/>
+      </div>
+      <div style={{ display:'flex', gap:8, paddingTop:4 }}>
+        <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'7px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace", letterSpacing:'0.08em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
+        <button onClick={handleDelete} disabled={deleting} style={{ padding:'7px 12px', background:T.red, color:T.surface, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>{deleting?"...":"Elimina"}</button>
+      </div>
+    </div>
+  );
+
+  // Su mobile: modal centrato fullscreen
+  if (isMobile) return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div ref={ref} onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:20, maxHeight:'85vh', overflowY:'auto' }}>
+        {formContent}
+      </div>
+    </div>
+  );
+
+  // Desktop: dropdown assoluto
+  return (
+    <div ref={ref} onClick={e=>e.stopPropagation()} style={{
+      position:'absolute', left:0, top:'100%', zIndex:50, marginTop:4,
+      width:280, background:T.surface, border:`0.5px solid ${T.borderMd}`,
+      padding:14, boxShadow:`0 4px 16px ${T.border}`,
+    }}>
+      {formContent}
     </div>
   );
 }
