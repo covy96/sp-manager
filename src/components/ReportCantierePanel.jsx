@@ -302,6 +302,14 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setLoading(false);
   }, [projectId, studioId]);
 
+  // Carica il conteggio subito (per mostrare badge nel pulsante)
+  useEffect(() => {
+    if (!projectId || !studioId) return;
+    supabase.from("report_cantiere").select("id", { count:"exact", head:true }).eq("project_id", projectId).is("deleted_at", null)
+      .then(({ count }) => { if (count != null) setReports(Array(count).fill({})); });
+  }, [projectId, studioId]);
+
+  // Carica tutto quando si apre il modal
   useEffect(() => { if (open) load(); }, [open, load]);
 
   // ── nuovo report ─────────────────────────────────────────────────
