@@ -1,15 +1,15 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-const FieldLabel = ({ children, required }) => {
+const FL = ({ children, required }) => {
   const { T } = useTheme();
   return (
     <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>
-      {children}{required && <span style={{ color:T.red, marginLeft:2 }}>*</span>}
+      {children}{required && <span style={{ color:'#ef4444', marginLeft:2 }}>*</span>}
     </div>
   );
 };
@@ -20,8 +20,17 @@ const inputCss = (T) => ({
   fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
 });
 
-const BtnPrimary = ({ children, onClick, disabled, style={} }) => {
+const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
   const { T } = useTheme();
+  if (ghost) return (
+    <button onClick={onClick} disabled={disabled} style={{
+      background:'transparent', border:`0.5px solid ${danger ? '#ef4444' : T.borderMd}`,
+      color: danger ? '#ef4444' : T.ink,
+      fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em',
+      textTransform:'uppercase', padding:'8px 18px', cursor:disabled?'not-allowed':'pointer',
+      opacity:disabled?0.5:1, ...style,
+    }}>{children}</button>
+  );
   return (
     <button onClick={onClick} disabled={disabled} style={{
       background:T.navy, color:T.bg, border:'none',
@@ -30,18 +39,8 @@ const BtnPrimary = ({ children, onClick, disabled, style={} }) => {
     }}>{children}</button>
   );
 };
-const BtnGhost = ({ children, onClick, danger, style={} }) => {
-  const { T } = useTheme();
-  return (
-    <button onClick={onClick} style={{
-      background:'transparent', border:`0.5px solid ${danger?T.red:T.borderMd}`,
-      color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
-      letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer', ...style,
-    }}>{children}</button>
-  );
-};
 
-// Data/ora locale → input datetime-local value
+// Datetime helpers
 const toInputDt = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -49,60 +48,87 @@ const toInputDt = (iso) => {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 const fromInputDt = (v) => v ? new Date(v).toISOString() : new Date().toISOString();
-
 const formatDt = (iso) => {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
 };
 
+// Carica un'immagine da URL come base64 (per jsPDF)
+async function urlToBase64(url) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
 // ── PDF generator ─────────────────────────────────────────────────────────────
-function generatePdf({ report, project, studio }) {
+async function generatePdf({ report, project, studio }) {
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 20, mr = 20, cw = W - ml - mr;
-  let y = 20;
+  let y = 18;
 
-  // ── Intestazione studio ──────────────────────────────────────────
+  // ── Logo ─────────────────────────────────────────────────────────
+  let logoLoaded = false;
+  if (studio?.report_logo_url) {
+    const b64 = await urlToBase64(studio.report_logo_url);
+    if (b64) {
+      try {
+        // Dimensione max logo: 40×20mm, allineato a destra
+        doc.addImage(b64, "AUTO", W - mr - 40, y - 4, 40, 20, undefined, "FAST");
+        logoLoaded = true;
+      } catch {}
+    }
+  }
+
+  // ── Nome studio ──────────────────────────────────────────────────
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.setTextColor(19, 49, 92); // T.navy approx
+  doc.setTextColor(19, 49, 92);
   doc.text(studio?.name || "Studio", ml, y);
   y += 5;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(80, 80, 80);
+  // ── Testo intestazione custom (o fallback indirizzo/piva) ────────
+  const headerText = studio?.report_header_text?.trim()
+    || [studio?.indirizzo, studio?.città, studio?.cap].filter(Boolean).join(", ")
+    || "";
 
-  const studioLines = [
-    [studio?.indirizzo, studio?.città, studio?.cap].filter(Boolean).join(", "),
-    studio?.piva ? `P.IVA: ${studio.piva}` : "",
-  ].filter(Boolean);
-  studioLines.forEach(line => { doc.text(line, ml, y); y += 4.5; });
+  if (headerText) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    const lines = doc.splitTextToSize(headerText, logoLoaded ? cw - 45 : cw);
+    lines.forEach(line => { doc.text(line, ml, y); y += 4.5; });
+  }
 
   // Linea divisoria
   y += 3;
   doc.setDrawColor(19, 49, 92);
   doc.setLineWidth(0.5);
   doc.line(ml, y, W - mr, y);
-  y += 8;
+  y += 10;
 
-  // ── Titolo report ────────────────────────────────────────────────
+  // ── Titolo PDF ───────────────────────────────────────────────────
+  const pdfTitle = (report.titolo || "Report di Cantiere").toUpperCase();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(15);
   doc.setTextColor(19, 49, 92);
-  const titleText = (report.titolo || "Report di Cantiere").toUpperCase();
-  doc.text(titleText, W / 2, y, { align:"center" });
+  doc.text(pdfTitle, W / 2, y, { align:"center" });
   y += 12;
 
   // ── Metadati ─────────────────────────────────────────────────────
   const meta = [
-    ["Progetto",        project?.name || "—"],
-    ["Cliente",         project?.client || "—"],
-    ["Luogo",           report.luogo || project?.address || "—"],
-    ["Data e ora",      formatDt(report.data_ora)],
-    ["Sopralluogo N.",  String(report.numero)],
+    ["Progetto",       project?.name || "—"],
+    ["Cliente",        project?.client || "—"],
+    ["Luogo",          report.luogo || project?.address || "—"],
+    ["Data e ora",     formatDt(report.data_ora)],
+    ["Sopralluogo N.", String(report.numero)],
   ];
-
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
   doc.setTextColor(30, 30, 30);
   meta.forEach(([k, v]) => {
@@ -120,7 +146,6 @@ function generatePdf({ report, project, studio }) {
     doc.setTextColor(19, 49, 92);
     doc.text("PRESENTI", ml, y);
     y += 4;
-
     autoTable(doc, {
       startY: y,
       margin: { left: ml, right: mr },
@@ -131,14 +156,10 @@ function generatePdf({ report, project, studio }) {
         p.email || "—",
         p.telefono || "—",
       ]),
-      headStyles: {
-        fillColor: [19, 49, 92], textColor: [255,255,255],
-        fontStyle:"bold", fontSize:8, cellPadding:3,
-      },
+      headStyles: { fillColor:[19,49,92], textColor:[255,255,255], fontStyle:"bold", fontSize:8, cellPadding:3 },
       bodyStyles: { fontSize:8, cellPadding:3, textColor:[30,30,30] },
       alternateRowStyles: { fillColor:[245,247,250] },
-      tableLineWidth: 0.1,
-      tableLineColor: [200,200,200],
+      tableLineWidth:0.1, tableLineColor:[200,200,200],
     });
     y = doc.lastAutoTable.finalY + 10;
   }
@@ -150,77 +171,79 @@ function generatePdf({ report, project, studio }) {
     doc.setTextColor(19, 49, 92);
     doc.text("REPORT", ml, y);
     y += 5;
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(30, 30, 30);
-    const lines = doc.splitTextToSize(report.contenuto, cw);
-    // page break handling
-    lines.forEach(line => {
+    doc.splitTextToSize(report.contenuto, cw).forEach(line => {
       if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(line, ml, y);
-      y += 5.5;
+      doc.text(line, ml, y); y += 5.5;
     });
   }
 
   // ── Footer ───────────────────────────────────────────────────────
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
+  const tot = doc.getNumberOfPages();
+  for (let i = 1; i <= tot; i++) {
     doc.setPage(i);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(160, 160, 160);
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(160,160,160);
     doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, 290);
-    doc.text(`Pagina ${i} di ${totalPages}`, W - mr, 290, { align:"right" });
+    doc.text(`Pagina ${i} di ${tot}`, W - mr, 290, { align:"right" });
   }
 
-  const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\- ]/g, "").trim() || "report";
+  const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\- ]/g,"").trim() || "report";
   doc.save(`${safeTitle}_sopralluogo_${report.numero}.pdf`);
 }
 
-// ── EMPTY FORM ────────────────────────────────────────────────────────────────
-const emptyForm = () => ({
+// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+const emptyForm = (address = "") => ({
+  nome_interno: "",
   titolo: "",
-  luogo: "",
+  luogo: address,
   data_ora: new Date().toISOString(),
   contenuto: "",
   presenti: [],
 });
 
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function ReportCantierePanel({ projectId, studioId }) {
   const { T } = useTheme();
   const inputSt = inputCss(T);
+  const fileRef = useRef(null);
 
-  const [open, setOpen]         = useState(false);
-  const [reports, setReports]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [project, setProject]   = useState(null);
-  const [studio, setStudio]     = useState(null);
-  const [contacts, setContacts] = useState([]); // project_contacts + global_contacts
+  const [open, setOpen]       = useState(false);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState(null);
+  const [studio, setStudio]   = useState(null);
+  const [contacts, setContacts] = useState([]);
 
-  // view: "list" | "form"
-  const [view, setView]         = useState("list");
+  // "list" | "form" | "header"
+  const [view, setView]           = useState("list");
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm]         = useState(emptyForm());
-  const [saving, setSaving]     = useState(false);
+  const [form, setForm]           = useState(emptyForm());
+  const [saving, setSaving]       = useState(false);
   const [saveError, setSaveError] = useState("");
   const [confirmDel, setConfirmDel] = useState(null);
+
+  // Header settings
+  const [headerForm, setHeaderForm]   = useState({ report_header_text:"", report_logo_url:"" });
+  const [savingHeader, setSavingHeader] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [headerMsg, setHeaderMsg]     = useState("");
 
   // ── load ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!projectId || !studioId) return;
     setLoading(true);
     const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
-      supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at", null).order("numero", { ascending:false }),
-      supabase.from("projects").select("id,name,client,address").eq("id", projectId).single(),
-      supabase.from("studios").select("name,indirizzo,città,cap,piva").eq("id", studioId).single(),
-      supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id", projectId),
+      supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
+      supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
+      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_text,report_logo_url").eq("id",studioId).single(),
+      supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
     ]);
     setReports(reps || []);
     setProject(proj);
     setStudio(st);
     setContacts(ctc || []);
+    setHeaderForm({ report_header_text: st?.report_header_text || "", report_logo_url: st?.report_logo_url || "" });
     setLoading(false);
   }, [projectId, studioId]);
 
@@ -228,142 +251,151 @@ export default function ReportCantierePanel({ projectId, studioId }) {
 
   // ── nuovo report ─────────────────────────────────────────────────
   const openNew = () => {
-    const nextNum = (reports[0]?.numero ?? 0) + 1; // reports sorted desc
-    const base = emptyForm();
-    base.luogo = project?.address || "";
-    // Pre-popola presenti dall'anagrafica progetto
+    const nextNum = (reports[0]?.numero ?? 0) + 1;
+    const base = emptyForm(project?.address || "");
     base.presenti = contacts.map(pc => {
       const gc = pc.global_contacts || {};
-      return {
-        figura:    pc.professional_role || "—",
-        azienda:   gc.company || "",
-        referente: gc.full_name || "",
-        email:     gc.email || "",
-        telefono:  gc.phone || "",
-      };
+      return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
     });
-    setForm({ ...base, _numero: nextNum });
-    setEditingId(null);
-    setView("form");
+    setForm({ ...base, _numero:nextNum });
+    setEditingId(null); setSaveError(""); setView("form");
   };
 
-  // ── modifica report ──────────────────────────────────────────────
   const openEdit = (r) => {
     setForm({
-      titolo:   r.titolo,
-      luogo:    r.luogo,
-      data_ora: r.data_ora,
-      contenuto:r.contenuto,
-      presenti: Array.isArray(r.presenti) ? r.presenti : [],
-      _numero:  r.numero,
+      nome_interno: r.nome_interno || "",
+      titolo:       r.titolo,
+      luogo:        r.luogo,
+      data_ora:     r.data_ora,
+      contenuto:    r.contenuto,
+      presenti:     Array.isArray(r.presenti) ? r.presenti : [],
+      _numero:      r.numero,
     });
-    setEditingId(r.id);
-    setView("form");
+    setEditingId(r.id); setSaveError(""); setView("form");
   };
 
-  // ── salva ────────────────────────────────────────────────────────
+  // ── salva report ─────────────────────────────────────────────────
   const handleSave = async () => {
-    if (!form.titolo.trim()) return;
-    setSaving(true);
-    setSaveError("");
+    if (!form.nome_interno.trim() && !form.titolo.trim()) return;
+    setSaving(true); setSaveError("");
     const payload = {
-      studio:     studioId,
-      project_id: projectId,
-      numero:     form._numero || 1,
-      titolo:     form.titolo.trim(),
-      luogo:      form.luogo.trim(),
-      data_ora:   form.data_ora || new Date().toISOString(),
-      contenuto:  form.contenuto,
-      presenti:   form.presenti,
-      updated_at: new Date().toISOString(),
+      studio:       studioId,
+      project_id:   projectId,
+      numero:       form._numero || 1,
+      nome_interno: form.nome_interno.trim() || form.titolo.trim(),
+      titolo:       form.titolo.trim() || form.nome_interno.trim(),
+      luogo:        form.luogo.trim(),
+      data_ora:     form.data_ora || new Date().toISOString(),
+      contenuto:    form.contenuto,
+      presenti:     form.presenti,
+      updated_at:   new Date().toISOString(),
     };
     let err;
     if (editingId) {
-      ({ error: err } = await supabase.from("report_cantiere").update(payload).eq("id", editingId));
+      ({ error:err } = await supabase.from("report_cantiere").update(payload).eq("id",editingId));
     } else {
-      ({ error: err } = await supabase.from("report_cantiere").insert(payload));
+      ({ error:err } = await supabase.from("report_cantiere").insert(payload));
     }
     setSaving(false);
-    if (err) {
-      setSaveError(err.message);
-      return;
-    }
-    setView("list");
-    setEditingId(null);
-    load();
+    if (err) { setSaveError(err.message); return; }
+    setView("list"); setEditingId(null); load();
   };
 
-  // ── elimina ──────────────────────────────────────────────────────
+  // ── elimina report ───────────────────────────────────────────────
   const handleDelete = async (id) => {
-    await supabase.rpc("elimina_report_cantiere", { p_id: id });
-    setConfirmDel(null);
-    load();
+    await supabase.rpc("elimina_report_cantiere", { p_id:id });
+    setConfirmDel(null); load();
+  };
+
+  // ── salva intestazione ───────────────────────────────────────────
+  const handleSaveHeader = async () => {
+    setSavingHeader(true); setHeaderMsg("");
+    const { error } = await supabase.from("studios").update({
+      report_header_text: headerForm.report_header_text || null,
+      report_logo_url:    headerForm.report_logo_url || null,
+    }).eq("id", studioId);
+    setSavingHeader(false);
+    if (error) { setHeaderMsg("Errore: " + error.message); return; }
+    setHeaderMsg("Salvato!");
+    setStudio(s => ({ ...s, ...headerForm }));
+    setTimeout(() => setHeaderMsg(""), 3000);
+  };
+
+  // ── upload logo ──────────────────────────────────────────────────
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true); setHeaderMsg("");
+    const ext  = file.name.split(".").pop();
+    const path = `${studioId}/logo.${ext}`;
+    const { error: upErr } = await supabase.storage.from("report-logos").upload(path, file, { upsert:true });
+    if (upErr) { setHeaderMsg("Errore upload: " + upErr.message); setUploadingLogo(false); return; }
+    const { data:{ publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
+    setHeaderForm(h => ({ ...h, report_logo_url: publicUrl + "?t=" + Date.now() }));
+    setUploadingLogo(false);
   };
 
   // ── presenti helpers ─────────────────────────────────────────────
-  const updatePresente = (idx, field, value) => {
-    setForm(f => {
-      const arr = [...f.presenti];
-      arr[idx] = { ...arr[idx], [field]: value };
-      return { ...f, presenti: arr };
-    });
-  };
-  const addPresente = () => setForm(f => ({
-    ...f, presenti: [...f.presenti, { figura:"", azienda:"", referente:"", email:"", telefono:"" }]
-  }));
-  const removePresente = (idx) => setForm(f => ({
-    ...f, presenti: f.presenti.filter((_,i) => i !== idx)
-  }));
+  const updateP = (i, k, v) => setForm(f => { const a=[...f.presenti]; a[i]={...a[i],[k]:v}; return {...f,presenti:a}; });
+  const addP    = ()        => setForm(f => ({ ...f, presenti:[...f.presenti, {figura:"",azienda:"",referente:"",email:"",telefono:""}] }));
+  const removeP = (i)       => setForm(f => ({ ...f, presenti:f.presenti.filter((_,j)=>j!==i) }));
 
-  // ── widget button ─────────────────────────────────────────────────
+  // ── WIDGET ────────────────────────────────────────────────────────
   const widget = (
-    <button onClick={() => setOpen(true)} style={{
+    <button onClick={()=>setOpen(true)} style={{
       display:'flex', alignItems:'center', gap:8,
       border:`0.5px solid ${reports.length > 0 ? T.navy : T.borderMd}`,
       background: reports.length > 0 ? T.navyLight : 'transparent',
       padding:'6px 12px', cursor:'pointer',
     }}>
-      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color: reports.length > 0 ? T.navy : T.muted, fontWeight:600 }}>
-        Report
-      </span>
-      {reports.length > 0 ? (
-        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>
-          {reports.length}
-        </span>
-      ) : (
-        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>+ Crea</span>
-      )}
+      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
+      {reports.length > 0
+        ? <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>{reports.length}</span>
+        : <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>+ Crea</span>}
     </button>
   );
 
   // ── MODAL ─────────────────────────────────────────────────────────
   const modal = open && (
     <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.55)', padding:16 }}>
-      <div style={{ width:'100%', maxWidth:780, background:T.surface, border:`0.5px solid ${T.borderMd}`, maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ width:'100%', maxWidth:800, background:T.surface, border:`0.5px solid ${T.borderMd}`, maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
-        {/* Header modal */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'20px 28px 16px', borderBottom:`0.5px solid ${T.border}`, position:'sticky', top:0, background:T.surface, zIndex:1 }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              {view === "form" && (
-                <button onClick={() => { setView("list"); setEditingId(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16, padding:0, marginRight:4 }}>←</button>
-              )}
-              <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>
-                {view === "list" ? "Report di Cantiere" : editingId ? "Modifica Report" : "Nuovo Report"}
+        {/* ── Header modal ── */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`0.5px solid ${T.border}`, position:'sticky', top:0, background:T.surface, zIndex:1 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            {view !== "list" && (
+              <button onClick={()=>{ setView("list"); setEditingId(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
+            )}
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>
+                  {view==="list" ? "Report di Cantiere" : view==="header" ? "Intestazione PDF" : editingId ? "Modifica Report" : "Nuovo Report"}
+                </span>
+                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:'#fff', background:'#16a34a', padding:'2px 7px', borderRadius:3 }}>BETA</span>
               </div>
-              <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:'#fff', background:T.green, padding:'2px 7px', borderRadius:3 }}>BETA</span>
-            </div>
-            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:3 }}>
-              {project?.name}{project?.client ? ` · ${project.client}` : ""}
+              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                {project?.name}{project?.client?` · ${project.client}`:""}
+              </div>
             </div>
           </div>
-          <button onClick={() => { setOpen(false); setView("list"); setEditingId(null); }}
-            style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:22, lineHeight:1 }}>×</button>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {/* Pulsante impostazioni intestazione */}
+            {view === "list" && (
+              <button onClick={()=>setView("header")} title="Personalizza intestazione PDF"
+                style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width={15} height={15} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </button>
+            )}
+            <button onClick={()=>{ setOpen(false); setView("list"); setEditingId(null); }}
+              style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:22, lineHeight:1 }}>×</button>
+          </div>
         </div>
 
-        <div style={{ padding:'20px 28px', flex:1 }}>
+        <div style={{ padding:'20px 24px', flex:1 }}>
 
-          {/* ── LISTA REPORT ── */}
+          {/* ══════════════ LISTA REPORT ══════════════ */}
           {view === "list" && (
             <>
               {loading ? (
@@ -372,25 +404,32 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 <div style={{ textAlign:'center', padding:'40px 0' }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, marginBottom:20 }}>Nessun report ancora</div>
-                  <BtnPrimary onClick={openNew}>+ Crea primo report</BtnPrimary>
+                  <Btn onClick={openNew}>+ Crea primo report</Btn>
                 </div>
               ) : (
                 <>
                   <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
-                    <BtnPrimary onClick={openNew}>+ Nuovo report</BtnPrimary>
+                    <Btn onClick={openNew}>+ Nuovo report</Btn>
                   </div>
                   <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {reports.map(r => {
                       const isDel = confirmDel === r.id;
                       return (
                         <div key={r.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
-                          {/* Numero badge */}
                           <div style={{ width:36, height:36, background:T.navyLight, border:`0.5px solid ${T.navy}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                             <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:700, color:T.navy }}>#{r.numero}</span>
                           </div>
-                          {/* Info */}
                           <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ fontSize:14, fontWeight:600, color:T.ink, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.titolo || "Senza titolo"}</div>
+                            {/* Nome nell'app */}
+                            <div style={{ fontSize:14, fontWeight:600, color:T.ink, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                              {r.nome_interno || r.titolo || "Senza nome"}
+                            </div>
+                            {/* Titolo PDF (se diverso) */}
+                            {r.titolo && r.titolo !== r.nome_interno && (
+                              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, marginTop:1 }}>
+                                PDF: {r.titolo}
+                              </div>
+                            )}
                             <div style={{ display:'flex', gap:12, marginTop:2, flexWrap:'wrap' }}>
                               <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{formatDt(r.data_ora)}</span>
                               {r.luogo && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{r.luogo}</span>}
@@ -399,26 +438,25 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                               )}
                             </div>
                           </div>
-                          {/* Azioni */}
                           <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                             {isDel ? (
                               <>
                                 <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, alignSelf:'center' }}>Sicuro?</span>
-                                <button onClick={() => handleDelete(r.id)} style={{ border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
-                                <button onClick={() => setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
+                                <button onClick={()=>handleDelete(r.id)} style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
+                                <button onClick={()=>setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
                               </>
                             ) : (
                               <>
-                                <button onClick={() => generatePdf({ report:r, project, studio })}
+                                <button onClick={()=>generatePdf({report:r,project,studio})}
                                   style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
-                                <button onClick={() => openEdit(r)}
+                                <button onClick={()=>openEdit(r)}
                                   style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   Modifica
                                 </button>
-                                <button onClick={() => setConfirmDel(r.id)}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
+                                <button onClick={()=>setConfirmDel(r.id)}
+                                  style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
                                   ✕
                                 </button>
                               </>
@@ -433,65 +471,150 @@ export default function ReportCantierePanel({ projectId, studioId }) {
             </>
           )}
 
-          {/* ── FORM REPORT ── */}
+          {/* ══════════════ INTESTAZIONE PDF ══════════════ */}
+          {view === "header" && (
+            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+              {/* Logo */}
+              <div>
+                <FL>Logo studio</FL>
+                <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+                  {headerForm.report_logo_url && (
+                    <img src={headerForm.report_logo_url} alt="logo" style={{ height:48, maxWidth:160, objectFit:'contain', border:`0.5px solid ${T.border}`, padding:4, background:'#fff' }}/>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display:'none' }}/>
+                  <button onClick={()=>fileRef.current?.click()} disabled={uploadingLogo}
+                    style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>
+                    {uploadingLogo ? "Caricamento..." : headerForm.report_logo_url ? "Cambia logo" : "Carica logo"}
+                  </button>
+                  {headerForm.report_logo_url && (
+                    <button onClick={()=>setHeaderForm(h=>({...h,report_logo_url:""}))}
+                      style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'7px 12px', cursor:'pointer' }}>
+                      Rimuovi
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:6 }}>
+                  PNG o SVG consigliati. Il logo appare in alto a destra nell'intestazione del PDF.
+                </div>
+              </div>
+
+              {/* Testo intestazione */}
+              <div>
+                <FL>Testo sotto il nome studio</FL>
+                <textarea
+                  value={headerForm.report_header_text}
+                  onChange={e=>setHeaderForm(h=>({...h,report_header_text:e.target.value}))}
+                  placeholder={`Es.\nVia Roma 1, 20100 Milano\nTel: +39 02 1234567 | Email: info@studio.it | P.IVA: 01234567890`}
+                  rows={4}
+                  style={{ ...inputSt, resize:'vertical', lineHeight:1.6 }}
+                />
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>
+                  Indirizzo, telefono, email, P.IVA — appare nell'intestazione di ogni PDF generato.
+                </div>
+              </div>
+
+              {/* Anteprima */}
+              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'14px 18px' }}>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{studio?.name || "Nome Studio"}</div>
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>
+                      {headerForm.report_header_text || [studio?.indirizzo, studio?.città].filter(Boolean).join(", ") || "Testo intestazione"}
+                    </div>
+                  </div>
+                  {headerForm.report_logo_url && (
+                    <img src={headerForm.report_logo_url} alt="logo" style={{ height:40, maxWidth:120, objectFit:'contain' }}/>
+                  )}
+                </div>
+                <div style={{ borderTop:`0.5px solid ${T.navy}`, marginTop:10, paddingTop:8 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.navy, textAlign:'center', textTransform:'uppercase', letterSpacing:'0.05em' }}>Titolo del report PDF</div>
+                </div>
+              </div>
+
+              {headerMsg && (
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: headerMsg.startsWith("Errore") ? '#ef4444' : '#16a34a', padding:'8px 12px', background: headerMsg.startsWith("Errore") ? '#fef2f2' : '#f0fdf4', border:`0.5px solid ${headerMsg.startsWith("Errore") ? '#fca5a5' : '#86efac'}` }}>
+                  {headerMsg}
+                </div>
+              )}
+
+              <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                <Btn ghost onClick={()=>setView("list")}>← Indietro</Btn>
+                <Btn onClick={handleSaveHeader} disabled={savingHeader}>
+                  {savingHeader ? "Salvataggio..." : "Salva intestazione"}
+                </Btn>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════════ FORM REPORT ══════════════ */}
           {view === "form" && (
             <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
 
-              {/* Titolo */}
-              <div>
-                <FieldLabel required>Titolo report</FieldLabel>
-                <input type="text" value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo:e.target.value }))}
-                  placeholder="Es. Verifica tramezzature interne" style={inputSt} />
+              {/* Nome interno (app) + Titolo PDF */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                <div>
+                  <FL required>Nome nell'app</FL>
+                  <input type="text" value={form.nome_interno} onChange={e=>setForm(f=>({...f,nome_interno:e.target.value}))}
+                    placeholder="Es. Sopralluogo cucina" style={inputSt}/>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>Come appare nella lista dei report</div>
+                </div>
+                <div>
+                  <FL>Titolo PDF</FL>
+                  <input type="text" value={form.titolo} onChange={e=>setForm(f=>({...f,titolo:e.target.value}))}
+                    placeholder="Es. Verifica tramezzature interne" style={inputSt}/>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>Titolo grande nel documento PDF</div>
+                </div>
               </div>
 
               {/* Luogo + Data/Ora */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div>
-                  <FieldLabel>Luogo</FieldLabel>
-                  <input type="text" value={form.luogo} onChange={e => setForm(f => ({ ...f, luogo:e.target.value }))}
-                    placeholder="Via e città del cantiere" style={inputSt} />
+                  <FL>Luogo</FL>
+                  <input type="text" value={form.luogo} onChange={e=>setForm(f=>({...f,luogo:e.target.value}))}
+                    placeholder="Via e città del cantiere" style={inputSt}/>
                 </div>
                 <div>
-                  <FieldLabel>Data e ora</FieldLabel>
-                  <input type="datetime-local" value={toInputDt(form.data_ora)} onChange={e => setForm(f => ({ ...f, data_ora:fromInputDt(e.target.value) }))}
-                    style={inputSt} />
+                  <FL>Data e ora</FL>
+                  <input type="datetime-local" value={toInputDt(form.data_ora)} onChange={e=>setForm(f=>({...f,data_ora:fromInputDt(e.target.value)}))}
+                    style={inputSt}/>
                 </div>
               </div>
 
               {/* Tabella presenti */}
               <div>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <FieldLabel>Presenti</FieldLabel>
-                  <button onClick={addPresente} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                  <FL>Presenti</FL>
+                  <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
                     + Aggiungi riga
                   </button>
                 </div>
-
                 {form.presenti.length === 0 ? (
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'12px 0' }}>
-                    Nessun presente — clicca "+ Aggiungi riga" o i dati vengono presi dall'Anagrafica progetto
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'10px 0' }}>
+                    Nessun presente — aggiungi righe o compila l'Anagrafica del progetto
                   </div>
                 ) : (
                   <div style={{ overflowX:'auto' }}>
                     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
                       <thead>
                         <tr style={{ background:T.bg }}>
-                          {["Figura", "Azienda", "Referente", "Email", "Telefono", ""].map(h => (
+                          {["Figura","Azienda","Referente","Email","Telefono",""].map(h=>(
                             <th key={h} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {form.presenti.map((p, i) => (
+                        {form.presenti.map((p,i)=>(
                           <tr key={i} style={{ borderBottom:`0.5px solid ${T.border}` }}>
-                            {["figura","azienda","referente","email","telefono"].map(field => (
+                            {["figura","azienda","referente","email","telefono"].map(field=>(
                               <td key={field} style={{ padding:'4px 4px' }}>
-                                <input type="text" value={p[field] || ""} onChange={e => updatePresente(i, field, e.target.value)}
-                                  style={{ ...inputSt, padding:'5px 7px', fontSize:11 }} />
+                                <input type="text" value={p[field]||""} onChange={e=>updateP(i,field,e.target.value)}
+                                  style={{ ...inputSt, padding:'5px 7px', fontSize:11 }}/>
                               </td>
                             ))}
                             <td style={{ padding:'4px 4px' }}>
-                              <button onClick={() => removePresente(i)} style={{ background:'none', border:'none', color:T.red, cursor:'pointer', fontSize:14 }}>✕</button>
+                              <button onClick={()=>removeP(i)} style={{ background:'none', border:'none', color:'#ef4444', cursor:'pointer', fontSize:14 }}>✕</button>
                             </td>
                           </tr>
                         ))}
@@ -503,28 +626,23 @@ export default function ReportCantierePanel({ projectId, studioId }) {
 
               {/* Contenuto */}
               <div>
-                <FieldLabel>Contenuto del report</FieldLabel>
-                <textarea value={form.contenuto} onChange={e => setForm(f => ({ ...f, contenuto:e.target.value }))}
+                <FL>Contenuto del report</FL>
+                <textarea value={form.contenuto} onChange={e=>setForm(f=>({...f,contenuto:e.target.value}))}
                   placeholder="Descrivi cosa è stato verificato, le prescrizioni operative, l'esito del sopralluogo..."
-                  rows={10}
-                  style={{ ...inputSt, resize:'vertical', minHeight:180, lineHeight:1.6 }} />
+                  rows={10} style={{ ...inputSt, resize:'vertical', minHeight:180, lineHeight:1.6 }}/>
               </div>
 
-              {/* Errore salvataggio */}
               {saveError && (
-                <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c', borderRadius:2 }}>
+                <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c' }}>
                   ⚠ Errore: {saveError}
                 </div>
               )}
 
-              {/* Footer form */}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <BtnGhost onClick={() => { setView("list"); setEditingId(null); }}>← Indietro</BtnGhost>
-                <div style={{ display:'flex', gap:10 }}>
-                  <BtnPrimary onClick={handleSave} disabled={saving || !form.titolo.trim()}>
-                    {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Salva report"}
-                  </BtnPrimary>
-                </div>
+                <Btn ghost onClick={()=>{ setView("list"); setEditingId(null); }}>← Indietro</Btn>
+                <Btn onClick={handleSave} disabled={saving || (!form.nome_interno.trim() && !form.titolo.trim())}>
+                  {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Salva report"}
+                </Btn>
               </div>
             </div>
           )}
@@ -534,10 +652,5 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     </div>
   );
 
-  return (
-    <>
-      {widget}
-      {modal}
-    </>
-  );
+  return <>{widget}{modal}</>;
 }
