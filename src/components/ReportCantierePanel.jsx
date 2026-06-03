@@ -3,6 +3,10 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
+import { registerGroteskaFonts, GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
+
+// Registra i font Groteska globalmente (una volta sola)
+registerGroteskaFonts();
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const FL = ({ children, required }) => {
@@ -85,7 +89,11 @@ async function generatePdf({ report, project, studio }) {
   const maxY = PAGE_H - FOOTER_H - 10;
   let y = 18;
 
-  const footerFont = s?.report_footer_font || "helvetica";
+  // Font footer: se è un Groteska usa il nome-famiglia direttamente
+  const footerFontKey = s?.report_footer_font || "helvetica";
+  const groteskaVariant = GROTESKA_VARIANTS.find(g => g.key === footerFontKey);
+  const footerFont     = groteskaVariant ? groteskaVariant.family : footerFontKey;
+  const footerFontStyle = groteskaVariant ? groteskaVariant.style  : "normal";
 
   // ── Logo (destra) ─────────────────────────────────────────────────
   let logoBottomY = y;
@@ -216,7 +224,7 @@ async function generatePdf({ report, project, studio }) {
     const fy = PAGE_H - FOOTER_H;
     doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
     doc.line(ml, fy, W - mr, fy);
-    doc.setFont(footerFont, "normal"); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+    doc.setFont(footerFont, footerFontStyle); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
 
     // Sostituisce {pagina} e {totale} e gestisce i ritorni a capo
     const replace = (str) => str.replace(/\{pagina\}/g, i).replace(/\{totale\}/g, tot);
@@ -656,10 +664,15 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 {/* Font */}
                 <div style={{ marginBottom:14 }}>
                   <FL>Font footer</FL>
-                  <div style={{ display:'flex', gap:8 }}>
-                    {[["helvetica","Helvetica"],["times","Times"],["courier","Courier"]].map(([val,label])=>(
+                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                    {[
+                      { val:"helvetica", label:"Helvetica", css:"Arial, sans-serif" },
+                      { val:"times",     label:"Times",     css:"Georgia, serif" },
+                      { val:"courier",   label:"Courier",   css:"'Courier New', monospace" },
+                      ...GROTESKA_VARIANTS.map(g => ({ val:g.key, label:`Groteska ${g.label}`, css:"'Space Grotesk', sans-serif" })),
+                    ].map(({val,label,css})=>(
                       <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val}))}
-                        style={{ padding:'6px 16px', border:`0.5px solid ${headerForm.report_footer_font===val ? T.navy : T.borderMd}`, background: headerForm.report_footer_font===val ? T.navyLight : 'transparent', color: headerForm.report_footer_font===val ? T.navy : T.ink, cursor:'pointer', fontFamily: val==='helvetica' ? 'Arial, sans-serif' : val==='times' ? 'Georgia, serif' : "'Courier New', monospace", fontSize:12 }}>
+                        style={{ padding:'6px 14px', border:`0.5px solid ${headerForm.report_footer_font===val ? T.navy : T.borderMd}`, background: headerForm.report_footer_font===val ? T.navyLight : 'transparent', color: headerForm.report_footer_font===val ? T.navy : T.ink, cursor:'pointer', fontFamily:css, fontSize:12 }}>
                         {label}
                       </button>
                     ))}
