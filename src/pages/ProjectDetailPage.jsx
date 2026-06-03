@@ -535,17 +535,20 @@ export default function ProjectDetailPage() {
     <div>
       {/* PROJECT HEADER */}
       <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 22px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: T.ink }}>{project.name ?? "Progetto"}</div>
-            <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
-              onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
-              style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
-              <option value="show-all">Tutte le task</option>
-              <option value="hide-completed">Nascondi completate</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Titolo + filtro */}
+        <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap', marginBottom: isMobile ? 12 : 0 }}>
+          <div style={{ fontSize: isMobile ? 18 : 20, fontWeight:600, letterSpacing:'-0.02em', color:T.ink }}>{project.name ?? "Progetto"}</div>
+          <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
+            onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
+            style={{ padding:'5px 10px', border:`0.5px solid ${T.borderMd}`, background:T.bg, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono', monospace", outline:'none', cursor:'pointer' }}>
+            <option value="show-all">Tutte le task</option>
+            <option value="hide-completed">Nascondi completate</option>
+          </select>
+        </div>
+
+        {/* Barra pulsanti — scrollabile su mobile */}
+        <div style={{ overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling:'touch', marginBottom: isMobile ? 4 : 0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, minWidth:'max-content' }}>
             {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
