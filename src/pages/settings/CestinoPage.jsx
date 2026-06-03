@@ -82,6 +82,8 @@ export default function CestinoPage() {
       if (rows.length > 0) result[cat.id] = { cat, items: rows };
     }));
     setByCategory(result);
+    // Tutte le categorie chiuse di default
+    setCollapsed(Object.fromEntries(Object.keys(result).map(k => [k, true])));
     setLoading(false);
   };
 
