@@ -220,12 +220,16 @@ async function generatePdf({ report, project, studio }) {
     doc.line(ml, fy, W - mr, fy);
     doc.setFont(footerFont, "normal"); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
 
-    // Sostituisce {pagina} e {totale} nei template
-    const replace = (s) => s.replace(/\{pagina\}/g, i).replace(/\{totale\}/g, tot);
+    // Sostituisce {pagina} e {totale} e gestisce i ritorni a capo
+    const replace = (str) => str.replace(/\{pagina\}/g, i).replace(/\{totale\}/g, tot);
+    const drawFooterLines = (text, x, align) => {
+      const lines = replace(text).split("\n");
+      lines.forEach((line, li) => doc.text(line, x, fy + 5 + li * 4, { align }));
+    };
 
-    if (fLeft)   doc.text(replace(fLeft),   ml,       fy + 5, { align:"left"   });
-    if (fCenter) doc.text(replace(fCenter), W / 2,    fy + 5, { align:"center" });
-    if (fRight)  doc.text(replace(fRight),  W - mr,   fy + 5, { align:"right"  });
+    if (fLeft)   drawFooterLines(fLeft,   ml,      "left");
+    if (fCenter) drawFooterLines(fCenter, W / 2,   "center");
+    if (fRight)  drawFooterLines(fRight,  W - mr,  "right");
 
     // Fallback se tutti e tre vuoti
     if (!fLeft && !fCenter && !fRight) {
