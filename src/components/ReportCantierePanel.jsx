@@ -395,9 +395,11 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [studio, setStudio]   = useState(null);
   const [contacts, setContacts] = useState([]);
 
-  // "list" | "form" | "header"
+  // "list" | "form" | "header" | "preview"
   const [view, setView]           = useState("list");
   const [editingId, setEditingId] = useState(null);
+  const [previewReport, setPreviewReport] = useState(null); // report selezionato per anteprima
+  const [previewFotos, setPreviewFotos]   = useState([]);
   const [form, setForm]           = useState(emptyForm());
   const [saving, setSaving]       = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -464,6 +466,15 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const { data } = await supabase.from("report_cantiere_foto")
       .select("*").eq("report_id", reportId).order("ordine", { ascending:true });
     setFotos(data || []);
+  };
+
+  // ── anteprima report ─────────────────────────────────────────────
+  const openPreview = async (r) => {
+    setPreviewReport(r);
+    const { data } = await supabase.from("report_cantiere_foto")
+      .select("*").eq("report_id", r.id).order("ordine", { ascending:true });
+    setPreviewFotos(data || []);
+    setView("preview");
   };
 
   // ── nuovo report ─────────────────────────────────────────────────
@@ -695,12 +706,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`0.5px solid ${T.border}`, position:'sticky', top:0, background:T.surface, zIndex:1 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {view !== "list" && (
-              <button onClick={()=>{ setView("list"); setEditingId(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
+              <button onClick={()=>{ setView("list"); setEditingId(null); setPreviewReport(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
             )}
             <div>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>
-                  {view==="list" ? "Report di Cantiere" : view==="header" ? "Intestazione PDF" : editingId ? "Modifica Report" : "Nuovo Report"}
+                  {view==="list" ? "Report di Cantiere" : view==="header" ? "Intestazione PDF" : view==="preview" ? (previewReport?.nome_interno || previewReport?.titolo || "Report") : editingId ? "Modifica Report" : "Nuovo Report"}
                 </span>
                 <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:'#fff', background:'#16a34a', padding:'2px 7px', borderRadius:3 }}>BETA</span>
               </div>
@@ -746,7 +757,8 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                     {reports.map(r => {
                       const isDel = confirmDel === r.id;
                       return (
-                        <div key={r.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+                        <div key={r.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}`, cursor:'pointer' }}
+                          onClick={(e)=>{ if(!e.target.closest('button')) openPreview(r); }}>
                           <div style={{ width:36, height:36, background:T.navyLight, border:`0.5px solid ${T.navy}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                             <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:700, color:T.navy }}>#{r.numero}</span>
                           </div>
@@ -1008,6 +1020,99 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                   </Btn>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ══════════════ ANTEPRIMA REPORT ══════════════ */}
+          {view === "preview" && previewReport && (
+            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+
+              {/* Badge numero + metadati */}
+              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:44, height:44, background:T.navyLight, border:`0.5px solid ${T.navy}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:13, fontWeight:700, color:T.navy }}>#{previewReport.numero}</span>
+                </div>
+                <div>
+                  <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>{previewReport.nome_interno || previewReport.titolo || "Report"}</div>
+                  {previewReport.titolo && previewReport.titolo !== previewReport.nome_interno && (
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, marginTop:2 }}>PDF: {previewReport.titolo}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {[
+                  ["Data e ora", formatDt(previewReport.data_ora)],
+                  ["Luogo", previewReport.luogo || "—"],
+                ].map(([k,v])=>(
+                  <div key={k} style={{ padding:'10px 14px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>{k}</div>
+                    <div style={{ fontSize:13, color:T.ink }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Presenti */}
+              {Array.isArray(previewReport.presenti) && previewReport.presenti.length > 0 && (
+                <div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Presenti</div>
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                      <thead>
+                        <tr>
+                          {["Figura","Azienda","Referente","Email","Telefono"].map(h=>(
+                            <th key={h} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}` }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewReport.presenti.map((p,i)=>(
+                          <tr key={i} style={{ borderBottom:`0.5px solid ${T.border}` }}>
+                            {["figura","azienda","referente","email","telefono"].map(f=>(
+                              <td key={f} style={{ padding:'6px 8px', color:T.ink, fontSize:12 }}>{p[f]||"—"}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Contenuto */}
+              {previewReport.contenuto?.trim() && (
+                <div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Report</div>
+                  <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, whiteSpace:'pre-wrap', padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+                    {previewReport.contenuto}
+                  </div>
+                </div>
+              )}
+
+              {/* Foto */}
+              {previewFotos.length > 0 && (
+                <div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                    {previewFotos.map(f=>(
+                      <img key={f.id} src={f.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', border:`0.5px solid ${T.border}` }}/>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Azioni */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                <Btn ghost onClick={()=>{ setView("list"); setPreviewReport(null); }}>← Lista</Btn>
+                <div style={{ display:'flex', gap:10 }}>
+                  <Btn ghost onClick={async ()=>{
+                    const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",previewReport.id).order("ordine",{ascending:true});
+                    generatePdf({ report:previewReport, project, studio, fotos:rf||[] });
+                  }}>↓ PDF</Btn>
+                  <Btn onClick={()=>{ openEdit(previewReport); }}>Modifica</Btn>
+                </div>
+              </div>
             </div>
           )}
 
