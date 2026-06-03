@@ -261,34 +261,37 @@ export default function ReportPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'12px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10 }}>
 
-        {/* Toggle mese/settimana */}
-        <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-          {[["month","Mensile"],["week","Settimanale"]].map(([m,label])=>(
-            <button key={m} onClick={()=>setMode(m)} style={{
-              padding:'6px 14px', border:'none', background: mode===m ? T.navy : 'transparent',
-              color: mode===m ? T.bg : T.muted,
-              fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-              cursor:'pointer',
-            }}>{label}</button>
-          ))}
+        {/* Riga 1: toggle + esporta */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+          {/* Toggle mese/settimana */}
+          <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
+            {[["month","Mensile"],["week","Settimanale"]].map(([m,label])=>(
+              <button key={m} onClick={()=>setMode(m)} style={{
+                padding:'6px 14px', border:'none', background: mode===m ? T.navy : 'transparent',
+                color: mode===m ? T.bg : T.muted,
+                fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
+                cursor:'pointer',
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {/* Esporta */}
+          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            Esporta CSV
+          </button>
         </div>
 
-        {/* Navigazione periodo */}
+        {/* Riga 2: navigazione periodo */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
-          <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', minWidth:220, textAlign:'center' }}>
+          <div style={{ flex:1, fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center' }}>
             {periodLabel}
           </div>
           <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
           <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
         </div>
-
-        {/* Esporta */}
-        <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-          Esporta CSV
-        </button>
       </div>
 
       {/* ── KPI ── */}
