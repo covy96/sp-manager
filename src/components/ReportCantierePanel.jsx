@@ -342,6 +342,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [form, setForm]           = useState(emptyForm());
   const [saving, setSaving]       = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [saveOk, setSaveOk]       = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
 
   // Header + footer settings
@@ -415,7 +416,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
     });
     setForm({ ...base, _numero:nextNum });
-    setEditingId(null); setSaveError(""); setFotos([]); setView("form");
+    setEditingId(null); setSaveError(""); setSaveOk(false); setFotos([]); setView("form");
   };
 
   const openEdit = (r) => {
@@ -467,7 +468,17 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     }
     setSaving(false);
     if (err) { setSaveError(err.message); return; }
-    setView("list"); setEditingId(null); load();
+
+    if (!editingId && newId) {
+      // Nuovo report salvato: rimani nel form in edit mode per aggiungere foto
+      setEditingId(newId);
+      await loadFotos(newId);
+      setSaveError(""); setSaveOk(true);
+      setTimeout(() => setSaveOk(false), 4000);
+      load();
+    } else {
+      setView("list"); setEditingId(null); setFotos([]); setSaveOk(false); load();
+    }
   };
 
   // ── elimina report ───────────────────────────────────────────────
@@ -1049,6 +1060,11 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 )}
               </div>
 
+              {saveOk && (
+                <div style={{ background:'#f0fdf4', border:'0.5px solid #86efac', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#16a34a' }}>
+                  ✓ Report salvato — ora puoi aggiungere le foto qui sotto
+                </div>
+              )}
               {saveError && (
                 <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c' }}>
                   ⚠ Errore: {saveError}
