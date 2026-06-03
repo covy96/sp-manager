@@ -205,7 +205,7 @@ export default function MobileLayout({ session, children }) {
                 <div style={{ padding:'6px 0' }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Account</div>
                   {[
-                    { label:'Piano',   icon:'piano',   path:'/impostazioni/piano'   },
+                    ...(['Owner','Partner'].includes(teamMember?.role_internal) ? [{ label:'Piano', icon:'piano', path:'/impostazioni/piano' }] : []),
                     { label:'Profilo', icon:'profilo', path:'/impostazioni/profilo' },
                   ].map(item=>(
                     <button key={item.path} onClick={()=>{ navigate(item.path); setSettingsOpen(false); }}
