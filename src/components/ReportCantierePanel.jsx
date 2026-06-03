@@ -111,7 +111,7 @@ async function generatePdf({ report, project, studio }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(19, 49, 92);
-  doc.text(studio?.name || "Studio", ml, y);
+  doc.text(studio?.report_header_name || studio?.name || "Studio", ml, y);
   y += 5;
 
   const headerText = studio?.report_header_text?.trim()
@@ -228,7 +228,7 @@ async function generatePdf({ report, project, studio }) {
 
     // Fallback se tutti e tre vuoti
     if (!fLeft && !fCenter && !fRight) {
-      doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, fy + 5);
+      doc.text(`${studio?.report_header_name || studio?.name || ""} — Report di Cantiere`, ml, fy + 5);
       doc.text(`Pagina ${i} di ${tot}`, W - mr, fy + 5, { align:"right" });
     }
   }
@@ -269,6 +269,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
 
   // Header + footer settings
   const [headerForm, setHeaderForm]   = useState({
+    report_header_name:"",
     report_header_text:"", report_logo_url:"",
     report_footer_left:"", report_footer_center:"", report_footer_right:"",
     report_footer_font:"helvetica",
@@ -284,7 +285,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
       supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
-      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font").eq("id",studioId).single(),
+      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
     ]);
     setReports(reps || []);
@@ -292,6 +293,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setStudio(st);
     setContacts(ctc || []);
     setHeaderForm({
+      report_header_name:   st?.report_header_name   || st?.name || "",
       report_header_text:   st?.report_header_text   || "",
       report_logo_url:      st?.report_logo_url      || "",
       report_footer_left:   st?.report_footer_left   || "",
@@ -374,6 +376,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const handleSaveHeader = async () => {
     setSavingHeader(true); setHeaderMsg("");
     const { error } = await supabase.from("studios").update({
+      report_header_name:   headerForm.report_header_name   || null,
       report_header_text:   headerForm.report_header_text   || null,
       report_logo_url:      headerForm.report_logo_url      || null,
       report_footer_left:   headerForm.report_footer_left   || null,
@@ -384,7 +387,8 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     setSavingHeader(false);
     if (error) { setHeaderMsg("Errore: " + error.message); return; }
     setHeaderMsg("Salvato!");
-    setStudio(s => ({ ...s, ...headerForm }));
+    // Ricarica tutto così il PDF usa subito i nuovi dati
+    await load();
     setTimeout(() => setHeaderMsg(""), 3000);
   };
 
@@ -571,6 +575,14 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 </div>
               </div>
 
+              {/* Nome studio nel PDF */}
+              <div>
+                <FL required>Nome studio nel PDF</FL>
+                <input type="text" value={headerForm.report_header_name}
+                  onChange={e=>setHeaderForm(h=>({...h,report_header_name:e.target.value}))}
+                  placeholder="Es. Studio Prini" style={inputSt}/>
+              </div>
+
               {/* Testo intestazione */}
               <div>
                 <FL>Testo sotto il nome studio</FL>
@@ -591,7 +603,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{studio?.name || "Nome Studio"}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{headerForm.report_header_name || studio?.name || "Nome Studio"}</div>
                     <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>
                       {headerForm.report_header_text || ""}
                     </div>
