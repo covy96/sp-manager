@@ -1,5 +1,5 @@
 -- Funzione cestino per report_cantiere
-CREATE OR REPLACE FUNCTION cestino_report_cantiere(p_studio uuid)
+CREATE OR REPLACE FUNCTION cestino_report_cantiere(p_studio_id uuid)
 RETURNS TABLE(
   id uuid, numero integer, titolo text, nome_interno text,
   luogo text, data_ora timestamptz, deleted_at timestamptz,
@@ -11,7 +11,7 @@ RETURNS TABLE(
     p.name AS project_name
   FROM report_cantiere rc
   LEFT JOIN projects p ON p.id = rc.project_id
-  WHERE rc.studio = p_studio
+  WHERE rc.studio = p_studio_id
     AND rc.deleted_at IS NOT NULL
   ORDER BY rc.deleted_at DESC;
 $$;
