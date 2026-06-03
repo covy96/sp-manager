@@ -57,6 +57,28 @@ const formatDt = (iso) => {
   return new Date(iso).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
 };
 
+// Comprime un File immagine prima dell'upload (max 1800px, qualità 0.82)
+async function compressImage(file, maxPx = 1800, quality = 0.82) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { naturalWidth: w, naturalHeight: h } = img;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => resolve(blob || file), "image/jpeg", quality);
+    };
+    img.onerror = () => resolve(file);
+    img.src = url;
+  });
+}
+
 // Carica un'immagine da URL come base64 (per jsPDF)
 // Usa canvas per evitare problemi CORS con Supabase Storage
 async function urlToBase64(url) {
@@ -493,9 +515,10 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     if (!files.length || !editingId) return;
     setUploadingFoto(true);
     for (const file of files) {
-      const ext  = file.name.split(".").pop().toLowerCase();
-      const path = `${studioId}/${editingId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("report-foto").upload(path, file, { upsert:false });
+      // Comprimi prima dell'upload (max 1800px, ~300-500KB)
+      const compressed = await compressImage(file);
+      const path = `${studioId}/${editingId}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const { error: upErr } = await supabase.storage.from("report-foto").upload(path, compressed, { contentType:"image/jpeg", upsert:false });
       if (upErr) continue;
       const { data:{ publicUrl } } = supabase.storage.from("report-foto").getPublicUrl(path);
       await supabase.from("report_cantiere_foto").insert({
