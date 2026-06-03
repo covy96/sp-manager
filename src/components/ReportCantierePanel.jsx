@@ -79,53 +79,55 @@ async function urlToBase64(url) {
 async function generatePdf({ report, project, studio }) {
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 20, mr = 20, cw = W - ml - mr;
+  const PAGE_H = 297, FOOTER_H = 15;
+  const maxY = PAGE_H - FOOTER_H - 10;
   let y = 18;
 
-  // ── Logo ─────────────────────────────────────────────────────────
-  let logoLoaded = false;
+  const footerFont = studio?.report_footer_font || "helvetica";
+
+  // ── Logo (destra) ─────────────────────────────────────────────────
+  let logoBottomY = y; // traccia fino a dove arriva il logo
   if (studio?.report_logo_url) {
     const b64 = await urlToBase64(studio.report_logo_url);
     if (b64) {
       try {
-        // Leggi dimensioni naturali per mantenere aspect ratio
         const imgEl = await new Promise(res => {
           const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null);
           i.src = b64;
         });
         if (imgEl) {
-          const maxW = 45, maxH = 22;
+          const maxW = 45, maxH = 25;
           const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
           let w = maxW, h = maxW / ratio;
           if (h > maxH) { h = maxH; w = maxH * ratio; }
           doc.addImage(b64, "PNG", W - mr - w, y - 4, w, h, undefined, "FAST");
-          logoLoaded = true;
+          logoBottomY = y - 4 + h;
         }
       } catch {}
     }
   }
 
-  // ── Nome studio ──────────────────────────────────────────────────
+  // ── Nome studio + testo intestazione (sinistra) ──────────────────
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(19, 49, 92);
   doc.text(studio?.name || "Studio", ml, y);
   y += 5;
 
-  // ── Testo intestazione custom (o fallback indirizzo/piva) ────────
   const headerText = studio?.report_header_text?.trim()
     || [studio?.indirizzo, studio?.città, studio?.cap].filter(Boolean).join(", ")
     || "";
-
   if (headerText) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
-    const lines = doc.splitTextToSize(headerText, logoLoaded ? cw - 45 : cw);
-    lines.forEach(line => { doc.text(line, ml, y); y += 4.5; });
+    // lascia spazio al logo a destra
+    const maxTextW = studio?.report_logo_url ? cw - 50 : cw;
+    doc.splitTextToSize(headerText, maxTextW).forEach(line => { doc.text(line, ml, y); y += 4.5; });
   }
 
-  // Linea divisoria
-  y += 3;
+  // La linea scende sotto il punto più basso tra testo e logo
+  y = Math.max(y + 3, logoBottomY + 4);
   doc.setDrawColor(19, 49, 92);
   doc.setLineWidth(0.5);
   doc.line(ml, y, W - mr, y);
@@ -183,10 +185,6 @@ async function generatePdf({ report, project, studio }) {
   }
 
   // ── Contenuto ────────────────────────────────────────────────────
-  const FOOTER_H = 15; // spazio riservato al footer (mm)
-  const PAGE_H   = 297;
-  const maxY     = PAGE_H - FOOTER_H - 10; // margine inferiore contenuto
-
   const newPageIfNeeded = (neededH = 6) => {
     if (y + neededH > maxY) { doc.addPage(); y = 20; return true; }
     return false;
@@ -208,16 +206,31 @@ async function generatePdf({ report, project, studio }) {
     });
   }
 
-  // ── Footer su ogni pagina ─────────────────────────────────────────
+  // ── Footer personalizzato su ogni pagina ──────────────────────────
+  const fLeft   = studio?.report_footer_left   || "";
+  const fCenter = studio?.report_footer_center || "";
+  const fRight  = studio?.report_footer_right  || "";
   const tot = doc.getNumberOfPages();
+
   for (let i = 1; i <= tot; i++) {
     doc.setPage(i);
-    // Linea footer
+    const fy = PAGE_H - FOOTER_H;
     doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
-    doc.line(ml, PAGE_H - FOOTER_H, W - mr, PAGE_H - FOOTER_H);
-    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(160,160,160);
-    doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, PAGE_H - FOOTER_H + 5);
-    doc.text(`Pagina ${i} di ${tot}`, W - mr, PAGE_H - FOOTER_H + 5, { align:"right" });
+    doc.line(ml, fy, W - mr, fy);
+    doc.setFont(footerFont, "normal"); doc.setFontSize(7.5); doc.setTextColor(140,140,140);
+
+    // Sostituisce {pagina} e {totale} nei template
+    const replace = (s) => s.replace(/\{pagina\}/g, i).replace(/\{totale\}/g, tot);
+
+    if (fLeft)   doc.text(replace(fLeft),   ml,       fy + 5, { align:"left"   });
+    if (fCenter) doc.text(replace(fCenter), W / 2,    fy + 5, { align:"center" });
+    if (fRight)  doc.text(replace(fRight),  W - mr,   fy + 5, { align:"right"  });
+
+    // Fallback se tutti e tre vuoti
+    if (!fLeft && !fCenter && !fRight) {
+      doc.text(`${studio?.name || ""} — Report di Cantiere`, ml, fy + 5);
+      doc.text(`Pagina ${i} di ${tot}`, W - mr, fy + 5, { align:"right" });
+    }
   }
 
   const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\- ]/g,"").trim() || "report";
@@ -254,8 +267,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [saveError, setSaveError] = useState("");
   const [confirmDel, setConfirmDel] = useState(null);
 
-  // Header settings
-  const [headerForm, setHeaderForm]   = useState({ report_header_text:"", report_logo_url:"" });
+  // Header + footer settings
+  const [headerForm, setHeaderForm]   = useState({
+    report_header_text:"", report_logo_url:"",
+    report_footer_left:"", report_footer_center:"", report_footer_right:"",
+    report_footer_font:"helvetica",
+  });
   const [savingHeader, setSavingHeader] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [headerMsg, setHeaderMsg]     = useState("");
@@ -267,14 +284,21 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
       supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
-      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_text,report_logo_url").eq("id",studioId).single(),
+      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
     ]);
     setReports(reps || []);
     setProject(proj);
     setStudio(st);
     setContacts(ctc || []);
-    setHeaderForm({ report_header_text: st?.report_header_text || "", report_logo_url: st?.report_logo_url || "" });
+    setHeaderForm({
+      report_header_text:   st?.report_header_text   || "",
+      report_logo_url:      st?.report_logo_url      || "",
+      report_footer_left:   st?.report_footer_left   || "",
+      report_footer_center: st?.report_footer_center || "",
+      report_footer_right:  st?.report_footer_right  || "",
+      report_footer_font:   st?.report_footer_font   || "helvetica",
+    });
     setLoading(false);
   }, [projectId, studioId]);
 
@@ -342,8 +366,12 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const handleSaveHeader = async () => {
     setSavingHeader(true); setHeaderMsg("");
     const { error } = await supabase.from("studios").update({
-      report_header_text: headerForm.report_header_text || null,
-      report_logo_url:    headerForm.report_logo_url || null,
+      report_header_text:   headerForm.report_header_text   || null,
+      report_logo_url:      headerForm.report_logo_url      || null,
+      report_footer_left:   headerForm.report_footer_left   || null,
+      report_footer_center: headerForm.report_footer_center || null,
+      report_footer_right:  headerForm.report_footer_right  || null,
+      report_footer_font:   headerForm.report_footer_font   || "helvetica",
     }).eq("id", studioId);
     setSavingHeader(false);
     if (error) { setHeaderMsg("Errore: " + error.message); return; }
@@ -550,7 +578,58 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 </div>
               </div>
 
-              {/* Anteprima */}
+              {/* Sezione Footer */}
+              <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>Piè di pagina (footer)</div>
+
+                {/* Font */}
+                <div style={{ marginBottom:14 }}>
+                  <FL>Font footer</FL>
+                  <div style={{ display:'flex', gap:8 }}>
+                    {[["helvetica","Helvetica"],["times","Times"],["courier","Courier"]].map(([val,label])=>(
+                      <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val}))}
+                        style={{ padding:'6px 16px', border:`0.5px solid ${headerForm.report_footer_font===val ? T.navy : T.borderMd}`, background: headerForm.report_footer_font===val ? T.navyLight : 'transparent', color: headerForm.report_footer_font===val ? T.navy : T.ink, cursor:'pointer', fontFamily: val==='helvetica' ? 'Arial, sans-serif' : val==='times' ? 'Georgia, serif' : "'Courier New', monospace", fontSize:12 }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3 colonne footer */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                  <div>
+                    <FL>Sinistra</FL>
+                    <input type="text" value={headerForm.report_footer_left} onChange={e=>setHeaderForm(h=>({...h,report_footer_left:e.target.value}))}
+                      placeholder="Es. Studio Prini" style={inputSt}/>
+                  </div>
+                  <div>
+                    <FL>Centro</FL>
+                    <input type="text" value={headerForm.report_footer_center} onChange={e=>setHeaderForm(h=>({...h,report_footer_center:e.target.value}))}
+                      placeholder="Es. Report di Cantiere" style={inputSt}/>
+                  </div>
+                  <div>
+                    <FL>Destra</FL>
+                    <input type="text" value={headerForm.report_footer_right} onChange={e=>setHeaderForm(h=>({...h,report_footer_right:e.target.value}))}
+                      placeholder="Es. Pagina {pagina} di {totale}" style={inputSt}/>
+                  </div>
+                </div>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:6 }}>
+                  Usa <strong style={{color:T.ink}}>{"{pagina}"}</strong> e <strong style={{color:T.ink}}>{"{totale}"}</strong> per numerazione automatica.
+                </div>
+
+                {/* Anteprima footer */}
+                <div style={{ marginTop:12, background:T.bg, border:`0.5px solid ${T.border}`, padding:'10px 14px' }}>
+                  <div style={{ height:1, background:'rgba(150,150,150,0.3)', marginBottom:8 }}/>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, color:T.muted,
+                    fontFamily: headerForm.report_footer_font==='times' ? 'Georgia, serif' : headerForm.report_footer_font==='courier' ? "'Courier New', monospace" : 'Arial, sans-serif' }}>
+                    <span>{(headerForm.report_footer_left  ||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || (!headerForm.report_footer_center && !headerForm.report_footer_right ? (studio?.name||"Studio") : "")}</span>
+                    <span>{(headerForm.report_footer_center||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
+                    <span>{(headerForm.report_footer_right ||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || (!headerForm.report_footer_left && !headerForm.report_footer_center ? "Pagina 1 di 3" : "")}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Anteprima intestazione */}
               <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'14px 18px' }}>
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
