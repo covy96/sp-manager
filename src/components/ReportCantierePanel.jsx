@@ -262,7 +262,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     });
   }
 
-  // ── Foto — griglia 2 per riga ─────────────────────────────────────
+  // ── Foto: verticali 2 per riga, orizzontali 1 per riga ──────────
   if (fotos.length > 0) {
     newPageIfNeeded(20);
     y += 6;
@@ -270,34 +270,71 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     doc.text("FOTO", ml, y);
     y += 6;
 
-    const imgW = (cw - 6) / 2;   // larghezza foto (2 per riga, gap 6mm)
-    const imgH = imgW * 0.67;     // proporzione 3:2
+    // Carica tutte le immagini e rileva orientamento
+    const loaded = await Promise.all(fotos.map(async f => {
+      const b64 = await urlToBase64(f.url);
+      if (!b64) return null;
+      const dims = await new Promise(res => {
+        const i = new Image();
+        i.onload = () => res({ w: i.naturalWidth, h: i.naturalHeight });
+        i.onerror = () => res(null);
+        i.src = b64;
+      });
+      return { b64, dims };
+    }));
 
-    for (let i = 0; i < fotos.length; i += 2) {
-      if (newPageIfNeeded(imgH + 4)) { /* nuova pagina */ }
-      const left  = fotos[i];
-      const right = fotos[i + 1];
+    const gapX = 6;
+    let pendingPortrait = null; // tiene una foto verticale in attesa del suo paio
 
-      // Foto sinistra
-      const b64L = await urlToBase64(left.url);
-      if (b64L) {
-        try { doc.addImage(b64L, "AUTO", ml, y, imgW, imgH, undefined, "FAST"); } catch {}
+    const renderOne = (b64, x, w, h) => {
+      if (b64) { try { doc.addImage(b64, "AUTO", x, y, w, h, undefined, "FAST"); } catch {} }
+      else { doc.setDrawColor(220,220,220); doc.setLineWidth(0.3); doc.rect(x, y, w, h); }
+    };
+
+    const flushPending = () => {
+      // Stampa il portrait rimasto in attesa da solo (occupa metà riga)
+      if (!pendingPortrait) return;
+      const w = (cw - gapX) / 2;
+      const h = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
+      newPageIfNeeded(h + 5);
+      renderOne(pendingPortrait.b64, ml, w, h);
+      y += h + 5;
+      pendingPortrait = null;
+    };
+
+    for (const item of loaded) {
+      if (!item) continue;
+      const { b64, dims } = item;
+      const isLandscape = dims.w >= dims.h;
+
+      if (isLandscape) {
+        // Se c'è un portrait in attesa, stampalo prima da solo
+        flushPending();
+        // Foto orizzontale: larghezza intera
+        const h = cw * (dims.h / dims.w);
+        newPageIfNeeded(h + 5);
+        renderOne(b64, ml, cw, h);
+        y += h + 5;
       } else {
-        doc.setDrawColor(220,220,220); doc.rect(ml, y, imgW, imgH);
-      }
-
-      // Foto destra
-      if (right) {
-        const b64R = await urlToBase64(right.url);
-        if (b64R) {
-          try { doc.addImage(b64R, "AUTO", ml + imgW + 6, y, imgW, imgH, undefined, "FAST"); } catch {}
+        // Foto verticale
+        if (pendingPortrait) {
+          // Abbiamo già uno in attesa → stampa la coppia
+          const w = (cw - gapX) / 2;
+          const hL = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
+          const hR = w * (dims.h / dims.w);
+          const rowH = Math.max(hL, hR);
+          newPageIfNeeded(rowH + 5);
+          renderOne(pendingPortrait.b64, ml, w, hL);
+          renderOne(b64, ml + w + gapX, w, hR);
+          y += rowH + 5;
+          pendingPortrait = null;
         } else {
-          doc.setDrawColor(220,220,220); doc.rect(ml + imgW + 6, y, imgW, imgH);
+          pendingPortrait = { b64, dims };
         }
       }
-
-      y += imgH + 5;
     }
+    // Stampa eventuale portrait rimasto solo
+    flushPending();
   }
 
   // ── Footer personalizzato su ogni pagina ──────────────────────────
