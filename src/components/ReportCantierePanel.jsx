@@ -578,6 +578,25 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 </div>
               </div>
 
+              {/* Anteprima intestazione — subito dopo il testo */}
+              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'14px 18px' }}>
+                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{studio?.name || "Nome Studio"}</div>
+                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>
+                      {headerForm.report_header_text || ""}
+                    </div>
+                  </div>
+                  {headerForm.report_logo_url && (
+                    <img src={headerForm.report_logo_url} alt="logo" style={{ height:40, maxWidth:120, objectFit:'contain', marginLeft:12 }}/>
+                  )}
+                </div>
+                <div style={{ borderTop:`0.5px solid ${T.navy}`, marginTop:10, paddingTop:8 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.navy, textAlign:'center', textTransform:'uppercase', letterSpacing:'0.05em' }}>Titolo del report PDF</div>
+                </div>
+              </div>
+
               {/* Sezione Footer */}
               <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>Piè di pagina (footer)</div>
@@ -595,26 +614,27 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                   </div>
                 </div>
 
-                {/* 3 colonne footer */}
+                {/* 3 colonne footer — textarea per andare a capo */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
-                  <div>
-                    <FL>Sinistra</FL>
-                    <input type="text" value={headerForm.report_footer_left} onChange={e=>setHeaderForm(h=>({...h,report_footer_left:e.target.value}))}
-                      placeholder="Es. Studio Prini" style={inputSt}/>
-                  </div>
-                  <div>
-                    <FL>Centro</FL>
-                    <input type="text" value={headerForm.report_footer_center} onChange={e=>setHeaderForm(h=>({...h,report_footer_center:e.target.value}))}
-                      placeholder="Es. Report di Cantiere" style={inputSt}/>
-                  </div>
-                  <div>
-                    <FL>Destra</FL>
-                    <input type="text" value={headerForm.report_footer_right} onChange={e=>setHeaderForm(h=>({...h,report_footer_right:e.target.value}))}
-                      placeholder="Es. Pagina {pagina} di {totale}" style={inputSt}/>
-                  </div>
+                  {[
+                    ["report_footer_left",   "Sinistra"],
+                    ["report_footer_center", "Centro"],
+                    ["report_footer_right",  "Destra"],
+                  ].map(([field, label]) => (
+                    <div key={field}>
+                      <FL>{label}</FL>
+                      <textarea
+                        value={headerForm[field]}
+                        onChange={e=>setHeaderForm(h=>({...h,[field]:e.target.value}))}
+                        rows={3}
+                        placeholder=""
+                        style={{ ...inputSt, resize:'vertical', lineHeight:1.5 }}
+                      />
+                    </div>
+                  ))}
                 </div>
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:6 }}>
-                  Usa <strong style={{color:T.ink}}>{"{pagina}"}</strong> e <strong style={{color:T.ink}}>{"{totale}"}</strong> per numerazione automatica.
+                  Scrivi liberamente. Usa <strong style={{color:T.ink}}>{"{pagina}"}</strong> e <strong style={{color:T.ink}}>{"{totale}"}</strong> per la numerazione automatica.
                 </div>
 
                 {/* Anteprima footer */}
@@ -622,29 +642,10 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                   <div style={{ height:1, background:'rgba(150,150,150,0.3)', marginBottom:8 }}/>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:9, color:T.muted,
                     fontFamily: headerForm.report_footer_font==='times' ? 'Georgia, serif' : headerForm.report_footer_font==='courier' ? "'Courier New', monospace" : 'Arial, sans-serif' }}>
-                    <span>{(headerForm.report_footer_left  ||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || (!headerForm.report_footer_center && !headerForm.report_footer_right ? (studio?.name||"Studio") : "")}</span>
-                    <span>{(headerForm.report_footer_center||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
-                    <span>{(headerForm.report_footer_right ||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || (!headerForm.report_footer_left && !headerForm.report_footer_center ? "Pagina 1 di 3" : "")}</span>
+                    <span style={{ flex:1, whiteSpace:'pre-line' }}>{(headerForm.report_footer_left||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
+                    <span style={{ flex:1, textAlign:'center', whiteSpace:'pre-line' }}>{(headerForm.report_footer_center||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
+                    <span style={{ flex:1, textAlign:'right', whiteSpace:'pre-line' }}>{(headerForm.report_footer_right||"").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Anteprima intestazione */}
-              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'14px 18px' }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.navy }}>{studio?.name || "Nome Studio"}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>
-                      {headerForm.report_header_text || [studio?.indirizzo, studio?.città].filter(Boolean).join(", ") || "Testo intestazione"}
-                    </div>
-                  </div>
-                  {headerForm.report_logo_url && (
-                    <img src={headerForm.report_logo_url} alt="logo" style={{ height:40, maxWidth:120, objectFit:'contain' }}/>
-                  )}
-                </div>
-                <div style={{ borderTop:`0.5px solid ${T.navy}`, marginTop:10, paddingTop:8 }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.navy, textAlign:'center', textTransform:'uppercase', letterSpacing:'0.05em' }}>Titolo del report PDF</div>
                 </div>
               </div>
 
