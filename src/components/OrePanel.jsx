@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { formatOre } from "../lib/utils";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 function avatarColor(name = "") {
   const colors = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
@@ -45,6 +46,7 @@ export default function OrePanel({ projectId, studioId }) {
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
   const [open, setOpen]           = useState(false);
+  useBodyScrollLock(open);
   const [entries, setEntries]     = useState([]);
   const [memberMap, setMemberMap] = useState({}); // team_member id → user_name
   const [loading, setLoading]     = useState(false);

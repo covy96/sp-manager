@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 const FIGURE_PROFESSIONALI = [
   "Cliente",
@@ -55,6 +56,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  useBodyScrollLock(modalOpen);
   const [editingId, setEditingId] = useState(null); // project_contacts.id being edited
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);

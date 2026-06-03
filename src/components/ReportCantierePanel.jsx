@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { registerGroteskaFonts, GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 // Registra i font Groteska globalmente (una volta sola)
 registerGroteskaFonts();
@@ -389,6 +390,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const fileRef = useRef(null);
 
   const [open, setOpen]       = useState(false);
+  useBodyScrollLock(open);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
