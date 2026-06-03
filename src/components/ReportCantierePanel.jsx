@@ -76,19 +76,21 @@ async function urlToBase64(url) {
 }
 
 // ── PDF generator ─────────────────────────────────────────────────────────────
+// Usa lo snapshot salvato nel report se disponibile, altrimenti le impostazioni correnti
 async function generatePdf({ report, project, studio }) {
+  const s = report.header_snapshot ? { ...studio, ...report.header_snapshot } : studio;
   const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
   const W = 210, ml = 20, mr = 20, cw = W - ml - mr;
   const PAGE_H = 297, FOOTER_H = 15;
   const maxY = PAGE_H - FOOTER_H - 10;
   let y = 18;
 
-  const footerFont = studio?.report_footer_font || "helvetica";
+  const footerFont = s?.report_footer_font || "helvetica";
 
   // ── Logo (destra) ─────────────────────────────────────────────────
-  let logoBottomY = y; // traccia fino a dove arriva il logo
-  if (studio?.report_logo_url) {
-    const b64 = await urlToBase64(studio.report_logo_url);
+  let logoBottomY = y;
+  if (s?.report_logo_url) {
+    const b64 = await urlToBase64(s.report_logo_url);
     if (b64) {
       try {
         const imgEl = await new Promise(res => {
@@ -111,18 +113,17 @@ async function generatePdf({ report, project, studio }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(19, 49, 92);
-  const headerName = studio?.report_header_name ?? "";
+  const headerName = s?.report_header_name ?? "";
   if (headerName) { doc.text(headerName, ml, y); y += 5; }
 
-  const headerText = studio?.report_header_text?.trim()
-    || [studio?.indirizzo, studio?.città, studio?.cap].filter(Boolean).join(", ")
+  const headerText = s?.report_header_text?.trim()
+    || [s?.indirizzo, s?.città, s?.cap].filter(Boolean).join(", ")
     || "";
   if (headerText) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
-    // lascia spazio al logo a destra
-    const maxTextW = studio?.report_logo_url ? cw - 50 : cw;
+    const maxTextW = s?.report_logo_url ? cw - 50 : cw;
     doc.splitTextToSize(headerText, maxTextW).forEach(line => { doc.text(line, ml, y); y += 4.5; });
   }
 
@@ -207,9 +208,9 @@ async function generatePdf({ report, project, studio }) {
   }
 
   // ── Footer personalizzato su ogni pagina ──────────────────────────
-  const fLeft   = studio?.report_footer_left   || "";
-  const fCenter = studio?.report_footer_center || "";
-  const fRight  = studio?.report_footer_right  || "";
+  const fLeft   = s?.report_footer_left   || "";
+  const fCenter = s?.report_footer_center || "";
+  const fRight  = s?.report_footer_right  || "";
   const tot = doc.getNumberOfPages();
 
   for (let i = 1; i <= tot; i++) {
@@ -228,7 +229,7 @@ async function generatePdf({ report, project, studio }) {
 
     // Fallback se tutti e tre vuoti
     if (!fLeft && !fCenter && !fRight) {
-      const fn = studio?.report_header_name ?? studio?.name ?? "";
+      const fn = s?.report_header_name ?? s?.name ?? "";
       doc.text(`${fn}${fn ? " — " : ""}Report di Cantiere`, ml, fy + 5);
       doc.text(`Pagina ${i} di ${tot}`, W - mr, fy + 5, { align:"right" });
     }
@@ -278,6 +279,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   const [savingHeader, setSavingHeader] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [headerMsg, setHeaderMsg]     = useState("");
+  const [confirmUpdateAll, setConfirmUpdateAll] = useState(false);
 
   // ── load ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -348,13 +350,23 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       studio:       studioId,
       project_id:   projectId,
       numero:       form._numero || 1,
-      nome_interno: form.nome_interno.trim() || form.titolo.trim(),
-      titolo:       form.titolo.trim() || form.nome_interno.trim(),
-      luogo:        form.luogo.trim(),
-      data_ora:     form.data_ora || new Date().toISOString(),
-      contenuto:    form.contenuto,
-      presenti:     form.presenti,
-      updated_at:   new Date().toISOString(),
+      nome_interno:    form.nome_interno.trim() || form.titolo.trim(),
+      titolo:          form.titolo.trim() || form.nome_interno.trim(),
+      luogo:           form.luogo.trim(),
+      data_ora:        form.data_ora || new Date().toISOString(),
+      contenuto:       form.contenuto,
+      presenti:        form.presenti,
+      updated_at:      new Date().toISOString(),
+      // Snapshot intestazione al momento della creazione (non sovrascrivere se modifica)
+      ...(editingId ? {} : { header_snapshot: {
+        report_header_name:   studio?.report_header_name   ?? null,
+        report_header_text:   studio?.report_header_text   ?? null,
+        report_logo_url:      studio?.report_logo_url      ?? null,
+        report_footer_left:   studio?.report_footer_left   ?? null,
+        report_footer_center: studio?.report_footer_center ?? null,
+        report_footer_right:  studio?.report_footer_right  ?? null,
+        report_footer_font:   studio?.report_footer_font   ?? "helvetica",
+      }}),
     };
     let err;
     if (editingId) {
@@ -374,9 +386,9 @@ export default function ReportCantierePanel({ projectId, studioId }) {
   };
 
   // ── salva intestazione ───────────────────────────────────────────
-  const handleSaveHeader = async () => {
-    setSavingHeader(true); setHeaderMsg("");
-    const { error } = await supabase.from("studios").update({
+  const doSaveHeader = async (updateExisting) => {
+    setSavingHeader(true); setHeaderMsg(""); setConfirmUpdateAll(false);
+    const snapshot = {
       report_header_name:   headerForm.report_header_name   || null,
       report_header_text:   headerForm.report_header_text   || null,
       report_logo_url:      headerForm.report_logo_url      || null,
@@ -384,13 +396,30 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       report_footer_center: headerForm.report_footer_center || null,
       report_footer_right:  headerForm.report_footer_right  || null,
       report_footer_font:   headerForm.report_footer_font   || "helvetica",
-    }).eq("id", studioId);
+    };
+    const { error } = await supabase.from("studios").update(snapshot).eq("id", studioId);
+    if (error) { setSavingHeader(false); setHeaderMsg("Errore: " + error.message); return; }
+
+    if (updateExisting) {
+      // Aggiorna lo snapshot di tutti i report esistenti di questo studio
+      await supabase.from("report_cantiere")
+        .update({ header_snapshot: snapshot })
+        .eq("studio", studioId)
+        .is("deleted_at", null);
+    }
     setSavingHeader(false);
-    if (error) { setHeaderMsg("Errore: " + error.message); return; }
-    setHeaderMsg("Salvato!");
-    // Ricarica tutto così il PDF usa subito i nuovi dati
+    setHeaderMsg(updateExisting ? "Salvato e aggiornato su tutti i report!" : "Salvato!");
     await load();
     setTimeout(() => setHeaderMsg(""), 3000);
+  };
+
+  const handleSaveHeader = () => {
+    // Se ci sono report esistenti, chiedi se aggiornarli
+    if (reports.length > 0) {
+      setConfirmUpdateAll(true);
+    } else {
+      doSaveHeader(false);
+    }
   };
 
   // ── upload logo + auto-save ──────────────────────────────────────
@@ -676,12 +705,37 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 </div>
               )}
 
-              <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <Btn ghost onClick={()=>setView("list")}>← Indietro</Btn>
-                <Btn onClick={handleSaveHeader} disabled={savingHeader}>
-                  {savingHeader ? "Salvataggio..." : "Salva intestazione"}
-                </Btn>
-              </div>
+              {/* Popup conferma aggiornamento report esistenti */}
+              {confirmUpdateAll && (
+                <div style={{ background: T.navyLight, border:`1px solid ${T.navy}`, padding:'16px 18px', borderRadius:4 }}>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:6 }}>
+                    Aggiornare anche i report esistenti?
+                  </div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:14 }}>
+                    Hai {reports.length} report salvati. Vuoi applicare la nuova intestazione anche a quelli già creati?
+                  </div>
+                  <div style={{ display:'flex', gap:10 }}>
+                    <Btn onClick={()=>doSaveHeader(true)} disabled={savingHeader} style={{ flex:1 }}>
+                      {savingHeader ? "..." : "Sì, aggiorna tutti"}
+                    </Btn>
+                    <Btn ghost onClick={()=>doSaveHeader(false)} disabled={savingHeader} style={{ flex:1 }}>
+                      No, solo i nuovi
+                    </Btn>
+                    <Btn ghost onClick={()=>setConfirmUpdateAll(false)} disabled={savingHeader}>
+                      Annulla
+                    </Btn>
+                  </div>
+                </div>
+              )}
+
+              {!confirmUpdateAll && (
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                  <Btn ghost onClick={()=>setView("list")}>← Indietro</Btn>
+                  <Btn onClick={handleSaveHeader} disabled={savingHeader}>
+                    {savingHeader ? "Salvataggio..." : "Salva intestazione"}
+                  </Btn>
+                </div>
+              )}
             </div>
           )}
 
