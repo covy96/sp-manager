@@ -89,11 +89,28 @@ async function generatePdf({ report, project, studio }) {
   const maxY = PAGE_H - FOOTER_H - 10;
   let y = 18;
 
-  // Font footer: se è un Groteska usa il nome-famiglia direttamente
-  const footerFontKey = s?.report_footer_font || "helvetica";
-  const groteskaVariant = GROTESKA_VARIANTS.find(g => g.key === footerFontKey);
-  const footerFont     = groteskaVariant ? groteskaVariant.family : footerFontKey;
-  const footerFontStyle = groteskaVariant ? groteskaVariant.style  : "normal";
+  // ── Font setup ───────────────────────────────────────────────────
+  const footerFontKey  = s?.report_footer_font || "helvetica";
+  const groteskaFooter = GROTESKA_VARIANTS.find(g => g.key === footerFontKey);
+  const footerFont      = groteskaFooter ? groteskaFooter.family : footerFontKey;
+  const footerFontStyle = groteskaFooter ? groteskaFooter.style  : "normal";
+
+  // Body font (solo se lo switch è attivo E il font selezionato è Groteska)
+  const bodyEnabled = s?.report_body_font_enabled && groteskaFooter;
+  // Mappa: peso → nome font Groteska
+  const gBold    = "Groteska-Bold";
+  const gRegular = "Groteska-Regular";
+  const gBook    = "Groteska-Book";
+  const gLight   = "Groteska-Light";
+  // Helper: imposta font (usa Groteska se bodyEnabled, altrimenti helvetica)
+  const setF = (weight, style="normal") => {
+    if (bodyEnabled) {
+      const fam = weight === "bold" ? gBold : weight === "regular" ? gRegular : weight === "book" ? gBook : gLight;
+      doc.setFont(fam, style === "italic" ? "italic" : "normal");
+    } else {
+      doc.setFont("helvetica", weight === "bold" ? "bold" : "normal");
+    }
+  };
 
   // ── Logo (destra) ─────────────────────────────────────────────────
   let logoBottomY = y;
@@ -118,17 +135,13 @@ async function generatePdf({ report, project, studio }) {
   }
 
   // ── Nome studio + testo intestazione (sinistra) ──────────────────
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.setTextColor(19, 49, 92);
+  setF("bold"); doc.setFontSize(13); doc.setTextColor(19, 49, 92);
   const headerName = s?.report_header_name ?? "";
   if (headerName) { doc.text(headerName, ml, y); y += 5; }
 
   const headerText = s?.report_header_text?.trim() || "";
   if (headerText) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    doc.setTextColor(80, 80, 80);
+    setF("light"); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
     const maxTextW = s?.report_logo_url ? cw - 50 : cw;
     doc.splitTextToSize(headerText, maxTextW).forEach(line => { doc.text(line, ml, y); y += 4.5; });
   }
@@ -142,9 +155,7 @@ async function generatePdf({ report, project, studio }) {
 
   // ── Titolo PDF ───────────────────────────────────────────────────
   const pdfTitle = (report.titolo || "Report di Cantiere").toUpperCase();
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.setTextColor(19, 49, 92);
+  setF("bold"); doc.setFontSize(15); doc.setTextColor(19, 49, 92);
   doc.text(pdfTitle, W / 2, y, { align:"center" });
   y += 12;
 
@@ -156,11 +167,10 @@ async function generatePdf({ report, project, studio }) {
     ["Data e ora",     formatDt(report.data_ora)],
     ["Sopralluogo N.", String(report.numero)],
   ];
-  doc.setFontSize(9.5);
-  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(9.5); doc.setTextColor(30, 30, 30);
   meta.forEach(([k, v]) => {
-    doc.setFont("helvetica", "bold");   doc.text(`${k}:`, ml, y);
-    doc.setFont("helvetica", "normal"); doc.text(v, ml + 38, y);
+    setF("regular"); doc.text(`${k}:`, ml, y);
+    setF("book");    doc.text(v, ml + 38, y);
     y += 6;
   });
   y += 4;
@@ -168,11 +178,11 @@ async function generatePdf({ report, project, studio }) {
   // ── Tabella presenti ─────────────────────────────────────────────
   const presenti = Array.isArray(report.presenti) ? report.presenti : [];
   if (presenti.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(19, 49, 92);
+    setF("regular"); doc.setFontSize(9); doc.setTextColor(19, 49, 92);
     doc.text("PRESENTI", ml, y);
     y += 4;
+    const tblFont = bodyEnabled ? gBook : "helvetica";
+    const tblHFont = bodyEnabled ? gBold : "helvetica";
     autoTable(doc, {
       startY: y,
       margin: { left: ml, right: mr },
@@ -183,8 +193,8 @@ async function generatePdf({ report, project, studio }) {
         p.email || "—",
         p.telefono || "—",
       ]),
-      headStyles: { fillColor:[19,49,92], textColor:[255,255,255], fontStyle:"bold", fontSize:8, cellPadding:3 },
-      bodyStyles: { fontSize:8, cellPadding:3, textColor:[30,30,30] },
+      headStyles: { fillColor:[19,49,92], textColor:[255,255,255], fontStyle:"bold", fontSize:8, cellPadding:3, font: tblHFont },
+      bodyStyles: { fontSize:8, cellPadding:3, textColor:[30,30,30], font: tblFont },
       alternateRowStyles: { fillColor:[245,247,250] },
       tableLineWidth:0.1, tableLineColor:[200,200,200],
     });
@@ -199,14 +209,10 @@ async function generatePdf({ report, project, studio }) {
 
   if (report.contenuto?.trim()) {
     newPageIfNeeded(14);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(19, 49, 92);
+    setF("regular"); doc.setFontSize(9); doc.setTextColor(19, 49, 92);
     doc.text("REPORT", ml, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(30, 30, 30);
+    setF("book"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 30);
     doc.splitTextToSize(report.contenuto, cw).forEach(line => {
       newPageIfNeeded(6);
       doc.text(line, ml, y); y += 5.5;
@@ -285,6 +291,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     report_header_text:"", report_logo_url:"",
     report_footer_left:"", report_footer_center:"", report_footer_right:"",
     report_footer_font:"helvetica",
+    report_body_font_enabled: false,
   });
   const [savingHeader, setSavingHeader] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -298,7 +305,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
     const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
       supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
-      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font").eq("id",studioId).single(),
+      supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
     ]);
     setReports(reps || []);
@@ -312,7 +319,8 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       report_footer_left:   st?.report_footer_left   || "",
       report_footer_center: st?.report_footer_center || "",
       report_footer_right:  st?.report_footer_right  || "",
-      report_footer_font:   st?.report_footer_font   || "helvetica",
+      report_footer_font:        st?.report_footer_font        || "helvetica",
+      report_body_font_enabled:  st?.report_body_font_enabled  ?? false,
     });
     setLoading(false);
   }, [projectId, studioId]);
@@ -405,7 +413,8 @@ export default function ReportCantierePanel({ projectId, studioId }) {
       report_footer_left:   headerForm.report_footer_left   || null,
       report_footer_center: headerForm.report_footer_center || null,
       report_footer_right:  headerForm.report_footer_right  || null,
-      report_footer_font:   headerForm.report_footer_font   || "helvetica",
+      report_footer_font:        headerForm.report_footer_font        || "helvetica",
+      report_body_font_enabled:  headerForm.report_body_font_enabled  ?? false,
     };
     const { error } = await supabase.from("studios").update(snapshot).eq("id", studioId);
     if (error) { setSavingHeader(false); setHeaderMsg("Errore: " + error.message); return; }
@@ -664,18 +673,37 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 {/* Font */}
                 <div style={{ marginBottom:14 }}>
                   <FL>Font footer</FL>
-                  <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                    {[
-                      { val:"helvetica", label:"Helvetica", css:"Arial, sans-serif" },
-                      { val:"times",     label:"Times",     css:"Georgia, serif" },
-                      { val:"courier",   label:"Courier",   css:"'Courier New', monospace" },
-                      ...GROTESKA_VARIANTS.map(g => ({ val:g.key, label:`Groteska ${g.label}`, css:"'Space Grotesk', sans-serif" })),
-                    ].map(({val,label,css})=>(
-                      <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val}))}
-                        style={{ padding:'6px 14px', border:`0.5px solid ${headerForm.report_footer_font===val ? T.navy : T.borderMd}`, background: headerForm.report_footer_font===val ? T.navyLight : 'transparent', color: headerForm.report_footer_font===val ? T.navy : T.ink, cursor:'pointer', fontFamily:css, fontSize:12 }}>
-                        {label}
-                      </button>
-                    ))}
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:16, flexWrap:'wrap' }}>
+                    <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                      {[
+                        { val:"helvetica", label:"Helvetica", css:"Arial, sans-serif" },
+                        { val:"times",     label:"Times",     css:"Georgia, serif" },
+                        { val:"courier",   label:"Courier",   css:"'Courier New', monospace" },
+                        ...GROTESKA_VARIANTS.map(g => ({ val:g.key, label:`Groteska ${g.label}`, css:"'Space Grotesk', sans-serif" })),
+                      ].map(({val,label,css})=>(
+                        <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val}))}
+                          style={{ padding:'6px 14px', border:`0.5px solid ${headerForm.report_footer_font===val ? T.navy : T.borderMd}`, background: headerForm.report_footer_font===val ? T.navyLight : 'transparent', color: headerForm.report_footer_font===val ? T.navy : T.ink, cursor:'pointer', fontFamily:css, fontSize:12 }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Switch: applica a tutto il documento */}
+                    {GROTESKA_VARIANTS.find(g => g.key === headerForm.report_footer_font) && (
+                      <div style={{ display:'flex', alignItems:'center', gap:8, paddingTop:2 }}>
+                        <button onClick={()=>setHeaderForm(h=>({...h,report_body_font_enabled:!h.report_body_font_enabled}))}
+                          style={{ width:40, height:22, borderRadius:11, border:'none', cursor:'pointer', position:'relative', transition:'background 0.2s',
+                            background: headerForm.report_body_font_enabled ? T.navy : T.borderMd }}>
+                          <div style={{ position:'absolute', top:3, left: headerForm.report_body_font_enabled ? 21 : 3, width:16, height:16, borderRadius:'50%', background:'#fff', transition:'left 0.2s' }}/>
+                        </button>
+                        <div>
+                          <div style={{ fontSize:12, color:T.ink, fontWeight:500 }}>Applica a tutto il documento</div>
+                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+                            Titolo → Bold · Etichette → Regular · Testo → Book
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
