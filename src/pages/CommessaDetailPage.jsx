@@ -963,7 +963,7 @@ export default function CommessaDetailPage() {
                         )}
                       </div>
                       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>
-                        {currency(r.importo_calcolato ?? r.importo ?? 0)}
+                        {currency(r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100))}
                       </div>
                     </div>
                   ))}
