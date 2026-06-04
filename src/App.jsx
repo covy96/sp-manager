@@ -35,6 +35,7 @@ import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
 import NotifichePage from "./pages/settings/NotifichePage";
+import ReportImpostazioniPage from "./pages/settings/ReportImpostazioniPage";
 import PianoPage from "./pages/settings/PianoPage";
 import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
 import CestinoPage from "./pages/settings/CestinoPage";
@@ -358,6 +359,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><NotifichePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/report"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><ReportImpostazioniPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
