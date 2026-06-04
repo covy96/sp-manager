@@ -39,27 +39,22 @@ function Btn({ children, onClick, disabled, ghost, style = {} }) {
   );
 }
 
-// ── Modale anteprima A4 reale ─────────────────────────────────────
-// A4: 210 × 297 mm → ratio 1:1.4142
-// Rendiamo il foglio largo quanto lo schermo consente, con proporzioni fisse
+// ── Modale anteprima A4 — layout identico al PDF reale ───────────
 function PreviewModal({ form, onClose }) {
   const footerFont =
     form.report_footer_font === "times"   ? "Georgia, serif" :
     form.report_footer_font === "courier" ? "'Courier New', monospace" :
     "'Space Grotesk', Arial, sans-serif";
 
-  // Il foglio ha larghezza fissa 794px (96dpi ≈ A4 width)
-  // e altezza 1123px (A4 height in px a 96dpi)
-  const PAGE_W = 794;
-  const PAGE_H = 1123;
-  const MARGIN = 64; // px margini interni foglio
+  const PAGE_W = 794;  // 210mm @ 96dpi
+  const PAGE_H = 1123; // 297mm @ 96dpi
+  const ML = 72; const MR = 72; const MT = 52; const MB = 52;
 
   return (
-    <div
-      style={{ position: "fixed", inset: 0, zIndex: 200, background: "#4a4a4a", display: "flex", flexDirection: "column", overflow: "hidden" }}
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#4a4a4a", display: "flex", flexDirection: "column", overflow: "hidden" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
-      {/* barra superiore */}
+      {/* barra */}
       <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 24px", background: "#333", borderBottom: "1px solid #222" }}>
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#aaa" }}>
           Anteprima PDF — A4 (210 × 297 mm)
@@ -67,88 +62,97 @@ function PreviewModal({ form, onClose }) {
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1, padding: "0 4px" }}>×</button>
       </div>
 
-      {/* area scroll con foglio centrato */}
+      {/* area scroll */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", display: "flex", justifyContent: "center", padding: "32px 24px" }}>
         <div style={{
           width: PAGE_W, minHeight: PAGE_H, flexShrink: 0,
-          background: "#fff",
-          boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
+          background: "#fff", boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
           display: "flex", flexDirection: "column",
-          padding: MARGIN, boxSizing: "border-box",
-          fontFamily: footerFont,
+          paddingTop: MT, paddingBottom: MB, paddingLeft: ML, paddingRight: MR,
+          boxSizing: "border-box", fontFamily: footerFont,
         }}>
 
-          {/* intestazione */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-            <div style={{ flex: 1 }}>
-              {form.report_header_name && (
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#13315C", marginBottom: 5, fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {form.report_header_name}
-                </div>
-              )}
-              {form.report_header_text && (
-                <div style={{ fontSize: 10, color: "#555", whiteSpace: "pre-line", lineHeight: 1.7 }}>
-                  {form.report_header_text}
-                </div>
-              )}
-            </div>
-            {form.report_logo_url && (
-              <img src={form.report_logo_url} alt="logo"
-                style={{
-                  height: form.report_logo_size === "small" ? 36 : form.report_logo_size === "large" ? 68 : 50,
-                  maxWidth: form.report_logo_size === "small" ? 100 : form.report_logo_size === "large" ? 170 : 130,
-                  objectFit: "contain", marginLeft: 24,
-                }} />
+          {/* ── TOP: logo in alto a destra ── */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+            {form.report_logo_url ? (
+              <img src={form.report_logo_url} alt="logo" style={{
+                height: form.report_logo_size === "small" ? 32 : form.report_logo_size === "large" ? 60 : 44,
+                maxWidth: form.report_logo_size === "small" ? 90 : form.report_logo_size === "large" ? 160 : 120,
+                objectFit: "contain",
+              }} />
+            ) : (
+              <div style={{ width: 44, height: 44, background: "#f0f0f0", border: "0.5px dashed #ccc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 9, color: "#bbb", fontFamily: "'IBM Plex Mono', monospace" }}>LOGO</span>
+              </div>
             )}
           </div>
 
-          {/* linea + titolo */}
-          <div style={{ borderTop: "2px solid #13315C", paddingTop: 12, marginBottom: 28 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#13315C", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Report di Cantiere n° 1
-            </div>
+          {/* ── Linea blu ── */}
+          <div style={{ borderTop: "1.5px solid #13315C", marginBottom: 16 }} />
+
+          {/* ── Titolo centrato (report_header_name) ── */}
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: "#13315C", letterSpacing: "0.02em", fontFamily: "'Space Grotesk', sans-serif" }}>
+              {form.report_header_name || <span style={{ color: "#ccc", fontStyle: "italic", fontWeight: 400 }}>Nome studio nel PDF</span>}
+            </span>
           </div>
 
-          {/* corpo */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-              {[["Data","15/06/2025"],["Luogo","Via Example 1, Milano"],["Meteo","Soleggiato"]].map(([k,v]) => (
-                <div key={k} style={{ background: "#f8f8f8", border: "0.5px solid #e8e8e8", padding: "10px 12px" }}>
-                  <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>{k}</div>
-                  <div style={{ fontSize: 12, color: "#222" }}>{v}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ background: "#f8f8f8", border: "0.5px solid #e8e8e8", padding: "12px 14px" }}>
-              <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Presenti</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {[["DL","Direttore Lavori"],["IM","Impresa Edile"],["SC","Studio Cliente"]].map(([r,a]) => (
-                  <div key={r} style={{ fontSize: 11, color: "#444", padding: "3px 10px", border: "0.5px solid #ccc", background: "#fff" }}>{r} · {a}</div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 5 }}>Note lavori</div>
-              <div style={{ fontSize: 12, color: "#444", lineHeight: 1.8, padding: "10px 12px", border: "0.5px solid #e8e8e8" }}>
-                Proseguono i lavori di muratura al piano primo. Verificata la posa dei serramenti in conformità al progetto. Il capocantiere segnala un ritardo di 2 giorni sulla consegna del materiale di copertura.
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
-              {[1,2].map(n => (
-                <div key={n} style={{ height: 160, background: "#f0f0f0", border: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em" }}>FOTO {n}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* footer */}
-          <div style={{ marginTop: 32, borderTop: "0.5px solid #ccc", paddingTop: 10, display: "flex", gap: 8, fontSize: 10, color: "#888" }}>
-            {[["report_footer_left","left"],["report_footer_center","center"],["report_footer_right","right"]].map(([field,align]) => (
-              <div key={field} style={{ flex: 1, textAlign: align, whiteSpace: "pre-line" }}>
-                {(form[field] || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || <span style={{ opacity: 0.3 }}>—</span>}
+          {/* ── Tabella info progetto ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 24 }}>
+            {[
+              ["Progetto:",   "Nome del progetto"],
+              ["Cliente:",    "Nome del cliente"],
+              ["Luogo:",      "Via Example 1, Milano"],
+              ["Data e ora:", "04/06/2026, 13:10"],
+              ["Report N.:",  "1"],
+            ].map(([label, value]) => (
+              <div key={label} style={{ display: "flex", gap: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#222", minWidth: 120, fontFamily: footerFont }}>{label}</span>
+                <span style={{ fontSize: 12, color: "#444", fontFamily: footerFont }}>{value}</span>
               </div>
             ))}
+          </div>
+
+          {/* ── Sezione REPORT (titolo + note) ── */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#13315C", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>
+              Report
+            </div>
+            <div style={{ fontSize: 12, color: "#444", lineHeight: 1.8 }}>
+              Testo delle note del sopralluogo...
+            </div>
+          </div>
+
+          {/* ── Foto placeholder ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {[1,2].map(n => (
+              <div key={n} style={{ height: 140, background: "#f5f5f5", border: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 10, color: "#ccc", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em" }}>FOTO {n}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* ── Footer ── */}
+          <div style={{ borderTop: "0.5px solid #ccc", paddingTop: 10 }}>
+            {/* se c'è solo report_header_text usato come footer centrato (come nel PDF reale) */}
+            {form.report_footer_left || form.report_footer_center || form.report_footer_right ? (
+              <div style={{ display: "flex", gap: 8, fontSize: 10, color: "#888" }}>
+                {[["report_footer_left","left"],["report_footer_center","center"],["report_footer_right","right"]].map(([field,align]) => (
+                  <div key={field} style={{ flex: 1, textAlign: align, whiteSpace: "pre-line" }}>
+                    {(form[field] || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || <span style={{ opacity: 0.2 }}>—</span>}
+                  </div>
+                ))}
+              </div>
+            ) : form.report_header_text ? (
+              <div style={{ textAlign: "center", fontSize: 10, color: "#888", whiteSpace: "pre-line", lineHeight: 1.7 }}>
+                {form.report_header_text}
+              </div>
+            ) : (
+              <div style={{ textAlign: "center", fontSize: 10, color: "#ccc", fontStyle: "italic" }}>footer</div>
+            )}
           </div>
         </div>
       </div>
