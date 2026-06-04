@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { registerGroteskaFonts, GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import { useStudio } from "../hooks/useStudio";
 
 // Registra i font Groteska globalmente (una volta sola)
 registerGroteskaFonts();
@@ -389,6 +390,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const { T } = useTheme();
   const inputSt = inputCss(T);
   const fileRef = useRef(null);
+  const { teamMember } = useStudio();
 
   const [open, setOpen]       = useState(false);
   useBodyScrollLock(open);
@@ -485,10 +487,33 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const openNew = () => {
     const nextNum = (reports[0]?.numero ?? 0) + 1;
     const base = emptyForm(project?.address || "");
-    base.presenti = contacts.map(pc => {
-      const gc = pc.global_contacts || {};
-      return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
-    });
+
+    // Voce DL: sempre il membro che sta aprendo il report, con dati dello studio
+    const dlEntry = {
+      figura:    "Direttore Lavori",
+      azienda:   studio?.report_header_name || studio?.name || "",
+      referente: teamMember?.user_name || teamMember?.user_email || "",
+      email:     teamMember?.user_email || "",
+      telefono:  teamMember?.telefono || "",
+    };
+
+    if (reports.length > 0) {
+      // Report successivi: riprendi i presenti dall'ultimo report
+      const lastPresenti = Array.isArray(reports[0]?.presenti) ? reports[0].presenti : [];
+      // Aggiorna (o aggiungi) la voce DL in cima
+      const withoutDL = lastPresenti.filter(p =>
+        !(p.figura === "Direttore Lavori" && (p.azienda === dlEntry.azienda || p.referente === dlEntry.referente))
+      );
+      base.presenti = [dlEntry, ...withoutDL];
+    } else {
+      // Primo report: DL + contatti progetto
+      const contactPresenti = contacts.map(pc => {
+        const gc = pc.global_contacts || {};
+        return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
+      });
+      base.presenti = [dlEntry, ...contactPresenti];
+    }
+
     setForm({ ...base, _numero:nextNum });
     setEditingId(null); setSaveError(""); setSaveOk(false); setFotos([]); setView("form");
   };
