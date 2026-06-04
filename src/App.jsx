@@ -123,6 +123,16 @@ export default function App({ session }) {
                 />
         }
       />
+      <Route
+        path="/landing"
+        element={
+          <LandingPage
+            onLogin={() => navigate("/login")}
+            onRegister={() => navigate("/crea-studio")}
+            onJoin={() => navigate("/unisciti")}
+          />
+        }
+      />
       <Route path="/login" element={<LoginPage session={session} />} />
       <Route path="/register" element={<RegisterPage session={session} />} />
       <Route path="/crea-studio" element={<CreateStudioPage session={session} />} />

@@ -53,8 +53,10 @@ export default function LoginPage({ session }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#1c1c1e] p-4">
       <div className="w-full max-w-md rounded-xl bg-[#2c2c2e] p-6 shadow">
-        <h1 className="text-2xl font-semibold text-white">ASM</h1>
-        <p className="text-xs text-white/40">Architect Studio Management</p>
+        <Link to="/landing" className="inline-block group">
+          <h1 className="text-2xl font-semibold text-white group-hover:text-white/80 transition-colors">ASM</h1>
+          <p className="text-xs text-white/40 group-hover:text-white/60 transition-colors">Architect Studio Management</p>
+        </Link>
         <p className="mt-1 text-sm text-white/60">
           Accedi al gestionale del tuo studio di architettura.
         </p>
