@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
@@ -200,6 +201,7 @@ function ProjectRow({ proj }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function DashboardPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Dashboard");
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
   const isMobile = useIsMobile();

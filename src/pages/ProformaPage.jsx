@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useStudio } from "../hooks/useStudio";
@@ -51,6 +52,7 @@ function SortBtn({ field, label, sortField, sortDesc, onSort }) {
 
 export default function ProformaPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Proforma");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { studioId } = useStudio();

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
@@ -263,6 +264,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Progetto");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { id: projectId } = useParams();

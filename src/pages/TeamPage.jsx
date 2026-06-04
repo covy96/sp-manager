@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
 import { useStudio } from "../hooks/useStudio";
@@ -97,6 +98,7 @@ function RoleBadge({ role }) {
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
 export default function TeamPage() {
+  usePageTitleOnMount("Team");
   const { T } = useTheme();
   const isMobile = useIsMobile();
   const { studioId, loading: studioLoading, teamMember: currentMember } = useStudio();

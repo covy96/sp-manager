@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -125,6 +126,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function CommessaDetailPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Commessa");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { id: commessaId } = useParams();

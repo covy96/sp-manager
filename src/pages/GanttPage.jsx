@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
@@ -1356,6 +1357,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 // ── LISTA PROGETTI ────────────────────────────────────────────────
 export default function GanttPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Gantt");
   const { studioId } = useStudio();
   const [projects, setProjects]               = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);

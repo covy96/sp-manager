@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
@@ -68,6 +69,7 @@ function TabBtn({ active, onClick, children }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function ReportPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Report");
   const thSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 14px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left', whiteSpace:'nowrap' };
   const tdSt = { padding:'9px 14px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, color:T.ink };
   const monoSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:11 };

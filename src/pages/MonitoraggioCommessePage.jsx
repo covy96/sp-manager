@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
@@ -66,6 +67,7 @@ function SortButton({ label, col, sortBy, sortDir, onSort }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function MonitoraggioCommessePage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Monitoraggio");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { studioId, loading: studioLoading } = useStudio();

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -141,6 +142,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function CalendarioPage() {
   const { T } = useTheme();
+  usePageTitleOnMount("Calendario");
   const isMobile = useIsMobile();
   const { studioId } = useStudio();
   const now = new Date();

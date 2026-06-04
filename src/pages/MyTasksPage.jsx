@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 
@@ -87,6 +88,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
 
 export default function MyTasksPage() {
   const { studioId } = useStudio();
+  usePageTitleOnMount("Le mie task");
 
   const [activeTasks, setActiveTasks]       = useState([]);
   const [completedToday, setCompletedToday] = useState([]);
