@@ -441,7 +441,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
       supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_logo_size,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
-      supabase.from("team_members").select("id,user_name,user_email,telefono,role_internal").eq("studio",studioId).order("user_name",{ascending:true}),
+      supabase.from("team_members").select("id,user_name,user_email,role_internal").eq("studio",studioId).order("user_name",{ascending:true}),
     ]);
     setTeamMembers(members || []);
     setReports(reps || []);
@@ -498,7 +498,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       azienda:   studio?.report_header_name || studio?.name || "",
       referente: teamMember?.user_name || teamMember?.user_email || "",
       email:     teamMember?.user_email || "",
-      telefono:  teamMember?.telefono || "",
+      telefono:  "",
     };
 
     if (reports.length > 0) {
@@ -721,7 +721,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       azienda:   studio?.report_header_name || studio?.name || "",
       referente: member.user_name || member.user_email || "",
       email:     member.user_email || "",
-      telefono:  member.telefono || "",
+      telefono:  "",
     };
     setForm(f => ({ ...f, presenti: [...f.presenti, entry] }));
   };
