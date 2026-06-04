@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
+import { usePermissions } from "../hooks/usePermissions";
+import { usePlan } from "../hooks/usePlan";
 import { supabase } from "../lib/supabase";
 import PraticaEdiliziaPanel from '../components/PraticaEdiliziaPanel';
 import AnagraficaPanel from '../components/AnagraficaPanel';
@@ -265,6 +267,8 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const { id: projectId } = useParams();
   const { studioId, teamMember } = useStudio();
+  const permissions = usePermissions();
+  const { isPro } = usePlan();
   const id = projectId;
   const inputRefs = useRef({});
 
@@ -586,7 +590,13 @@ export default function ProjectDetailPage() {
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
             <OrePanel projectId={id} studioId={studioId} />
-            {teamMember?.user_name === "Giacomo Coviello" && <ReportCantierePanel projectId={id} studioId={studioId} />}
+            {isPro && permissions.canViewReportCantiere && (
+              <ReportCantierePanel
+                projectId={id}
+                studioId={studioId}
+                canManage={permissions.canManageReportCantiere}
+              />
+            )}
             <AnagraficaPanel projectId={id} studioId={studioId} />
             <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>

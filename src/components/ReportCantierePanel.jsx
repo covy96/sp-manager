@@ -384,7 +384,7 @@ const emptyForm = (address = "") => ({
   presenti: [],
 });
 
-export default function ReportCantierePanel({ projectId, studioId }) {
+export default function ReportCantierePanel({ projectId, studioId, canManage = false }) {
   const { T } = useTheme();
   const inputSt = inputCss(T);
   const fileRef = useRef(null);
@@ -724,7 +724,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             {/* Pulsante impostazioni intestazione */}
-            {view === "list" && (
+            {view === "list" && canManage && (
               <button onClick={()=>setView("header")} title="Personalizza intestazione PDF"
                 style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <svg width={15} height={15} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -748,13 +748,15 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                 <div style={{ textAlign:'center', padding:'40px 0' }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, marginBottom:20 }}>Nessun report ancora</div>
-                  <Btn onClick={openNew}>+ Crea primo report</Btn>
+                  {canManage && <Btn onClick={openNew}>+ Crea primo report</Btn>}
                 </div>
               ) : (
                 <>
-                  <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
-                    <Btn onClick={openNew}>+ Nuovo report</Btn>
-                  </div>
+                  {canManage && (
+                    <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
+                      <Btn onClick={openNew}>+ Nuovo report</Btn>
+                    </div>
+                  )}
                   <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {reports.map(r => {
                       const isDel = confirmDel === r.id;
@@ -784,7 +786,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                             </div>
                           </div>
                           <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                            {isDel ? (
+                            {canManage && isDel ? (
                               <>
                                 <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, alignSelf:'center' }}>Sicuro?</span>
                                 <button onClick={()=>handleDelete(r.id)} style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
@@ -799,14 +801,18 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                                   style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
-                                <button onClick={()=>openEdit(r)}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
-                                  Modifica
-                                </button>
-                                <button onClick={()=>setConfirmDel(r.id)}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
-                                  ✕
-                                </button>
+                                {canManage && (
+                                  <button onClick={()=>openEdit(r)}
+                                    style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
+                                    Modifica
+                                  </button>
+                                )}
+                                {canManage && (
+                                  <button onClick={()=>setConfirmDel(r.id)}
+                                    style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
+                                    ✕
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
@@ -1112,7 +1118,7 @@ export default function ReportCantierePanel({ projectId, studioId }) {
                     const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",previewReport.id).order("ordine",{ascending:true});
                     generatePdf({ report:previewReport, project, studio, fotos:rf||[] });
                   }}>↓ PDF</Btn>
-                  <Btn onClick={()=>{ openEdit(previewReport); }}>Modifica</Btn>
+                  {canManage && <Btn onClick={()=>{ openEdit(previewReport); }}>Modifica</Btn>}
                 </div>
               </div>
             </div>

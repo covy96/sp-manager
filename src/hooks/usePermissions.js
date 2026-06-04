@@ -42,6 +42,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: true, canAssignTasks: true, canViewAllTimesheets: true,
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
+    canViewReportCantiere: true, canManageReportCantiere: true,
   },
   "Partner": {
     isOwner: false, isProjectManager: true, isMember: true,
@@ -51,6 +52,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: true, canAssignTasks: true, canViewAllTimesheets: true,
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
+    canViewReportCantiere: true, canManageReportCantiere: true,
   },
   "Project Manager": {
     isOwner: false, isProjectManager: true, isMember: true,
@@ -60,6 +62,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: false, canAssignTasks: true, canViewAllTimesheets: true,
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
+    canViewReportCantiere: true, canManageReportCantiere: true,
   },
   "Architetto": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -69,6 +72,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
+    canViewReportCantiere: true, canManageReportCantiere: false,
   },
   "Ingegnere": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -78,6 +82,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
+    canViewReportCantiere: true, canManageReportCantiere: false,
   },
   "Collaboratore Interno": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -87,6 +92,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
+    canViewReportCantiere: true, canManageReportCantiere: false,
   },
   "Collaboratore Esterno": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -96,6 +102,7 @@ const ROLE_PERMISSIONS = {
     canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
+    canViewReportCantiere: true, canManageReportCantiere: false,
   },
 };
 
@@ -107,6 +114,7 @@ const DEFAULT_PERMISSIONS = {
   canDeleteAnything: false, canAssignTasks: false, canViewAllTimesheets: false,
   canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
   canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
+  canViewReportCantiere: true, canManageReportCantiere: false,
 };
 
 // ── SEZIONI PERMESSI GRANULARI ────────────────────────────────────
@@ -137,8 +145,10 @@ export const PERMISSION_SECTIONS = [
   {
     label: "Report & Monitoraggio",
     perms: [
-      { key: "canViewReport",       label: "Report" },
-      { key: "canViewMonitoraggio", label: "Monitoraggio commesse" },
+      { key: "canViewReport",              label: "Report" },
+      { key: "canViewMonitoraggio",        label: "Monitoraggio commesse" },
+      { key: "canViewReportCantiere",      label: "Report di cantiere — Vedere" },
+      { key: "canManageReportCantiere",    label: "Report di cantiere — Creare / Modificare / Eliminare" },
     ],
   },
   {
