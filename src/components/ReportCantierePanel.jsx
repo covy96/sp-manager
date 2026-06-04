@@ -717,7 +717,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const addFromTeam = (member) => {
     setTeamDropOpen(false);
     const entry = {
-      figura:    member.role_internal || "Collaboratore",
+      figura:    "Direttore Lavori",
       azienda:   studio?.report_header_name || studio?.name || "",
       referente: member.user_name || member.user_email || "",
       email:     member.user_email || "",
