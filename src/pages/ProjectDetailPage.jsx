@@ -297,7 +297,10 @@ export default function ProjectDetailPage() {
   const [commesseProgetto, setCommesseProgetto] = useState([]);
   const [addColInput, setAddColInput]           = useState("");
   const [addColOpen, setAddColOpen]             = useState(false);
-  const [reorderOpen, setReorderOpen]           = useState(false);
+  // drag-to-reorder columns
+  const [dragColIdx, setDragColIdx]             = useState(null);
+  const [dragOverIdx, setDragOverIdx]           = useState(null);
+  const touchDragRef = useRef({ active: false, timer: null, fromIdx: null, phantom: null });
 
   useEffect(() => {
     if (!projectId || projectId === "null" || projectId === "undefined") { navigate("/progetti"); return; }
@@ -576,11 +579,6 @@ export default function ProjectDetailPage() {
               <option value="show-all">Tutte le task</option>
               <option value="hide-completed">Nascondi completate</option>
             </select>
-            <button onClick={() => setReorderOpen(true)}
-              title="Riordina colonne"
-              style={{ padding:'5px 10px', border:`0.5px solid ${T.borderMd}`, background:T.bg, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono', monospace", cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-              ⇅ Colonne
-            </button>
           </div>
           {/* Pulsanti */}
           <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -703,68 +701,91 @@ export default function ProjectDetailPage() {
           paddingRight: isMobile ? 16 : 0,
           boxSizing: 'border-box',
         }}>
-          {/* Colonna "Aggiungi colonna" */}
-          {addColOpen ? (
-            <div style={{
-              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 220px',
-              minWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
-              maxWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
-              scrollSnapAlign: isMobile ? 'start' : 'none',
-              display: 'flex', flexDirection: 'column',
-              background: T.surface, border: `0.5px solid ${T.border}`,
-              height: isMobile ? 'auto' : '100%',
-              padding: 12, gap: 8, alignSelf: 'flex-start',
-            }}>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Nome nuova colonna</span>
-              <input autoFocus type="text" value={addColInput}
-                onChange={e => setAddColInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddColumn(); } if (e.key === 'Escape') { setAddColOpen(false); setAddColInput(""); } }}
-                placeholder="es. In revisione"
-                style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, background:T.bg, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }} />
-              <div style={{ display:'flex', gap:6 }}>
-                <button onClick={handleAddColumn}
-                  style={{ flex:1, padding:'6px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
-                  Crea
-                </button>
-                <button onClick={() => { setAddColOpen(false); setAddColInput(""); }}
-                  style={{ flex:1, padding:'6px 0', background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
-                  Annulla
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div onClick={() => setAddColOpen(true)} style={{
-              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 160px',
-              minWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
-              maxWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
-              scrollSnapAlign: isMobile ? 'start' : 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
-              background: 'transparent', border: `0.5px dashed ${T.border}`,
-              cursor: 'pointer', padding: 18, gap: 8,
-              alignSelf: 'flex-start', minHeight: 80,
-            }}>
-              <span style={{ fontSize: 22, color: T.muted, lineHeight: 1 }}>+</span>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
-            </div>
-          )}
-          {groupedTasks.map((group, _gi) => {
+          {groupedTasks.map((group, gi) => {
             const catDone = Boolean(completedCategories[group.category]);
+            const isDragging  = dragColIdx  === gi;
+            const isDropTarget = dragOverIdx === gi && dragColIdx !== gi;
+
+            // ── Touch drag handlers ─────────────────────────────────
+            const handleTouchStart = (e) => {
+              const ref = touchDragRef.current;
+              ref.fromIdx = gi;
+              ref.timer = setTimeout(() => {
+                ref.active = true;
+                // haptic feedback if available
+                if (navigator.vibrate) navigator.vibrate(40);
+                setDragColIdx(gi);
+              }, 500);
+            };
+            const handleTouchMove = (e) => {
+              const ref = touchDragRef.current;
+              if (!ref.active) { clearTimeout(ref.timer); return; }
+              e.preventDefault();
+              const touch = e.touches[0];
+              const el = document.elementFromPoint(touch.clientX, touch.clientY);
+              const colEl = el?.closest('[data-col-idx]');
+              if (colEl) {
+                const idx = parseInt(colEl.dataset.colIdx, 10);
+                if (!isNaN(idx)) setDragOverIdx(idx);
+              }
+            };
+            const handleTouchEnd = () => {
+              const ref = touchDragRef.current;
+              clearTimeout(ref.timer);
+              if (ref.active && dragOverIdx !== null && dragOverIdx !== ref.fromIdx) {
+                const next = [...selectedServices];
+                const [moved] = next.splice(ref.fromIdx, 1);
+                next.splice(dragOverIdx, 0, moved);
+                handleReorderColumns(next);
+              }
+              ref.active = false; ref.fromIdx = null;
+              setDragColIdx(null); setDragOverIdx(null);
+            };
+
             return (
-              <div key={group.category} style={{
-                flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
-                minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
-                maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
-                scrollSnapAlign: isMobile ? 'start' : 'none',
-                display: 'flex', flexDirection: 'column',
-                background: T.surface, border: `0.5px solid ${T.border}`,
-                overflow: 'hidden',
-                height: isMobile ? 'auto' : '100%',
-                maxHeight: isMobile ? 'none' : '100%',
-                opacity: catDone ? 0.5 : 1,
-              }}>
+              <div
+                key={group.category}
+                data-col-idx={gi}
+                draggable
+                onDragStart={() => { setDragColIdx(gi); setDragOverIdx(gi); }}
+                onDragOver={e => { e.preventDefault(); setDragOverIdx(gi); }}
+                onDrop={() => {
+                  if (dragColIdx !== null && dragColIdx !== gi) {
+                    const next = [...selectedServices];
+                    const [moved] = next.splice(dragColIdx, 1);
+                    next.splice(gi, 0, moved);
+                    handleReorderColumns(next);
+                  }
+                  setDragColIdx(null); setDragOverIdx(null);
+                }}
+                onDragEnd={() => { setDragColIdx(null); setDragOverIdx(null); }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{
+                  flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
+                  minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+                  maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+                  scrollSnapAlign: isMobile ? 'start' : 'none',
+                  display: 'flex', flexDirection: 'column',
+                  background: T.surface,
+                  border: isDropTarget ? `1.5px solid ${T.navy}` : `0.5px solid ${T.border}`,
+                  overflow: 'hidden',
+                  height: isMobile ? 'auto' : '100%',
+                  maxHeight: isMobile ? 'none' : '100%',
+                  opacity: isDragging ? 0.4 : catDone ? 0.5 : 1,
+                  transition: 'opacity 0.15s, border-color 0.15s',
+                  cursor: 'default',
+                }}>
                 {/* Column header */}
                 <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    {/* Drag handle */}
+                    <span
+                      title="Trascina per riordinare"
+                      style={{ fontSize: 13, color: T.muted, cursor: 'grab', userSelect: 'none', flexShrink: 0, lineHeight: 1, touchAction: 'none' }}>
+                      ⠿
+                    </span>
                     <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
                       style={{ accentColor: T.navy, width: 13, height: 13 }} />
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
@@ -825,47 +846,51 @@ export default function ProjectDetailPage() {
               </div>
             );
           })}
-        </div>
-      )}
 
-      {/* MODALE RIORDINA COLONNE */}
-      {reorderOpen && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
-          onClick={e => { if (e.target === e.currentTarget) setReorderOpen(false); }}>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:24, width:'100%', maxWidth:400, display:'flex', flexDirection:'column', gap:16 }}>
-            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:T.ink }}>Riordina colonne</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-              {selectedServices.map((col, idx) => (
-                <div key={col} style={{ display:'flex', alignItems:'center', gap:8, background:T.bg, border:`0.5px solid ${T.border}`, padding:'8px 12px' }}>
-                  <span style={{ flex:1, fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.ink }}>
-                    {col === "__uncategorized__" ? "Generali" : col}
-                  </span>
-                  <button disabled={idx === 0}
-                    onClick={() => {
-                      const next = [...selectedServices];
-                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                      handleReorderColumns(next);
-                    }}
-                    style={{ width:28, height:28, border:`0.5px solid ${T.border}`, background:T.surface, color: idx === 0 ? T.muted : T.ink, cursor: idx === 0 ? 'default' : 'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    ↑
-                  </button>
-                  <button disabled={idx === selectedServices.length - 1}
-                    onClick={() => {
-                      const next = [...selectedServices];
-                      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-                      handleReorderColumns(next);
-                    }}
-                    style={{ width:28, height:28, border:`0.5px solid ${T.border}`, background:T.surface, color: idx === selectedServices.length - 1 ? T.muted : T.ink, cursor: idx === selectedServices.length - 1 ? 'default' : 'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    ↓
-                  </button>
-                </div>
-              ))}
+          {/* Colonna "Aggiungi colonna" — sempre in fondo */}
+          {addColOpen ? (
+            <div style={{
+              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 220px',
+              minWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
+              maxWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
+              scrollSnapAlign: isMobile ? 'start' : 'none',
+              display: 'flex', flexDirection: 'column',
+              background: T.surface, border: `0.5px solid ${T.border}`,
+              height: isMobile ? 'auto' : 'fit-content',
+              padding: 14, gap: 8, alignSelf: 'flex-start',
+            }}>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Nome nuova colonna</span>
+              <input autoFocus type="text" value={addColInput}
+                onChange={e => setAddColInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddColumn(); } if (e.key === 'Escape') { setAddColOpen(false); setAddColInput(""); } }}
+                placeholder="es. In revisione"
+                style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, background:T.bg, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }} />
+              <div style={{ display:'flex', gap:6 }}>
+                <button onClick={handleAddColumn}
+                  style={{ flex:1, padding:'7px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  Crea
+                </button>
+                <button onClick={() => { setAddColOpen(false); setAddColInput(""); }}
+                  style={{ flex:1, padding:'7px 0', background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  Annulla
+                </button>
+              </div>
             </div>
-            <button onClick={() => setReorderOpen(false)}
-              style={{ padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:12, fontFamily:"'IBM Plex Mono',monospace" }}>
-              Chiudi
-            </button>
-          </div>
+          ) : (
+            <div onClick={() => setAddColOpen(true)} style={{
+              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 160px',
+              minWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
+              maxWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
+              scrollSnapAlign: isMobile ? 'start' : 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
+              background: 'transparent', border: `0.5px dashed ${T.border}`,
+              cursor: 'pointer', padding: 20, gap: 8,
+              alignSelf: 'flex-start', minHeight: 80,
+            }}>
+              <span style={{ fontSize: 22, color: T.muted, lineHeight: 1 }}>+</span>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
+            </div>
+          )}
         </div>
       )}
     </div>
