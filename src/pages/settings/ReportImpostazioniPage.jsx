@@ -137,22 +137,34 @@ function PreviewModal({ form, onClose }) {
 
           {/* ── Footer ── */}
           <div style={{ borderTop: "0.5px solid #ccc", paddingTop: 10 }}>
-            {/* se c'è solo report_header_text usato come footer centrato (come nel PDF reale) */}
-            {form.report_footer_left || form.report_footer_center || form.report_footer_right ? (
-              <div style={{ display: "flex", gap: 8, fontSize: 10, color: "#888" }}>
-                {[["report_footer_left","left"],["report_footer_center","center"],["report_footer_right","right"]].map(([field,align]) => (
-                  <div key={field} style={{ flex: 1, textAlign: align, whiteSpace: "pre-line" }}>
-                    {(form[field] || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || <span style={{ opacity: 0.2 }}>—</span>}
+            {(() => {
+              const L = (form.report_footer_left  || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3").trim();
+              const C = (form.report_footer_center|| "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3").trim();
+              const R = (form.report_footer_right || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3").trim();
+              const hasFooter = L || C || R;
+              // Se solo centro (o nessuno) → testo centrato a larghezza piena, come nel PDF reale
+              if (!L && !R && C) {
+                return (
+                  <div style={{ textAlign: "center", fontSize: 10, color: "#888", whiteSpace: "pre-line", lineHeight: 1.7 }}>{C}</div>
+                );
+              }
+              // Se compilate più colonne → layout 3 colonne proporzionale
+              if (hasFooter) {
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, fontSize: 10, color: "#888" }}>
+                    <div style={{ textAlign: "left",   whiteSpace: "pre-line", lineHeight: 1.6 }}>{L}</div>
+                    <div style={{ textAlign: "center", whiteSpace: "pre-line", lineHeight: 1.6 }}>{C}</div>
+                    <div style={{ textAlign: "right",  whiteSpace: "pre-line", lineHeight: 1.6 }}>{R}</div>
                   </div>
-                ))}
-              </div>
-            ) : form.report_header_text ? (
-              <div style={{ textAlign: "center", fontSize: 10, color: "#888", whiteSpace: "pre-line", lineHeight: 1.7 }}>
-                {form.report_header_text}
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", fontSize: 10, color: "#ccc", fontStyle: "italic" }}>footer</div>
-            )}
+                );
+              }
+              // Fallback: report_header_text centrato
+              return form.report_header_text ? (
+                <div style={{ textAlign: "center", fontSize: 10, color: "#888", whiteSpace: "pre-line", lineHeight: 1.7 }}>{form.report_header_text}</div>
+              ) : (
+                <div style={{ textAlign: "center", fontSize: 10, color: "#ddd", fontStyle: "italic" }}>footer</div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -452,16 +464,31 @@ export default function ReportImpostazioniPage() {
             <div style={{ background: T.bg, border: `0.5px solid ${T.border}`, padding: "10px 14px" }}>
               <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Anteprima footer</div>
               <div style={{ height: 1, background: "rgba(150,150,150,0.4)", marginBottom: 8 }} />
-              <div style={{ display: "flex", gap: 8, fontSize: 9, color: T.muted }}>
-                {[["report_footer_left","SINISTRA","left"],["report_footer_center","CENTRO","center"],["report_footer_right","DESTRA","right"]].map(([field,lbl,align]) => (
-                  <div key={field} style={{ flex: 1, borderLeft: `2px solid ${T.border}`, paddingLeft: 6, textAlign: align }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: T.muted, marginBottom: 3, opacity: 0.6 }}>{lbl}</div>
-                    {(form[field] || "").split("\n").map((line,i) => (
-                      <div key={i} style={{ minHeight: 13 }}>{line ? line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") : <span style={{ opacity: 0.25 }}>—</span>}</div>
+              {(() => {
+                const L = form.report_footer_left?.trim();
+                const C = form.report_footer_center?.trim();
+                const R = form.report_footer_right?.trim();
+                if (!L && !R && C) {
+                  // solo centro → larghezza piena centrata
+                  return (
+                    <div style={{ textAlign: "center", fontSize: 9, color: T.muted, whiteSpace: "pre-line", lineHeight: 1.6 }}>
+                      {C.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")}
+                    </div>
+                  );
+                }
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, fontSize: 9, color: T.muted }}>
+                    {[["report_footer_left","SINISTRA","left"],["report_footer_center","CENTRO","center"],["report_footer_right","DESTRA","right"]].map(([field,lbl,align]) => (
+                      <div key={field} style={{ borderLeft: `2px solid ${T.border}`, paddingLeft: 6, textAlign: align }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: T.muted, marginBottom: 3, opacity: 0.6 }}>{lbl}</div>
+                        {(form[field] || "").split("\n").map((line,i) => (
+                          <div key={i} style={{ minHeight: 13 }}>{line ? line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") : <span style={{ opacity: 0.25 }}>—</span>}</div>
+                        ))}
+                      </div>
                     ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
           </div>
         </div>
