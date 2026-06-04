@@ -281,10 +281,14 @@ export default function DashboardPage() {
         // 5. Task di oggi e scadute (sempre personali)
         const today = new Date().toISOString().split("T")[0];
         if (memberId) {
-          const { data: allTasks } = await supabase
+          const { data: allTodayTasks } = await supabase
             .from("tasks").select("*, projects(name)")
-            .eq("studio", studioId).eq("assigned_member", memberId);
-          setTodayTasks((allTasks || []).filter(t => String(t.data_pianificata).slice(0, 10) === today));
+            .eq("studio", studioId).eq("assigned_member", memberId)
+            .eq("data_pianificata", today)
+            .neq("status", "completed")
+            .is("parent_task_id", null)
+            .order("created_at", { ascending: true });
+          setTodayTasks(allTodayTasks || []);
 
           const { data: overdue } = await supabase
             .from("tasks").select("*, projects(name)")
@@ -302,6 +306,7 @@ export default function DashboardPage() {
             .eq("studio", studioId).eq("assigned_member", memberId)
             .eq("data_pianificata", nwDay)
             .neq("status", "completed")
+            .is("parent_task_id", null)
             .order("created_at", { ascending: true });
           setTomorrowTasks(tmTasks || []);
         }
