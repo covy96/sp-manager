@@ -429,17 +429,21 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const [fotos, setFotos]           = useState([]);   // { id, url, ordine }
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const fotoInputRef = useRef(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamDropOpen, setTeamDropOpen] = useState(false);
 
   // ── load ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     if (!projectId || !studioId) return;
     setLoading(true);
-    const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }] = await Promise.all([
+    const [{ data:reps }, { data:proj }, { data:st }, { data:ctc }, { data:members }] = await Promise.all([
       supabase.from("report_cantiere").select("*").eq("project_id", projectId).is("deleted_at",null).order("numero",{ascending:false}),
       supabase.from("projects").select("id,name,client,address").eq("id",projectId).single(),
       supabase.from("studios").select("name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_logo_size,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled").eq("id",studioId).single(),
       supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id",projectId),
+      supabase.from("team_members").select("id,user_name,user_email,telefono,role_internal").eq("studio",studioId).order("user_name",{ascending:true}),
     ]);
+    setTeamMembers(members || []);
     setReports(reps || []);
     setProject(proj);
     setStudio(st);
@@ -710,6 +714,17 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const updateP = (i, k, v) => setForm(f => { const a=[...f.presenti]; a[i]={...a[i],[k]:v}; return {...f,presenti:a}; });
   const addP    = ()        => setForm(f => ({ ...f, presenti:[...f.presenti, {figura:"",azienda:"",referente:"",email:"",telefono:""}] }));
   const removeP = (i)       => setForm(f => ({ ...f, presenti:f.presenti.filter((_,j)=>j!==i) }));
+  const addFromTeam = (member) => {
+    setTeamDropOpen(false);
+    const entry = {
+      figura:    member.role_internal || "Collaboratore",
+      azienda:   studio?.report_header_name || studio?.name || "",
+      referente: member.user_name || member.user_email || "",
+      email:     member.user_email || "",
+      telefono:  member.telefono || "",
+    };
+    setForm(f => ({ ...f, presenti: [...f.presenti, entry] }));
+  };
 
   // ── WIDGET ────────────────────────────────────────────────────────
   const widget = (
@@ -1180,9 +1195,40 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               <div>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
                   <FL>Presenti</FL>
-                  <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
-                    + Aggiungi riga
-                  </button>
+                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    {/* Dropdown team */}
+                    {teamMembers.length > 0 && (
+                      <div style={{ position:'relative' }}>
+                        <button
+                          onClick={e => {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setTeamDropOpen(p => !p);
+                            // salva posizione per dropdown fixed
+                            e.currentTarget._rect = r;
+                          }}
+                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                          + Dal team
+                        </button>
+                        {teamDropOpen && (() => {
+                          const btn = document.activeElement?.closest?.('button') || null;
+                          return (
+                            <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, zIndex:200, background:T.surface, border:`0.5px solid ${T.borderMd}`, boxShadow:'0 4px 16px rgba(0,0,0,0.15)', minWidth:200, maxHeight:240, overflowY:'auto' }}>
+                              {teamMembers.map(m => (
+                                <button key={m.id} onClick={() => addFromTeam(m)}
+                                  style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'Space Grotesk', sans-serif", fontSize:12, color:T.ink, borderBottom:`0.5px solid ${T.border}` }}>
+                                  <div style={{ fontWeight:600 }}>{m.user_name || m.user_email}</div>
+                                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>{m.role_internal || ""}</div>
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                      + Aggiungi riga
+                    </button>
+                  </div>
                 </div>
                 {form.presenti.length === 0 ? (
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'10px 0' }}>
