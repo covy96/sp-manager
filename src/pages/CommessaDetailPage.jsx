@@ -182,6 +182,7 @@ export default function CommessaDetailPage() {
   const [newCostoInterno, setNewCostoInterno]   = useState({ team_member_id:'', descrizione:'', importo:'', data:new Date().toISOString().slice(0,10) });
   const [savingCostoInt, setSavingCostoInt]     = useState(false);
 
+  const [previewProforma, setPreviewProforma] = useState(null);
   const [proformaModal, setProformaModal] = useState(false);
   const [proformaForm, setProformaForm]   = useState({ numero_proforma: "", data_creazione: "", data_scadenza: "", note: "" });
   const [proformaSaving, setProformaSaving] = useState(false);
@@ -616,13 +617,13 @@ export default function CommessaDetailPage() {
               <thead><tr>{['N°','Data','Importo','Note',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
                 {proforma.filter(p => !p.pagato).map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} onClick={() => setPreviewProforma(p)} style={{ cursor: 'pointer' }}>
                     <td style={tdSt}><span style={monoSt}>{p.numero_proforma}</span></td>
                     <td style={{ ...tdSt, ...monoSt }}>{p.data_creazione ? new Date(p.data_creazione).toLocaleDateString('it-IT') : '—'}</td>
                     <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(p.importo_totale)}</td>
                     <td style={{ ...tdSt, color: T.muted, fontSize: 11 }}>{p.note || '—'}</td>
                     <td style={{ ...tdSt, textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                         <BtnPrimary onClick={() => openPagamentoProforma(p)} style={{ fontSize: 10, padding: '5px 10px' }}>Segna pagata</BtnPrimary>
                         <RowMenu open={openMenuId === p.id} onOpen={() => setOpenMenuId(p.id)} onClose={() => setOpenMenuId(null)}
                           items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) }]} />
@@ -643,13 +644,13 @@ export default function CommessaDetailPage() {
               <thead><tr>{['N°','Fattura','Data pag.','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
                 {proforma.filter(p => p.pagato).map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} onClick={() => setPreviewProforma(p)} style={{ cursor: 'pointer' }}>
                     <td style={tdSt}><span style={monoSt}>{p.numero_proforma}</span></td>
                     <td style={{ ...tdSt, ...monoSt }}>{p.numero_fattura || '—'}</td>
                     <td style={{ ...tdSt, ...monoSt }}>{p.data_pagamento ? new Date(p.data_pagamento).toLocaleDateString('it-IT') : '—'}</td>
                     <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.green }}>{currency(p.importo_totale)}</td>
                     <td style={{ ...tdSt, textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
                         <button onClick={() => { setSelectedProforma(p); setRimuoviModal(true); }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>annulla pag.</button>
                         <RowMenu open={openMenuId === `paid-${p.id}`} onOpen={() => setOpenMenuId(`paid-${p.id}`)} onClose={() => setOpenMenuId(null)}
@@ -909,6 +910,98 @@ export default function CommessaDetailPage() {
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setCostoModal(false)} disabled={costoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={costoSaving}>{costoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
+
+      {/* ── ANTEPRIMA PROFORMA ── */}
+      {previewProforma && (() => {
+        const p = previewProforma;
+        const rateIds = p.suddivisione_pagamento_ids || [];
+        const costiIds = p.costo_extra_ids || [];
+        const rateIncluse = suddivisione.filter(r => rateIds.includes(r.id));
+        // cerca nelle altre commesse
+        const rateAltreCommesse = Object.entries(altreCommesseData || {}).flatMap(([cid, d]) =>
+          (d.suddivisione || []).filter(r => rateIds.includes(r.id)).map(r => ({ ...r, _commessaNome: altreCommesse.find(c => c.id === cid)?.nome_commessa }))
+        );
+        const tutteLeRate = [...rateIncluse, ...rateAltreCommesse];
+        const costiInclusi = costiExtra.filter(c => costiIds.includes(c.id));
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+            onClick={e => { if (e.target === e.currentTarget) setPreviewProforma(null); }}>
+            <div style={{ background: T.surface, border: `0.5px solid ${T.borderMd}`, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              {/* header modale */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: T.ink }}>{p.numero_proforma}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>
+                    {p.data_creazione ? new Date(p.data_creazione).toLocaleDateString('it-IT') : ''}
+                    {p.pagato && <span style={{ marginLeft: 8, color: T.green }}>· Pagata</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>{currency(p.importo_totale)}</div>
+                  <button onClick={() => setPreviewProforma(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: T.muted, lineHeight: 1 }}>×</button>
+                </div>
+              </div>
+              <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Rate */}
+                <div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                    Rate incluse {tutteLeRate.length > 0 && `(${tutteLeRate.length})`}
+                  </div>
+                  {tutteLeRate.length === 0 ? (
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessuna rata</div>
+                  ) : tutteLeRate.map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 4 }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>
+                          Rata {r.numero_rata}{r.descrizione ? ` — ${r.descrizione}` : ''}
+                        </div>
+                        {r._commessaNome && (
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{r._commessaNome}</div>
+                        )}
+                        {r.percentuale != null && (
+                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{r.percentuale}%</div>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>
+                        {currency(r.importo_calcolato ?? r.importo ?? 0)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Costi */}
+                <div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                    Costi extra inclusi {costiInclusi.length > 0 && `(${costiInclusi.length})`}
+                  </div>
+                  {costiInclusi.length === 0 ? (
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun costo extra</div>
+                  ) : costiInclusi.map(c => (
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: T.bg, border: `0.5px solid ${T.border}`, marginBottom: 4 }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{c.tipo_costo}</div>
+                        {c.description && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{c.description}</div>}
+                      </div>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Note */}
+                {p.note && (
+                  <div>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
+                    <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.6 }}>{p.note}</div>
+                  </div>
+                )}
+                {/* Totale */}
+                <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Totale proforma</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>{currency(p.importo_totale)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <Modal open={proformaModal} onClose={() => setProformaModal(false)} title="Nuova Proforma" subtitle={`Importo selezionato: ${currency(importoProformaSelezionata)}`} width={600}>
         <form onSubmit={handleSaveProforma} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
