@@ -295,6 +295,9 @@ export default function ProjectDetailPage() {
   const [editSaving, setEditSaving]   = useState(false);
   const [editError, setEditError]     = useState("");
   const [commesseProgetto, setCommesseProgetto] = useState([]);
+  const [addColInput, setAddColInput]           = useState("");
+  const [addColOpen, setAddColOpen]             = useState(false);
+  const [reorderOpen, setReorderOpen]           = useState(false);
 
   useEffect(() => {
     if (!projectId || projectId === "null" || projectId === "undefined") { navigate("/progetti"); return; }
@@ -469,6 +472,23 @@ export default function ProjectDetailPage() {
     if (uErr) { setCompletedCategories(prev); setProject(p => p ? { ...p, completed_categories: prev } : p); setError(uErr.message); } else setError("");
   };
 
+  const handleAddColumn = async () => {
+    const name = addColInput.trim();
+    if (!name) return;
+    const current = Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : selectedServices;
+    const alreadyExists = current.some(s => s.trim().toLowerCase() === name.toLowerCase());
+    if (alreadyExists) { setAddColInput(""); setAddColOpen(false); return; }
+    const next = [...current, name];
+    setProject(p => p ? { ...p, servizi_selezionati: next } : p);
+    setAddColInput(""); setAddColOpen(false);
+    await supabase.from("projects").update({ servizi_selezionati: next }).eq("id", id);
+  };
+
+  const handleReorderColumns = async (newOrder) => {
+    setProject(p => p ? { ...p, servizi_selezionati: newOrder } : p);
+    await supabase.from("projects").update({ servizi_selezionati: newOrder }).eq("id", id);
+  };
+
   const createTaskForCategory = async category => {
     const title = (newTaskInputs[category] ?? "").trim();
     if (!title || creatingCategory) return;
@@ -556,6 +576,11 @@ export default function ProjectDetailPage() {
               <option value="show-all">Tutte le task</option>
               <option value="hide-completed">Nascondi completate</option>
             </select>
+            <button onClick={() => setReorderOpen(true)}
+              title="Riordina colonne"
+              style={{ padding:'5px 10px', border:`0.5px solid ${T.borderMd}`, background:T.bg, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono', monospace", cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+              ⇅ Colonne
+            </button>
           </div>
           {/* Pulsanti */}
           <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -678,7 +703,51 @@ export default function ProjectDetailPage() {
           paddingRight: isMobile ? 16 : 0,
           boxSizing: 'border-box',
         }}>
-          {groupedTasks.map(group => {
+          {/* Colonna "Aggiungi colonna" */}
+          {addColOpen ? (
+            <div style={{
+              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 220px',
+              minWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
+              maxWidth: isMobile ? 'calc(100vw - 48px)' : '220px',
+              scrollSnapAlign: isMobile ? 'start' : 'none',
+              display: 'flex', flexDirection: 'column',
+              background: T.surface, border: `0.5px solid ${T.border}`,
+              height: isMobile ? 'auto' : '100%',
+              padding: 12, gap: 8, alignSelf: 'flex-start',
+            }}>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Nome nuova colonna</span>
+              <input autoFocus type="text" value={addColInput}
+                onChange={e => setAddColInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddColumn(); } if (e.key === 'Escape') { setAddColOpen(false); setAddColInput(""); } }}
+                placeholder="es. In revisione"
+                style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, background:T.bg, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }} />
+              <div style={{ display:'flex', gap:6 }}>
+                <button onClick={handleAddColumn}
+                  style={{ flex:1, padding:'6px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  Crea
+                </button>
+                <button onClick={() => { setAddColOpen(false); setAddColInput(""); }}
+                  style={{ flex:1, padding:'6px 0', background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  Annulla
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div onClick={() => setAddColOpen(true)} style={{
+              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 160px',
+              minWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
+              maxWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
+              scrollSnapAlign: isMobile ? 'start' : 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
+              background: 'transparent', border: `0.5px dashed ${T.border}`,
+              cursor: 'pointer', padding: 18, gap: 8,
+              alignSelf: 'flex-start', minHeight: 80,
+            }}>
+              <span style={{ fontSize: 22, color: T.muted, lineHeight: 1 }}>+</span>
+              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
+            </div>
+          )}
+          {groupedTasks.map((group, _gi) => {
             const catDone = Boolean(completedCategories[group.category]);
             return (
               <div key={group.category} style={{
@@ -756,6 +825,47 @@ export default function ProjectDetailPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* MODALE RIORDINA COLONNE */}
+      {reorderOpen && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+          onClick={e => { if (e.target === e.currentTarget) setReorderOpen(false); }}>
+          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:24, width:'100%', maxWidth:400, display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:13, fontWeight:600, color:T.ink }}>Riordina colonne</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {selectedServices.map((col, idx) => (
+                <div key={col} style={{ display:'flex', alignItems:'center', gap:8, background:T.bg, border:`0.5px solid ${T.border}`, padding:'8px 12px' }}>
+                  <span style={{ flex:1, fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.ink }}>
+                    {col === "__uncategorized__" ? "Generali" : col}
+                  </span>
+                  <button disabled={idx === 0}
+                    onClick={() => {
+                      const next = [...selectedServices];
+                      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                      handleReorderColumns(next);
+                    }}
+                    style={{ width:28, height:28, border:`0.5px solid ${T.border}`, background:T.surface, color: idx === 0 ? T.muted : T.ink, cursor: idx === 0 ? 'default' : 'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    ↑
+                  </button>
+                  <button disabled={idx === selectedServices.length - 1}
+                    onClick={() => {
+                      const next = [...selectedServices];
+                      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                      handleReorderColumns(next);
+                    }}
+                    style={{ width:28, height:28, border:`0.5px solid ${T.border}`, background:T.surface, color: idx === selectedServices.length - 1 ? T.muted : T.ink, cursor: idx === selectedServices.length - 1 ? 'default' : 'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    ↓
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setReorderOpen(false)}
+              style={{ padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:12, fontFamily:"'IBM Plex Mono',monospace" }}>
+              Chiudi
+            </button>
+          </div>
         </div>
       )}
     </div>
