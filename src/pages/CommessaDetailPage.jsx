@@ -96,7 +96,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
       <button onClick={e => { e.stopPropagation(); open ? onClose() : onOpen(); }}
         style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px', lineHeight: 1 }}>···</button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 2, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
+        <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 2, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
           {items.map(item => (
             <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
               style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
