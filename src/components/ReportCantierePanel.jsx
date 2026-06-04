@@ -715,7 +715,6 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                 <span style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>
                   {view==="list" ? "Report di Cantiere" : view==="header" ? "Intestazione PDF" : view==="preview" ? (previewReport?.nome_interno || previewReport?.titolo || "Report") : editingId ? "Modifica Report" : "Nuovo Report"}
                 </span>
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:'#fff', background:'#16a34a', padding:'2px 7px', borderRadius:3 }}>BETA</span>
               </div>
               <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
                 {project?.name}{project?.client?` · ${project.client}`:""}
