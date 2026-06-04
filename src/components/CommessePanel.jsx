@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useEscKey } from '../hooks/useEscKey';
 
 function currency(v) {
   return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(Number(v)||0);
@@ -12,6 +13,7 @@ export default function CommessePanel({ commesse = [] }) {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   useBodyScrollLock(modalOpen);
+  useEscKey(() => setModalOpen(false), modalOpen);
 
   if (commesse.length === 0) return null;
 

@@ -5,6 +5,7 @@ import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
+import { useEscKey } from "../hooks/useEscKey";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -38,6 +39,11 @@ export default function OffertePage() {
   const [accettaForm, setAccettaForm]   = useState(null);
   const [accettaId, setAccettaId]       = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
+  useEscKey(() => {
+    if (allineaModal)  { setAllineaModal(false); return; }
+    if (accettaModal)  { setAccettaModal(false); return; }
+    if (modalOpen)     { setModalOpen(false); }
+  }, allineaModal || accettaModal || modalOpen);
   const [offertaOriginale, setOffertaOriginale] = useState(null);
 
   const [form, setForm] = useState({

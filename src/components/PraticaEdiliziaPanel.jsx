@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useEscKey } from "../hooks/useEscKey";
 
 const TIPI_PRATICA = [
   "CILA",
@@ -33,6 +34,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const [saving, setSaving]     = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   useBodyScrollLock(modalOpen);
+  useEscKey(() => setModalOpen(false), modalOpen);
   const [form, setForm] = useState({
     tipo_pratica:'', protocollo:'',
     data_presentazione:'', data_protocollazione:'',

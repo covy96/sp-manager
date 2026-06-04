@@ -8,6 +8,7 @@ import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useEscKey } from "../hooks/useEscKey";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -145,6 +146,7 @@ export default function CommessePage() {
 
   // Modal state
   const [modalOpen, setModalOpen]       = useState(false);
+  useEscKey(() => setModalOpen(false), modalOpen);
   const [step, setStep]                 = useState(1); // 1=commessa, 2=progetto
   const [saving, setSaving]             = useState(false);
   const [formError, setFormError]       = useState("");

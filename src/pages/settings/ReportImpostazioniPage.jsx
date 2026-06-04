@@ -4,6 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { GROTESKA_VARIANTS } from "../../assets/fonts/groteskaFonts";
+import { useEscKey } from "../../hooks/useEscKey";
 
 const inputCss = (T) => ({
   padding: "8px 12px",
@@ -200,6 +201,7 @@ export default function ReportImpostazioniPage() {
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [search, setSearch]           = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  useEscKey(() => setShowPreview(false), showPreview);
 
   // ── carica dati ────────────────────────────────────────────────────
   const load = useCallback(async () => {

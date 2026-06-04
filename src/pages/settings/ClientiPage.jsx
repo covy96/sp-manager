@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase";
 import { backfillContacts } from "../../utils/backfillContacts";
 import { useTheme } from '../../contexts/ThemeContext';
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useEscKey } from "../../hooks/useEscKey";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
@@ -45,6 +46,7 @@ export default function ClientiPage() {
   const [error, setError]                 = useState("");
   const [saving, setSaving]               = useState(false);
   const [addModalOpen, setAddModalOpen]   = useState(false);
+  useEscKey(() => setAddModalOpen(false), addModalOpen);
   const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
   const [expandedId, setExpandedId]       = useState(null);
   const [formError, setFormError]         = useState("");

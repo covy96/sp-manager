@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { supabase } from "../lib/supabase";
+import { useEscKey } from "../hooks/useEscKey";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -30,6 +31,10 @@ export default function OfferteDetailPage() {
   const [accettaModal, setAccettaModal] = useState(false);
   const [accettaForm, setAccettaForm]   = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
+  useEscKey(() => {
+    if (allineaModal)  { setAllineaModal(false); return; }
+    if (accettaModal)  { setAccettaModal(false); }
+  }, allineaModal || accettaModal);
 
   usePageTitleOnMount("Dettaglio offerta");
 

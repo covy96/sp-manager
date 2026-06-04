@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
+import { useEscKey } from "../hooks/useEscKey";
 
 // Normalizzazione robusta: lowercase, trim, rimuove accenti, collassa spazi
 function nk(s) {
@@ -49,6 +50,7 @@ export default function ClientiPage() {
   const [error, setError]                 = useState("");
   const [saving, setSaving]               = useState(false);
   const [addModalOpen, setAddModalOpen]   = useState(false);
+  useEscKey(() => setAddModalOpen(false), addModalOpen);
   const [newContact, setNewContact]       = useState({ full_name:"", company:"" });
   const [expandedId, setExpandedId]       = useState(null);
   const [formError, setFormError]         = useState("");

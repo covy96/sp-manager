@@ -8,6 +8,7 @@ import { useStudio } from "../hooks/useStudio";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
+import { useEscKey } from "../hooks/useEscKey";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function getInitials(name = "") {
@@ -408,6 +409,14 @@ export default function ProjectsPage() {
   const [archiveLoading, setArchiveLoading]     = useState(false);
   const [commessaArchiveModal, setCommessaArchiveModal] = useState(null); // { commessa, residuo, canArchive }
   const [commessaArchiving, setCommessaArchiving]       = useState(false);
+
+  useEscKey(() => {
+    if (commessaArchiveModal) { setCommessaArchiveModal(null); return; }
+    if (archiveModalOpen)     { setArchiveModalOpen(false); return; }
+    if (editModalOpen)        { setEditModalOpen(false); return; }
+    if (isModalOpen)          { setIsModalOpen(false); return; }
+    if (filterOpen)           { setFilterOpen(false); return; }
+  }, commessaArchiveModal || archiveModalOpen || editModalOpen || isModalOpen || filterOpen);
 
   const [commesseList, setCommesseList]         = useState([]);
   const [toast, setToast]                       = useState("");

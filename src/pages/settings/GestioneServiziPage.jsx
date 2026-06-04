@@ -3,6 +3,7 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from '../../contexts/ThemeContext';
+import { useEscKey } from "../../hooks/useEscKey";
 
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   const { T } = useTheme();
@@ -34,6 +35,7 @@ export default function GestioneServiziPage() {
 
   // Nuovo servizio
   const [addModalOpen, setAddModalOpen]     = useState(false);
+  useEscKey(() => setAddModalOpen(false), addModalOpen);
   const [newServiceName, setNewServiceName] = useState("");
 
   // Servizio selezionato per edit + task predefinite

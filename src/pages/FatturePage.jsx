@@ -5,6 +5,7 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useEscKey } from "../hooks/useEscKey";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -43,6 +44,7 @@ export default function FatturePage() {
   const [showPagate, setShowPagate]     = useState(true);
   const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
   const [modalOpen, setModalOpen]       = useState(false);
+  useEscKey(() => setModalOpen(false), modalOpen);
   const [editFattura, setEditFattura]   = useState(null);
   const [form, setForm]                 = useState({
     numero_fattura:'', commessa_id:'', data_emissione:'', termini_pagamento:60,

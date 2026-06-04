@@ -7,6 +7,7 @@ import { formatOre } from "../lib/utils";
 import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_SECTIONS } from "../hooks/usePermissions";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useEscKey } from "../hooks/useEscKey";
 
 // ── COLORI / HELPERS ─────────────────────────────────────────────
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
@@ -121,6 +122,7 @@ export default function TeamPage() {
 
   // ── modale aggiungi ──────────────────────────────────────────────
   const [modalOpen, setModalOpen] = useState(false);
+  useEscKey(() => setModalOpen(false), modalOpen);
   const [formError, setFormError] = useState("");
   const [formData, setFormData]   = useState({ user_name:"", user_email:"", role_internal:"Architetto" });
 
