@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -91,12 +91,24 @@ function KpiCard({ label, value, color }) {
 }
 function RowMenu({ open, onOpen, onClose, items }) {
   const { T } = useTheme();
+  const btnRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ top: 0, right: 0 });
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!open) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    open ? onClose() : onOpen();
+  };
+
   return (
     <div style={{ position: 'relative' }}>
-      <button onClick={e => { e.stopPropagation(); open ? onClose() : onOpen(); }}
+      <button ref={btnRef} onClick={handleOpen}
         style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px', lineHeight: 1 }}>···</button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, bottom: '100%', marginBottom: 2, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
+        <div style={{ position: 'fixed', top: pos.top, right: pos.right, width: 150, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 999, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
           {items.map(item => (
             <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
               style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
