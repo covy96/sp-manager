@@ -39,37 +39,55 @@ function Btn({ children, onClick, disabled, ghost, style = {} }) {
   );
 }
 
-// ── Modale anteprima pagina completa ──────────────────────────────
+// ── Modale anteprima A4 reale ─────────────────────────────────────
+// A4: 210 × 297 mm → ratio 1:1.4142
+// Rendiamo il foglio largo quanto lo schermo consente, con proporzioni fisse
 function PreviewModal({ form, onClose }) {
-  const { T } = useTheme();
   const footerFont =
     form.report_footer_font === "times"   ? "Georgia, serif" :
     form.report_footer_font === "courier" ? "'Courier New', monospace" :
     "'Space Grotesk', Arial, sans-serif";
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "#fff", width: "100%", maxWidth: 680, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
-        {/* barra modale */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", background: "#f5f5f5", borderBottom: "0.5px solid #ddd" }}>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#666" }}>Anteprima pagina PDF</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#666", lineHeight: 1 }}>×</button>
-        </div>
+  // Il foglio ha larghezza fissa 794px (96dpi ≈ A4 width)
+  // e altezza 1123px (A4 height in px a 96dpi)
+  const PAGE_W = 794;
+  const PAGE_H = 1123;
+  const MARGIN = 64; // px margini interni foglio
 
-        {/* foglio A4 simulato */}
-        <div style={{ padding: "40px 48px", fontFamily: footerFont, flex: 1 }}>
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 200, background: "#4a4a4a", display: "flex", flexDirection: "column", overflow: "hidden" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+
+      {/* barra superiore */}
+      <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 24px", background: "#333", borderBottom: "1px solid #222" }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#aaa" }}>
+          Anteprima PDF — A4 (210 × 297 mm)
+        </span>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1, padding: "0 4px" }}>×</button>
+      </div>
+
+      {/* area scroll con foglio centrato */}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", display: "flex", justifyContent: "center", padding: "32px 24px" }}>
+        <div style={{
+          width: PAGE_W, minHeight: PAGE_H, flexShrink: 0,
+          background: "#fff",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
+          display: "flex", flexDirection: "column",
+          padding: MARGIN, boxSizing: "border-box",
+          fontFamily: footerFont,
+        }}>
 
           {/* intestazione */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
             <div style={{ flex: 1 }}>
               {form.report_header_name && (
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#13315C", marginBottom: 4, fontFamily: "'Space Grotesk', sans-serif" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#13315C", marginBottom: 5, fontFamily: "'Space Grotesk', sans-serif" }}>
                   {form.report_header_name}
                 </div>
               )}
               {form.report_header_text && (
-                <div style={{ fontSize: 9, color: "#666", whiteSpace: "pre-line", lineHeight: 1.7 }}>
+                <div style={{ fontSize: 10, color: "#555", whiteSpace: "pre-line", lineHeight: 1.7 }}>
                   {form.report_header_text}
                 </div>
               )}
@@ -77,65 +95,55 @@ function PreviewModal({ form, onClose }) {
             {form.report_logo_url && (
               <img src={form.report_logo_url} alt="logo"
                 style={{
-                  height: form.report_logo_size === "small" ? 30 : form.report_logo_size === "large" ? 56 : 40,
-                  maxWidth: form.report_logo_size === "small" ? 80 : form.report_logo_size === "large" ? 140 : 110,
-                  objectFit: "contain", marginLeft: 20,
+                  height: form.report_logo_size === "small" ? 36 : form.report_logo_size === "large" ? 68 : 50,
+                  maxWidth: form.report_logo_size === "small" ? 100 : form.report_logo_size === "large" ? 170 : 130,
+                  objectFit: "contain", marginLeft: 24,
                 }} />
             )}
           </div>
 
-          {/* linea + titolo report */}
-          <div style={{ borderTop: "1.5px solid #13315C", paddingTop: 10, marginBottom: 24 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#13315C", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          {/* linea + titolo */}
+          <div style={{ borderTop: "2px solid #13315C", paddingTop: 12, marginBottom: 28 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#13315C", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Report di Cantiere n° 1
             </div>
           </div>
 
-          {/* corpo pagina simulato */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {/* riga info */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {/* corpo */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {[["Data","15/06/2025"],["Luogo","Via Example 1, Milano"],["Meteo","Soleggiato"]].map(([k,v]) => (
-                <div key={k} style={{ background: "#f9f9f9", border: "0.5px solid #e5e5e5", padding: "8px 10px" }}>
-                  <div style={{ fontSize: 8, color: "#999", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>{k}</div>
-                  <div style={{ fontSize: 11, color: "#222" }}>{v}</div>
+                <div key={k} style={{ background: "#f8f8f8", border: "0.5px solid #e8e8e8", padding: "10px 12px" }}>
+                  <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>{k}</div>
+                  <div style={{ fontSize: 12, color: "#222" }}>{v}</div>
                 </div>
               ))}
             </div>
-
-            {/* presenti */}
-            <div style={{ background: "#f9f9f9", border: "0.5px solid #e5e5e5", padding: "10px 12px" }}>
-              <div style={{ fontSize: 8, color: "#999", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>Presenti</div>
+            <div style={{ background: "#f8f8f8", border: "0.5px solid #e8e8e8", padding: "12px 14px" }}>
+              <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Presenti</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {[["DL","Direttore Lavori"],["IM","Impresa Edile"],["SC","Studio Cliente"]].map(([r,a]) => (
-                  <div key={r} style={{ fontSize: 10, color: "#444", padding: "2px 8px", border: "0.5px solid #ccc", background: "#fff" }}>{r} · {a}</div>
+                  <div key={r} style={{ fontSize: 11, color: "#444", padding: "3px 10px", border: "0.5px solid #ccc", background: "#fff" }}>{r} · {a}</div>
                 ))}
               </div>
             </div>
-
-            {/* note lavori */}
             <div>
-              <div style={{ fontSize: 8, color: "#999", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Note lavori</div>
-              <div style={{ fontSize: 11, color: "#444", lineHeight: 1.7, padding: "8px 10px", border: "0.5px solid #e5e5e5" }}>
+              <div style={{ fontSize: 8, color: "#aaa", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 5 }}>Note lavori</div>
+              <div style={{ fontSize: 12, color: "#444", lineHeight: 1.8, padding: "10px 12px", border: "0.5px solid #e8e8e8" }}>
                 Proseguono i lavori di muratura al piano primo. Verificata la posa dei serramenti in conformità al progetto. Il capocantiere segnala un ritardo di 2 giorni sulla consegna del materiale di copertura.
               </div>
             </div>
-
-            {/* foto placeholder */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
               {[1,2].map(n => (
-                <div key={n} style={{ height: 90, background: "#f0f0f0", border: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 10, color: "#bbb", fontFamily: "'IBM Plex Mono', monospace" }}>FOTO {n}</span>
+                <div key={n} style={{ height: 160, background: "#f0f0f0", border: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 11, color: "#ccc", fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em" }}>FOTO {n}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* spacer */}
-          <div style={{ flex: 1, minHeight: 40 }} />
-
           {/* footer */}
-          <div style={{ marginTop: 32, borderTop: "0.5px solid #ccc", paddingTop: 8, display: "flex", gap: 8, fontSize: 9, color: "#888" }}>
+          <div style={{ marginTop: 32, borderTop: "0.5px solid #ccc", paddingTop: 10, display: "flex", gap: 8, fontSize: 10, color: "#888" }}>
             {[["report_footer_left","left"],["report_footer_center","center"],["report_footer_right","right"]].map(([field,align]) => (
               <div key={field} style={{ flex: 1, textAlign: align, whiteSpace: "pre-line" }}>
                 {(form[field] || "").replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3") || <span style={{ opacity: 0.3 }}>—</span>}
@@ -268,7 +276,7 @@ export default function ReportImpostazioniPage() {
   const filteredProjects = projects.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1100 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* Header con titolo + azioni */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -310,7 +318,7 @@ export default function ReportImpostazioniPage() {
       )}
 
       {/* Layout principale: sinistra (form) + destra (progetti) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 16, alignItems: "start" }}>
 
         {/* ── COLONNA SINISTRA ──────────────────────────────────────── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
