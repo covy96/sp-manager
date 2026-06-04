@@ -91,7 +91,10 @@ export default function ProformaPage() {
     anni.add(new Date().getFullYear());
     proformaList.forEach(p => {
       const d = p.data_creazione || p.created_at;
-      if (d) anni.add(new Date(d).getFullYear());
+      if (d) {
+        const y = new Date(d).getFullYear();
+        if (!isNaN(y) && y >= 2000 && y <= 2100) anni.add(y);
+      }
     });
     return Array.from(anni).sort((a,b)=>b-a);
   }, [proformaList]);
