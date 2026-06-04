@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { registerGroteskaFonts, GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useEscKey } from "../hooks/useEscKey";
 
 // Registra i font Groteska globalmente (una volta sola)
 registerGroteskaFonts();
@@ -391,6 +392,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
   const [open, setOpen]       = useState(false);
   useBodyScrollLock(open);
+  useEscKey(() => { setOpen(false); setView("list"); setEditingId(null); setPreviewReport(null); }, open);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);

@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { formatOre } from "../lib/utils";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useEscKey } from "../hooks/useEscKey";
 
 function avatarColor(name = "") {
   const colors = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
@@ -47,6 +48,7 @@ export default function OrePanel({ projectId, studioId }) {
 
   const [open, setOpen]           = useState(false);
   useBodyScrollLock(open);
+  useEscKey(() => setOpen(false), open);
   const [entries, setEntries]     = useState([]);
   const [memberMap, setMemberMap] = useState({}); // team_member id → user_name
   const [loading, setLoading]     = useState(false);

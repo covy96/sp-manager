@@ -4,6 +4,7 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useEscKey } from '../hooks/useEscKey';
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -204,6 +205,18 @@ export default function CommessaDetailPage() {
   const [selectedProforma, setSelectedProforma]   = useState(null);
   const [rimuoviModal, setRimuoviModal]           = useState(false);
   const [rimuoviSaving, setRimuoviSaving]         = useState(false);
+
+  // Chiudi modal con ESC (dal più recente)
+  useEscKey(() => {
+    if (previewProforma)    { setPreviewProforma(null); return; }
+    if (rimuoviModal)       { setRimuoviModal(false); return; }
+    if (pagProformaModal)   { setPagProformaModal(false); return; }
+    if (editProformaModal)  { setEditProformaModal(false); return; }
+    if (proformaModal)      { setProformaModal(false); return; }
+    if (costoModal)         { setCostoModal(false); return; }
+    if (rataModal)          { setRataModal(false); return; }
+    if (menuOpen)           { setMenuOpen(false); }
+  }, previewProforma || rimuoviModal || pagProformaModal || editProformaModal || proformaModal || costoModal || rataModal || menuOpen);
 
   // ── LOAD ─────────────────────────────────────────────────────
   const loadData = async () => {
