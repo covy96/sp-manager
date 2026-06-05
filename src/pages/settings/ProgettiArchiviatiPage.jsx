@@ -101,11 +101,11 @@ export default function ProgettiArchiviatiPage() {
           Nessun risultato per "{search}"
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+        <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
           {filtered.map(project => {
             const assignedMembers = (project.assigned_users || []).map(id => getMemberById(id)).filter(Boolean);
             return (
-              <div key={project.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
+              <div className="asm-card" key={project.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>
                   {project.name || "Progetto senza nome"}
                 </div>

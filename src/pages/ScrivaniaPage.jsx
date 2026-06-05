@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SlidingTabs from "../components/SlidingTabs";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
@@ -459,13 +460,15 @@ export default function ScrivaniaPage() {
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>
-          <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:14 }}>
-            <button style={tabSt(taskTab === "active")} onClick={() => setTaskTab("active")}>
-              Attive ({activeTasks.length})
-            </button>
-            <button style={tabSt(taskTab === "completed")} onClick={() => setTaskTab("completed")}>
-              Oggi ({completedToday.length})
-            </button>
+          <div style={{ marginBottom:14 }}>
+            <SlidingTabs
+              tabs={[
+                { key: "active",    label: `Attive (${activeTasks.length})` },
+                { key: "completed", label: `Oggi (${completedToday.length})` },
+              ]}
+              active={taskTab}
+              onChange={setTaskTab}
+            />
           </div>
 
           {taskTab === "active" && (

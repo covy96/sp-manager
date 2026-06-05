@@ -9,6 +9,7 @@ import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_SECTIONS } fro
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
+import SlidingTabs from "../components/SlidingTabs";
 
 // ── COLORI / HELPERS ─────────────────────────────────────────────
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
@@ -427,10 +428,16 @@ export default function TeamPage() {
 
                 {/* Tabs gestione */}
                 <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
-                  <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:18 }}>
-                    <button onClick={() => setActiveTab("role")}  style={tabBtn(activeTab === "role")}>Ruolo</button>
-                    <button onClick={() => setActiveTab("perms")} style={tabBtn(activeTab === "perms")}>Permessi</button>
-                    <button onClick={() => setActiveTab("color")} style={tabBtn(activeTab === "color")}>Colore</button>
+                  <div style={{ marginBottom:18 }}>
+                    <SlidingTabs
+                      tabs={[
+                        { key:"role",  label:"Ruolo" },
+                        { key:"perms", label:"Permessi" },
+                        { key:"color", label:"Colore" },
+                      ]}
+                      active={activeTab}
+                      onChange={setActiveTab}
+                    />
                   </div>
 
                   {/* ── TAB: Ruolo ── */}

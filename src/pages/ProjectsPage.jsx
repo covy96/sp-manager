@@ -168,7 +168,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
   }, []);
 
   return (
-    <div style={{
+    <div className="asm-card" style={{
       background: hover ? T.surface2 : T.surface,
       border: `1px solid ${T.border}`,
       borderRadius: T.radius,
@@ -774,7 +774,7 @@ export default function ProjectsPage() {
           {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+        <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
           {filteredProjects.map(project => (
             <ProjectCard
               key={project.id} project={project}
