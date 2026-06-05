@@ -240,7 +240,9 @@ export default function AnalisiPage() {
 
   // ── DETTAGLIO PROGETTO ────────────────────────────────────────────
   if (selectedProject) {
-    const stat = projectStats.find(s => s.proj.id === selectedProject.id);
+    const stat = selectedProject.id === '__orphan__'
+      ? orphanStats
+      : projectStats.find(s => s.proj.id === selectedProject.id);
     if (!stat) return null;
 
     return (
