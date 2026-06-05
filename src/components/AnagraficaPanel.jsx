@@ -267,20 +267,38 @@ export default function AnagraficaPanel({ projectId, studioId }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
-            {/* Figura professionale — full width */}
-            <div style={{ gridColumn: 'span 2' }}>
+            {/* Figura professionale — full width con dropdown custom */}
+            <div style={{ gridColumn: 'span 2', position: 'relative' }}>
               <FieldLabel required>Figura professionale</FieldLabel>
-              <datalist id="figure-professionali-list">
-                {FIGURE_PROFESSIONALI.map(f => <option key={f} value={f} />)}
-              </datalist>
               <input
                 type="text"
-                list="figure-professionali-list"
                 value={form.professional_role}
                 onChange={e => setForm(p => ({ ...p, professional_role: e.target.value }))}
+                onFocus={() => setForm(p => ({ ...p, _roleFocus: true }))}
+                onBlur={() => setTimeout(() => setForm(p => ({ ...p, _roleFocus: false })), 150)}
                 placeholder="Es. Cliente, Impresa, o scrivi liberamente..."
                 style={inputSt}
+                autoComplete="off"
               />
+              {form._roleFocus && (() => {
+                const q = (form.professional_role || '').toLowerCase();
+                const matches = FIGURE_PROFESSIONALI.filter(f => f.toLowerCase().includes(q));
+                if (matches.length === 0) return null;
+                return (
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 4, zIndex: 200, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow: T.shadowMd, overflow: 'hidden' }}>
+                    {matches.map(f => (
+                      <button key={f} type="button"
+                        onMouseDown={() => setForm(p => ({ ...p, professional_role: f, _roleFocus: false }))}
+                        style={{ display: 'block', width: '100%', padding: '9px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", borderBottom: `0.5px solid ${T.border}` }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Nome e cognome */}
