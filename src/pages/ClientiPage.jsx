@@ -5,6 +5,7 @@ import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 // Normalizzazione robusta: lowercase, trim, rimuove accenti, collassa spazi
 function nk(s) {
@@ -41,6 +42,7 @@ export default function ClientiPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   const [contacts, setContacts]           = useState([]);
@@ -176,7 +178,7 @@ export default function ClientiPage() {
           </div>
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(2,1fr)',gap:8}}>
           {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
