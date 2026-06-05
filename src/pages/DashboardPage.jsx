@@ -391,10 +391,10 @@ export default function DashboardPage() {
         <KpiCard
           label={scope === "all" ? "Progetti Attivi — studio" : "I miei progetti attivi"}
           value={activeProjects} note="in corso" valueColor={T.ink} />
+        <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
         <KpiCard
           label={scope === "all" ? "Task da Completare — studio" : "I miei task aperti"}
           value={openTasks} note="aperti" valueColor={T.red} />
-        <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
         {permissions.canViewFinancials && (
           <KpiCard label="Credito da Incassare" value={currency(creditToCollect)} note="da commesse - proforma pagate" valueColor={T.green} />
         )}
