@@ -301,6 +301,7 @@ export default function ProjectDetailPage() {
   const [editSaving, setEditSaving]   = useState(false);
   const [editError, setEditError]     = useState("");
   const [commesseProgetto, setCommesseProgetto] = useState([]);
+  const [commesseList, setCommesseList]         = useState([]); // per il select collegamento
   const [addColInput, setAddColInput]           = useState("");
   const [addColOpen, setAddColOpen]             = useState(false);
   // drag-to-reorder columns
@@ -335,6 +336,8 @@ export default function ProjectDetailPage() {
       setCompletedCategories(pR.data?.completed_categories ?? {});
       const { data: commProg } = await supabase.from('commesse').select('id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,stato_pagamento,archived').eq('project_id', projectId).eq('studio', studioId).order('created_at', { ascending: false });
       setCommesseProgetto(commProg ?? []);
+      const { data: allComm } = await supabase.from('commesse').select('id,nome_commessa,numero_offerta').eq('studio', studioId).eq('archived', false).order('created_at', { ascending: false });
+      setCommesseList(allComm ?? []);
       setLoading(false);
     };
     loadData();
@@ -450,6 +453,7 @@ export default function ProjectDetailPage() {
       gantt_enabled: project?.gantt_enabled ?? false,
       selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [],
       selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [],
+      selectedCommessaId: project?.commessa_id ?? "",
     });
     setEditError(""); setEditOpen(true); setMenuOpen(false);
   };
@@ -458,6 +462,7 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     if (!editForm.name.trim() || !editForm.client.trim()) { setEditError("Nome e cliente sono obbligatori."); return; }
     setEditSaving(true); setEditError("");
+    const newCid = editForm.selectedCommessaId || null;
     const payload = {
       name: editForm.name.trim(),
       client: editForm.client.trim(),
@@ -466,9 +471,17 @@ export default function ProjectDetailPage() {
       gantt_enabled: !!editForm.gantt_enabled,
       servizi_selezionati: editForm.selectedServices,
       assigned_users: editForm.selectedMembers ?? [],
+      commessa_id: newCid,
     };
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", id);
     if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
+    // Gestisci collegamento bidirezionale commessa ↔ project
+    if (project?.commessa_id && project.commessa_id !== newCid) {
+      await supabase.from("commesse").update({ project_id: null }).eq("id", project.commessa_id);
+    }
+    if (newCid) {
+      await supabase.from("commesse").update({ project_id: id }).eq("id", newCid);
+    }
     setProject(p => p ? { ...p, ...payload } : p);
     setEditSaving(false); setEditOpen(false);
   };
@@ -686,6 +699,14 @@ export default function ProjectDetailPage() {
                 onSelectClient={name => setEditForm(p => ({ ...p, client: name }))}
                 onGanttChange={e => setEditForm(p => ({ ...p, gantt_enabled: e.target.checked }))}
               />
+              <div style={{ marginTop: 14 }}>
+                <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commessa collegata</label>
+                <select value={editForm.selectedCommessaId ?? ""} onChange={e => setEditForm(p => ({ ...p, selectedCommessaId: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+                  <option value="">Nessuna</option>
+                  {commesseList.map(c => <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>)}
+                </select>
+              </div>
               {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.border}` }}>
                 <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
