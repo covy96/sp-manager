@@ -28,7 +28,7 @@ function BtnPrimary({ children, type = "button", onClick, disabled }) {
 function Panel({ title, subtitle, children }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', marginBottom: 14 }}>
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 22px', marginBottom: 14 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>{title}</div>
       {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 18 }}>{subtitle}</div>}
       {children}

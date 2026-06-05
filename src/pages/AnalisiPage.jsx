@@ -427,7 +427,7 @@ export default function AnalisiPage() {
         )}
 
         {/* Riepilogo finale */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 24px' }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:16 }}>Riepilogo economico</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:400 }}>
             {[
@@ -518,7 +518,7 @@ export default function AnalisiPage() {
       })()}
 
       {/* Tabella progetti */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}` }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr>
@@ -560,8 +560,8 @@ export default function AnalisiPage() {
                 <td style={tdSt}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ fontWeight:600, color: isOrphan ? T.muted : T.ink }}>{proj.name}</div>
-                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>archiviato</span>}
-                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>non collegato</span>}
+                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, padding:'1px 5px' }}>archiviato</span>}
+                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, padding:'1px 5px' }}>non collegato</span>}
                   </div>
                   {proj.client && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{proj.client}</div>}
                 </td>
@@ -599,7 +599,7 @@ export default function AnalisiPage() {
 
             <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
               {members.map(m => (
-                <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:T.surface2, border:`1px solid ${T.border}` }}>
                   <div style={{ width:32, height:32, borderRadius:'50%', background:m.color||T.navy, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#fff', flexShrink:0 }}>
                     {(m.user_name||'?').slice(0,2).toUpperCase()}
                   </div>

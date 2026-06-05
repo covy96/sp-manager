@@ -304,7 +304,7 @@ export default function TimesheetPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {entries.map(en => (
             <button key={en.id} onClick={() => { setEditingEntry(en); setEditHours(en.hours); setEditNotes(en.notes || ""); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: T.surface, border: `1px solid ${T.border}`, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s', borderRadius: T.radiusSm, boxShadow: T.shadow }}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow,  cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s', borderRadius: T.radiusSm, boxShadow: T.shadow }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg}
               onMouseLeave={e => e.currentTarget.style.background = T.surface}
             >

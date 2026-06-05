@@ -22,7 +22,7 @@ function isOverdue(dataScadenza, pagato) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{background:T.surface,border:`1px solid ${T.border}`,padding:'16px 20px',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+    <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'16px 20px',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
       <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.25em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
       <div style={{fontSize:24,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink}}>{value}</div>
       {sub&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:4}}>{sub}</div>}

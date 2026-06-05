@@ -144,7 +144,7 @@ export default function NotifichePage() {
       </div>
 
       {!supportsNotifications && (
-        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px' }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 22px' }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>
             Le notifiche push non sono supportate su questo browser.<br/>
             Su iPhone, aggiungi l'app alla schermata home e aprila da lì.
@@ -155,7 +155,7 @@ export default function NotifichePage() {
       {supportsNotifications && (
       <>
       {/* Toggle principale */}
-      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Notifiche push</div>
@@ -170,7 +170,7 @@ export default function NotifichePage() {
       </div>
 
       {/* Lista preferenze */}
-      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow,  opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 18px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
         {prefsLoading ? (
           <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
@@ -183,7 +183,7 @@ export default function NotifichePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Avvisami</span>
                   <input type="number" min={1} max={30} value={proformaDays} onChange={e => handleProformaDays(e.target.value)}
-                    style={{ width: 48, padding: '4px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
+                    style={{ width: 48, padding: '4px 8px', border: `1px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>giorni prima</span>
                 </div>
               )}

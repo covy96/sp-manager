@@ -24,7 +24,7 @@ const TIPO_OPTIONS = [
 function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radiusSm, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'16px 20px' }}>
       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink }}>{value}</div>
     </div>
@@ -34,7 +34,7 @@ function KpiCard({ label, value, color }) {
 function Panel({ title, subtitle, children }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', marginBottom:14 }}>
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 22px', marginBottom:14 }}>
       <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom: subtitle?4:16 }}>{title}</div>
       {subtitle && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:18 }}>{subtitle}</div>}
       {children}

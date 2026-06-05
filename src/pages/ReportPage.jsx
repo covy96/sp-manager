@@ -256,7 +256,7 @@ export default function ReportPage() {
   };
 
   if (!studioLoading && !permissions.canViewReport) return (
-    <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`1px solid ${T.border}`, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
 
   return (
@@ -318,7 +318,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10 }}>
 
         {/* Andamento temporale */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
             <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
@@ -435,7 +435,7 @@ export default function ReportPage() {
       )}
 
       {error && (
-        <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
+        <div style={{ border:`1px solid ${T.border}`, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
           {error}
         </div>
       )}
@@ -454,7 +454,7 @@ export default function ReportPage() {
               top:  Math.max(barPopup.y - 20, 80),
               width: 260,
               background: T.surface,
-              border: `0.5px solid ${T.borderMd}`,
+              border: `1px solid ${T.borderMd}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, 
               boxShadow: `0 8px 24px rgba(0,0,0,0.14)`,
               zIndex: 61,
             }}

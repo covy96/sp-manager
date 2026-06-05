@@ -526,7 +526,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
     <div style={{ display:'flex', flexDirection:'column', gap:0, minHeight:'calc(100vh - 120px)' }}>
 
       {/* Toolbar */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Gantt</button>
           <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{project.name}</div>
@@ -551,7 +551,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
         {loading ? (
           <div style={{ ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>
         ) : versions.length === 0 ? (
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'56px 0', textAlign:'center' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 0', textAlign:'center' }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
             <div style={{ ...mono, fontSize:11, color:T.muted, marginBottom:8 }}>Nessuna versione salvata</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>Crea la prima versione per iniziare</div>
@@ -571,7 +571,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                   onMouseLeave={e => e.currentTarget.style.borderColor = isLatest ? T.navy : T.border}
                 >
                   <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                    <div style={{ width:36, height:36, background: isLatest ? T.navy : T.surface2, border:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
+                    <div style={{ width:36, height:36, background: isLatest ? T.navy : T.surface2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>
                       📊
                     </div>
                     <div>
@@ -604,7 +604,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <button
                       onClick={e => { e.stopPropagation(); handleDeleteVersion(v); }}
-                      style={{ background:'none', border:`0.5px solid ${T.border}`, cursor:'pointer', color:T.muted, padding:'5px 10px', ...mono, fontSize:10 }}
+                      style={{ background:'none', border:`1px solid ${T.border}`, cursor:'pointer', color:T.muted, padding:'5px 10px', ...mono, fontSize:10 }}
                       title="Elimina versione"
                     >×</button>
                     <span style={{ ...mono, fontSize:11, color:T.navy }}>Apri →</span>
@@ -993,7 +993,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
 
       {/* Toolbar */}
-      <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Versioni</button>
           <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>{project.name}</div>
@@ -1022,7 +1022,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       </div>
 
       {/* Body */}
-      <div style={{flex:1,display:'flex',overflow:'hidden',border:`0.5px solid ${T.border}`,borderTop:'none',background:T.surface}}>
+      <div style={{flex:1,display:'flex',overflow:'hidden',border:`1px solid ${T.border}`,borderTop:'none',background:T.surface}}>
 
         {/* LEFT */}
         {!onlyChart && (
@@ -1072,7 +1072,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       onKeyDown={e=>{ if(e.key==='Enter') e.target.blur(); }}
                       style={{...inputSt,fontSize:10}}/>
                     {impresaSuggest?.rowId===lav.id && Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).length>0 && (
-                      <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                      <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
                         {Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).map(opt=>(
                           <div key={opt} onMouseDown={()=>{handleInlineEdit(lav,'operatore',opt);setImpresaSuggest(null);}}
                             style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}
@@ -1147,7 +1147,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                   placeholder="Impresa..."
                   style={{...inputSt,fontSize:10,color:T.muted}}/>
                 {impresaSuggest?.rowId==='new' && Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).length>0 && (
-                  <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                  <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
                     {Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).map(opt=>(
                       <div key={opt} onMouseDown={()=>{updateNewRow('operatore',opt);setImpresaSuggest(null);}}
                         style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}
@@ -1409,7 +1409,7 @@ export default function GanttPage() {
       </div>
 
       {projects.length===0 ? (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,marginBottom:8}}>
             Nessun progetto con Gantt attivo.
           </div>
@@ -1421,7 +1421,7 @@ export default function GanttPage() {
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:10}}>
           {projects.map(p=>(
             <button key={p.id} onClick={()=>setSelectedProject(p)}
-              style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'20px 22px',textAlign:'left',cursor:'pointer',transition:'border-color 0.1s'}}
+              style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'20px 22px',textAlign:'left',cursor:'pointer',transition:'border-color 0.1s'}}
               onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
               onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
             >

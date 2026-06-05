@@ -169,7 +169,7 @@ export default function ClientiPage() {
 
       {/* Lista vuota */}
       {contacts.length===0 ? (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
             Nessun cliente ancora.<br/>
             I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
@@ -232,13 +232,13 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {projs.map(p=>(
                               <button key={p.id} onClick={()=>navigate(`/progetti/${p.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
                                 <div style={{display:'flex',alignItems:'center',gap:6}}>
                                   <div style={{fontSize:12,fontWeight:600,color:p.archived?T.muted:T.ink}}>{p.name}</div>
-                                  {p.archived && <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.1em',textTransform:'uppercase',color:T.muted,border:`0.5px solid ${T.border}`,padding:'1px 5px'}}>archiviato</span>}
+                                  {p.archived && <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.1em',textTransform:'uppercase',color:T.muted,border:`1px solid ${T.border}`,padding:'1px 5px'}}>archiviato</span>}
                                 </div>
                                 <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
                               </button>
@@ -258,7 +258,7 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {comms.map(com=>(
                               <button key={com.id} onClick={()=>navigate(`/commesse/${com.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >

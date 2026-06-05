@@ -375,7 +375,7 @@ export default function OffertePage() {
                     Ripristina
                   </button>
                 )}
-                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`0.5px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
+                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
                   🗑
                 </button>
               </div>
@@ -448,7 +448,7 @@ export default function OffertePage() {
                   </label>
                 </div>
                 {form.creaProgetto && (
-                  <div style={{ gridColumn:'span 2', display:'flex', flexDirection:'column', gap:10, padding:'14px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                  <div style={{ gridColumn:'span 2', display:'flex', flexDirection:'column', gap:10, padding:'14px', background:T.surface2, border:`1px solid ${T.border}` }}>
                     <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>Nuovo progetto</div>
                     <div>
                       <label style={labelSt}>Nome progetto *</label>
@@ -461,7 +461,7 @@ export default function OffertePage() {
                     {serviceTemplates.length > 0 && (
                       <div>
                         <label style={labelSt}>Servizi</label>
-                        <div style={{ border:`0.5px solid ${T.border}`, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                        <div style={{ border:`1px solid ${T.border}`, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
                           {serviceTemplates.map(s => {
                             const selected = (form.nuovoProgettoServizi||[]).includes(s.service_name);
                             return (
@@ -515,7 +515,7 @@ export default function OffertePage() {
               Hai modificato il valore rispetto all'offerta originale.<br/>
               Vuoi allineare anche il valore dell'offerta a quello della commessa?
             </div>
-            <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
+            <div style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
               <div>
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
@@ -585,7 +585,7 @@ export default function OffertePage() {
                     </label>
                   </div>
                   {accettaForm.creaProgetto && (
-                    <div style={{ padding:'12px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                    <div style={{ padding:'12px', background:T.surface2, border:`1px solid ${T.border}` }}>
                       <label style={labelSt}>Nome progetto *</label>
                       <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
                     </div>

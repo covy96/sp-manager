@@ -148,7 +148,7 @@ export default function GestioneServiziPage() {
       {error && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, marginBottom:14 }}>{error}</div>}
 
       {services.length === 0 ? (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
           Nessun servizio configurato.
         </div>
       ) : (
@@ -177,7 +177,7 @@ export default function GestioneServiziPage() {
                       <button onClick={() => setExpandedId(isExpanded ? null : service.id)}
                         style={{ flex:1, textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, fontWeight:600, color:T.ink, display:'flex', alignItems:'center', gap:8 }}>
                         {service.service_name}
-                        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 6px' }}>
+                        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, border:`1px solid ${T.border}`, padding:'1px 6px' }}>
                           {tasks.length} task
                         </span>
                         <span style={{ fontSize:11, color:T.muted, marginLeft:'auto' }}>{isExpanded ? '▲' : '▼'}</span>
@@ -212,7 +212,7 @@ export default function GestioneServiziPage() {
                     ) : (
                       <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:12 }}>
                         {tasks.map((task, i) => (
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background:T.surface, border:`0.5px solid ${T.border}`, padding:'7px 12px' }}>
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background:T.surface, border:`1px solid ${T.border}`, padding:'7px 12px' }}>
                             <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
                               <button onClick={() => handleMoveTask(service, i, -1)} disabled={i===0}
                                 style={{ background:'none', border:'none', cursor:i===0?'default':'pointer', color:i===0?T.border:T.muted, fontSize:10, lineHeight:1, padding:'1px 2px' }}>▲</button>

@@ -125,7 +125,7 @@ export default function PianoPage() {
               </div>
 
               {/* Limiti chiave */}
-              <div style={{ marginBottom:16, padding:'12px 14px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+              <div style={{ marginBottom:16, padding:'12px 14px', background:T.bg, border:`1px solid ${T.border}` }}>
                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                   {[
                     { label:'Utenti', value: p.maxUsers === Infinity ? 'Illimitati' : `${p.maxUsers}` },
@@ -157,7 +157,7 @@ export default function PianoPage() {
                     {loading ? "Caricamento..." : "Gestisci abbonamento"}
                   </button>
                 ) : (
-                  <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`0.5px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
+                  <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`1px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
                     Piano attuale
                   </div>
                 )
@@ -166,7 +166,7 @@ export default function PianoPage() {
                   {loading ? "Caricamento..." : `Passa a ${p.name}`}
                 </button>
               ) : (
-                <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`0.5px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
+                <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`1px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
                   Piano inferiore
                 </div>
               )}
@@ -176,7 +176,7 @@ export default function PianoPage() {
       </div>
 
       {/* Info box */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px' }}>
         <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:6 }}>Hai bisogno di aiuto?</div>
         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1.7 }}>
           Contattaci per assistenza con il tuo abbonamento, richieste personalizzate o codici sconto.
