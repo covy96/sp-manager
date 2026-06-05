@@ -43,6 +43,12 @@ export default function FatturePage() {
   const [loading, setLoading]           = useState(true);
   const [showPagate, setShowPagate]     = useState(true);
   const [annoFiltro, setAnnoFiltro]     = useState(new Date().getFullYear());
+  const [sortCol, setSortCol]           = useState("data_pagamento");
+  const [sortAsc, setSortAsc]           = useState(false);
+  const [sortColF, setSortColF]         = useState("data_emissione");
+  const [sortAscF, setSortAscF]         = useState(false);
+  const handleSortP = col => { if (sortCol===col) setSortAsc(p=>!p); else { setSortCol(col); setSortAsc(false); } };
+  const handleSortF = col => { if (sortColF===col) setSortAscF(p=>!p); else { setSortColF(col); setSortAscF(false); } };
   const [modalOpen, setModalOpen]       = useState(false);
   useEscKey(() => setModalOpen(false), modalOpen);
   const [editFattura, setEditFattura]   = useState(null);
@@ -236,12 +242,13 @@ export default function FatturePage() {
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead>
                 <tr>
-                  <th style={thSt}>N° Proforma</th>
-                  <th style={thSt}>Commessa</th>
-                  <th style={thSt}>Cliente</th>
-                  <th style={thSt}>Data pagamento</th>
-                  <th style={thSt}>Importo</th>
-                  <th style={thSt}>N° Fattura fiscale</th>
+                  {[['numero_proforma','N° Proforma'],['commessa','Commessa'],['cliente','Cliente'],['data_pagamento','Data pagamento'],['importo_totale','Importo'],['numero_fattura','N° Fattura fiscale']].map(([col,lbl])=>(
+                    <th key={col} style={{...thSt,cursor:'pointer',userSelect:'none'}} onClick={()=>handleSortP(col)}>
+                      <span style={{display:'inline-flex',alignItems:'center',gap:4,color:sortCol===col?T.navy:T.muted}}>
+                        {lbl}<span style={{fontSize:9,opacity:sortCol===col?1:0.3}}>{sortCol===col?(sortAsc?'↑':'↓'):'↕'}</span>
+                      </span>
+                    </th>
+                  ))}
                   <th style={thSt}></th>
                 </tr>
               </thead>
@@ -250,7 +257,17 @@ export default function FatturePage() {
                   <tr><td colSpan={7} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>
                     Nessuna proforma pagata ancora — le proforma pagate appaiono qui come fatture emesse.
                   </td></tr>
-                ) : proformePagate.map(p => (
+                ) : [...proformePagate].sort((a,b)=>{
+                    const v = r => {
+                      if(sortCol==='commessa') return (commessaName(r.commessa_id)||'').toLowerCase();
+                      if(sortCol==='cliente') return (commessaCliente(r.commessa_id)||'').toLowerCase();
+                      if(sortCol==='importo_totale') return Number(r.importo_totale)||0;
+                      if(sortCol==='data_pagamento') return r.data_pagamento?new Date(r.data_pagamento).getTime():0;
+                      return (r[sortCol]||'').toString().toLowerCase();
+                    };
+                    const vA=v(a),vB=v(b);
+                    return vA<vB?(sortAsc?-1:1):vA>vB?(sortAsc?1:-1):0;
+                  }).map(p => (
                   <tr key={p.id}>
                     <td style={{...tdSt,fontWeight:600}}>{p.numero_proforma}</td>
                     <td style={tdSt}>
@@ -294,20 +311,30 @@ export default function FatturePage() {
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead>
                 <tr>
-                  <th style={thSt}>N° Fattura</th>
-                  <th style={thSt}>Commessa</th>
-                  <th style={thSt}>Cliente</th>
-                  <th style={thSt}>Data emissione</th>
-                  <th style={thSt}>Scadenza</th>
-                  <th style={thSt}>Importo</th>
-                  <th style={thSt}>Stato</th>
+                  {[['numero_fattura','N° Fattura'],['commessa','Commessa'],['cliente','Cliente'],['data_emissione','Data emissione'],['data_scadenza','Scadenza'],['importo','Importo'],['stato','Stato']].map(([col,lbl])=>(
+                    <th key={col} style={{...thSt,cursor:'pointer',userSelect:'none'}} onClick={()=>handleSortF(col)}>
+                      <span style={{display:'inline-flex',alignItems:'center',gap:4,color:sortColF===col?T.navy:T.muted}}>
+                        {lbl}<span style={{fontSize:9,opacity:sortColF===col?1:0.3}}>{sortColF===col?(sortAscF?'↑':'↓'):'↕'}</span>
+                      </span>
+                    </th>
+                  ))}
                   <th style={thSt}></th>
                 </tr>
               </thead>
               <tbody>
                 {visibili.length===0 ? (
                   <tr><td colSpan={8} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>Nessuna fattura</td></tr>
-                ) : visibili.map(f=>{
+                ) : [...visibili].sort((a,b)=>{
+                    const v = r => {
+                      if(sortColF==='commessa') return (r.commessa_nome||'').toLowerCase();
+                      if(sortColF==='cliente') return (r.cliente||'').toLowerCase();
+                      if(sortColF==='importo') return Number(r.importo)||0;
+                      if(sortColF==='data_emissione'||sortColF==='data_scadenza') return r[sortColF]?new Date(r[sortColF]).getTime():0;
+                      return (r[sortColF]||'').toString().toLowerCase();
+                    };
+                    const vA=v(a),vB=v(b);
+                    return vA<vB?(sortAscF?-1:1):vA>vB?(sortAscF?1:-1):0;
+                  }).map(f=>{
                   const overdue = isOverdue(f.data_scadenza, f.pagato);
                   return (
                     <tr key={f.id}>
