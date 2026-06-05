@@ -183,7 +183,7 @@ export default function NotifichePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Avvisami</span>
                   <input type="number" min={1} max={30} value={proformaDays} onChange={e => handleProformaDays(e.target.value)}
-                    style={{ width: 48, padding: '4px 8px', border: `1px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
+                    style={{ width: 48, padding: '4px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>giorni prima</span>
                 </div>
               )}

@@ -282,7 +282,7 @@ export default function EsportaDatiPage() {
       </div>
 
       {/* Selezione sezioni */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', marginBottom:14 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 22px', marginBottom:14 }}>
         <div style={{ ...mono, fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Seleziona cosa esportare</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {SEZIONI.map(s => (
@@ -308,7 +308,7 @@ export default function EsportaDatiPage() {
       </div>
 
       {/* Info formato */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'14px 18px', marginBottom:14 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'14px 18px', marginBottom:14 }}>
         <div style={{ ...mono, fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Formato</div>
         <div style={{ display:'flex', gap:20 }}>
           {[

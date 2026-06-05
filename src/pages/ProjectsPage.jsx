@@ -44,7 +44,7 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
   const { T } = useTheme();
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
-      background: 'transparent', border: `0.5px solid ${danger ? T.red : T.borderMd}`,
+      background: 'transparent', border: `1px solid ${danger ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink,
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
       letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
@@ -75,7 +75,7 @@ function Input({ value, onChange, type = "text", placeholder, required, autoComp
       onFocus={() => setFocus(true)}
       style={{
         width: '100%', padding: '8px 12px', boxSizing: 'border-box',
-        border: `0.5px solid ${focus ? T.navy : T.borderMd}`,
+        border: `1px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: T.surface, color: T.ink, fontSize: 13,
         fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
       }}
@@ -143,7 +143,7 @@ function ScrollBox({ children, maxHeight = 160 }) {
   const { T } = useTheme();
   return (
     <div style={{
-      border: `0.5px solid ${T.border}`, background: T.bg,
+      border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg,
       padding: '8px 12px', maxHeight, overflowY: 'auto',
     }}>{children}</div>
   );
@@ -296,7 +296,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
         {clientSuggestions?.length > 0 && (
           <div style={{
             position: 'absolute', left: 0, right: 0, top: '100%',
-            background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 40,
+            background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 40,
           }}>
             {clientSuggestions.map(c => (
               <button key={c.id} onMouseDown={() => onSelectClient(c.full_name)} style={{
@@ -716,11 +716,11 @@ export default function ProjectsPage() {
               placeholder="Cerca progetto o cliente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '6px 10px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '6px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
             />
             {/* Year filter */}
             <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-              style={{ padding: '6px 8px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+              style={{ padding: '6px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
               {anniDisponibili.map(a => (
                 <option key={a} value={a}>{a}</option>
               ))}
@@ -731,7 +731,7 @@ export default function ProjectsPage() {
                 Utenti ({selectedUserIds.length})
               </BtnGhost>
               {filterOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `0.5px solid ${T.borderMd}`, zIndex: 20 }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 20 }}>
                   <div style={{ padding: 8, maxHeight: 240, overflowY: 'auto' }}>
                     {teamMembers.map(m => (
                       <CheckRow
@@ -768,9 +768,9 @@ export default function ProjectsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 64, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : error ? (
-        <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
       ) : filteredProjects.length === 0 ? (
-        <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
           {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
@@ -816,7 +816,7 @@ export default function ProjectsPage() {
 
           {modalStep === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', border: `0.5px solid ${T.border}`, background: T.bg }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg }}>
                 <input type="checkbox" checked={formData.createInlineCommessa} onChange={e => setFormData(p => ({ ...p, createInlineCommessa: e.target.checked }))} style={{ accentColor: T.navy, width: 14, height: 14 }} />
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>Crea anche la commessa per questo progetto</span>
               </label>
@@ -866,7 +866,7 @@ export default function ProjectsPage() {
           <div style={{ marginTop: 14 }}>
             <FieldLabel>Commessa collegata</FieldLabel>
             <select value={editFormData.selectedCommessaId ?? ""} onChange={e => setEditFormData(p => ({ ...p, selectedCommessaId: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
               <option value="">Nessuna</option>
               {commesseList.map(c => <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>)}
             </select>

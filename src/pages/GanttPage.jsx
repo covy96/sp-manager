@@ -526,16 +526,16 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
     <div style={{ display:'flex', flexDirection:'column', gap:0, minHeight:'calc(100vh - 120px)' }}>
 
       {/* Toolbar */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Gantt</button>
+          <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Gantt</button>
           <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{project.name}</div>
           {project.client && <div style={{ ...mono, fontSize:10, color:T.muted }}>{project.client}</div>}
         </div>
         <div style={{ display:'flex', gap:8 }}>
           {versions.length > 0 && (
             <button onClick={handleCopyLast} disabled={creating}
-              style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
+              style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
               ⎘ Copia ultima
             </button>
           )}
@@ -551,7 +551,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
         {loading ? (
           <div style={{ ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>
         ) : versions.length === 0 ? (
-          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 0', textAlign:'center' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'56px 0', textAlign:'center' }}>
             <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
             <div style={{ ...mono, fontSize:11, color:T.muted, marginBottom:8 }}>Nessuna versione salvata</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>Crea la prima versione per iniziare</div>
@@ -592,7 +592,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                         ) : (
                           <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>{v.name}</span>
                         )}
-                        {isLatest && <span style={{ ...mono, fontSize:8, letterSpacing:'0.12em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>Ultima</span>}
+                        {isLatest && <span style={{ ...mono, fontSize:8, letterSpacing:'0.12em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>Ultima</span>}
                       </div>
                       <div style={{ ...mono, fontSize:9, color:T.muted }}>
                         {new Date(v.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
@@ -604,7 +604,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <button
                       onClick={e => { e.stopPropagation(); handleDeleteVersion(v); }}
-                      style={{ background:'none', border:`1px solid ${T.border}`, cursor:'pointer', color:T.muted, padding:'5px 10px', ...mono, fontSize:10 }}
+                      style={{ background:'none', border:`1px solid ${T.border}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 10px', ...mono, fontSize:10 }}
                       title="Elimina versione"
                     >×</button>
                     <span style={{ ...mono, fontSize:11, color:T.navy }}>Apri →</span>
@@ -995,21 +995,21 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       {/* Toolbar */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Versioni</button>
+          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Versioni</button>
           <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>{project.name}</div>
-          {version&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,border:`0.5px solid ${T.navy}`,padding:'2px 8px'}}>{version.name}</div>}
+          {version&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm,padding:'2px 8px'}}>{version.name}</div>}
           {project.client&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{project.client}</div>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {/* Export */}
-          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
-          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.borderMd}`,color:onlyChart?T.bg:T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:onlyChart?T.bg:T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             {onlyChart ? '⊞ Tabella' : '▦ Solo grafico'}
           </button>
           {/* Vista */}
@@ -1022,7 +1022,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       </div>
 
       {/* Body */}
-      <div style={{flex:1,display:'flex',overflow:'hidden',border:`1px solid ${T.border}`,borderTop:'none',background:T.surface}}>
+      <div style={{flex:1,display:'flex',overflow:'hidden',border:`1px solid ${T.border}`, borderRadius: T.radiusSm,borderTop:'none',background:T.surface}}>
 
         {/* LEFT */}
         {!onlyChart && (

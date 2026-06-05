@@ -27,7 +27,7 @@ function BtnPrimary({ children, onClick, disabled, type="button" }) {
 function BtnGhost({ children, onClick, disabled, danger }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
@@ -120,7 +120,7 @@ export default function ClientiPage() {
     setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null);
   };
 
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
@@ -155,7 +155,7 @@ export default function ClientiPage() {
               placeholder="Cerca cliente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{width:220,padding:'7px 28px 7px 30px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+              style={{width:220,padding:'7px 28px 7px 30px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
             />
             {searchQuery && (
               <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
@@ -211,7 +211,7 @@ export default function ClientiPage() {
 
                   {/* Elimina */}
                   <button onClick={()=>handleDelete(c.id)}
-                    style={{background:'none',border:`0.5px solid ${T.red}`,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
+                    style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
                     Elimina
                   </button>
                 </div>
@@ -238,7 +238,7 @@ export default function ClientiPage() {
                               >
                                 <div style={{display:'flex',alignItems:'center',gap:6}}>
                                   <div style={{fontSize:12,fontWeight:600,color:p.archived?T.muted:T.ink}}>{p.name}</div>
-                                  {p.archived && <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.1em',textTransform:'uppercase',color:T.muted,border:`1px solid ${T.border}`,padding:'1px 5px'}}>archiviato</span>}
+                                  {p.archived && <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.1em',textTransform:'uppercase',color:T.muted,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'1px 5px'}}>archiviato</span>}
                                 </div>
                                 <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
                               </button>

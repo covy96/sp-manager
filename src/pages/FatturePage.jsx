@@ -182,7 +182,7 @@ export default function FatturePage() {
 
   const thSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,padding:'8px 14px',borderBottom:`0.5px solid ${T.border}`,textAlign:'left'};
   const tdSt = {padding:'10px 14px',borderBottom:`0.5px solid ${T.border}`,fontSize:12,color:T.ink};
-  const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
+  const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
   const lbSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6,display:'block'};
 
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:240,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento fatture...</div>;
@@ -203,7 +203,7 @@ export default function FatturePage() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -269,7 +269,7 @@ export default function FatturePage() {
                     </td>
                     <td style={tdSt}>
                       <button onClick={()=>navigate(`/commesse/${p.commessa_id}`)}
-                        style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
+                        style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
                         Vai a commessa
                       </button>
                     </td>
@@ -346,12 +346,12 @@ export default function FatturePage() {
                             </button>
                           )}
                           {f.pagato && (
-                            <button onClick={()=>handleAnnullaPagamento(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleAnnullaPagamento(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
                               Annulla pag.
                             </button>
                           )}
-                          <button onClick={()=>openEdit(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>···</button>
-                          <button onClick={()=>handleDelete(f.id)} style={{background:'none',border:`0.5px solid ${T.red}`,color:T.red,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>×</button>
+                          <button onClick={()=>openEdit(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>···</button>
+                          <button onClick={()=>handleDelete(f.id)} style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,color:T.red,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>×</button>
                         </div>
                       </td>
                     </tr>
@@ -415,7 +415,7 @@ export default function FatturePage() {
               {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
 
               <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.borderMd}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
                 <button type="submit" disabled={saving} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
                   {saving?'Salvataggio...':editFattura?'Aggiorna':'Crea fattura'}
                 </button>

@@ -73,7 +73,7 @@ export default function CommesseArchiviatePage() {
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                 <button onClick={() => navigate(`/impostazioni/commesse-archiviate/${c.id}`)} style={{ padding: '6px 12px', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
-                <button onClick={() => handleUnarchive(c.id)} disabled={restoring === c.id} style={{ padding: '6px 12px', background: 'transparent', border: `0.5px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === c.id ? 'not-allowed' : 'pointer', opacity: restoring === c.id ? 0.6 : 1 }}>
+                <button onClick={() => handleUnarchive(c.id)} disabled={restoring === c.id} style={{ padding: '6px 12px', background: 'transparent', border: `1px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === c.id ? 'not-allowed' : 'pointer', opacity: restoring === c.id ? 0.6 : 1 }}>
                   {restoring === c.id ? "..." : "Ripristina"}
                 </button>
               </div>

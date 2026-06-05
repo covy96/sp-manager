@@ -51,7 +51,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
           disabled={updating}
           style={{
             width:15, height:15, borderRadius:'50%', flexShrink:0, padding:0,
-            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`,
+            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
             background: done ? T.navy : 'transparent',
             display:'inline-flex', alignItems:'center', justifyContent:'center',
             cursor: updating ? 'not-allowed' : 'pointer',
@@ -165,13 +165,13 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
           {NOTE_COLORS.map(c => (
             <button key={c} onClick={() => isOwn && handleColorChange(c)} style={{
               width:13, height:13, borderRadius:'50%', background:c,
-              border:`1.5px solid ${color === c ? T.ink : T.border}`,
+              border:`1.5px solid ${color === c ? T.ink : T.border}`, borderRadius: T.radiusSm,
               cursor: isOwn ? 'pointer' : 'default', padding:0, flexShrink:0,
             }}/>
           ))}
           {isOwn && (
             <button onClick={handlePrivacyToggle} style={{
-              background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`,
+              background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`, borderRadius: T.radiusSm,
               padding:'1px 6px', cursor:'pointer', marginLeft:4,
               fontFamily:"'IBM Plex Mono', monospace", fontSize:8,
               color: isPrivate ? T.muted : T.navy, letterSpacing:'0.05em',
@@ -492,7 +492,7 @@ export default function ScrivaniaPage() {
                       <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
                         {projectsById[pid] || "Senza progetto"}
                       </span>
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>
                         {tasks.length}
                       </span>
                     </div>
@@ -533,7 +533,7 @@ export default function ScrivaniaPage() {
         {/* ── COLONNA NOTE ── */}
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {notes.length === 0 ? (
-            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
               Nessuna nota. Clicca "+ Nuova nota" per iniziare.
             </div>
           ) : notes.map(note => (

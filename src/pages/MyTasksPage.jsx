@@ -42,7 +42,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         width: '100%', padding: '9px 12px', textAlign: 'left',
         background: hover ? T.paper : 'transparent',
-        border: `0.5px solid ${hover ? T.ink20 : T.ink10}`,
+        border: `1px solid ${hover ? T.ink20 : T.ink10}`,
         cursor: updating ? 'not-allowed' : 'pointer',
         opacity: updating ? 0.5 : 1, transition: 'all 0.1s',
       }}
@@ -51,7 +51,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
         {/* Checkbox circle */}
         <span style={{
           width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : overdue ? T.red : T.ink20}`,
+          border: `1px solid ${done ? T.navy : overdue ? T.red : T.ink20}`, borderRadius: T.radiusSm,
           background: done ? T.navy : 'transparent',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         }}>
@@ -172,7 +172,7 @@ export default function MyTasksPage() {
   );
 
   if (error) return (
-    <div style={{ border: `0.5px solid ${T.ink10}`, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>{error}</div>
+    <div style={{ border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, background: '#fff', padding: 32, color: T.red, fontSize: 13 }}>{error}</div>
   );
 
   return (

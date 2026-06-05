@@ -245,7 +245,7 @@ export default function AnalisiPage() {
 
         {/* Header */}
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={()=>setSelectedProject(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Analisi</button>
+          <button onClick={()=>setSelectedProject(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Analisi</button>
           <div>
             <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{stat.proj.name}</div>
             {stat.proj.client && <div style={{ ...mono, fontSize:10, color:T.muted }}>{stat.proj.client}</div>}
@@ -427,7 +427,7 @@ export default function AnalisiPage() {
         )}
 
         {/* Riepilogo finale */}
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:16 }}>Riepilogo economico</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:400 }}>
             {[
@@ -473,7 +473,7 @@ export default function AnalisiPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Cerca progetto..."
-              style={{ padding:'6px 10px 6px 30px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:180 }}
+              style={{ padding:'6px 10px 6px 30px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:180 }}
             />
             <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', color:T.muted, fontSize:12, pointerEvents:'none' }}>⌕</span>
             {search && (
@@ -481,7 +481,7 @@ export default function AnalisiPage() {
             )}
           </div>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -560,8 +560,8 @@ export default function AnalisiPage() {
                 <td style={tdSt}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ fontWeight:600, color: isOrphan ? T.muted : T.ink }}>{proj.name}</div>
-                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, padding:'1px 5px' }}>archiviato</span>}
-                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, padding:'1px 5px' }}>non collegato</span>}
+                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>archiviato</span>}
+                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>non collegato</span>}
                   </div>
                   {proj.client && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{proj.client}</div>}
                 </td>
@@ -613,7 +613,7 @@ export default function AnalisiPage() {
                       type="number" min={0} step={0.5}
                       value={editCosti[m.id]??0}
                       onChange={e => setEditCosti(p=>({...p,[m.id]:e.target.value}))}
-                      style={{ width:70, padding:'6px 8px', border:`0.5px solid ${T.borderMd}`, background:T.inputBg, color:T.inputText, fontSize:13, ...mono, outline:'none', textAlign:'right' }}
+                      style={{ width:70, padding:'6px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, ...mono, outline:'none', textAlign:'right' }}
                     />
                     <span style={{ ...mono, fontSize:11, color:T.muted }}>/h</span>
                   </div>
@@ -622,7 +622,7 @@ export default function AnalisiPage() {
             </div>
 
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setCostiPanel(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+              <button onClick={()=>setCostiPanel(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
                 Annulla
               </button>
               <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background:T.navy, border:'none', color:T.bg, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:savingCosti?'not-allowed':'pointer', opacity:savingCosti?0.6:1 }}>

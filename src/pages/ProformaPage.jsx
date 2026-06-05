@@ -149,7 +149,7 @@ export default function ProformaPage() {
         <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Proforma</div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -208,7 +208,7 @@ export default function ProformaPage() {
                     <td style={{ ...tdSt, ...monoSt }}>{formatDate(p.data_creazione)}</td>
                     <td style={{ ...tdSt, ...monoSt, color: scaduta ? T.red : T.muted }}>{formatDate(p.data_scadenza)}</td>
                     <td style={tdSt}>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `0.5px solid ${stato.color}`, padding: '2px 7px', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `1px solid ${stato.color}`, padding: '2px 7px', whiteSpace: 'nowrap', display: 'inline-block' }}>
                         {stato.label}
                       </span>
                     </td>

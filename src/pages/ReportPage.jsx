@@ -256,7 +256,7 @@ export default function ReportPage() {
   };
 
   if (!studioLoading && !permissions.canViewReport) return (
-    <div style={{ border:`1px solid ${T.border}`, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
 
   return (
@@ -287,12 +287,12 @@ export default function ReportPage() {
 
         {/* Riga 2: navigazione periodo */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
+          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
           <div style={{ flex:1, fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center' }}>
             {periodLabel}
           </div>
-          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
-          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
+          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
         </div>
       </div>
 
@@ -318,7 +318,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10 }}>
 
         {/* Andamento temporale */}
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 18px', position:'relative' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
             <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
@@ -435,7 +435,7 @@ export default function ReportPage() {
       )}
 
       {error && (
-        <div style={{ border:`1px solid ${T.border}`, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
+        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
           {error}
         </div>
       )}

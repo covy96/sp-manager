@@ -112,7 +112,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={()=>navigate('/impostazioni/commesse-archiviate')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+        <button onClick={()=>navigate('/impostazioni/commesse-archiviate')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>
           ← Archiviate
         </button>
         <div>
@@ -133,7 +133,7 @@ export default function CommessaArchiviataRecapPage() {
           { label:'Incassato',        value:currency(incassato), sub:`${valoreTotale>0?Math.round((incassato/valoreTotale)*100):0}%`, color:T.green },
           { label:'Residuo',          value:currency(residuo),       color:residuo>0?T.red:T.green },
         ].map((k,i) => (
-          <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px' }}>
             <div style={labelSt}>{k.label}</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
             {k.sub && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, marginTop:4 }}>{k.sub} del valore</div>}
@@ -142,7 +142,7 @@ export default function CommessaArchiviataRecapPage() {
       </div>
 
       {/* Info commessa */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
         <div style={{ ...labelSt, marginBottom:16 }}>Informazioni commessa</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
           {[
@@ -160,7 +160,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Rate */}
       {suddivisione.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
             <div style={labelSt}>Rate di pagamento</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{ratePagate}/{suddivisione.length} pagate</div>
@@ -185,7 +185,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Proforma */}
       {proforma.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
             <div style={labelSt}>Proforma emesse</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{proformaPagate.length}/{proforma.length} pagate · {currency(totProfPagate)}</div>
@@ -235,7 +235,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Fatture */}
       {fatture.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ ...labelSt, marginBottom:16 }}>Fatture emesse</div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
@@ -271,7 +271,7 @@ export default function CommessaArchiviataRecapPage() {
           if(!confirm('Ripristinare questa commessa?')) return;
           await supabase.from('commesse').update({ archived:false }).eq('id', id);
           navigate('/impostazioni/commesse-archiviate');
-        }} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+        }} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
           Ripristina commessa
         </button>
       </div>

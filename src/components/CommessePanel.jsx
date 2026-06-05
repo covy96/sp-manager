@@ -24,7 +24,7 @@ export default function CommessePanel({ commesse = [] }) {
     <>
       <button onClick={()=>setModalOpen(true)} style={{
         display:'flex', alignItems:'center', gap:8, padding:'6px 14px',
-        border:`0.5px solid ${T.borderMd}`, background:'transparent',
+        border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent',
         cursor:'pointer', color:T.ink,
         fontFamily:"'IBM Plex Mono', monospace", fontSize:10,
         letterSpacing:'0.08em', textTransform:'uppercase',
@@ -37,7 +37,7 @@ export default function CommessePanel({ commesse = [] }) {
 
       {modalOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:560, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:24, maxHeight:'85vh', overflowY:'auto' }}>
+          <div style={{ width:'100%', maxWidth:560, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:24, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Commesse collegate</div>
@@ -75,7 +75,7 @@ export default function CommessePanel({ commesse = [] }) {
               })}
             </div>
             <div style={{ marginTop:16, paddingTop:14, borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'flex-end' }}>
-              <button onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+              <button onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
                 Chiudi
               </button>
             </div>

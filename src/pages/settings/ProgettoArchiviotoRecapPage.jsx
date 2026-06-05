@@ -99,7 +99,7 @@ export default function ProgettoArchiviotoRecapPage() {
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={()=>navigate('/impostazioni/progetti-archiviati')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+        <button onClick={()=>navigate('/impostazioni/progetti-archiviati')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>
           ← Archiviati
         </button>
         <div>
@@ -119,7 +119,7 @@ export default function ProgettoArchiviotoRecapPage() {
           { label:'Valore commesse', value:currency(valoreCommesse),         sub:'',                 color:T.ink  },
           { label:'Incassato',       value:currency(incassato),              sub:`${valoreCommesse>0?Math.round((incassato/valoreCommesse)*100):0}%`, color:T.green },
         ].map((k,i) => (
-          <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px' }}>
             <div style={labelSt}>{k.label}</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
             {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub}</div>}
@@ -128,7 +128,7 @@ export default function ProgettoArchiviotoRecapPage() {
       </div>
 
       {/* Info progetto */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
         <div style={{ ...labelSt, marginBottom:16 }}>Informazioni progetto</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16 }}>
           {[
@@ -146,7 +146,7 @@ export default function ProgettoArchiviotoRecapPage() {
 
       {/* Task per categoria */}
       {Object.keys(perCategoria).length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ ...labelSt, marginBottom:16 }}>Task per categoria</div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {Object.entries(perCategoria).map(([cat, { totale, completate }]) => {
@@ -185,7 +185,7 @@ export default function ProgettoArchiviotoRecapPage() {
 
       {/* Ore per membro */}
       {Object.keys(orePerMembro).length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ ...labelSt, marginBottom:16 }}>Ore per membro</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {Object.entries(orePerMembro).sort((a,b)=>b[1]-a[1]).map(([nome, ore]) => {
@@ -218,7 +218,7 @@ export default function ProgettoArchiviotoRecapPage() {
 
       {/* Commesse collegate */}
       {commesse.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ ...labelSt, marginBottom:16 }}>Commesse collegate</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {commesse.map(c => {
@@ -255,7 +255,7 @@ export default function ProgettoArchiviotoRecapPage() {
           if(!confirm('Ripristinare questo progetto?')) return;
           await supabase.from('projects').update({ archived:false }).eq('id', id);
           navigate('/impostazioni/progetti-archiviati');
-        }} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+        }} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
           Ripristina progetto
         </button>
       </div>

@@ -302,3 +302,57 @@ input:focus, select:focus, textarea:focus {
   transition: box-shadow var(--duration-fast) var(--ease-apple),
               border-color var(--duration-fast) var(--ease-apple);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   BETA — ANGOLI ARROTONDATI GLOBALI
+   Applica border-radius a TUTTI gli elementi interattivi e contenitori
+═══════════════════════════════════════════════════════════════ */
+
+/* Bottoni */
+button { border-radius: 8px !important; }
+
+/* Input, select, textarea */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  border-radius: 8px !important;
+}
+
+/* Checkbox / Radio: mantieni forma nativa ma leggermente */
+input[type="checkbox"] { border-radius: 4px !important; }
+
+/* Tabelle — celle arrotondate agli angoli estremi */
+table { border-radius: 12px !important; overflow: hidden; }
+
+/* kbd shortcut */
+kbd { border-radius: 5px !important; }
+
+/* Badge e span con border */
+span[style*="border"] { border-radius: 6px !important; }
+
+/* Tutti i div con bordo → arrotondati (override inline) */
+/* Usiamo una classe helper aggiunta dal JS in punti chiave */
+
+/* ── Popup / Modal overlay ── */
+[style*="position: fixed"][style*="zIndex"] > div:first-child,
+[style*="position:fixed"][style*="zIndex"] > div:first-child {
+  border-radius: 20px !important;
+}
+
+/* ── Dropdown assoluti ── */
+[style*="position: absolute"][style*="background"],
+[style*="position:absolute"][style*="background"] {
+  border-radius: 12px !important;
+}
+
+/* ── Sticky header non arrotondato ── */
+header { border-radius: 0 !important; }
+aside  { border-radius: 0 !important; }
+
+/* ── Progress bar ── */
+[style*="height: 2px"],
+[style*="height:2px"],
+[style*="height: 4px"],
+[style*="height:4px"] {
+  border-radius: 99px !important;
+}

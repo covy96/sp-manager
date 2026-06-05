@@ -29,7 +29,7 @@ function BtnGhost({ children, onClick, disabled, danger, style={} }) {
   const { T } = useTheme();
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
-      background:'transparent',border:`0.5px solid ${danger?T.red:T.borderMd}`,color:danger?T.red:T.ink,
+      background:'transparent',border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm,color:danger?T.red:T.ink,
       fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
       padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.5:1,...style,
     }}>{children}</button>
@@ -54,7 +54,7 @@ function Divider() {
 }
 function ScrollBox({ children, maxHeight=150 }) {
   const { T } = useTheme();
-  return <div style={{border:`1px solid ${T.border}`,background:T.bg,padding:'8px 12px',maxHeight,overflowY:'auto'}}>{children}</div>;
+  return <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.bg,padding:'8px 12px',maxHeight,overflowY:'auto'}}>{children}</div>;
 }
 function CheckRow({ checked, onChange, label }) {
   const { T } = useTheme();
@@ -317,10 +317,10 @@ export default function CommessePage() {
     setNewProjectData(p=>({...p,selectedMembers:p.selectedMembers.includes(id)?p.selectedMembers.filter(x=>x!==id):[...p.selectedMembers,id]}));
   };
 
-  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
+  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
   const radioBtnSt=(active)=>({
     display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
-    border:`0.5px solid ${active?T.navy:T.border}`,
+    border:`0.5px solid ${active?T.navy:T.border}`, borderRadius: T.radiusSm,
     background:active?T.navyLight:T.surface,cursor:'pointer',marginBottom:6,width:'100%',textAlign:'left',
   });
 
@@ -366,10 +366,10 @@ export default function CommessePage() {
             placeholder="Cerca commessa, cliente..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{padding:'5px 10px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
+            style={{padding:'5px 10px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
           />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
+            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -383,9 +383,9 @@ export default function CommessePage() {
       {loading ? (
         <div style={{textAlign:'center',padding:64,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
       ) : error ? (
-        <div style={{border:`1px solid ${T.border}`,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
+        <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
       ) : commesseFiltrate.length===0 ? (
-        <div style={{border:`1px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
+        <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
       ) : (
         <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(
@@ -452,7 +452,7 @@ export default function CommessePage() {
                 <div>
                   <FieldLabel>Note amministrative</FieldLabel>
                   <textarea value={formData.note_amministrative} onChange={handleChange('note_amministrative')} rows={3}
-                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',resize:'vertical'}}/>
+                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',resize:'vertical'}}/>
                 </div>
 
                 {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
@@ -469,7 +469,7 @@ export default function CommessePage() {
               <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:14}}>
 
                 {/* Riepilogo commessa */}
-                <div style={{background:T.bg,border:`1px solid ${T.border}`,padding:'10px 14px'}}>
+                <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'10px 14px'}}>
                   <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.15em',marginBottom:4}}>COMMESSA</div>
                   <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{formData.nome_commessa}</div>
                   <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{clientInput} · {currency(Number(formData.importo_offerta_base)||0)}</div>
@@ -485,7 +485,7 @@ export default function CommessePage() {
                       {val:"new",      label:"Crea nuovo progetto",       desc:"Crea e collega automaticamente"},
                     ].map(opt=>(
                       <button key={opt.val} type="button" onClick={()=>setProjectMode(opt.val)} style={radioBtnSt(projectMode===opt.val)}>
-                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.borderMd}`,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.borderMd}`, borderRadius: T.radiusSm,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
                           {projectMode===opt.val && <div style={{width:6,height:6,borderRadius:'50%',background:T.bg}}/>}
                         </div>
                         <div>
@@ -518,7 +518,7 @@ export default function CommessePage() {
 
                 {/* Crea nuovo progetto */}
                 {projectMode==="new" && (
-                  <div style={{background:T.bg,border:`1px solid ${T.border}`,padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
                     <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
                     <div>
                       <FieldLabel>Nome progetto *</FieldLabel>

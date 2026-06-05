@@ -218,13 +218,13 @@ export default function MonitoraggioCommessePage() {
   );
 
   if (!studioLoading && !permissions.canViewMonitoraggio) return (
-    <div style={{ border: `1px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
       Non hai i permessi per accedere a questa sezione.
     </div>
   );
 
   if (error) return (
-    <div style={{ border: `1px solid ${T.border}`, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
   );
 
   return (
@@ -250,7 +250,7 @@ export default function MonitoraggioCommessePage() {
           <select
             value={selectedYear === null ? "all" : selectedYear}
             onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
-            style={{ padding: '5px 10px', border: `1px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+            style={{ padding: '5px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
             <option value="all">Tutti gli anni</option>
             {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>

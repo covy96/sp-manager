@@ -50,7 +50,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
 
   const inputSt = {
     width: '100%', padding: '7px 10px', boxSizing: 'border-box',
-    border: `0.5px solid ${T.borderMd}`, background: T.surface, color: T.ink,
+    border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink,
     fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
   };
 
@@ -157,7 +157,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   const widget = (
     <button onClick={() => setModalOpen(true)} style={{
       display: 'flex', alignItems: 'center', gap: 8,
-      border: `0.5px solid ${contacts.length > 0 ? T.navy : T.borderMd}`,
+      border: `1px solid ${contacts.length > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
       background: contacts.length > 0 ? T.navyLight : 'transparent',
       padding: '6px 12px', cursor: 'pointer',
     }}>
@@ -165,7 +165,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         Anagrafica
       </span>
       {contacts.length > 0 ? (
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, padding: '1px 6px' }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
           {contacts.length} {contacts.length === 1 ? "contatto" : "contatti"}
         </span>
       ) : (
@@ -179,7 +179,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   // ── MODAL ────────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 680, background: T.surface, border: `0.5px solid ${T.borderMd}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 680, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
@@ -204,12 +204,12 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                 const gc = pc.global_contacts || {};
                 const isDeleting = confirmDelete === pc.id;
                 return (
-                  <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: T.bg, border: `0.5px solid ${T.border}` }}>
+                  <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: T.bg, border: `1px solid ${T.border}` }}>
                     <Avatar name={gc.full_name} size={36} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{gc.full_name || "—"}</span>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, padding: '1px 6px', letterSpacing: '0.05em' }}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px', letterSpacing: '0.05em' }}>
                           {pc.professional_role}
                         </span>
                       </div>
@@ -224,22 +224,22 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                         <>
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, alignSelf: 'center' }}>Sicuro?</span>
                           <button onClick={() => handleDelete(pc)} disabled={deleting}
-                            style={{ border: `0.5px solid ${T.red}`, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             {deleting ? "..." : "Sì"}
                           </button>
                           <button onClick={() => setConfirmDelete(null)}
-                            style={{ border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
                             No
                           </button>
                         </>
                       ) : (
                         <>
                           <button onClick={() => openEdit(pc)}
-                            style={{ border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             Modifica
                           </button>
                           <button onClick={() => setConfirmDelete(pc.id)}
-                            style={{ border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
                             ✕
                           </button>
                         </>
@@ -322,7 +322,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => { setModalOpen(false); setEditingId(null); setConfirmDelete(null); }}
-              style={{ border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>
               Chiudi
             </button>
             <button onClick={handleSave} disabled={saving || !form.full_name.trim()}

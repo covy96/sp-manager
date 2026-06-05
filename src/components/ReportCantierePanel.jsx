@@ -23,7 +23,7 @@ const FL = ({ children, required }) => {
 
 const inputCss = (T) => ({
   width:'100%', padding:'7px 10px', boxSizing:'border-box',
-  border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink,
+  border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink,
   fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
 });
 
@@ -31,7 +31,7 @@ const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
   const { T } = useTheme();
   if (ghost) return (
     <button onClick={onClick} disabled={disabled} style={{
-      background:'transparent', border:`0.5px solid ${danger ? '#ef4444' : T.borderMd}`,
+      background:'transparent', border:`0.5px solid ${danger ? '#ef4444' : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? '#ef4444' : T.ink,
       fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em',
       textTransform:'uppercase', padding:'8px 18px', cursor:disabled?'not-allowed':'pointer',
@@ -730,13 +730,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const widget = (
     <button onClick={()=>setOpen(true)} style={{
       display:'flex', alignItems:'center', gap:8,
-      border:`0.5px solid ${reports.length > 0 ? T.navy : T.borderMd}`,
+      border:`0.5px solid ${reports.length > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
       background: reports.length > 0 ? T.navyLight : 'transparent',
       padding:'6px 12px', cursor:'pointer',
     }}>
       <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
       {reports.length > 0
-        ? <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>{reports.length}</span>
+        ? <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>{reports.length}</span>
         : <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>+ Crea</span>}
     </button>
   );
@@ -823,7 +823,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                               <>
                                 <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, alignSelf:'center' }}>Sicuro?</span>
                                 <button onClick={()=>handleDelete(r.id)} style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
-                                <button onClick={()=>setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
+                                <button onClick={()=>setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
                               </>
                             ) : (
                               <>
@@ -831,18 +831,18 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                                   const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",r.id).order("ordine",{ascending:true});
                                   generatePdf({report:r,project,studio,fotos:rf||[]});
                                 }}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
+                                  style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
                                 {canManage && (
                                   <button onClick={()=>openEdit(r)}
-                                    style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
+                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                     Modifica
                                   </button>
                                 )}
                                 {canManage && (
                                   <button onClick={()=>setConfirmDel(r.id)}
-                                    style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
+                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
                                     ✕
                                   </button>
                                 )}
@@ -870,11 +870,11 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   <FL>Logo studio</FL>
                   <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                     {headerForm.report_logo_url && (
-                      <img src={headerForm.report_logo_url} alt="logo" style={{ height:44, maxWidth:140, objectFit:'contain', border:`0.5px solid ${T.border}`, padding:4, background:'#fff' }}/>
+                      <img src={headerForm.report_logo_url} alt="logo" style={{ height:44, maxWidth:140, objectFit:'contain', border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:4, background:'#fff' }}/>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display:'none' }}/>
                     <button onClick={()=>fileRef.current?.click()} disabled={uploadingLogo}
-                      style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
+                      style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
                       {uploadingLogo ? "..." : headerForm.report_logo_url ? "Cambia" : "Carica logo"}
                     </button>
                     {headerForm.report_logo_url && (
@@ -888,7 +888,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     <div style={{ display:'flex', gap:4, marginTop:8 }}>
                       {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl])=>(
                         <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_logo_size:val}))}
-                          style={{ width:28, height:28, border:`0.5px solid ${headerForm.report_logo_size===val?T.navy:T.borderMd}`, background:headerForm.report_logo_size===val?T.navyLight:'transparent', color:headerForm.report_logo_size===val?T.navy:T.muted, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, fontWeight:600 }}>
+                          style={{ width:28, height:28, border:`0.5px solid ${headerForm.report_logo_size===val?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:headerForm.report_logo_size===val?T.navyLight:'transparent', color:headerForm.report_logo_size===val?T.navy:T.muted, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, fontWeight:600 }}>
                           {lbl}
                         </button>
                       ))}
@@ -913,7 +913,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         const sel = headerForm.report_footer_font === val;
                         return (
                           <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val,report_body_font_enabled:false}))}
-                            style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11 }}>
+                            style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11 }}>
                             {label}
                           </button>
                         );
@@ -927,7 +927,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                           const sel = headerForm.report_footer_font === g.key;
                           return (
                             <button key={g.key} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:g.key}))}
-                              style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11, fontFamily:"'Space Grotesk', sans-serif" }}>
+                              style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11, fontFamily:"'Space Grotesk', sans-serif" }}>
                               {g.label}
                             </button>
                           );
@@ -972,7 +972,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               </div>
 
               {/* Anteprima intestazione */}
-              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'14px 18px' }}>
+              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'14px 18px' }}>
                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
@@ -1007,7 +1007,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                 {/* Anteprima footer */}
                 <div style={{ marginTop:12 }}>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
-                  <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, padding:'10px 14px' }}>
+                  <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 14px' }}>
                     <div style={{ height:1, background:'rgba(150,150,150,0.4)', marginBottom:8 }}/>
                     <div style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:9, color:T.muted,
                       fontFamily: headerForm.report_footer_font==='times'?'Georgia, serif':headerForm.report_footer_font==='courier'?"'Courier New', monospace":'Arial, sans-serif' }}>
@@ -1206,7 +1206,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             // salva posizione per dropdown fixed
                             e.currentTarget._rect = r;
                           }}
-                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
                           + Dal team
                         </button>
                         {teamDropOpen && (() => {
@@ -1225,7 +1225,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         })()}
                       </div>
                     )}
-                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
                       + Aggiungi riga
                     </button>
                   </div>
@@ -1286,7 +1286,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                       <>
                         <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoUpload} style={{ display:'none' }}/>
                         <button onClick={()=>fotoInputRef.current?.click()} disabled={uploadingFoto}
-                          style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'5px 12px', cursor:'pointer' }}>
+                          style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'5px 12px', cursor:'pointer' }}>
                           {uploadingFoto ? "Caricamento..." : "+ Aggiungi foto"}
                         </button>
                       </>

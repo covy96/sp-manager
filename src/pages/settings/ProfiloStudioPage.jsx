@@ -44,7 +44,7 @@ function Panel({ title, subtitle, children }) {
 
 export default function ProfiloStudioPage() {
   const { T } = useTheme();
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
   const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
@@ -188,7 +188,7 @@ export default function ProfiloStudioPage() {
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{tipoAttuale?.desc}</div>
           </div>
           <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
-            style={{background:'transparent',border:`0.5px solid ${T.borderMd}`,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
+            style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
             Modifica
           </button>
         </div>
@@ -204,7 +204,7 @@ export default function ProfiloStudioPage() {
       {/* Modal cambio tipo */}
       {tipoModal && (
         <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:500,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>
+          <div style={{width:'100%',maxWidth:500,background:T.surface,border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,padding:28}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>Cambia tipo fatturazione</div>
               <button onClick={()=>setTipoModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>
@@ -214,7 +214,7 @@ export default function ProfiloStudioPage() {
               {TIPO_OPTIONS.map(t=>(
                 <button key={t.id} onClick={()=>setNuovoTipo(t.id)} style={{
                   display:'flex',flexDirection:'column',gap:6,padding:'14px 16px',textAlign:'left',
-                  border:`0.5px solid ${nuovoTipo===t.id?T.navy:T.border}`,
+                  border:`0.5px solid ${nuovoTipo===t.id?T.navy:T.border}`, borderRadius: T.radiusSm,
                   background:nuovoTipo===t.id?T.navyLight:T.surface,cursor:'pointer',
                 }}>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -229,7 +229,7 @@ export default function ProfiloStudioPage() {
             </div>
 
             <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
-              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
+              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
               <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
                 {saving?'Salvataggio...':'Conferma cambio'}
               </button>

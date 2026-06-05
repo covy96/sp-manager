@@ -32,7 +32,7 @@ const LIGHT = {
   inputBorder:  'rgba(0,0,0,0.12)',
   inputText:    '#1a1a1e',
   // Sidebar
-  sidebarBg:    'rgba(30,30,36,0.88)',
+  sidebarBg:    '#0E0E0D',
   sidebarText:  'rgba(255,255,255,0.75)',
   sidebarActive:'rgba(255,255,255,0.12)',
   sidebarBorder:'rgba(255,255,255,0.07)',
@@ -79,7 +79,7 @@ const DARK = {
   inputBg:      'rgba(60,60,75,0.70)',
   inputBorder:  'rgba(255,255,255,0.12)',
   inputText:    '#f0f0f5',
-  sidebarBg:    'rgba(16,16,22,0.92)',
+  sidebarBg:    '#0a0a09',
   sidebarText:  'rgba(255,255,255,0.72)',
   sidebarActive:'rgba(255,255,255,0.10)',
   sidebarBorder:'rgba(255,255,255,0.06)',
