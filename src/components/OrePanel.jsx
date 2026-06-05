@@ -4,6 +4,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { formatOre } from "../lib/utils";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import SlidingTabs from "./SlidingTabs";
 
 function avatarColor(name = "") {
   const colors = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
@@ -184,16 +185,11 @@ export default function OrePanel({ projectId, studioId }) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ display: "flex" }}>
-                  <button onClick={() => setView("mese")}
-                    style={{ ...btnBase, background: view === "mese" ? T.navy : "transparent", color: view === "mese" ? "#fff" : T.muted, borderRight: "none" }}>
-                    Mese
-                  </button>
-                  <button onClick={() => setView("settimana")}
-                    style={{ ...btnBase, background: view === "settimana" ? T.navy : "transparent", color: view === "settimana" ? "#fff" : T.muted }}>
-                    Settimana
-                  </button>
-                </div>
+                <SlidingTabs
+                  tabs={[{ key: "mese", label: "Mese" }, { key: "settimana", label: "Settimana" }]}
+                  active={view}
+                  onChange={setView}
+                />
                 <button onClick={() => setOpen(false)}
                   style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1, padding: "0 4px" }}>×</button>
               </div>

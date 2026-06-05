@@ -744,10 +744,10 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   // ── MODAL ─────────────────────────────────────────────────────────
   const modal = open && (
     <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.55)', padding:16 }}>
-      <div style={{ width:'100%', maxWidth:800, background:T.surface, border:`0.5px solid ${T.borderMd}`, maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ width:'100%', maxWidth:800, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column', boxShadow:T.shadowLg }}>
 
         {/* ── Header modal ── */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`0.5px solid ${T.border}`, position:'sticky', top:0, background:T.surface, zIndex:1 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`1px solid ${T.border}`, borderRadius:`${T.radiusLg} ${T.radiusLg} 0 0`, position:'sticky', top:0, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, zIndex:1 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {view !== "list" && (
               <button onClick={()=>{ setView("list"); setEditingId(null); setPreviewReport(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>

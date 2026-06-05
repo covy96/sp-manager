@@ -485,7 +485,7 @@ export default function CommessePage() {
                       {val:"new",      label:"Crea nuovo progetto",       desc:"Crea e collega automaticamente"},
                     ].map(opt=>(
                       <button key={opt.val} type="button" onClick={()=>setProjectMode(opt.val)} style={radioBtnSt(projectMode===opt.val)}>
-                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.borderMd}`, borderRadius: T.radiusSm,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <div style={{width:14,height:14,borderRadius:'50%',border:`1.5px solid ${projectMode===opt.val?T.navy:T.borderMd}`,background:projectMode===opt.val?T.navy:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
                           {projectMode===opt.val && <div style={{width:6,height:6,borderRadius:'50%',background:T.bg}}/>}
                         </div>
                         <div>

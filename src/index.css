@@ -308,8 +308,11 @@ input:focus, select:focus, textarea:focus {
    Applica border-radius a TUTTI gli elementi interattivi e contenitori
 ═══════════════════════════════════════════════════════════════ */
 
-/* Bottoni */
+/* Bottoni — escludi cerchi avatar */
 button { border-radius: 8px !important; }
+/* Override: qualsiasi elemento con border-radius: 50% nel style rimane cerchio */
+[style*="border-radius: 50%"] { border-radius: 50% !important; }
+/* React usa camelCase → il browser lo converte in kebab-case nel DOM */
 
 /* Input, select, textarea */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
