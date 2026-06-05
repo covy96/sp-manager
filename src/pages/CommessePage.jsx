@@ -18,10 +18,10 @@ function currency(v) {
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{
+    <button type={type} onClick={onClick} disabled={disabled} className="asm-btn" style={{
       background:T.navy,color:T.bg,border:'none',
       fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
-      padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,...style,
+      padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,borderRadius:T.radiusSm,...style,
     }}>{children}</button>
   );
 }
@@ -45,7 +45,7 @@ function Input({ value, onChange, type="text", placeholder, required, style={} }
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
       onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
-      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.border}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',...style}}/>
+      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.border}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',borderRadius:T.radiusSm,...style}}/>
   );
 }
 function Divider() {
@@ -82,7 +82,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
   },[]);
   return (
     <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      style={{background:hover?T.surface2:T.surface,border:`0.5px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%'}}>
+      className="asm-card" style={{background:hover?T.surface2:T.surface,border:`1px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div onClick={onClick} style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
@@ -97,7 +97,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
           <div ref={menuRef} style={{position:'relative',flexShrink:0}}>
             <button onClick={e=>{e.stopPropagation();setMenuOpen(p=>!p);}} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,lineHeight:1}}>···</button>
             {menuOpen&&(
-              <div style={{position:'absolute',right:0,top:'100%',zIndex:20,background:T.surface,border:`0.5px solid ${T.borderMd}`,minWidth:160,boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
+              <div style={{position:'absolute',right:0,top:'100%',zIndex:20,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,minWidth:160,boxShadow:T.shadowMd,borderRadius:12}}>
                 <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
                   Archivia
                 </button>
@@ -387,7 +387,7 @@ export default function CommessePage() {
       ) : commesseFiltrate.length===0 ? (
         <div style={{border:`0.5px solid ${T.border}`,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
       ) : (
-        <div style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(
             <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }} onDelete={async(id)=>{ const {error}=await supabase.rpc('elimina_commessa',{p_commessa_id:id}); if(error){alert('Errore: '+error.message);return;} await loadData(); }}/>
           ))}
@@ -398,8 +398,8 @@ export default function CommessePage() {
 
       {/* ── MODAL NUOVA COMMESSA ── */}
       {modalOpen && (
-        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:540,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
+        <div className="asm-modal-bg" style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div className="asm-modal-content" style={{width:'100%',maxWidth:540,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,boxShadow:T.shadowLg,borderRadius:T.radiusLg,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
 
             {/* Header modal */}
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:20}}>

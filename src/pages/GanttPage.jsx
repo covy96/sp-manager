@@ -564,7 +564,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
               const isRenaming = renamingId === v.id;
               return (
                 <div key={v.id}
-                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', background:T.surface, border:`0.5px solid ${isLatest ? T.navy : T.border}`, cursor: isRenaming ? 'default' : 'pointer', transition:'border-color 0.15s' }}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', background:T.surface, border:`1px solid ${isLatest ? T.navy : T.border}`, cursor: isRenaming ? 'default' : 'pointer', transition:'border-color 0.15s', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}
                   onClick={() => { if (!isRenaming) onSelectVersion(v); }}
                   onContextMenu={e => handleContextMenu(e, v)}
                   onMouseEnter={e => e.currentTarget.style.borderColor = T.navy}
@@ -622,7 +622,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
         return (
           <div
             onClick={e => e.stopPropagation()}
-            style={{ position:'fixed', left:contextMenu.x, top:contextMenu.y, zIndex:9999, background:T.surface, border:`0.5px solid ${T.borderMd}`, boxShadow:'0 4px 16px rgba(0,0,0,0.14)', minWidth:160 }}
+            style={{ position:'fixed', left:contextMenu.x, top:contextMenu.y, zIndex:9999, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowMd, borderRadius:12, minWidth:160 }}
           >
             <button
               onClick={() => handleRenameStart(ver)}

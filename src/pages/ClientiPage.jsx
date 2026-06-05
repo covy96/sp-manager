@@ -176,7 +176,7 @@ export default function ClientiPage() {
           </div>
         </div>
       ) : (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
           {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
@@ -184,7 +184,7 @@ export default function ClientiPage() {
             const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
 
             return (
-              <div key={c.id} style={{background:T.surface,border:`0.5px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s'}}>
+              <div key={c.id} className="asm-card" style={{background:T.surface,border:`1px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
 
                 {/* Riga cliente */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
@@ -286,8 +286,8 @@ export default function ClientiPage() {
 
       {/* Modal aggiungi cliente */}
       {addModalOpen && (
-        <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:`${T.ink}80`,padding:16}}>
-          <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>
+        <div className="asm-modal-bg" style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div className="asm-modal-content" style={{width:'100%',maxWidth:400,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,boxShadow:T.shadowLg,borderRadius:T.radiusLg,padding:28}}>
             <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
               I clienti si aggiungono anche automaticamente dai progetti e commesse

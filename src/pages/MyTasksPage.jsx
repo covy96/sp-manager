@@ -24,7 +24,7 @@ function isOverdue(dateValue) {
 }
 
 function Panel({ children, style = {} }) {
-  return <div style={{ background: '#fff', border: `0.5px solid ${T.ink10}`, padding: '18px 20px', ...style }}>{children}</div>;
+  return <div style={{ background: '#fff', border: `1px solid ${T.ink10}`, padding: '18px 20px', borderRadius: 14, boxShadow: '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)', ...style }}>{children}</div>;
 }
 
 function TaskRow({ task, projectName, onToggle, updating, done }) {

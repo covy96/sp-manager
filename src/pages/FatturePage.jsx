@@ -22,7 +22,7 @@ function isOverdue(dataScadenza, pagato) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'16px 20px'}}>
+    <div style={{background:T.surface,border:`1px solid ${T.border}`,padding:'16px 20px',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
       <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.25em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
       <div style={{fontSize:24,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink}}>{value}</div>
       {sub&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:4}}>{sub}</div>}
@@ -228,7 +228,7 @@ export default function FatturePage() {
 
       {/* Tabella condizionale: proforma pagate o fatture dirette */}
       {tipoFatturazione === 'proforma' ? (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
           <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
             {proformePagate.length} proforma pagate
           </div>
@@ -280,7 +280,7 @@ export default function FatturePage() {
           </div>
         </div>
       ) : (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`}}>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
               {visibili.length} fatture
@@ -365,8 +365,8 @@ export default function FatturePage() {
 
       {/* Modal nuova/modifica fattura */}
       {modalOpen && (
-        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:`${T.ink}80`,padding:16}}>
-          <div style={{width:'100%',maxWidth:560,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
+        <div className="asm-modal-bg" style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div className="asm-modal-content" style={{width:'100%',maxWidth:560,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,boxShadow:T.shadowLg,borderRadius:T.radiusLg,padding:28,maxHeight:'90vh',overflowY:'auto'}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>{editFattura?'Modifica fattura':'Nuova fattura'}</div>
               <button onClick={()=>setModalOpen(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>

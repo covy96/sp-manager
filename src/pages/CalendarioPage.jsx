@@ -133,7 +133,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
   }
 
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
+    <div style={{ background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowMd, borderRadius:T.radius, padding:'16px 18px', minWidth:280 }}>
       {content}
     </div>
   );
@@ -271,7 +271,7 @@ export default function CalendarioPage() {
     if (isMobile) {
       // Versione mobile: celle compatte con pallini colorati
       return (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
               <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
@@ -320,7 +320,7 @@ export default function CalendarioPage() {
     // Desktop: versione originale con scroll
     return (
       <div style={{ overflowX:'auto' }}>
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:560 }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth:560, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
               <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
@@ -365,7 +365,7 @@ export default function CalendarioPage() {
     const minW = count === 7 ? 560 : 320;
     return (
       <div style={{ overflowX: (!isMobile || count===7) && count!==3 ? 'auto' : 'visible' }}>
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth: isMobile && count<=3 ? undefined : minW }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth: isMobile && count<=3 ? undefined : minW, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Header giorni */}
           <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {days.map((d,i)=>{
@@ -421,7 +421,7 @@ export default function CalendarioPage() {
   const renderToday = () => {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding: isMobile ? '16px' : '20px 24px' }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px' : '20px 24px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
           {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>

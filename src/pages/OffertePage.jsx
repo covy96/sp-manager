@@ -287,7 +287,7 @@ export default function OffertePage() {
           { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted},
           { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy },
         ].map((k,i)=>(
-          <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div key={i} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{k.label}</div>
             <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
             {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub}</div>}
@@ -315,16 +315,16 @@ export default function OffertePage() {
       </div>
 
       {/* Lista offerte */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
+      <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
         {visibili.length === 0 ? (
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', gridColumn:'1/-1' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius }}>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta</div>
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
           const valore = Number(o.importo_totale||o.importo_offerta_base||0);
           return (
-            <div key={o.id} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%' }}>
+            <div key={o.id} className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
               {/* Header card */}
               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -386,8 +386,8 @@ export default function OffertePage() {
 
       {/* Modal nuova offerta */}
       {modalOpen && (
-        <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:560, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:560, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
               <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Nuova offerta</div>
               <button onClick={()=>setModalOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
@@ -421,7 +421,7 @@ export default function OffertePage() {
                     onBlur={() => setTimeout(()=>setClientSuggestions([]), 150)}
                   />
                   {clientSuggestions.length > 0 && (
-                    <div style={{ position:'absolute', left:0, right:0, top:'100%', background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, maxHeight:200, overflowY:'auto' }}>
+                    <div style={{ position:'absolute', left:0, right:0, top:'100%', background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:12, boxShadow:T.shadowMd, zIndex:50, maxHeight:200, overflowY:'auto' }}>
                       {clientSuggestions.map(c => (
                         <button key={c.id} type="button" onMouseDown={() => { setForm(p=>({...p,cliente:c.full_name})); setClientSuggestions([]); }}
                           style={{ display:'block', width:'100%', padding:'9px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
@@ -506,8 +506,8 @@ export default function OffertePage() {
 
       {/* Modal allineamento valore */}
       {allineaModal && accettaForm && offertaOriginale && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:80, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'28px 28px 24px', maxWidth:420, width:'100%' }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:80, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:'28px 28px 24px', maxWidth:420, width:'100%' }}>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:8 }}>
               Aggiornare anche l'offerta?
             </div>
@@ -549,8 +549,8 @@ export default function OffertePage() {
 
       {/* Modal accettazione */}
       {accettaModal && accettaForm && (
-        <div style={{ position:'fixed', inset:0, zIndex:70, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:70, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Accetta offerta</div>

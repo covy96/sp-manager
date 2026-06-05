@@ -38,7 +38,8 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
         display:'flex', alignItems:'center', justifyContent:'space-between',
         width:'100%', padding:'8px 12px',
         background: hover ? T.bg : 'transparent',
-        border:`0.5px solid ${hover ? T.borderMd : T.border}`,
+        border:`1px solid ${hover ? T.borderMd : T.border}`,
+        borderRadius: T.radiusSm,
         opacity: updating ? 0.5 : 1, transition:'all 0.1s',
         boxSizing:'border-box',
       }}>
@@ -153,8 +154,8 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
 
   // In dark mode: sfondo scuro con bordo sinistro colorato (i pastelli su nero sono illeggibili)
   const cardStyle = isDark
-    ? { background: T.surface, border:`0.5px solid ${T.border}`, borderLeft:`3px solid ${color}`, display:'flex', flexDirection:'column' }
-    : { background: color, border:`0.5px solid ${T.border}`, display:'flex', flexDirection:'column' };
+    ? { background: T.surface, border:`1px solid ${T.border}`, borderLeft:`3px solid ${color}`, display:'flex', flexDirection:'column', borderRadius:T.radius, boxShadow:T.shadow }
+    : { background: color, border:`1px solid ${T.border}`, display:'flex', flexDirection:'column', borderRadius:T.radius, boxShadow:T.shadow };
 
   return (
     <div style={cardStyle}>
@@ -454,7 +455,7 @@ export default function ScrivaniaPage() {
       <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:20, alignItems:'start' }}>
 
         {/* ── COLONNA TASK ── */}
-        <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>

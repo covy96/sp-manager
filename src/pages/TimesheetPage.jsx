@@ -67,8 +67,8 @@ function Modal({ open, onClose, title, children, width = 480 }) {
   const { T } = useTheme();
   if (!open) return null;
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${T.ink}80`, padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: width, background: T.surface, border: `0.5px solid ${T.ink20}`, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+    <div className="asm-modal-bg" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="asm-modal-content" style={{ width: '100%', maxWidth: width, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, boxShadow: T.shadowLg, borderRadius: T.radiusLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{title}</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
@@ -234,7 +234,7 @@ export default function TimesheetPage() {
                   )}
                 </div>
                 {showDrop && filteredProjects.length > 0 && (
-                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.surface, border: `0.5px solid ${T.ink20}`, maxHeight: 200, overflowY: 'auto', marginTop: 2 }}>
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 200, overflowY: 'auto', marginTop: 2 }}>
                     {filteredProjects.map(p => (
                       <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
                         style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
@@ -304,7 +304,7 @@ export default function TimesheetPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {entries.map(en => (
             <button key={en.id} onClick={() => { setEditingEntry(en); setEditHours(en.hours); setEditNotes(en.notes || ""); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: T.surface, border: `0.5px solid ${T.ink10}`, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: T.surface, border: `1px solid ${T.border}`, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s', borderRadius: T.radiusSm, boxShadow: T.shadow }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg}
               onMouseLeave={e => e.currentTarget.style.background = T.surface}
             >

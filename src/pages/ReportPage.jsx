@@ -46,7 +46,7 @@ function csvEscape(v) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{value}</div>
       {sub && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>{sub}</div>}
@@ -263,7 +263,7 @@ export default function ReportPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
         {/* Riga 1: toggle + esporta */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
@@ -337,7 +337,7 @@ export default function ReportPage() {
         </div>
 
         {/* Grafico per vista selezionata */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Tab vista */}
           <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:14 }}>
             <TabBtn active={view==="progetto"} onClick={()=>setView("progetto")}>Per progetto</TabBtn>
@@ -368,7 +368,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
 
         {/* Tabella ore per utente — sticky left */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
@@ -395,7 +395,7 @@ export default function ReportPage() {
         </div>
 
         {/* Tabella ore per progetto */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per progetto
           </div>

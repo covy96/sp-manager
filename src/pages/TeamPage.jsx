@@ -265,7 +265,7 @@ export default function TeamPage() {
   const isOwnProfile = selectedMember?.id === currentMember?.id;
 
   // ── stili comuni ──────────────────────────────────────────────────
-  const statSt  = { background:T.bg, border:`0.5px solid ${T.border}`, padding:'10px 12px' };
+  const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
   const statLbl = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 };
   const statVal = { fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.03em', fontFamily:"'Space Grotesk', sans-serif" };
   const tabBtn  = (active) => ({ padding:'7px 14px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
@@ -312,15 +312,15 @@ export default function TeamPage() {
       {!selectedMember ? (
 
         /* ── CARD GRID ── */
-        <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
+        <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
           {cards.length === 0 ? (
-            <div style={{ gridColumn:'1/-1', background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+            <div style={{ gridColumn:'1/-1', background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, borderRadius:T.radius }}>
               Nessun membro presente.
             </div>
           ) : cards.map(({ member:m, stats:s, progress }) => (
             <div key={m.id}
               onClick={() => canEditRoles ? openMember(m) : undefined}
-              style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s' }}
+              className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}
               onMouseEnter={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.navy; }}
               onMouseLeave={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.border; }}
             >
@@ -397,7 +397,7 @@ export default function TeamPage() {
             const hasCustom = selectedMember?.custom_permissions && Object.keys(selectedMember.custom_permissions).length > 0;
 
             return (
-              <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px' }}>
+              <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
                 {/* Header membro */}
                 <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:18, paddingBottom:16, borderBottom:`0.5px solid ${T.border}` }}>
@@ -607,8 +607,8 @@ export default function TeamPage() {
 
       {/* ── MODALE AGGIUNGI MEMBRO ── */}
       {modalOpen && (
-        <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:`${T.ink}80`, padding:16 }}>
-          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Aggiungi Membro</div>
               <button onClick={() => { if (!saving) setModalOpen(false); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20, lineHeight:1 }}>×</button>

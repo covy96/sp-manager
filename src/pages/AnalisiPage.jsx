@@ -255,34 +255,34 @@ export default function AnalisiPage() {
         {/* KPI */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
           {/* Riga 1: valori economici */}
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Valore base offerta</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreCommesse)}</div>
             <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>senza IVA / contributi</div>
           </div>
           {stat.valoreTotale !== stat.valoreCommesse && (
-            <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
               <div style={{ ...label, marginBottom:8 }}>Valore con IVA/contributi</div>
               <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreTotale)}</div>
               <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>importo totale commesse</div>
             </div>
           )}
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Incassato</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.green }}>{currency(stat.incassato)}</div>
             {stat.valoreCommesse>0 && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{((stat.incassato/stat.valoreCommesse)*100).toFixed(0)}% del valore base</div>}
           </div>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Costo ore interne</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.navy }}>{currency(stat.costoOre)}</div>
           </div>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Costi esterni</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.muted }}>{currency(stat.costoEsterni)}</div>
           </div>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Margine stimato</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:stat.margine>=0?T.green:T.red }}>{currency(stat.margine)}</div>
             {stat.marginePerc!=null && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{stat.marginePerc.toFixed(1)}%</div>}
@@ -290,7 +290,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* ── ANALISI 1: Costo ore interne ── */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costo ore interne</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{fmtOre(stat.oreTotali)} ore totali</div>
@@ -347,7 +347,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* ── ANALISI 2: Costi esterni ── */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi esterni</div>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Costi extra e collaboratori dalle commesse collegate</div>
@@ -392,7 +392,7 @@ export default function AnalisiPage() {
 
         {/* ── ANALISI 3: Costi interni ── */}
         {costiInterni.filter(c => stat.commProj.some(x => x.id === c.commessa_id)).length > 0 && (
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
               <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Spese interne non fatturate al cliente</div>
@@ -508,7 +508,7 @@ export default function AnalisiPage() {
               { label:'Incassato totale',    value:currency(totIncassato),   color:T.green},
               { label:'Margine complessivo', value:currency(totMargine),     color:totMargine>=0?T.green:T.red },
             ].map((k,i)=>(
-              <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+              <div key={i} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
                 <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
                 <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
               </div>
@@ -587,8 +587,8 @@ export default function AnalisiPage() {
 
       {/* ── PANEL COSTI ORARI ── */}
       {costiPanel && (
-        <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28, maxHeight:'85vh', overflowY:'auto' }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Costi orari del team</div>
