@@ -249,12 +249,11 @@ export default function FatturePage() {
                       </span>
                     </th>
                   ))}
-                  <th style={thSt}></th>
                 </tr>
               </thead>
               <tbody>
                 {proformePagate.length === 0 ? (
-                  <tr><td colSpan={7} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>
+                  <tr><td colSpan={6} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>
                     Nessuna proforma pagata ancora — le proforma pagate appaiono qui come fatture emesse.
                   </td></tr>
                 ) : [...proformePagate].sort((a,b)=>{
@@ -268,27 +267,15 @@ export default function FatturePage() {
                     const vA=v(a),vB=v(b);
                     return vA<vB?(sortAsc?-1:1):vA>vB?(sortAsc?1:-1):0;
                   }).map(p => (
-                  <tr key={p.id}>
+                  <tr key={p.id} onClick={()=>p.commessa_id&&navigate(`/commesse/${p.commessa_id}`)}
+                    style={{cursor:p.commessa_id?'pointer':'default'}}>
                     <td style={{...tdSt,fontWeight:600}}>{p.numero_proforma}</td>
-                    <td style={tdSt}>
-                      {p.commessa_id ? (
-                        <button onClick={()=>navigate(`/commesse/${p.commessa_id}`)}
-                          style={{background:'none',border:'none',cursor:'pointer',color:T.navy,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,textDecoration:'underline'}}>
-                          {commessaName(p.commessa_id)}
-                        </button>
-                      ) : '—'}
-                    </td>
+                    <td style={{...tdSt,color:T.navy}}>{p.commessa_id ? commessaName(p.commessa_id) : '—'}</td>
                     <td style={{...tdSt,color:T.muted}}>{p.commessa_id ? commessaCliente(p.commessa_id) : '—'}</td>
                     <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11}}>{fmtDate(p.data_pagamento)}</td>
                     <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:12,color:T.navy,fontWeight:600}}>{currency(p.importo_totale)}</td>
                     <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>
                       {p.numero_fattura || '—'}
-                    </td>
-                    <td style={tdSt}>
-                      <button onClick={()=>navigate(`/commesse/${p.commessa_id}`)}
-                        style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
-                        Vai a commessa
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -337,15 +324,10 @@ export default function FatturePage() {
                   }).map(f=>{
                   const overdue = isOverdue(f.data_scadenza, f.pagato);
                   return (
-                    <tr key={f.id}>
+                    <tr key={f.id} onClick={()=>f.commessa_id&&navigate(`/commesse/${f.commessa_id}`)}
+                      style={{cursor:f.commessa_id?'pointer':'default'}}>
                       <td style={{...tdSt,fontWeight:600}}>{f.numero_fattura}</td>
-                      <td style={tdSt}>
-                        {f.commessa_id ? (
-                          <button onClick={()=>navigate(`/commesse/${f.commessa_id}`)} style={{background:'none',border:'none',cursor:'pointer',color:T.navy,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,textDecoration:'underline'}}>
-                            {commessaName(f.commessa_id)}
-                          </button>
-                        ) : '—'}
-                      </td>
+                      <td style={{...tdSt,color:T.navy}}>{f.commessa_id ? commessaName(f.commessa_id) : '—'}</td>
                       <td style={{...tdSt,color:T.muted}}>{f.commessa_id?commessaCliente(f.commessa_id):'—'}</td>
                       <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11}}>{fmtDate(f.data_emissione)}</td>
                       <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:overdue?T.red:T.ink}}>
@@ -365,7 +347,7 @@ export default function FatturePage() {
                           </span>
                         )}
                       </td>
-                      <td style={{...tdSt,whiteSpace:'nowrap'}}>
+                      <td style={{...tdSt,whiteSpace:'nowrap'}} onClick={e=>e.stopPropagation()}>
                         <div style={{display:'flex',gap:6}}>
                           {!f.pagato && (
                             <button onClick={()=>handleSegnaComePagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
