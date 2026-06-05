@@ -278,35 +278,39 @@ export default function OffertePage() {
         </button>
       </div>
 
-      {/* KPI */}
+      {/* KPI — cliccabili come filtri */}
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap:10 }}>
         {[
-          { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink  },
-          { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink  },
-          { label:'Accettate',   value:nAccettate,  sub:currency(valAccettate), color:T.green},
-          { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted},
-          { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy },
-        ].map((k,i)=>(
-          <div key={i} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-            <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{k.label}</div>
-            <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
-            {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub}</div>}
-          </div>
-        ))}
+          { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink,   filtro:'tutti'     },
+          { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink,   filtro:'offerta'   },
+          { label:'Accettate',   value:nAccettate,  sub:currency(valAccettate), color:T.green, filtro:'accettata' },
+          { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted, filtro:'rifiutata' },
+          { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy, filtro:null },
+        ].map((k,i)=>{
+          const isActive = k.filtro && filtroStato === k.filtro;
+          return (
+            <div key={i}
+              onClick={() => k.filtro && setFiltroStato(k.filtro)}
+              className={k.filtro ? 'asm-card' : ''}
+              style={{
+                background: isActive ? T.navyLight : T.surface,
+                border: `${isActive ? '2px' : '1px'} solid ${isActive ? T.navy : T.border}`,
+                padding:'16px 20px', borderRadius:T.radius,
+                backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm,
+                boxShadow: isActive ? T.shadowMd : T.shadow,
+                cursor: k.filtro ? 'pointer' : 'default',
+                transition:'all 0.18s',
+              }}>
+              <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
+              <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color: isActive ? T.navy : k.color }}>{k.value}</div>
+              {k.sub && <div style={{ ...mono, fontSize:10, color: isActive ? T.navy : T.muted, marginTop:4 }}>{k.sub}</div>}
+            </div>
+          );
+        })}
       </div>
 
-      {/* Filtri */}
+      {/* Filtri — solo anno rimane */}
       <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-        <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-          {[['tutti','Tutte'],['offerta','In corso'],['accettata','Accettate'],['rifiutata','Rifiutate']].map(([id,label])=>(
-            <button key={id} onClick={()=>setFiltroStato(id)} style={{
-              padding:'7px 16px', border:'none', cursor:'pointer',
-              background: filtroStato===id ? T.navy : 'transparent',
-              color: filtroStato===id ? '#EEF1F6' : T.muted,
-              ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-            }}>{label}</button>
-          ))}
-        </div>
         <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
           style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
           <option value={0}>Tutti gli anni</option>
