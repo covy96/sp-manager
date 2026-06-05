@@ -270,13 +270,17 @@ export default function AnagraficaPanel({ projectId, studioId }) {
             {/* Figura professionale — full width */}
             <div style={{ gridColumn: 'span 2' }}>
               <FieldLabel required>Figura professionale</FieldLabel>
-              <select value={form.professional_role} onChange={e => setForm(p => ({ ...p, professional_role: e.target.value }))}
-                style={{ ...inputSt, cursor: 'pointer', appearance: 'auto' }}>
-                {FIGURE_PROFESSIONALI.map(f => <option key={f} value={f}>{f}</option>)}
-                {!FIGURE_PROFESSIONALI.includes(form.professional_role) && form.professional_role && (
-                  <option value={form.professional_role}>{form.professional_role}</option>
-                )}
-              </select>
+              <datalist id="figure-professionali-list">
+                {FIGURE_PROFESSIONALI.map(f => <option key={f} value={f} />)}
+              </datalist>
+              <input
+                type="text"
+                list="figure-professionali-list"
+                value={form.professional_role}
+                onChange={e => setForm(p => ({ ...p, professional_role: e.target.value }))}
+                placeholder="Es. Cliente, Impresa, o scrivi liberamente..."
+                style={inputSt}
+              />
             </div>
 
             {/* Nome e cognome */}
