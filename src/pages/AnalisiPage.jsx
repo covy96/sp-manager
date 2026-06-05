@@ -39,6 +39,9 @@ export default function AnalisiPage() {
   const [savingCosti, setSavingCosti]         = useState(false);
   const [annoFiltro, setAnnoFiltro]           = useState(0); // default: tutti gli anni
   const [search, setSearch]                   = useState("");
+  const [sortCol, setSortCol]                 = useState("margine");
+  const [sortAsc, setSortAsc]                 = useState(false);
+  const handleSortCol = col => { if (sortCol === col) setSortAsc(p => !p); else { setSortCol(col); setSortAsc(false); } };
 
   // ── LOAD ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -522,15 +525,26 @@ export default function AnalisiPage() {
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr>
-              <th style={thSt}>Progetto</th>
-              <th style={thSt}>Ore totali</th>
-              <th style={thSt}>Costo ore</th>
-              <th style={thSt}>Costi esterni</th>
-              <th style={thSt}>Costi interni</th>
-              <th style={thSt}>Costo totale</th>
-              <th style={thSt}>Valore commesse</th>
-              <th style={thSt}>Incassato</th>
-              <th style={thSt}>Margine</th>
+              {[
+                ['nome',           'Progetto'],
+                ['oreTotali',      'Ore totali'],
+                ['costoOre',       'Costo ore'],
+                ['costoEsterni',   'Costi esterni'],
+                ['costoInterno',   'Costi interni'],
+                ['costoTotale',    'Costo totale'],
+                ['valoreCommesse', 'Valore commesse'],
+                ['incassato',      'Incassato'],
+                ['margine',        'Margine'],
+              ].map(([col, label]) => (
+                <th key={col} style={{ ...thSt, cursor:'pointer', userSelect:'none' }} onClick={() => handleSortCol(col)}>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:4, color: sortCol===col ? T.navy : T.muted }}>
+                    {label}
+                    <span style={{ fontSize:9, opacity: sortCol===col ? 1 : 0.3 }}>
+                      {sortCol===col ? (sortAsc ? '↑' : '↓') : '↕'}
+                    </span>
+                  </span>
+                </th>
+              ))}
               <th style={thSt}></th>
             </tr>
           </thead>
@@ -545,10 +559,20 @@ export default function AnalisiPage() {
                 (proj.client||'').toLowerCase().includes(q)
               );
               const withOrphan = [...filtered, ...(orphanStats && (!q || '— commesse senza progetto'.includes(q)) ? [orphanStats] : [])];
+              const sortedRows = [...withOrphan].sort((a, b) => {
+                const getVal = (row) => {
+                  if (sortCol === 'nome') return (row.proj.name || '').toLowerCase();
+                  return Number(row[sortCol]) || 0;
+                };
+                const vA = getVal(a), vB = getVal(b);
+                if (vA < vB) return sortAsc ? -1 : 1;
+                if (vA > vB) return sortAsc ? 1 : -1;
+                return 0;
+              });
               if (withOrphan.length === 0) return (
                 <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun risultato per "{search}"</td></tr>
               );
-              return withOrphan.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
+              return sortedRows.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
               const isOrphan = proj.id === '__orphan__';
               return (
               <tr key={proj.id}
