@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import SlidingTabs from "../components/SlidingTabs";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePermissions } from "../hooks/usePermissions";
@@ -268,16 +269,11 @@ export default function ReportPage() {
         {/* Riga 1: toggle + esporta */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
           {/* Toggle mese/settimana */}
-          <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-            {[["month","Mensile"],["week","Settimanale"]].map(([m,label])=>(
-              <button key={m} onClick={()=>setMode(m)} style={{
-                padding:'6px 14px', border:'none', background: mode===m ? T.navy : 'transparent',
-                color: mode===m ? T.bg : T.muted,
-                fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-                cursor:'pointer',
-              }}>{label}</button>
-            ))}
-          </div>
+          <SlidingTabs
+            tabs={[{ key:"month", label:"Mensile" }, { key:"week", label:"Settimanale" }]}
+            active={mode}
+            onChange={setMode}
+          />
 
           {/* Esporta */}
           <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
@@ -339,10 +335,16 @@ export default function ReportPage() {
         {/* Grafico per vista selezionata */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Tab vista */}
-          <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:14 }}>
-            <TabBtn active={view==="progetto"} onClick={()=>setView("progetto")}>Per progetto</TabBtn>
-            <TabBtn active={view==="cliente"}  onClick={()=>setView("cliente")}>Per cliente</TabBtn>
-            <TabBtn active={view==="utente"}   onClick={()=>setView("utente")}>Per utente</TabBtn>
+          <div style={{ marginBottom:14 }}>
+            <SlidingTabs
+              tabs={[
+                { key:"progetto", label:"Per progetto" },
+                { key:"cliente",  label:"Per cliente" },
+                { key:"utente",   label:"Per utente" },
+              ]}
+              active={view}
+              onChange={setView}
+            />
           </div>
           <div style={{ height:200 }}>
             {chartData.length === 0 ? (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import SlidingTabs from "../components/SlidingTabs";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
@@ -1013,11 +1014,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             {onlyChart ? '⊞ Tabella' : '▦ Solo grafico'}
           </button>
           {/* Vista */}
-          <div style={{display:'flex',border:`0.5px solid ${T.borderMd}`,overflow:'hidden'}}>
-            {[['week','Settimane'],['month','Mesi']].map(([m,label])=>(
-              <button key={m} onClick={()=>setViewMode(m)} style={{padding:'6px 14px',border:'none',background:viewMode===m?T.navy:'transparent',color:viewMode===m?T.bg:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',cursor:'pointer'}}>{label}</button>
-            ))}
-          </div>
+          <SlidingTabs
+            tabs={[{ key:"week", label:"Settimane" }, { key:"month", label:"Mesi" }]}
+            active={viewMode}
+            onChange={setViewMode}
+          />
         </div>
       </div>
 

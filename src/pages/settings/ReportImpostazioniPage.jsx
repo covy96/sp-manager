@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { GROTESKA_VARIANTS } from "../../assets/fonts/groteskaFonts";
 import { useEscKey } from "../../hooks/useEscKey";
+import SlidingTabs from "../../components/SlidingTabs";
 
 const inputCss = (T) => ({
   padding: "8px 12px",
@@ -360,14 +361,13 @@ export default function ReportImpostazioniPage() {
                   {form.report_logo_url && <Btn ghost onClick={() => setForm(f => ({ ...f, report_logo_url: "" }))}>Rimuovi</Btn>}
                 </div>
                 {form.report_logo_url && (
-                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                    {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl]) => (
-                      <button key={val} onClick={() => setForm(f => ({ ...f, report_logo_size: val }))}
-                        style={{ width: 28, height: 28, border: `1px solid ${form.report_logo_size === val ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: form.report_logo_size === val ? T.navyLight : "transparent", color: form.report_logo_size === val ? T.navy : T.muted, cursor: "pointer", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600 }}>
-                        {lbl}
-                      </button>
-                    ))}
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, alignSelf: "center", marginLeft: 4 }}>dimensione</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                    <SlidingTabs
+                      tabs={[{ key:"small", label:"S" }, { key:"medium", label:"M" }, { key:"large", label:"L" }]}
+                      active={form.report_logo_size || "medium"}
+                      onChange={val => setForm(f => ({ ...f, report_logo_size: val }))}
+                    />
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>dimensione logo</span>
                   </div>
                 )}
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 6 }}>PNG consigliato · appare in alto a destra</div>
