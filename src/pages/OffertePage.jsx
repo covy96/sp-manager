@@ -324,7 +324,7 @@ export default function OffertePage() {
           const st = STATI[o.stato]||STATI.offerta;
           const valore = Number(o.importo_totale||o.importo_offerta_base||0);
           return (
-            <div key={o.id} className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+            <div key={o.id} className="asm-card" onClick={() => navigate(`/offerte/${o.id}`)} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, cursor:'pointer' }}>
               {/* Header card */}
               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -353,29 +353,26 @@ export default function OffertePage() {
               )}
 
               {/* Azioni */}
-              <div style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <button onClick={()=>navigate(`/offerte/${o.id}`)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                  Dettagli
-                </button>
+              <div onClick={e => e.stopPropagation()} style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
                 {o.stato==='offerta' && <>
-                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
                   </button>
-                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.red}`, background:'transparent', color:T.red, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.red}`, background:'transparent', color:T.red, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Rifiuta
                   </button>
                 </>}
                 {o.stato==='accettata' && o.commessa_id && (
-                  <button onClick={()=>navigate(`/commesse/${o.commessa_id}`)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.navy}`, background:'transparent', color:T.navy, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={e => { e.stopPropagation(); navigate(`/commesse/${o.commessa_id}`); }} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Vai a commessa
                   </button>
                 )}
                 {o.stato==='rifiutata' && (
-                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.muted, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Ripristina
                   </button>
                 )}
-                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
+                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
                   🗑
                 </button>
               </div>
