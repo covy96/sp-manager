@@ -176,7 +176,7 @@ export default function ClientiPage() {
           </div>
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8,minWidth:0}}>
           {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);
@@ -184,7 +184,7 @@ export default function ClientiPage() {
             const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
 
             return (
-              <div key={c.id} className="asm-card" style={{background:T.surface,border:`1px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+              <div key={c.id} className="asm-card" style={{background:T.surface,border:`1px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow,minWidth:0,overflow:'hidden'}}>
 
                 {/* Riga cliente */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>

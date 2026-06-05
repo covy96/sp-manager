@@ -22,9 +22,9 @@ function isOverdue(dataScadenza, pagato) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'16px 20px',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+    <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'16px 20px', minWidth:0, overflow:'hidden'}}>
       <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.25em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
-      <div style={{fontSize:24,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink}}>{value}</div>
+      <div style={{fontSize:20,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{value}</div>
       {sub&&<div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:4}}>{sub}</div>}
     </div>
   );
@@ -222,7 +222,7 @@ export default function FatturePage() {
       </div>
 
       {/* KPI */}
-      <div style={{display:'grid',gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)',gap:10}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)',gap:10,minWidth:0}}>
         <KpiCard label="Totale emesso"  value={currency(totaleEmesso)}  color={T.ink}
           sub={tipoFatturazione==='proforma' ? `${proformePagate.length} proforma pagate` : `${fatture.length} fatture`}/>
         <KpiCard label="Pagato"         value={currency(totalePagato)}  color={T.green}
