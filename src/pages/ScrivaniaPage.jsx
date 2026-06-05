@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
@@ -26,29 +27,41 @@ function formatDate(d) {
 // ── TASK ROW ─────────────────────────────────────────────────────
 function TaskRow({ task, projectName, onToggle, updating, done }) {
   const { T } = useTheme();
+  const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const overdue = !done && isOverdue(task.data_pianificata);
+
   return (
-    <button type="button" onClick={() => onToggle(task, done)} disabled={updating}
+    <div
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         display:'flex', alignItems:'center', justifyContent:'space-between',
-        width:'100%', padding:'8px 12px', textAlign:'left',
+        width:'100%', padding:'8px 12px',
         background: hover ? T.bg : 'transparent',
         border:`0.5px solid ${hover ? T.borderMd : T.border}`,
-        cursor: updating ? 'not-allowed' : 'pointer',
         opacity: updating ? 0.5 : 1, transition:'all 0.1s',
+        boxSizing:'border-box',
       }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
-        <span style={{
-          width:15, height:15, borderRadius:'50%', flexShrink:0,
-          border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`,
-          background: done ? T.navy : 'transparent',
-          display:'inline-flex', alignItems:'center', justifyContent:'center',
-        }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, flex:1 }}>
+        {/* Pallino: solo toggle */}
+        <button
+          type="button"
+          onClick={e => { e.stopPropagation(); onToggle(task, done); }}
+          disabled={updating}
+          style={{
+            width:15, height:15, borderRadius:'50%', flexShrink:0, padding:0,
+            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`,
+            background: done ? T.navy : 'transparent',
+            display:'inline-flex', alignItems:'center', justifyContent:'center',
+            cursor: updating ? 'not-allowed' : 'pointer',
+          }}>
           {done && <svg width="7" height="5" viewBox="0 0 7 5" fill="none"><path d="M1 2.5L2.5 4L6 1" stroke={T.bg} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-        </span>
-        <div style={{ minWidth:0 }}>
+        </button>
+
+        {/* Testo: naviga al progetto */}
+        <div
+          onClick={() => task.project_id && navigate(`/progetti/${task.project_id}`)}
+          style={{ minWidth:0, flex:1, cursor: task.project_id ? 'pointer' : 'default' }}>
           <div style={{ fontSize:12, fontWeight:600, color: done ? T.muted : T.ink, textDecoration: done ? 'line-through' : 'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {task.title || "Task senza titolo"}
           </div>
@@ -57,10 +70,11 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
           </div>
         </div>
       </div>
+
       <div style={{ flexShrink:0, marginLeft:12, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: done ? T.green : overdue ? T.red : T.muted }}>
         {done ? '✓' : task.data_pianificata ? formatDate(task.data_pianificata) : '—'}
       </div>
-    </button>
+    </div>
   );
 }
 
