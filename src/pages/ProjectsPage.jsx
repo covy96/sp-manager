@@ -698,65 +698,85 @@ export default function ProjectsPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        {/* Riga unica: titolo | filtri + nuovo (desktop) — due righe su mobile */}
-        <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-          {/* Titolo */}
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em' }}>
-              Panoramica dei progetti attivi
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Panoramica dei progetti attivi</div>
+              </div>
+              <input type="text" placeholder="Cerca progetto o cliente..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                style={{ flex: '1 1 0', minWidth: 0, maxWidth: 200, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+              />
             </div>
-          </div>
-
-          {/* Controlli filtro + bottone nuovo */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: isMobile ? 'wrap' : 'nowrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
-            {/* Search bar */}
-            <input
-              type="text"
-              placeholder="Cerca progetto o cliente..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
-            />
-            {/* Year filter */}
-            <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-              style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
-              {anniDisponibili.map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-            {/* Filter dropdown utenti */}
-            <div ref={filterRef} style={{ position: 'relative' }}>
-              <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>
-                Utenti ({selectedUserIds.length})
-              </BtnGhost>
-              {filterOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 20 }}>
-                  <div style={{ padding: 8, maxHeight: 240, overflowY: 'auto' }}>
-                    {teamMembers.map(m => (
-                      <CheckRow
-                        key={m.id}
-                        checked={selectedUserIds.includes(m.id)}
-                        onChange={() => setSelectedUserIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
-                        label={`${m.user_name || m.user_email}${m.id === teamMember?.id ? ' (io)' : ''}`}
-                        avatar={{ bg: avatarColor(m), initials: getInitials(m.user_name || m.user_email) }}
-                      />
-                    ))}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+                {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <div ref={filterRef} style={{ position: 'relative' }}>
+                <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>Utenti ({selectedUserIds.length})</BtnGhost>
+                {filterOpen && (
+                  <div style={{ position: 'absolute', left: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 20 }}>
+                    <div style={{ padding: 8, maxHeight: 240, overflowY: 'auto' }}>
+                      {teamMembers.map(m => (
+                        <CheckRow key={m.id} checked={selectedUserIds.includes(m.id)}
+                          onChange={() => setSelectedUserIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                          label={`${m.user_name || m.user_email}${m.id === teamMember?.id ? ' (io)' : ''}`}
+                          avatar={{ bg: avatarColor(m), initials: getInitials(m.user_name || m.user_email) }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
+                      <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                    </div>
                   </div>
-                  <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                    <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
-                      Rimuovi tutti i filtri
-                    </button>
-                  </div>
-                </div>
+                )}
+              </div>
+              {permissions.canCreateProjects && (
+                <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
               )}
             </div>
-            {/* Bottone nuovo */}
-            {permissions.canCreateProjects && (
-              <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
-            )}
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em' }}>Panoramica dei progetti attivi</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+              <input type="text" placeholder="Cerca progetto o cliente..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                style={{ flex: '1 1 160px', minWidth: 0, maxWidth: 240, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+              />
+              <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+                {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              <div ref={filterRef} style={{ position: 'relative' }}>
+                <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>Utenti ({selectedUserIds.length})</BtnGhost>
+                {filterOpen && (
+                  <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 220, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 20 }}>
+                    <div style={{ padding: 8, maxHeight: 240, overflowY: 'auto' }}>
+                      {teamMembers.map(m => (
+                        <CheckRow key={m.id} checked={selectedUserIds.includes(m.id)}
+                          onChange={() => setSelectedUserIds(prev => prev.includes(m.id) ? prev.filter(id => id !== m.id) : [...prev, m.id])}
+                          label={`${m.user_name || m.user_email}${m.id === teamMember?.id ? ' (io)' : ''}`}
+                          avatar={{ bg: avatarColor(m), initials: getInitials(m.user_name || m.user_email) }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
+                      <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {permissions.canCreateProjects && (
+                <BtnPrimary onClick={() => { resetForm(); setIsModalOpen(true); }}>+ Nuovo</BtnPrimary>
+              )}
+            </div>
+          </div>
+        )}
         {permissions.canCreateProjects && !canAddProject(projects.length) && (
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: T.red, marginTop:8 }}>
             Limite {plan.maxProjects} progetti attivi raggiunto — archivia i completati o <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>fai l'upgrade</button>
