@@ -268,14 +268,21 @@ export default function OffertePage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink, marginBottom:4 }}>Offerte</div>
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
-        <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer' }}>
-          + Nuova offerta
-        </button>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+            + Nuova offerta
+          </button>
+        </div>
       </div>
 
       {/* KPI — cliccabili come filtri */}
@@ -307,15 +314,6 @@ export default function OffertePage() {
             </div>
           );
         })}
-      </div>
-
-      {/* Filtri — solo anno rimane */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-        <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-          style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
-          <option value={0}>Tutti gli anni</option>
-          {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
-        </select>
       </div>
 
       {/* Lista offerte */}

@@ -518,7 +518,7 @@ export default function AnalisiPage() {
       })()}
 
       {/* Tabella progetti */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}` }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflow:'hidden' }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr>
