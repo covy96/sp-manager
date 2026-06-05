@@ -186,12 +186,12 @@ export default function ClientiPage() {
             const totale = comms.reduce((s,com)=>s+(Number(com.importo_offerta_base)||0),0);
 
             return (
-              <div key={c.id} className="asm-card" style={{background:T.surface,border:`1px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+              <div key={c.id} className="asm-card" style={{background:T.surface,border:`1px solid ${isOpen?T.navy:T.border}`,transition:'border-color 0.1s',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow,minWidth:0,overflow:'hidden'}}>
 
                 {/* Riga cliente */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px'}}>
                   <button onClick={()=>setExpandedId(isOpen?null:c.id)}
-                    style={{display:'flex',alignItems:'center',gap:12,flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
+                    style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0,background:'none',border:'none',cursor:'pointer',textAlign:'left'}}>
                     {/* Avatar */}
                     <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:isOpen?T.navy:T.bg,display:'flex',alignItems:'center',justifyContent:'center',transition:'background 0.1s'}}>
                       <span style={{fontSize:14}}>{c.company?'🏢':'👤'}</span>
