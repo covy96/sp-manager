@@ -332,6 +332,8 @@ kbd { border-radius: 5px !important; }
 
 /* Badge e span con border */
 span[style*="border"] { border-radius: 6px !important; }
+/* Avatar circolari: priorità su qualsiasi regola span con border */
+span[style*="border-radius: 50%"] { border-radius: 50% !important; }
 
 /* Tutti i div con bordo → arrotondati (override inline) */
 /* Usiamo una classe helper aggiunta dal JS in punti chiave */
