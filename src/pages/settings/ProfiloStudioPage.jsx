@@ -3,6 +3,7 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 const TIPO_OPTIONS = [
   {
@@ -48,6 +49,7 @@ export default function ProfiloStudioPage() {
   const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
+  const isMobile = useIsMobile();
 
   const [studioData, setStudioData]   = useState(null);
   const [stats, setStats]             = useState({ progetti:0, commesse:0, membri:0 });
@@ -132,7 +134,7 @@ export default function ProfiloStudioPage() {
       )}
 
       {/* KPI */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginBottom:14}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)',gap:10,marginBottom:14}}>
         <KpiCard label="Iscritto il" value={iscritto} color={T.muted}/>
         <KpiCard label="Progetti attivi" value={stats.progetti} color={T.navy}/>
         <KpiCard label="Commesse" value={stats.commesse} color={T.green}/>

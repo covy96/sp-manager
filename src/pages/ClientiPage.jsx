@@ -176,7 +176,7 @@ export default function ClientiPage() {
           </div>
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8}}>
           {filtered.map(c => {
             const isOpen = expandedId===c.id;
             const projs  = getProjects(c);

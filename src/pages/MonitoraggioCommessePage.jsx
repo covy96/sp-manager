@@ -273,7 +273,7 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* TABELLA */}
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, overflowX: 'auto', overflow: 'hidden' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
           <thead>
             <tr>

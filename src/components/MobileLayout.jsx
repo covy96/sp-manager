@@ -300,9 +300,9 @@ export default function MobileLayout({ session, children }) {
       {menuOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(2px)' }} onClick={()=>setMenuOpen(false)}>
           <div onClick={e=>e.stopPropagation()}
-            style={{ position:'absolute', bottom:64, left:0, right:0, background:isDark?'#1c1c1e':'#ffffff', borderRadius:'20px 20px 0 0', maxHeight:'75vh', overflowY:'auto', boxShadow:`0 -4px 24px rgba(0,0,0,${isDark?'0.5':'0.25'})` }}>
+            style={{ position:'absolute', bottom:64, left:8, right:8, background:isDark?'#1c1c1e':'#ffffff', borderRadius:14, maxHeight:'75vh', overflowY:'auto', boxShadow:`0 -4px 24px rgba(0,0,0,${isDark?'0.5':'0.25'})` }}>
             {/* Handle */}
-            <div style={{ position:'sticky', top:0, background:isDark?'#1c1c1e':'#ffffff', paddingTop:10, paddingBottom:4, zIndex:1 }}>
+            <div style={{ position:'sticky', top:0, background:isDark?'#1c1c1e':'#ffffff', paddingTop:12, paddingBottom:4, zIndex:1, borderRadius:'14px 14px 0 0' }}>
               <div style={{ width:40, height:4, borderRadius:2, background:T.border, margin:'0 auto 8px' }}/>
               <div style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:T.muted, padding:'0 20px 10px', fontFamily:"'IBM Plex Mono', monospace" }}>Menu</div>
             </div>

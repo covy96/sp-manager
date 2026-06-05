@@ -197,7 +197,7 @@ export default function FatturePage() {
     <div style={{display:'flex',flexDirection:'column',gap:14}}>
 
       {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{display:'flex',alignItems:isMobile?'flex-start':'center',justifyContent:'space-between',flexWrap:'wrap',gap:10}}>
         <div>
           <div style={{fontSize:22,fontWeight:600,letterSpacing:'-0.03em',color:T.ink,marginBottom:4}}>Fatture</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
@@ -207,7 +207,7 @@ export default function FatturePage() {
             }
           </div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
             style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
