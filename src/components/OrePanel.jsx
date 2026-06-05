@@ -167,7 +167,7 @@ export default function OrePanel({ projectId, studioId }) {
             onClick={e => e.stopPropagation()}
             style={{
               width: "100%", maxWidth: 540,
-              background: T.surface, border: `1px solid ${T.borderMd}`,
+              background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg,
               maxHeight: "80vh", display: "flex", flexDirection: "column",
               boxShadow: `0 8px 32px rgba(0,0,0,${isDark ? "0.5" : "0.14"})`,
             }}

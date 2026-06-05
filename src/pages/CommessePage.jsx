@@ -360,16 +360,16 @@ export default function CommessePage() {
             {commesseFiltrate.length} commesse · {currency(commesseFiltrate.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
           </div>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'stretch',gap:8,flexWrap:'wrap'}}>
           <input
             type="text"
             placeholder="Cerca commessa, cliente..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{padding:'5px 10px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
+            style={{padding:'8px 12px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
           />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{padding:'4px 8px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
+            style={{padding:'8px 10px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>

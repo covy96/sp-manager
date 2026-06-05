@@ -177,7 +177,7 @@ export default function OfferteDetailPage() {
   const st = STATI[offerta.stato]||STATI.offerta;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14, maxWidth:680 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -206,7 +206,7 @@ export default function OfferteDetailPage() {
       </div>
 
       {/* Dati offerta */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'24px 28px' }}>
         {editing ? (
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
@@ -250,7 +250,7 @@ export default function OfferteDetailPage() {
             </div>
           </div>
         ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
             {[
               ['N° Offerta', offerta.numero_offerta],
               ['Data offerta', offerta.data_offerta ? new Date(offerta.data_offerta).toLocaleDateString('it-IT') : '—'],

@@ -32,7 +32,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   const { T } = useTheme();
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
-      background: T.navy, color: T.bg, border: 'none',
+      background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm,
       fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
       letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
       padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
@@ -709,18 +709,18 @@ export default function ProjectsPage() {
           </div>
 
           {/* Controlli filtro + bottone nuovo */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: isMobile ? 'wrap' : 'nowrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: isMobile ? 'wrap' : 'nowrap', flex: isMobile ? '1 1 100%' : '0 0 auto' }}>
             {/* Search bar */}
             <input
               type="text"
               placeholder="Cerca progetto o cliente..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '6px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+              style={{ flex: isMobile ? '1 1 100%' : '1 1 160px', minWidth: 0, maxWidth: 240, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
             />
             {/* Year filter */}
             <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-              style={{ padding: '6px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+              style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
               {anniDisponibili.map(a => (
                 <option key={a} value={a}>{a}</option>
               ))}

@@ -159,7 +159,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
       display: 'flex', alignItems: 'center', gap: 8,
       border: `1px solid ${contacts.length > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
       background: contacts.length > 0 ? T.navyLight : 'transparent',
-      padding: '6px 12px', cursor: 'pointer',
+      height: 34, padding: '0 12px', cursor: 'pointer',
     }}>
       <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: contacts.length > 0 ? T.navy : T.muted, fontWeight: 600 }}>
         Anagrafica
@@ -179,7 +179,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   // ── MODAL ────────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 680, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 680, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>

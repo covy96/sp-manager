@@ -23,7 +23,7 @@ export default function CommessePanel({ commesse = [] }) {
   return (
     <>
       <button onClick={()=>setModalOpen(true)} style={{
-        display:'flex', alignItems:'center', gap:8, padding:'6px 14px',
+        display:'flex', alignItems:'center', gap:8, height:34, padding:'0 14px',
         border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent',
         cursor:'pointer', color:T.ink,
         fontFamily:"'IBM Plex Mono', monospace", fontSize:10,
@@ -37,7 +37,7 @@ export default function CommessePanel({ commesse = [] }) {
 
       {modalOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:560, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:24, maxHeight:'85vh', overflowY:'auto' }}>
+          <div style={{ width:'100%', maxWidth:560, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:24, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Commesse collegate</div>
