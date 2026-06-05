@@ -270,41 +270,47 @@ export default function AppLayout({ session, children }) {
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
 
-      {/* ── SIDEBAR — sempre scura ── */}
-      <aside style={{ width:220, display:'flex', flexDirection:'column', background:T.sidebarBg, flexShrink:0 }}>
+      {/* ── SIDEBAR — glass scura ── */}
+      <aside style={{
+        width:220, display:'flex', flexDirection:'column', flexShrink:0,
+        background: T.sidebarBg,
+        backdropFilter: T.blur,
+        WebkitBackdropFilter: T.blur,
+        borderRight: `1px solid ${T.sidebarBorder}`,
+      }}>
         <button onClick={() => navigate("/dashboard")} style={{
-          padding:'18px 16px 14px', background:'transparent', border:'none',
-          borderBottom:`0.5px solid ${T.sidebarBorder}`, cursor:'pointer', textAlign:'left', width:'100%',
+          padding:'20px 18px 16px', background:'transparent', border:'none',
+          borderBottom:`1px solid ${T.sidebarBorder}`, cursor:'pointer', textAlign:'left', width:'100%',
         }}>
           <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark"/>
         </button>
 
-        <nav style={{ padding:'10px 8px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
+        <nav style={{ padding:'10px 10px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
           {menuItems.map((item, idx) => {
             if (item.divider) return (
-              <div key={`div-${idx}`} style={{ margin:'6px 12px', height:'0.5px', background:'rgba(255,255,255,0.1)' }}/>
+              <div key={`div-${idx}`} style={{ margin:'6px 10px', height:'0.5px', background:'rgba(255,255,255,0.08)' }}/>
             );
             return (
               <NavLink key={item.path} to={item.path} style={({ isActive }) => ({
-                display:'flex', alignItems:'center', gap:10, padding:'7px 10px',
-                borderRadius:2, textDecoration:'none',
+                display:'flex', alignItems:'center', gap:10, padding:'8px 12px',
+                borderRadius:10, textDecoration:'none',
                 background: isActive ? T.sidebarActive : 'transparent',
-                transition:'background 0.12s',
+                transition:'background 0.15s',
               })}
-                onMouseEnter={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='rgba(255,255,255,0.05)'; }}
+                onMouseEnter={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
                 onMouseLeave={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='transparent'; }}
               >
                 {({ isActive }) => (<>
                   <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{item.num}</span>
-                  <span style={{ fontSize:12, color: isActive ? '#EEF1F6' : T.sidebarText, letterSpacing:'0.01em' }}>{item.label}</span>
+                  <span style={{ fontSize:12.5, color: isActive ? '#ffffff' : T.sidebarText, fontWeight: isActive ? 600 : 400, letterSpacing:'0.01em' }}>{item.label}</span>
                 </>)}
               </NavLink>
             );
           })}
         </nav>
 
-        <div style={{ padding:'10px 16px', borderTop:`0.5px solid ${T.sidebarBorder}` }}>
-          <div style={{ width:26, height:26, borderRadius:'50%', background:memberColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:600, color:'#fff' }}>
+        <div style={{ padding:'12px 18px', borderTop:`1px solid ${T.sidebarBorder}` }}>
+          <div style={{ width:28, height:28, borderRadius:'50%', background:memberColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
             {avatarInitials}
           </div>
         </div>
@@ -313,13 +319,16 @@ export default function AppLayout({ session, children }) {
       {/* ── MAIN ── */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0, overflow:'hidden' }}>
 
-        {/* Header */}
+        {/* Header — glass */}
         <header style={{
           position:'sticky', top:0, zIndex:30,
           display:'flex', alignItems:'center', justifyContent:'space-between',
-          height:52, padding:'0 28px',
-          background:T.headerBg, borderBottom:`0.5px solid ${T.headerBorder}`,
-          transition:'background 0.2s, border-color 0.2s',
+          height:56, padding:'0 28px',
+          background: T.headerBg,
+          backdropFilter: T.blur,
+          WebkitBackdropFilter: T.blur,
+          borderBottom: `1px solid ${T.headerBorder}`,
+          transition:'background 0.2s',
         }}>
 
           {/* Nome studio */}
@@ -335,26 +344,31 @@ export default function AppLayout({ session, children }) {
           </div>
 
           {/* Ricerca globale */}
-          <div ref={searchRef} style={{ flex:1, maxWidth:400, margin:'0 32px', position:'relative' }}>
+          <div ref={searchRef} style={{ flex:1, maxWidth:420, margin:'0 32px', position:'relative' }}>
             <div style={{ position:'relative' }}>
-              <SearchIcon style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', width:14, height:14, color:T.muted }}/>
+              <SearchIcon style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', width:14, height:14, color:T.muted }}/>
               <input
                 ref={searchInputRef}
                 type="text" placeholder="Cerca progetti, commesse, task..." value={query}
                 onChange={e => setQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 style={{
-                  width:'100%', padding:'7px 48px 7px 32px',
-                  border:`0.5px solid ${searchFocused ? T.navy : T.borderMd}`,
-                  background:T.inputBg, color:T.inputText,
-                  fontSize:12, fontFamily:"'IBM Plex Mono', monospace", outline:'none',
-                  transition:'border-color 0.1s',
+                  width:'100%', padding:'8px 48px 8px 34px',
+                  border:`1px solid ${searchFocused ? T.navy : T.borderMd}`,
+                  borderRadius: 10,
+                  background: T.inputBg,
+                  backdropFilter: T.blurSm,
+                  WebkitBackdropFilter: T.blurSm,
+                  color:T.inputText,
+                  fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
+                  transition:'border-color 0.15s, box-shadow 0.15s',
+                  boxShadow: searchFocused ? `0 0 0 3px ${T.navyLight}` : 'none',
                 }}
               />
               {query ? (
-                <button onClick={clear} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16, lineHeight:1 }}>×</button>
+                <button onClick={clear} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, lineHeight:1 }}>×</button>
               ) : (
-                <kbd style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, background:T.border, padding:'2px 5px' }}>
+                <kbd style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, background:T.borderMd, padding:'2px 6px', borderRadius:5 }}>
                   {showMacShortcut ? "⌘K" : "Ctrl+K"}
                 </kbd>
               )}
@@ -362,7 +376,7 @@ export default function AppLayout({ session, children }) {
 
             {/* Dropdown risultati */}
             {showDropdown && (
-              <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 6px)', background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, maxHeight:360, overflowY:'auto', boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.08'})` }}>
+              <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 8px)', background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:14, zIndex:50, maxHeight:360, overflowY:'auto', boxShadow:T.shadowMd }}>
                 {searchLoading ? (
                   <div style={{ padding:16, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center' }}>Ricerca...</div>
                 ) : results.length === 0 ? (
@@ -479,7 +493,7 @@ export default function AppLayout({ session, children }) {
             </button>
 
             {settingsOpen && (
-              <div style={{ position:'absolute', right:0, top:'calc(100% + 8px)', width:224, background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.08'})` }}>
+              <div style={{ position:'absolute', right:0, top:'calc(100% + 8px)', width:240, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:16, zIndex:50, boxShadow:T.shadowLg, overflow:'hidden' }}>
 
                 {/* User info */}
                 <div style={{ padding:'12px 14px', borderBottom:`0.5px solid ${T.border}` }}>
@@ -529,7 +543,7 @@ export default function AppLayout({ session, children }) {
         </header>
 
         {/* Content */}
-        <main style={{ flex:1, padding:'28px', overflowY:'auto', background:T.bg, transition:'background 0.2s' }}>
+        <main style={{ flex:1, padding:'28px', overflowY:'auto', background:T.bg, transition:'background 0.2s', backgroundImage: isDark ? 'radial-gradient(ellipse at 20% 10%, rgba(74,158,255,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(120,80,220,0.04) 0%, transparent 60%)' : 'radial-gradient(ellipse at 20% 10%, rgba(29,106,255,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(120,80,220,0.04) 0%, transparent 60%)' }}>
           {children}
         </main>
       </div>
