@@ -101,42 +101,36 @@ export default function ProgettiArchiviatiPage() {
           Nessun risultato per "{search}"
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, overflow: 'hidden' }}>
-          {filtered.map((project, idx) => {
+        <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+          {filtered.map(project => {
             const assignedMembers = (project.assigned_users || []).map(id => getMemberById(id)).filter(Boolean);
             return (
-              <div key={project.id} style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '12px 20px',
-                borderBottom: idx < filtered.length - 1 ? `0.5px solid ${T.border}` : 'none',
-              }}>
-                {/* Nome + cliente */}
-                <div style={{ flex: '1 1 0', minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div className="asm-card" key={project.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>
                     {project.name || "Progetto senza nome"}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: project.address ? 4 : 10 }}>
                     {project.client || "—"}
                   </div>
+                  {project.address && (
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 8 }}>{project.address}</div>
+                  )}
+                  {assignedMembers.length > 0 && (
+                    <div style={{ display: 'flex', marginBottom: 14 }}>
+                      {assignedMembers.slice(0, 5).map((m, i) => (
+                        <div key={m.id} title={m.user_name || m.user_email} style={{
+                          width: 24, height: 24, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""),
+                          border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: T.surface,
+                        }}>{getInitials(m.user_name || m.user_email)}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {/* Indirizzo */}
-                <div style={{ flex: '0 1 180px', minWidth: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {project.address || ""}
-                </div>
-                {/* Avatar team */}
-                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, minWidth: 60 }}>
-                  {assignedMembers.slice(0, 5).map((m, i) => (
-                    <div key={m.id} title={m.user_name || m.user_email} style={{
-                      width: 24, height: 24, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""),
-                      border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: T.surface, flexShrink: 0,
-                    }}>{getInitials(m.user_name || m.user_email)}</div>
-                  ))}
-                </div>
-                {/* Bottoni */}
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ padding: '6px 14px', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
-                  <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '6px 14px', background: 'transparent', border: `1px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
+                  <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '7px 14px', background: 'transparent', border: `1px solid ${T.navy}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
                     {restoring === project.id ? "..." : "Ripristina"}
                   </button>
                 </div>
