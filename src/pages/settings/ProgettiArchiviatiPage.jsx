@@ -107,26 +107,24 @@ export default function ProgettiArchiviatiPage() {
             return (
               <div className="asm-card" key={project.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4, minHeight: 36, display: 'flex', alignItems: 'flex-start' }}>
                     {project.name || "Progetto senza nome"}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: project.address ? 4 : 10 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 4, minHeight: 16 }}>
                     {project.client || "—"}
                   </div>
-                  {project.address && (
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 8 }}>{project.address}</div>
-                  )}
-                  {assignedMembers.length > 0 && (
-                    <div style={{ display: 'flex', marginBottom: 14 }}>
-                      {assignedMembers.slice(0, 5).map((m, i) => (
-                        <div key={m.id} title={m.user_name || m.user_email} style={{
-                          width: 24, height: 24, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""),
-                          border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: T.surface,
-                        }}>{getInitials(m.user_name || m.user_email)}</div>
-                      ))}
-                    </div>
-                  )}
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginBottom: 8, minHeight: 14 }}>
+                    {project.address || ""}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', minHeight: 28, marginBottom: 14 }}>
+                    {assignedMembers.slice(0, 5).map((m, i) => (
+                      <div key={m.id} title={m.user_name || m.user_email} style={{
+                        width: 24, height: 24, borderRadius: '50%', background: m.color || avatarColor(m.user_name || m.user_email || ""),
+                        border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: T.surface,
+                      }}>{getInitials(m.user_name || m.user_email)}</div>
+                    ))}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ flex: 1, padding: '7px 0', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
