@@ -80,12 +80,12 @@ function SectionHeader({ title, action }) {
 }
 function Panel({ children, style = {} }) {
   const { T } = useTheme();
-  return <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '16px 18px', ...style }}>{children}</div>;
+  return <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: '16px 18px', boxShadow: T.shadow, ...style }}>{children}</div>;
 }
 function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '10px 10px', minWidth: 0, overflow: 'hidden' }}>
+    <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '12px 14px', minWidth: 0, overflow: 'hidden', boxShadow: T.shadow }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
       <div style={{ fontSize: 'clamp(13px, 3.5vw, 20px)', fontWeight: 600, letterSpacing: '-0.02em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
     </div>

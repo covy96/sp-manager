@@ -781,12 +781,15 @@ export default function ProjectDetailPage() {
                   scrollSnapAlign: isMobile ? 'start' : 'none',
                   display: 'flex', flexDirection: 'column',
                   background: T.surface,
-                  border: isDropTarget ? `1.5px solid ${T.navy}` : `0.5px solid ${T.border}`,
+                  backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+                  border: isDropTarget ? `2px solid ${T.navy}` : `1px solid ${T.border}`,
+                  borderRadius: T.radius,
                   overflow: 'hidden',
                   height: isMobile ? 'auto' : '100%',
                   maxHeight: isMobile ? 'none' : '100%',
                   opacity: isDragging ? 0.4 : catDone ? 0.5 : 1,
                   transition: 'opacity 0.15s, border-color 0.15s',
+                  boxShadow: T.shadow,
                   cursor: 'default',
                 }}>
                 {/* Column header */}

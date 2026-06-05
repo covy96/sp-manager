@@ -13,8 +13,8 @@ const LIGHT = {
   ink40:        'rgba(26,26,30,0.4)',
   muted:        '#7a7a8a',
   // Accenti
-  navy:         '#1d6aff',
-  navyLight:    'rgba(29,106,255,0.10)',
+  navy:         '#13315C',
+  navyLight:    'rgba(19,49,92,0.10)',
   brass:        '#D9C98A',
   // Bordi (vetro)
   border:       'rgba(255,255,255,0.6)',

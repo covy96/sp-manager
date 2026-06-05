@@ -48,8 +48,11 @@ function KpiCard({ label, value, note, valueColor }) {
   return (
     <div style={{
       background: T.surface,
-      border: `0.5px solid ${T.border}`,
+      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radius,
       padding: '18px 20px',
+      boxShadow: T.shadow,
     }}>
       <div style={{
         fontFamily: "'IBM Plex Mono', monospace",
@@ -75,8 +78,11 @@ function Panel({ title, children }) {
   return (
     <div style={{
       background: T.surface,
-      border: `0.5px solid ${T.border}`,
+      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radius,
       padding: '20px 22px',
+      boxShadow: T.shadow,
     }}>
       <div style={{
         fontSize: 13, fontWeight: 600,

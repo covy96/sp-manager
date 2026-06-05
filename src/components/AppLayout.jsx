@@ -493,7 +493,7 @@ export default function AppLayout({ session, children }) {
             </button>
 
             {settingsOpen && (
-              <div style={{ position:'absolute', right:0, top:'calc(100% + 8px)', width:240, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:16, zIndex:50, boxShadow:T.shadowLg, overflow:'hidden' }}>
+              <div style={{ position:'absolute', right:0, top:'calc(100% + 8px)', width:240, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:16, zIndex:50, boxShadow:T.shadowLg, overflow:'visible' }}>
 
                 {/* User info */}
                 <div style={{ padding:'12px 14px', borderBottom:`0.5px solid ${T.border}` }}>

@@ -116,9 +116,10 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
       background: `rgba(14,14,13,0.5)`, padding: 16,
     }}>
       <div style={{
-        width: '100%', maxWidth: width, background: T.surface,
-        border: `0.5px solid ${T.borderMd}`, padding: 28,
-        maxHeight: '90vh', overflowY: 'auto',
+        width: '100%', maxWidth: width,
+        background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur,
+        border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, padding: 28,
+        maxHeight: '90vh', overflowY: 'auto', boxShadow: T.shadowLg,
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
@@ -169,8 +170,12 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
   return (
     <div style={{
       background: hover ? T.surface2 : T.surface,
-      border: `0.5px solid ${T.border}`,
-      padding: 20, position: 'relative', transition: 'background 0.12s',
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radius,
+      padding: 20, position: 'relative', transition: 'all 0.15s',
+      backdropFilter: T.blurSm,
+      WebkitBackdropFilter: T.blurSm,
+      boxShadow: hover ? T.shadowMd : T.shadow,
     }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -184,8 +189,10 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
         {menuOpen && (
           <div style={{
             position: 'absolute', right: 0, top: '100%',
-            background: T.surface, border: `0.5px solid ${T.borderMd}`,
-            width: 160, zIndex: 20, marginTop: 4,
+            background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur,
+            border: `1px solid ${T.glassBorder}`, borderRadius: 12,
+            width: 160, zIndex: 20, marginTop: 4, overflow: 'hidden',
+            boxShadow: T.shadowMd,
           }}>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onEdit(project); }} style={{
               display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
