@@ -4,6 +4,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { formatOre } from "../lib/utils";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import SlidingTabs from "./SlidingTabs";
 
 function avatarColor(name = "") {
   const colors = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
@@ -131,7 +132,7 @@ export default function OrePanel({ projectId, studioId }) {
 
   const btnBase = {
     ...mono, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase",
-    padding: "4px 10px", cursor: "pointer", border: `0.5px solid ${T.borderMd}`,
+    padding: "4px 10px", cursor: "pointer", border: `1px solid ${T.borderMd}`,
   };
 
   return (
@@ -141,7 +142,7 @@ export default function OrePanel({ projectId, studioId }) {
         onClick={() => { setOpen(true); loadEntries(); }}
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          padding: "7px 13px", border: `0.5px solid ${T.borderMd}`,
+          padding: "7px 13px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm,
           background: "transparent", color: T.ink, cursor: "pointer",
           ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
           whiteSpace: "nowrap",
@@ -167,7 +168,7 @@ export default function OrePanel({ projectId, studioId }) {
             onClick={e => e.stopPropagation()}
             style={{
               width: "100%", maxWidth: 540,
-              background: T.surface, border: `0.5px solid ${T.borderMd}`,
+              background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg,
               maxHeight: "80vh", display: "flex", flexDirection: "column",
               boxShadow: `0 8px 32px rgba(0,0,0,${isDark ? "0.5" : "0.14"})`,
             }}
@@ -184,16 +185,11 @@ export default function OrePanel({ projectId, studioId }) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ display: "flex" }}>
-                  <button onClick={() => setView("mese")}
-                    style={{ ...btnBase, background: view === "mese" ? T.navy : "transparent", color: view === "mese" ? "#fff" : T.muted, borderRight: "none" }}>
-                    Mese
-                  </button>
-                  <button onClick={() => setView("settimana")}
-                    style={{ ...btnBase, background: view === "settimana" ? T.navy : "transparent", color: view === "settimana" ? "#fff" : T.muted }}>
-                    Settimana
-                  </button>
-                </div>
+                <SlidingTabs
+                  tabs={[{ key: "mese", label: "Mese" }, { key: "settimana", label: "Settimana" }]}
+                  active={view}
+                  onChange={setView}
+                />
                 <button onClick={() => setOpen(false)}
                   style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1, padding: "0 4px" }}>×</button>
               </div>
@@ -215,7 +211,7 @@ export default function OrePanel({ projectId, studioId }) {
                       onClick={() => toggleExpand(g.key)}
                       style={{
                         width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "8px 12px", background: T.bg, border: `0.5px solid ${T.border}`,
+                        padding: "8px 12px", background: T.bg, border: `1px solid ${T.border}`,
                         cursor: "pointer", textAlign: "left",
                       }}
                     >

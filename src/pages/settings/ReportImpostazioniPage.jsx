@@ -5,10 +5,11 @@ import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { GROTESKA_VARIANTS } from "../../assets/fonts/groteskaFonts";
 import { useEscKey } from "../../hooks/useEscKey";
+import SlidingTabs from "../../components/SlidingTabs";
 
 const inputCss = (T) => ({
   padding: "8px 12px",
-  border: `0.5px solid ${T.border}`,
+  border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
   background: T.surface,
   color: T.ink,
   fontSize: 12,
@@ -315,14 +316,14 @@ export default function ReportImpostazioniPage() {
 
       {/* msg */}
       {msg && (
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: msg.startsWith("Errore") ? "#ef4444" : "#16a34a", padding: "8px 12px", background: msg.startsWith("Errore") ? "#fef2f2" : "#f0fdf4", border: `0.5px solid ${msg.startsWith("Errore") ? "#fca5a5" : "#86efac"}` }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: msg.startsWith("Errore") ? "#ef4444" : "#16a34a", padding: "8px 12px", background: msg.startsWith("Errore") ? "#fef2f2" : "#f0fdf4", border: `1px solid ${msg.startsWith("Errore") ? "#fca5a5" : "#86efac"}` }}>
           {msg}
         </div>
       )}
 
       {/* confirmAll */}
       {confirmAll && (
-        <div style={{ background: T.navyLight, border: `1px solid ${T.navy}`, padding: "16px 18px" }}>
+        <div style={{ background: T.navyLight, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "16px 18px" }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Aggiornare anche i report esistenti?</div>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 14 }}>
             Hai {reportCount} report salvati. Vuoi applicare la nuova intestazione anche a quelli già creati?
@@ -342,7 +343,7 @@ export default function ReportImpostazioniPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
           {/* INTESTAZIONE PDF */}
-          <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Intestazione PDF</div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
@@ -351,7 +352,7 @@ export default function ReportImpostazioniPage() {
                 <FL>Logo studio</FL>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   {form.report_logo_url && (
-                    <img src={form.report_logo_url} alt="logo" style={{ height: 44, maxWidth: 140, objectFit: "contain", border: `0.5px solid ${T.border}`, padding: 4, background: "#fff" }} />
+                    <img src={form.report_logo_url} alt="logo" style={{ height: 44, maxWidth: 140, objectFit: "contain", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 4, background: "#fff" }} />
                   )}
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
                   <Btn onClick={() => fileRef.current?.click()} disabled={uploading} ghost>
@@ -360,14 +361,13 @@ export default function ReportImpostazioniPage() {
                   {form.report_logo_url && <Btn ghost onClick={() => setForm(f => ({ ...f, report_logo_url: "" }))}>Rimuovi</Btn>}
                 </div>
                 {form.report_logo_url && (
-                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                    {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl]) => (
-                      <button key={val} onClick={() => setForm(f => ({ ...f, report_logo_size: val }))}
-                        style={{ width: 28, height: 28, border: `0.5px solid ${form.report_logo_size === val ? T.navy : T.borderMd}`, background: form.report_logo_size === val ? T.navyLight : "transparent", color: form.report_logo_size === val ? T.navy : T.muted, cursor: "pointer", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600 }}>
-                        {lbl}
-                      </button>
-                    ))}
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, alignSelf: "center", marginLeft: 4 }}>dimensione</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+                    <SlidingTabs
+                      tabs={[{ key:"small", label:"S" }, { key:"medium", label:"M" }, { key:"large", label:"L" }]}
+                      active={form.report_logo_size || "medium"}
+                      onChange={val => setForm(f => ({ ...f, report_logo_size: val }))}
+                    />
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>dimensione logo</span>
                   </div>
                 )}
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 6 }}>PNG consigliato · appare in alto a destra</div>
@@ -382,7 +382,7 @@ export default function ReportImpostazioniPage() {
                       const sel = form.report_footer_font === val;
                       return (
                         <button key={val} onClick={() => setForm(f => ({ ...f, report_footer_font: val, report_body_font_enabled: false }))}
-                          style={{ padding: "5px 12px", border: `0.5px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navyLight : "transparent", color: sel ? T.navy : T.ink, cursor: "pointer", fontSize: 11 }}>
+                          style={{ padding: "5px 12px", border: `1px solid ${sel ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: sel ? T.navyLight : "transparent", color: sel ? T.navy : T.ink, cursor: "pointer", fontSize: 11 }}>
                           {label}
                         </button>
                       );
@@ -395,7 +395,7 @@ export default function ReportImpostazioniPage() {
                         const sel = form.report_footer_font === g.key;
                         return (
                           <button key={g.key} onClick={() => setForm(f => ({ ...f, report_footer_font: g.key }))}
-                            style={{ padding: "5px 12px", border: `0.5px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navyLight : "transparent", color: sel ? T.navy : T.ink, cursor: "pointer", fontSize: 11, fontFamily: "'Space Grotesk', sans-serif" }}>
+                            style={{ padding: "5px 12px", border: `1px solid ${sel ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: sel ? T.navyLight : "transparent", color: sel ? T.navy : T.ink, cursor: "pointer", fontSize: 11, fontFamily: "'Space Grotesk', sans-serif" }}>
                             {g.label}
                           </button>
                         );
@@ -403,7 +403,7 @@ export default function ReportImpostazioniPage() {
                     </div>
                   </div>
                   {GROTESKA_VARIANTS.find(g => g.key === form.report_footer_font) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, padding: "8px 10px", background: T.bg, border: `0.5px solid ${T.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, padding: "8px 10px", background: T.bg, border: `1px solid ${T.border}` }}>
                       <button onClick={() => setForm(f => ({ ...f, report_body_font_enabled: !f.report_body_font_enabled }))}
                         style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s", background: form.report_body_font_enabled ? T.navy : T.borderMd }}>
                         <div style={{ position: "absolute", top: 2, left: form.report_body_font_enabled ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
@@ -431,7 +431,7 @@ export default function ReportImpostazioniPage() {
             </div>
 
             {/* Anteprima intestazione */}
-            <div style={{ background: T.bg, border: `0.5px solid ${T.border}`, padding: "14px 18px" }}>
+            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "14px 18px" }}>
               <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>Anteprima intestazione</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -449,7 +449,7 @@ export default function ReportImpostazioniPage() {
           </div>
 
           {/* FOOTER */}
-          <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Piè di pagina (footer)</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {[["report_footer_left","Sinistra"],["report_footer_center","Centro"],["report_footer_right","Destra"]].map(([field,label]) => (
@@ -463,7 +463,7 @@ export default function ReportImpostazioniPage() {
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>
               Usa <strong style={{ color: T.ink }}>{"{pagina}"}</strong> e <strong style={{ color: T.ink }}>{"{totale}"}</strong> per la numerazione automatica.
             </div>
-            <div style={{ background: T.bg, border: `0.5px solid ${T.border}`, padding: "10px 14px" }}>
+            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "10px 14px" }}>
               <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Anteprima footer</div>
               <div style={{ height: 1, background: "rgba(150,150,150,0.4)", marginBottom: 8 }} />
               {(() => {
@@ -496,7 +496,7 @@ export default function ReportImpostazioniPage() {
         </div>
 
         {/* ── COLONNA DESTRA: PROGETTI ──────────────────────────────── */}
-        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 16 }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 16 }}>
           <div style={{ padding: "14px 16px", borderBottom: `0.5px solid ${T.border}` }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>Applica a questi progetti</div>
             {/* Barra ricerca */}

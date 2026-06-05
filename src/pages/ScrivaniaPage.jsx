@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SlidingTabs from "../components/SlidingTabs";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
@@ -38,7 +39,8 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
         display:'flex', alignItems:'center', justifyContent:'space-between',
         width:'100%', padding:'8px 12px',
         background: hover ? T.bg : 'transparent',
-        border:`0.5px solid ${hover ? T.borderMd : T.border}`,
+        border:`1px solid ${hover ? T.borderMd : T.border}`,
+        borderRadius: T.radiusSm,
         opacity: updating ? 0.5 : 1, transition:'all 0.1s',
         boxSizing:'border-box',
       }}>
@@ -50,7 +52,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
           disabled={updating}
           style={{
             width:15, height:15, borderRadius:'50%', flexShrink:0, padding:0,
-            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`,
+            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
             background: done ? T.navy : 'transparent',
             display:'inline-flex', alignItems:'center', justifyContent:'center',
             cursor: updating ? 'not-allowed' : 'pointer',
@@ -153,8 +155,8 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
 
   // In dark mode: sfondo scuro con bordo sinistro colorato (i pastelli su nero sono illeggibili)
   const cardStyle = isDark
-    ? { background: T.surface, border:`0.5px solid ${T.border}`, borderLeft:`3px solid ${color}`, display:'flex', flexDirection:'column' }
-    : { background: color, border:`0.5px solid ${T.border}`, display:'flex', flexDirection:'column' };
+    ? { background: T.surface, border:`1px solid ${T.border}`, borderLeft:`3px solid ${color}`, display:'flex', flexDirection:'column', borderRadius:T.radius, boxShadow:T.shadow }
+    : { background: color, border:`1px solid ${T.border}`, display:'flex', flexDirection:'column', borderRadius:T.radius, boxShadow:T.shadow };
 
   return (
     <div style={cardStyle}>
@@ -164,13 +166,13 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
           {NOTE_COLORS.map(c => (
             <button key={c} onClick={() => isOwn && handleColorChange(c)} style={{
               width:13, height:13, borderRadius:'50%', background:c,
-              border:`1.5px solid ${color === c ? T.ink : T.border}`,
+              border:`1.5px solid ${color === c ? T.ink : T.border}`, borderRadius: T.radiusSm,
               cursor: isOwn ? 'pointer' : 'default', padding:0, flexShrink:0,
             }}/>
           ))}
           {isOwn && (
             <button onClick={handlePrivacyToggle} style={{
-              background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`,
+              background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`, borderRadius: T.radiusSm,
               padding:'1px 6px', cursor:'pointer', marginLeft:4,
               fontFamily:"'IBM Plex Mono', monospace", fontSize:8,
               color: isPrivate ? T.muted : T.navy, letterSpacing:'0.05em',
@@ -454,17 +456,19 @@ export default function ScrivaniaPage() {
       <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:20, alignItems:'start' }}>
 
         {/* ── COLONNA TASK ── */}
-        <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>
-          <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:14 }}>
-            <button style={tabSt(taskTab === "active")} onClick={() => setTaskTab("active")}>
-              Attive ({activeTasks.length})
-            </button>
-            <button style={tabSt(taskTab === "completed")} onClick={() => setTaskTab("completed")}>
-              Oggi ({completedToday.length})
-            </button>
+          <div style={{ marginBottom:14 }}>
+            <SlidingTabs
+              tabs={[
+                { key: "active",    label: `Attive (${activeTasks.length})` },
+                { key: "completed", label: `Oggi (${completedToday.length})` },
+              ]}
+              active={taskTab}
+              onChange={setTaskTab}
+            />
           </div>
 
           {taskTab === "active" && (
@@ -491,7 +495,7 @@ export default function ScrivaniaPage() {
                       <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
                         {projectsById[pid] || "Senza progetto"}
                       </span>
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>
+                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>
                         {tasks.length}
                       </span>
                     </div>
@@ -532,7 +536,7 @@ export default function ScrivaniaPage() {
         {/* ── COLONNA NOTE ── */}
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {notes.length === 0 ? (
-            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
               Nessuna nota. Clicca "+ Nuova nota" per iniziare.
             </div>
           ) : notes.map(note => (

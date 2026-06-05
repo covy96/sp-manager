@@ -87,7 +87,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
             {date ? fmtDay(new Date(date)) : "Seleziona un giorno"}
           </div>
         </div>
-        <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, padding:'3px 10px', lineHeight:1 }}>×</button>
+        <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, padding:'3px 10px', lineHeight:1 }}>×</button>
       </div>
       {tasks.length===0 && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -133,7 +133,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
   }
 
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding:'16px 18px', minWidth:280 }}>
+    <div style={{ background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowMd, borderRadius:T.radius, padding:'16px 18px', minWidth:280 }}>
       {content}
     </div>
   );
@@ -271,7 +271,7 @@ export default function CalendarioPage() {
     if (isMobile) {
       // Versione mobile: celle compatte con pallini colorati
       return (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
               <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
@@ -320,7 +320,7 @@ export default function CalendarioPage() {
     // Desktop: versione originale con scroll
     return (
       <div style={{ overflowX:'auto' }}>
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth:560 }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth:560, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
               <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
@@ -365,7 +365,7 @@ export default function CalendarioPage() {
     const minW = count === 7 ? 560 : 320;
     return (
       <div style={{ overflowX: (!isMobile || count===7) && count!==3 ? 'auto' : 'visible' }}>
-        <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, overflow:'hidden', minWidth: isMobile && count<=3 ? undefined : minW }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth: isMobile && count<=3 ? undefined : minW, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Header giorni */}
           <div style={{ display:'grid', gridTemplateColumns:`repeat(${count},1fr)`, borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {days.map((d,i)=>{
@@ -421,7 +421,7 @@ export default function CalendarioPage() {
   const renderToday = () => {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding: isMobile ? '16px' : '20px 24px' }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px' : '20px 24px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
           {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>
@@ -462,7 +462,7 @@ export default function CalendarioPage() {
     </div>
   );
   if (error) return (
-    <div style={{ border:`0.5px solid ${T.ink10}`, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
+    <div style={{ border:`0.5px solid ${T.ink10}`, borderRadius: T.radiusSm, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
   );
 
   // Viste disponibili
@@ -476,7 +476,7 @@ export default function CalendarioPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, padding: isMobile ? '10px 14px' : '12px 18px', display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent:'space-between', gap:10 }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: isMobile ? '10px 14px' : '12px 18px', display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent:'space-between', gap:10 }}>
 
         {/* Riga 1 mobile: toggle vista + filtro utenti */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
@@ -499,7 +499,7 @@ export default function CalendarioPage() {
           <div ref={filterRef} style={{ position:'relative', flexShrink:0 }}>
             <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
               display:'flex', alignItems:'center', gap:5,
-              border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`,
+              border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`, borderRadius: T.radiusSm,
               background:selectedMembers.length>0?T.navyLight:'transparent',
               padding:'6px 10px', cursor:'pointer',
               fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase',
@@ -550,12 +550,12 @@ export default function CalendarioPage() {
         {/* Riga 2 mobile / inline desktop: navigazione periodo */}
         {viewMode!=="today" && (
           <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent: isMobile ? 'space-between' : 'flex-start' }}>
-            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
+            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
             <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', flex: isMobile ? 1 : 'none', textAlign:'center', minWidth: isMobile ? 0 : 180 }}>
               {periodLabel}
             </div>
-            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
+            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
           </div>
         )}
       </div>

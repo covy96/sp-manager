@@ -26,7 +26,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const { T } = useTheme();
   const inputSt = {
     width:'100%', padding:'7px 10px', boxSizing:'border-box',
-    border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink,
+    border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink,
     fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
   };
   const [pratica, setPratica]   = useState(null);
@@ -111,14 +111,14 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const widget = (
     <button onClick={() => setModalOpen(true)} style={{
       display:'flex', alignItems:'center', gap:8,
-      border:`0.5px solid ${T.navy}`, background: pratica ? T.navyLight : 'transparent',
-      padding:'6px 12px', cursor:'pointer',
+      border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: pratica ? T.navyLight : 'transparent',
+      height:34, padding:'0 12px', cursor:'pointer',
     }}>
       <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
         Pratica Edilizia
       </span>
       {pratica?.tipo_pratica ? (
-        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, padding:'1px 6px' }}>
+        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>
           {pratica.tipo_pratica}
         </span>
       ) : (
@@ -137,7 +137,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   // ── MODAL ─────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.5)', padding:16 }}>
-      <div style={{ width:'100%', maxWidth:680, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
+      <div style={{ width:'100%', maxWidth:680, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
 
         {/* Header modal */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
@@ -233,7 +233,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
 
         {/* Footer */}
         <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-          <button onClick={() => setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+          <button onClick={() => setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
             Annulla
           </button>
           <button onClick={handleSave} disabled={saving || !form.tipo_pratica} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor: saving || !form.tipo_pratica ? 'not-allowed' : 'pointer', opacity: saving || !form.tipo_pratica ? 0.6 : 1 }}>

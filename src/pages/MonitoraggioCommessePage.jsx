@@ -40,7 +40,7 @@ function getDaysOpen(d) {
 function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '18px 20px' }}>
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.04em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{value}</div>
     </div>
@@ -218,13 +218,13 @@ export default function MonitoraggioCommessePage() {
   );
 
   if (!studioLoading && !permissions.canViewMonitoraggio) return (
-    <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
       Non hai i permessi per accedere a questa sezione.
     </div>
   );
 
   if (error) return (
-    <div style={{ border: `0.5px solid ${T.border}`, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>
   );
 
   return (
@@ -242,7 +242,7 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* GRAFICO */}
-      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', overflowX: 'auto' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 22px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>
             {selectedYear ? `Andamento valore commesse — ${selectedYear}` : "Andamento valore commesse — tutti gli anni"}
@@ -250,7 +250,7 @@ export default function MonitoraggioCommessePage() {
           <select
             value={selectedYear === null ? "all" : selectedYear}
             onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
-            style={{ padding: '5px 10px', border: `0.5px solid ${T.borderMd}`, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+            style={{ padding: '5px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
             <option value="all">Tutti gli anni</option>
             {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
@@ -262,7 +262,7 @@ export default function MonitoraggioCommessePage() {
               <XAxis dataKey="month" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
               <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${formatNumber(v)}€`} />
               <Tooltip
-                contentStyle={{ background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}
+                contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}
                 formatter={v => currency(v)}
                 labelStyle={{ color: T.muted, fontSize: 10, letterSpacing: '0.1em' }}
               />
@@ -273,7 +273,7 @@ export default function MonitoraggioCommessePage() {
       </div>
 
       {/* TABELLA */}
-      <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, overflowX: 'auto' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, overflowX: 'auto', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
           <thead>
             <tr>

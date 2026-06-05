@@ -22,7 +22,7 @@ function BtnPrimary({ children, onClick, disabled, type="button" }) {
 function BtnGhost({ children, onClick, disabled, danger }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
@@ -113,7 +113,7 @@ export default function ClientiPage() {
     else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
@@ -148,7 +148,7 @@ export default function ClientiPage() {
           <input
             type="text" placeholder="Cerca cliente..."
             value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
-            style={{width:'100%',boxSizing:'border-box',padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+            style={{width:'100%',boxSizing:'border-box',padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
           />
           {searchQuery && (
             <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
@@ -159,14 +159,14 @@ export default function ClientiPage() {
       {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
 
       {contacts.length===0 ? (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'48px 0',textAlign:'center'}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'48px 0',textAlign:'center'}}>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
             Nessun cliente ancora.<br/>
             I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{background:T.surface,border:`0.5px solid ${T.border}`,padding:'32px 0',textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'32px 0',textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>
           Nessun cliente trovato per "{searchQuery}"
         </div>
       ) : (
@@ -205,7 +205,7 @@ export default function ClientiPage() {
 
                   {/* Elimina */}
                   <button onClick={()=>handleDelete(c.id)}
-                    style={{background:'none',border:`0.5px solid ${T.red}`,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
+                    style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
                     Elimina
                   </button>
                 </div>
@@ -226,7 +226,7 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {projs.map(p=>(
                               <button key={p.id} onClick={()=>navigate(`/progetti/${p.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
@@ -249,7 +249,7 @@ export default function ClientiPage() {
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {comms.map(com=>(
                               <button key={com.id} onClick={()=>navigate(`/commesse/${com.id}`)}
-                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`0.5px solid ${T.border}`,cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
+                                style={{display:'block',width:'100%',padding:'8px 12px',background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor:'pointer',textAlign:'left',transition:'border-color 0.1s'}}
                                 onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
@@ -279,7 +279,7 @@ export default function ClientiPage() {
 
       {addModalOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,padding:28}}>
+          <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:28}}>
             <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
               I clienti si aggiungono anche automaticamente dai progetti e commesse

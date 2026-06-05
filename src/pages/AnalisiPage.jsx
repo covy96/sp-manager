@@ -39,6 +39,9 @@ export default function AnalisiPage() {
   const [savingCosti, setSavingCosti]         = useState(false);
   const [annoFiltro, setAnnoFiltro]           = useState(0); // default: tutti gli anni
   const [search, setSearch]                   = useState("");
+  const [sortCol, setSortCol]                 = useState("margine");
+  const [sortAsc, setSortAsc]                 = useState(false);
+  const handleSortCol = col => { if (sortCol === col) setSortAsc(p => !p); else { setSortCol(col); setSortAsc(false); } };
 
   // ── LOAD ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -245,7 +248,7 @@ export default function AnalisiPage() {
 
         {/* Header */}
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={()=>setSelectedProject(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Analisi</button>
+          <button onClick={()=>setSelectedProject(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Analisi</button>
           <div>
             <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{stat.proj.name}</div>
             {stat.proj.client && <div style={{ ...mono, fontSize:10, color:T.muted }}>{stat.proj.client}</div>}
@@ -255,34 +258,34 @@ export default function AnalisiPage() {
         {/* KPI */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
           {/* Riga 1: valori economici */}
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Valore base offerta</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreCommesse)}</div>
             <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>senza IVA / contributi</div>
           </div>
           {stat.valoreTotale !== stat.valoreCommesse && (
-            <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+            <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
               <div style={{ ...label, marginBottom:8 }}>Valore con IVA/contributi</div>
               <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreTotale)}</div>
               <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>importo totale commesse</div>
             </div>
           )}
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Incassato</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.green }}>{currency(stat.incassato)}</div>
             {stat.valoreCommesse>0 && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{((stat.incassato/stat.valoreCommesse)*100).toFixed(0)}% del valore base</div>}
           </div>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Costo ore interne</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.navy }}>{currency(stat.costoOre)}</div>
           </div>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Costi esterni</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.muted }}>{currency(stat.costoEsterni)}</div>
           </div>
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Margine stimato</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:stat.margine>=0?T.green:T.red }}>{currency(stat.margine)}</div>
             {stat.marginePerc!=null && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{stat.marginePerc.toFixed(1)}%</div>}
@@ -290,7 +293,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* ── ANALISI 1: Costo ore interne ── */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costo ore interne</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{fmtOre(stat.oreTotali)} ore totali</div>
@@ -347,7 +350,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* ── ANALISI 2: Costi esterni ── */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi esterni</div>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Costi extra e collaboratori dalle commesse collegate</div>
@@ -392,7 +395,7 @@ export default function AnalisiPage() {
 
         {/* ── ANALISI 3: Costi interni ── */}
         {costiInterni.filter(c => stat.commProj.some(x => x.id === c.commessa_id)).length > 0 && (
-          <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
               <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Spese interne non fatturate al cliente</div>
@@ -427,7 +430,7 @@ export default function AnalisiPage() {
         )}
 
         {/* Riepilogo finale */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:16 }}>Riepilogo economico</div>
           <div style={{ display:'flex', flexDirection:'column', gap:8, maxWidth:400 }}>
             {[
@@ -473,7 +476,7 @@ export default function AnalisiPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Cerca progetto..."
-              style={{ padding:'6px 10px 6px 30px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:180 }}
+              style={{ padding:'6px 10px 6px 30px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:180 }}
             />
             <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', color:T.muted, fontSize:12, pointerEvents:'none' }}>⌕</span>
             {search && (
@@ -481,7 +484,7 @@ export default function AnalisiPage() {
             )}
           </div>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -508,7 +511,7 @@ export default function AnalisiPage() {
               { label:'Incassato totale',    value:currency(totIncassato),   color:T.green},
               { label:'Margine complessivo', value:currency(totMargine),     color:totMargine>=0?T.green:T.red },
             ].map((k,i)=>(
-              <div key={i} style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 20px' }}>
+              <div key={i} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
                 <div style={{ ...label, marginBottom:8 }}>{k.label}</div>
                 <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
               </div>
@@ -518,19 +521,30 @@ export default function AnalisiPage() {
       })()}
 
       {/* Tabella progetti */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}` }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflow:'hidden' }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr>
-              <th style={thSt}>Progetto</th>
-              <th style={thSt}>Ore totali</th>
-              <th style={thSt}>Costo ore</th>
-              <th style={thSt}>Costi esterni</th>
-              <th style={thSt}>Costi interni</th>
-              <th style={thSt}>Costo totale</th>
-              <th style={thSt}>Valore commesse</th>
-              <th style={thSt}>Incassato</th>
-              <th style={thSt}>Margine</th>
+              {[
+                ['nome',           'Progetto'],
+                ['oreTotali',      'Ore totali'],
+                ['costoOre',       'Costo ore'],
+                ['costoEsterni',   'Costi esterni'],
+                ['costoInterno',   'Costi interni'],
+                ['costoTotale',    'Costo totale'],
+                ['valoreCommesse', 'Valore commesse'],
+                ['incassato',      'Incassato'],
+                ['margine',        'Margine'],
+              ].map(([col, label]) => (
+                <th key={col} style={{ ...thSt, cursor:'pointer', userSelect:'none' }} onClick={() => handleSortCol(col)}>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:4, color: sortCol===col ? T.navy : T.muted }}>
+                    {label}
+                    <span style={{ fontSize:9, opacity: sortCol===col ? 1 : 0.3 }}>
+                      {sortCol===col ? (sortAsc ? '↑' : '↓') : '↕'}
+                    </span>
+                  </span>
+                </th>
+              ))}
               <th style={thSt}></th>
             </tr>
           </thead>
@@ -545,10 +559,20 @@ export default function AnalisiPage() {
                 (proj.client||'').toLowerCase().includes(q)
               );
               const withOrphan = [...filtered, ...(orphanStats && (!q || '— commesse senza progetto'.includes(q)) ? [orphanStats] : [])];
+              const sortedRows = [...withOrphan].sort((a, b) => {
+                const getVal = (row) => {
+                  if (sortCol === 'nome') return (row.proj.name || '').toLowerCase();
+                  return Number(row[sortCol]) || 0;
+                };
+                const vA = getVal(a), vB = getVal(b);
+                if (vA < vB) return sortAsc ? -1 : 1;
+                if (vA > vB) return sortAsc ? 1 : -1;
+                return 0;
+              });
               if (withOrphan.length === 0) return (
                 <tr><td colSpan={9} style={{ ...tdSt, textAlign:'center', color:T.muted, padding:'32px 0' }}>Nessun risultato per "{search}"</td></tr>
               );
-              return withOrphan.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
+              return sortedRows.map(({ proj, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreCommesse, incassato, margine, marginePerc }) => {
               const isOrphan = proj.id === '__orphan__';
               return (
               <tr key={proj.id}
@@ -560,8 +584,8 @@ export default function AnalisiPage() {
                 <td style={tdSt}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ fontWeight:600, color: isOrphan ? T.muted : T.ink }}>{proj.name}</div>
-                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>archiviato</span>}
-                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`0.5px solid ${T.border}`, padding:'1px 5px' }}>non collegato</span>}
+                    {proj.archived && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>archiviato</span>}
+                    {isOrphan && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>non collegato</span>}
                   </div>
                   {proj.client && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{proj.client}</div>}
                 </td>
@@ -587,8 +611,8 @@ export default function AnalisiPage() {
 
       {/* ── PANEL COSTI ORARI ── */}
       {costiPanel && (
-        <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28, maxHeight:'85vh', overflowY:'auto' }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'85vh', overflowY:'auto' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Costi orari del team</div>
@@ -599,7 +623,7 @@ export default function AnalisiPage() {
 
             <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
               {members.map(m => (
-                <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:T.surface2, border:`0.5px solid ${T.border}` }}>
+                <div key={m.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:T.surface2, border:`1px solid ${T.border}` }}>
                   <div style={{ width:32, height:32, borderRadius:'50%', background:m.color||T.navy, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:600, color:'#fff', flexShrink:0 }}>
                     {(m.user_name||'?').slice(0,2).toUpperCase()}
                   </div>
@@ -613,7 +637,7 @@ export default function AnalisiPage() {
                       type="number" min={0} step={0.5}
                       value={editCosti[m.id]??0}
                       onChange={e => setEditCosti(p=>({...p,[m.id]:e.target.value}))}
-                      style={{ width:70, padding:'6px 8px', border:`0.5px solid ${T.borderMd}`, background:T.inputBg, color:T.inputText, fontSize:13, ...mono, outline:'none', textAlign:'right' }}
+                      style={{ width:70, padding:'6px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, ...mono, outline:'none', textAlign:'right' }}
                     />
                     <span style={{ ...mono, fontSize:11, color:T.muted }}>/h</span>
                   </div>
@@ -622,7 +646,7 @@ export default function AnalisiPage() {
             </div>
 
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setCostiPanel(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+              <button onClick={()=>setCostiPanel(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
                 Annulla
               </button>
               <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background:T.navy, border:'none', color:T.bg, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:savingCosti?'not-allowed':'pointer', opacity:savingCosti?0.6:1 }}>

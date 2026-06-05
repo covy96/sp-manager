@@ -48,8 +48,11 @@ function KpiCard({ label, value, note, valueColor }) {
   return (
     <div style={{
       background: T.surface,
-      border: `0.5px solid ${T.border}`,
+      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radius,
       padding: '18px 20px',
+      boxShadow: T.shadow,
     }}>
       <div style={{
         fontFamily: "'IBM Plex Mono', monospace",
@@ -75,8 +78,11 @@ function Panel({ title, children }) {
   return (
     <div style={{
       background: T.surface,
-      border: `0.5px solid ${T.border}`,
+      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radius,
       padding: '20px 22px',
+      boxShadow: T.shadow,
     }}>
       <div style={{
         fontSize: 13, fontWeight: 600,
@@ -120,7 +126,7 @@ function TaskRow({ task, onToggle, overdue }) {
         onMouseLeave={() => setHover(false)}
         style={{
           width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.borderMd}`,
+          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
           background: done ? T.navy : 'transparent',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 0,
@@ -365,7 +371,7 @@ export default function DashboardPage() {
 
         {/* Toggle scope — solo per owner con team */}
         {permissions.isOwner && (
-          <div style={{ display: 'flex', border: `0.5px solid ${T.borderMd}`, overflow: 'hidden', alignSelf: 'flex-start', marginTop: 4 }}>
+          <div style={{ display: 'flex', border: `1px solid ${T.borderMd}`, overflow: 'hidden', alignSelf: 'flex-start', marginTop: 4 }}>
             {[["mine", "Solo miei"], ["all", "Tutto lo studio"]].map(([s, label]) => (
               <button key={s} onClick={() => setScope(s)} style={{
                 padding: '6px 14px', border: 'none', cursor: 'pointer',

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import SlidingTabs from "../components/SlidingTabs";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePermissions } from "../hooks/usePermissions";
@@ -46,7 +47,7 @@ function csvEscape(v) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{value}</div>
       {sub && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>{sub}</div>}
@@ -256,28 +257,23 @@ export default function ReportPage() {
   };
 
   if (!studioLoading && !permissions.canViewReport) return (
-    <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
         {/* Riga 1: toggle + esporta */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
           {/* Toggle mese/settimana */}
-          <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-            {[["month","Mensile"],["week","Settimanale"]].map(([m,label])=>(
-              <button key={m} onClick={()=>setMode(m)} style={{
-                padding:'6px 14px', border:'none', background: mode===m ? T.navy : 'transparent',
-                color: mode===m ? T.bg : T.muted,
-                fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-                cursor:'pointer',
-              }}>{label}</button>
-            ))}
-          </div>
+          <SlidingTabs
+            tabs={[{ key:"month", label:"Mensile" }, { key:"week", label:"Settimanale" }]}
+            active={mode}
+            onChange={setMode}
+          />
 
           {/* Esporta */}
           <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
@@ -287,12 +283,12 @@ export default function ReportPage() {
 
         {/* Riga 2: navigazione periodo */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
+          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
           <div style={{ flex:1, fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center' }}>
             {periodLabel}
           </div>
-          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
-          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
+          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
         </div>
       </div>
 
@@ -318,7 +314,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10 }}>
 
         {/* Andamento temporale */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px', position:'relative' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 18px', position:'relative' }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
             <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
@@ -337,12 +333,18 @@ export default function ReportPage() {
         </div>
 
         {/* Grafico per vista selezionata */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'16px 18px' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Tab vista */}
-          <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:14 }}>
-            <TabBtn active={view==="progetto"} onClick={()=>setView("progetto")}>Per progetto</TabBtn>
-            <TabBtn active={view==="cliente"}  onClick={()=>setView("cliente")}>Per cliente</TabBtn>
-            <TabBtn active={view==="utente"}   onClick={()=>setView("utente")}>Per utente</TabBtn>
+          <div style={{ marginBottom:14 }}>
+            <SlidingTabs
+              tabs={[
+                { key:"progetto", label:"Per progetto" },
+                { key:"cliente",  label:"Per cliente" },
+                { key:"utente",   label:"Per utente" },
+              ]}
+              active={view}
+              onChange={setView}
+            />
           </div>
           <div style={{ height:200 }}>
             {chartData.length === 0 ? (
@@ -368,7 +370,7 @@ export default function ReportPage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
 
         {/* Tabella ore per utente — sticky left */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
@@ -395,7 +397,7 @@ export default function ReportPage() {
         </div>
 
         {/* Tabella ore per progetto */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, overflowX:'auto' }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per progetto
           </div>
@@ -435,7 +437,7 @@ export default function ReportPage() {
       )}
 
       {error && (
-        <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
+        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
           {error}
         </div>
       )}
@@ -454,7 +456,7 @@ export default function ReportPage() {
               top:  Math.max(barPopup.y - 20, 80),
               width: 260,
               background: T.surface,
-              border: `0.5px solid ${T.borderMd}`,
+              border: `1px solid ${T.borderMd}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, 
               boxShadow: `0 8px 24px rgba(0,0,0,0.14)`,
               zIndex: 61,
             }}

@@ -126,7 +126,7 @@ export default function CestinoPage() {
       {loading ? (
         <div style={{ ...mono, fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : totalItems === 0 ? (
-        <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '48px 0', textAlign: 'center' }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '48px 0', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🗑</div>
           <div style={{ ...mono, fontSize: 11, color: T.muted }}>Il cestino è vuoto</div>
         </div>
@@ -136,7 +136,7 @@ export default function CestinoPage() {
             const { items } = byCategory[cat.id];
             const isOpen = !collapsed[cat.id];
             return (
-              <div key={cat.id} style={{ border: `0.5px solid ${T.border}`, background: T.surface, overflow: 'hidden' }}>
+              <div key={cat.id} style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, overflow: 'hidden' }}>
                 <button
                   onClick={() => toggleCollapse(cat.id)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: T.bg, border: 'none', cursor: 'pointer', borderBottom: isOpen ? `0.5px solid ${T.border}` : 'none' }}
@@ -144,7 +144,7 @@ export default function CestinoPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 16 }}>{cat.icon}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{cat.label}</span>
-                    <span style={{ ...mono, fontSize: 9, color: T.muted, background: T.surface2, border: `0.5px solid ${T.border}`, padding: '2px 7px' }}>
+                    <span style={{ ...mono, fontSize: 9, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '2px 7px' }}>
                       {items.length}
                     </span>
                   </div>
@@ -166,11 +166,11 @@ export default function CestinoPage() {
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                           <button onClick={() => handleRestore(item)} disabled={restoring === item.id}
-                            style={{ border: `0.5px solid ${T.green}`, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.green}`, borderRadius: T.radiusSm, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Ripristina
                           </button>
                           <button onClick={() => handleDeleteForever(item)} disabled={restoring === item.id}
-                            style={{ border: `0.5px solid ${T.red}`, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Elimina
                           </button>
                         </div>

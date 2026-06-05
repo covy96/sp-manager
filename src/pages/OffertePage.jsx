@@ -259,7 +259,7 @@ export default function OffertePage() {
   const totaleAnno   = offerteAnno.length;
 
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
   const labelSt = { ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
@@ -268,50 +268,52 @@ export default function OffertePage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink, marginBottom:4 }}>Offerte</div>
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
-        <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer' }}>
-          + Nuova offerta
-        </button>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
+            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+          <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+            + Nuova offerta
+          </button>
+        </div>
       </div>
 
-      {/* KPI */}
+      {/* KPI — cliccabili come filtri */}
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap:10 }}>
         {[
-          { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink  },
-          { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink  },
-          { label:'Accettate',   value:nAccettate,  sub:currency(valAccettate), color:T.green},
-          { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted},
-          { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy },
-        ].map((k,i)=>(
-          <div key={i} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-            <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{k.label}</div>
-            <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:k.color }}>{k.value}</div>
-            {k.sub && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{k.sub}</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Filtri */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-        <div style={{ display:'flex', border:`0.5px solid ${T.borderMd}`, overflow:'hidden' }}>
-          {[['tutti','Tutte'],['offerta','In corso'],['accettata','Accettate'],['rifiutata','Rifiutate']].map(([id,label])=>(
-            <button key={id} onClick={()=>setFiltroStato(id)} style={{
-              padding:'7px 16px', border:'none', cursor:'pointer',
-              background: filtroStato===id ? T.navy : 'transparent',
-              color: filtroStato===id ? '#EEF1F6' : T.muted,
-              ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-            }}>{label}</button>
-          ))}
-        </div>
-        <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-          style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
-          <option value={0}>Tutti gli anni</option>
-          {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
-        </select>
+          { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink,   filtro:'tutti'     },
+          { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink,   filtro:'offerta'   },
+          { label:'Accettate',   value:nAccettate,  sub:currency(valAccettate), color:T.green, filtro:'accettata' },
+          { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted, filtro:'rifiutata' },
+          { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy, filtro:null },
+        ].map((k,i)=>{
+          const isActive = k.filtro && filtroStato === k.filtro;
+          return (
+            <div key={i}
+              onClick={() => k.filtro && setFiltroStato(k.filtro)}
+              className={k.filtro ? 'asm-card' : ''}
+              style={{
+                background: isActive ? T.navyLight : T.surface,
+                border: `${isActive ? '2px' : '1px'} solid ${isActive ? T.navy : T.border}`,
+                padding:'16px 20px', borderRadius:T.radius,
+                backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm,
+                boxShadow: isActive ? T.shadowMd : T.shadow,
+                cursor: k.filtro ? 'pointer' : 'default',
+                transition:'all 0.18s',
+              }}>
+              <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
+              <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color: isActive ? T.navy : k.color }}>{k.value}</div>
+              {k.sub && <div style={{ ...mono, fontSize:10, color: isActive ? T.navy : T.muted, marginTop:4 }}>{k.sub}</div>}
+            </div>
+          );
+        })}
       </div>
 
       {/* Lista offerte */}
@@ -458,7 +460,7 @@ export default function OffertePage() {
                     {serviceTemplates.length > 0 && (
                       <div>
                         <label style={labelSt}>Servizi</label>
-                        <div style={{ border:`1px solid ${T.border}`, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
                           {serviceTemplates.map(s => {
                             const selected = (form.nuovoProgettoServizi||[]).includes(s.service_name);
                             return (
@@ -491,7 +493,7 @@ export default function OffertePage() {
               {formError && <div style={{ ...mono, fontSize:11, color:T.red }}>{formError}</div>}
 
               <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
                 <button type="submit" disabled={saving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving?'not-allowed':'pointer', opacity:saving?0.6:1 }}>
                   {saving?'Salvataggio...':'Crea offerta'}
                 </button>
@@ -512,7 +514,7 @@ export default function OffertePage() {
               Hai modificato il valore rispetto all'offerta originale.<br/>
               Vuoi allineare anche il valore dell'offerta a quello della commessa?
             </div>
-            <div style={{ background:T.bg, border:`1px solid ${T.border}`, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
+            <div style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
               <div>
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
@@ -532,7 +534,7 @@ export default function OffertePage() {
                 {saving ? 'Creazione...' : 'Sì, aggiorna offerta'}
               </button>
               <button onClick={() => _doCreaNcommessa(false)} disabled={saving}
-                style={{ flex:1, background:'transparent', color:T.ink, border:`0.5px solid ${T.borderMd}`, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
+                style={{ flex:1, background:'transparent', color:T.ink, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
                 No, mantieni offerta
               </button>
             </div>
@@ -599,7 +601,7 @@ export default function OffertePage() {
               </div>
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
               <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Creazione...':'Crea commessa →'}
               </button>

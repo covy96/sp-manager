@@ -9,6 +9,7 @@ import { ROLE_OPTIONS, ROLE_LABELS, ROLE_DESCRIPTIONS, PERMISSION_SECTIONS } fro
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
+import SlidingTabs from "../components/SlidingTabs";
 
 // ── COLORI / HELPERS ─────────────────────────────────────────────
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
@@ -64,7 +65,7 @@ function Input({ value, onChange, type = "text", required }) {
   return (
     <input type={type} value={value} onChange={onChange} required={required}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${focus ? T.navy : T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }} />
+      style={{ width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }} />
   );
 }
 function BtnPrimary({ children, onClick, disabled, type = "button" }) {
@@ -78,7 +79,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button" }) {
 function BtnGhost({ children, onClick, disabled }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );
@@ -265,7 +266,7 @@ export default function TeamPage() {
   const isOwnProfile = selectedMember?.id === currentMember?.id;
 
   // ── stili comuni ──────────────────────────────────────────────────
-  const statSt  = { background:T.bg, border:`0.5px solid ${T.border}`, padding:'10px 12px' };
+  const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
   const statLbl = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 };
   const statVal = { fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.03em', fontFamily:"'Space Grotesk', sans-serif" };
   const tabBtn  = (active) => ({ padding:'7px 14px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
@@ -274,7 +275,7 @@ export default function TeamPage() {
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Caricamento team...</div>
   );
   if (error) return (
-    <div style={{ border:`0.5px solid ${T.border}`, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
+    <div style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
   );
 
   return (
@@ -295,7 +296,7 @@ export default function TeamPage() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             {Array.from({ length:5 }, (_, i) => new Date().getFullYear() - i).map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -312,15 +313,15 @@ export default function TeamPage() {
       {!selectedMember ? (
 
         /* ── CARD GRID ── */
-        <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
+        <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
           {cards.length === 0 ? (
-            <div style={{ gridColumn:'1/-1', background:T.surface, border:`0.5px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+            <div style={{ gridColumn:'1/-1', background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, borderRadius:T.radius }}>
               Nessun membro presente.
             </div>
           ) : cards.map(({ member:m, stats:s, progress }) => (
             <div key={m.id}
               onClick={() => canEditRoles ? openMember(m) : undefined}
-              style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s' }}
+              className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}
               onMouseEnter={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.navy; }}
               onMouseLeave={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.border; }}
             >
@@ -368,7 +369,7 @@ export default function TeamPage() {
               const isSel = selectedMember?.id === m.id;
               return (
                 <button key={m.id} onClick={() => isSel ? setSelectedMember(null) : openMember(m)}
-                  style={{ display:'flex', alignItems:'center', gap:10, background:isSel ? T.navyLight : T.surface, border:`0.5px solid ${isSel ? T.navy : T.border}`, padding:'11px 13px', cursor:'pointer', textAlign:'left', transition:'all 0.1s' }}
+                  style={{ display:'flex', alignItems:'center', gap:10, background:isSel ? T.navyLight : T.surface, border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, padding:'11px 13px', cursor:'pointer', textAlign:'left', transition:'all 0.1s' }}
                   onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = T.bg; }}
                   onMouseLeave={e => { e.currentTarget.style.background = isSel ? T.navyLight : T.surface; }}
                 >
@@ -397,7 +398,7 @@ export default function TeamPage() {
             const hasCustom = selectedMember?.custom_permissions && Object.keys(selectedMember.custom_permissions).length > 0;
 
             return (
-              <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, padding:'20px 22px' }}>
+              <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
                 {/* Header membro */}
                 <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:18, paddingBottom:16, borderBottom:`0.5px solid ${T.border}` }}>
@@ -427,10 +428,16 @@ export default function TeamPage() {
 
                 {/* Tabs gestione */}
                 <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
-                  <div style={{ display:'flex', borderBottom:`0.5px solid ${T.border}`, marginBottom:18 }}>
-                    <button onClick={() => setActiveTab("role")}  style={tabBtn(activeTab === "role")}>Ruolo</button>
-                    <button onClick={() => setActiveTab("perms")} style={tabBtn(activeTab === "perms")}>Permessi</button>
-                    <button onClick={() => setActiveTab("color")} style={tabBtn(activeTab === "color")}>Colore</button>
+                  <div style={{ marginBottom:18 }}>
+                    <SlidingTabs
+                      tabs={[
+                        { key:"role",  label:"Ruolo" },
+                        { key:"perms", label:"Permessi" },
+                        { key:"color", label:"Colore" },
+                      ]}
+                      active={activeTab}
+                      onChange={setActiveTab}
+                    />
                   </div>
 
                   {/* ── TAB: Ruolo ── */}
@@ -453,7 +460,7 @@ export default function TeamPage() {
                           const perms = PERM_SUMMARY[role] || [];
                           return (
                             <button key={role} onClick={() => canClick && setEditRole(role)}
-                              style={{ padding:'10px 13px', border:`0.5px solid ${isSel ? T.navy : T.border}`, background:isSel ? T.navyLight : T.surface, cursor:canClick ? 'pointer' : 'not-allowed', textAlign:'left', opacity:canEditRoles ? 1 : 0.6 }}>
+                              style={{ padding:'10px 13px', border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, background:isSel ? T.navyLight : T.surface, cursor:canClick ? 'pointer' : 'not-allowed', textAlign:'left', opacity:canEditRoles ? 1 : 0.6 }}>
                               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:3 }}>
                                 <span style={{ fontSize:12, fontWeight:600, color:isSel ? T.navy : T.ink }}>{ROLE_LABELS[role]}</span>
                                 {isSel && <span style={{ color:T.navy, fontSize:12 }}>✓</span>}
@@ -489,7 +496,7 @@ export default function TeamPage() {
                                   {removing ? "Rimozione..." : "Sì, elimina"}
                                 </button>
                                 <button onClick={() => setConfirmRemove(false)}
-                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>
+                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>
                                   Annulla
                                 </button>
                               </div>
@@ -521,7 +528,7 @@ export default function TeamPage() {
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                         {PERMISSION_SECTIONS.map(section => (
-                          <div key={section.label} style={{ border:`0.5px solid ${T.border}`, background:T.bg }}>
+                          <div key={section.label} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg }}>
                             <div style={{ padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>
                               {section.label}
                             </div>
@@ -556,7 +563,7 @@ export default function TeamPage() {
                               setSelectedMember(p => ({ ...p, custom_permissions:null }));
                               setEditPerms({});
                               setSaving(false);
-                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 14px', cursor:'pointer' }}>
+                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 14px', cursor:'pointer' }}>
                               Ripristina defaults
                             </button>
                           )}
@@ -580,8 +587,8 @@ export default function TeamPage() {
                       <div style={{ marginBottom:14 }}>
                         <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Personalizzato</div>
                         <div style={{ display:'flex', gap:8 }}>
-                          <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width:38, height:34, border:`0.5px solid ${T.borderMd}`, cursor:'pointer', padding:2 }}/>
-                          <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ flex:1, padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono', monospace", outline:'none' }}/>
+                          <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width:38, height:34, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', padding:2 }}/>
+                          <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ flex:1, padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono', monospace", outline:'none' }}/>
                         </div>
                       </div>
                       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
@@ -607,8 +614,8 @@ export default function TeamPage() {
 
       {/* ── MODALE AGGIUNGI MEMBRO ── */}
       {modalOpen && (
-        <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:`${T.ink}80`, padding:16 }}>
-          <div style={{ width:'100%', maxWidth:480, background:T.surface, border:`0.5px solid ${T.borderMd}`, padding:28 }}>
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Aggiungi Membro</div>
               <button onClick={() => { if (!saving) setModalOpen(false); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
@@ -619,7 +626,7 @@ export default function TeamPage() {
               <div>
                 <FieldLabel>Ruolo *</FieldLabel>
                 <select value={formData.role_internal} onChange={e => setFormData(p => ({ ...p, role_internal:e.target.value }))} required
-                  style={{ width:'100%', padding:'8px 12px', border:`0.5px solid ${T.borderMd}`, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }}>
+                  style={{ width:'100%', padding:'8px 12px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }}>
                   {ROLE_OPTIONS.filter(r => r !== "Owner").map(r => (
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}

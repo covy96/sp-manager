@@ -14,7 +14,7 @@ function Input({ value, onChange, type = "text", placeholder, disabled }) {
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `0.5px solid ${focus ? T.navy : T.borderMd}`, background: disabled ? T.bg : T.inputBg, color: disabled ? T.muted : T.inputText, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `1px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: disabled ? T.bg : T.inputBg, color: disabled ? T.muted : T.inputText, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: disabled ? 'not-allowed' : 'auto' }} />
   );
 }
 function BtnPrimary({ children, type = "button", onClick, disabled }) {
@@ -28,7 +28,7 @@ function BtnPrimary({ children, type = "button", onClick, disabled }) {
 function Panel({ title, subtitle, children }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `0.5px solid ${T.border}`, padding: '20px 22px', marginBottom: 14 }}>
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 22px', marginBottom: 14 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>{title}</div>
       {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 18 }}>{subtitle}</div>}
       {children}
@@ -135,7 +135,7 @@ export default function ProfiloPage() {
               }}
               style={{
                 background: notifEnabled ? T.greenLight : T.navy, color: notifEnabled ? T.green : T.bg,
-                border: `0.5px solid ${notifEnabled ? T.green : T.navy}`,
+                border: `1px solid ${notifEnabled ? T.green : T.navy}`, borderRadius: T.radiusSm,
                 fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
                 padding: '7px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,
               }}>
