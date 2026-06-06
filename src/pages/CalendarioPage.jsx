@@ -485,68 +485,67 @@ export default function CalendarioPage() {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-      {/* ── TOOLBAR ── */}
-      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+      {/* ── TOOLBAR — riga unica ── */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
 
-        {/* Riga 1: SlidingTabs + filtro utenti */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
-          <SlidingTabs
-            tabs={tabs}
-            active={viewMode}
-            onChange={key => { setViewMode(key); if (key==="today") setRefDate(new Date(now)); }}
-          />
+        {/* SlidingTabs vista */}
+        <SlidingTabs
+          tabs={tabs}
+          active={viewMode}
+          onChange={key => { setViewMode(key); if (key==="today") setRefDate(new Date(now)); }}
+          style={{ flexShrink:0 }}
+        />
 
-          {/* Filtro utenti — stile ProjectsPage */}
-          <div ref={filterRef} style={{ position:'relative', flexShrink:0 }}>
-            <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
-              display:'flex', alignItems:'center', gap:6,
-              border:`0.5px solid ${selectedMembers.length>0 ? T.navy : T.borderMd}`,
-              borderRadius: T.radiusSm,
-              background: selectedMembers.length>0 ? T.navyLight : 'transparent',
-              padding:'7px 14px', cursor:'pointer',
-              fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
-              letterSpacing:'0.08em', textTransform:'uppercase',
-              color: selectedMembers.length>0 ? T.navy : T.ink,
-            }}>
-              {selectedMembers.length>0 ? `Utenti (${selectedMembers.length})` : `Utenti`}
-            </button>
-
-            {showMemberFilter && (
-              <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`1px solid ${T.borderMd}`, zIndex:30 }}>
-                <div style={{ padding:8, maxHeight:240, overflowY:'auto' }}>
-                  {teamMembers.map(m=>(
-                    <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
-                      <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
-                      <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:'#fff',flexShrink:0 }}>
-                        {getInitials(m.user_name||m.user_email)}
-                      </div>
-                      <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>
-                    </label>
-                  ))}
-                </div>
-                {selectedMembers.length>0 && (
-                  <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.border}` }}>
-                    <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
-                      Rimuovi filtri
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Riga 2: navigazione periodo */}
+        {/* Navigazione periodo */}
         {viewMode!=="today" && (
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
-            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', flex:1, textAlign:'center' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, flex:1, justifyContent:'center', minWidth:0 }}>
+            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:13, flexShrink:0 }}>←</button>
+            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 12 : 13, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0 }}>
               {periodLabel}
             </div>
-            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
+            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:13, flexShrink:0 }}>→</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'4px 8px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', whiteSpace:'nowrap', flexShrink:0 }}>Oggi</button>
           </div>
         )}
+
+        {/* Filtro utenti */}
+        <div ref={filterRef} style={{ position:'relative', flexShrink:0, marginLeft:'auto' }}>
+          <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
+            display:'flex', alignItems:'center', gap:6,
+            border:`0.5px solid ${selectedMembers.length>0 ? T.navy : T.borderMd}`,
+            borderRadius: T.radiusSm,
+            background: selectedMembers.length>0 ? T.navyLight : 'transparent',
+            padding:'7px 14px', cursor:'pointer',
+            fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
+            letterSpacing:'0.08em', textTransform:'uppercase',
+            color: selectedMembers.length>0 ? T.navy : T.ink,
+          }}>
+            {selectedMembers.length>0 ? `Utenti (${selectedMembers.length})` : `Utenti`}
+          </button>
+
+          {showMemberFilter && (
+            <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`1px solid ${T.borderMd}`, zIndex:30 }}>
+              <div style={{ padding:8, maxHeight:240, overflowY:'auto' }}>
+                {teamMembers.map(m=>(
+                  <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
+                    <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
+                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:'#fff',flexShrink:0 }}>
+                      {getInitials(m.user_name||m.user_email)}
+                    </div>
+                    <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedMembers.length>0 && (
+                <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.border}` }}>
+                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
+                    Rimuovi filtri
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── CONTENUTO ── */}
