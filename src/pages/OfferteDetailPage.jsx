@@ -45,15 +45,20 @@ export default function OfferteDetailPage() {
     ]);
     setOfferta(off);
     setProgetti(proj??[]);
-    if (off) setForm({
-      nome_offerta: off.nome_offerta,
-      cliente: off.cliente,
-      project_id: off.project_id||'',
-      data_offerta: off.data_offerta||'',
-      importo_offerta_base: off.importo_offerta_base,
-      note: off.note||'',
-      numero_offerta: off.numero_offerta,
-    });
+    if (off) {
+      const vociSalvate = Array.isArray(off.voci) && off.voci.length > 0
+        ? off.voci
+        : [{ id:'legacy', nome: off.nome_offerta||'Prestazione', prezzo: Number(off.importo_offerta_base)||0, attiva:true }];
+      setForm({
+        nome_offerta: off.nome_offerta,
+        cliente: off.cliente,
+        project_id: off.project_id||'',
+        data_offerta: off.data_offerta||'',
+        voci: vociSalvate,
+        note: off.note||'',
+        numero_offerta: off.numero_offerta,
+      });
+    }
     setLoading(false);
   };
 
@@ -62,13 +67,16 @@ export default function OfferteDetailPage() {
   const handleSave = async () => {
     setSaving(true);
     const proj = progetti.find(p=>p.id===form.project_id);
+    const totale = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
       cliente: form.cliente,
       project_id: form.project_id||null,
       project_name: proj?.name||null,
       data_offerta: form.data_offerta||null,
-      importo_offerta_base: Number(form.importo_offerta_base),
+      importo_offerta_base: totale,
+      voci: form.voci||[],
+      importo_totale: totale,
       note: form.note||null,
       numero_offerta: form.numero_offerta,
     }).eq("id",id);
@@ -96,12 +104,15 @@ export default function OfferteDetailPage() {
   };
 
   const openAccetta = () => {
+    const vociSalvate = Array.isArray(offerta.voci) && offerta.voci.length > 0
+      ? offerta.voci.map(v=>({...v, attiva: v.attiva!==false}))
+      : [{ id:'legacy', nome: offerta.nome_offerta||'Prestazione', prezzo: Number(offerta.importo_offerta_base)||0, attiva:true }];
     setAccettaForm({
       nome_commessa: offerta.nome_offerta,
       cliente: offerta.cliente,
       project_id: offerta.project_id||'',
       data_commessa: new Date().toISOString().slice(0,10),
-      importo_offerta_base: offerta.importo_offerta_base,
+      voci: vociSalvate,
       numero_offerta: offerta.numero_offerta,
     });
     setAccettaModal(true);
@@ -129,6 +140,7 @@ export default function OfferteDetailPage() {
       await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', id);
     }
 
+    const totaleAccetta = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const { data:commessa, error } = await supabase.from("commesse").insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -137,16 +149,16 @@ export default function OfferteDetailPage() {
       project_id: projectId,
       project_name: projectName,
       data_commessa: accettaForm.data_commessa || new Date().toISOString().slice(0,10),
-      importo_offerta_base: Number(accettaForm.importo_offerta_base),
+      importo_offerta_base: totaleAccetta,
       perc_iva1:60, perc_contributo1:5, perc_iva2:40, perc_contributo2:4, perc_iva_finale:22,
-      importo_totale: Number(accettaForm.importo_offerta_base),
+      importo_totale: totaleAccetta,
       stato_pagamento: 'non_iniziato',
     }).select().single();
     if (error) { alert('Errore: '+error.message); setSaving(false); return; }
 
     // Aggiorna stato offerta (e valore se richiesto)
     const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
-    if (aggiornaOfferta) offerUpdate.importo_offerta_base = Number(accettaForm.importo_offerta_base);
+    if (aggiornaOfferta) { offerUpdate.importo_offerta_base = totaleAccetta; offerUpdate.voci = accettaForm.voci; }
     await supabase.from("offerte").update(offerUpdate).eq("id",id);
 
     setSaving(false);
@@ -156,9 +168,8 @@ export default function OfferteDetailPage() {
   };
 
   const handleConfermaAccetta = async () => {
-    // Se il valore è stato modificato rispetto all'offerta originale, chiedi se allineare
     const valoreOriginale = Number(offerta.importo_offerta_base);
-    const valoreNuovo = Number(accettaForm.importo_offerta_base);
+    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);
@@ -233,9 +244,30 @@ export default function OfferteDetailPage() {
                   {progetti.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={labelSt}>Importo base (€)</label>
-                <input type="number" value={form.importo_offerta_base} onChange={e=>setForm(p=>({...p,importo_offerta_base:e.target.value}))} style={inputSt}/>
+              <div style={{ gridColumn:'span 2' }}>
+                <label style={labelSt}>Voci offerta</label>
+                <div style={{ border:`1px solid ${T.border}`, borderRadius:T.radiusSm, overflow:'hidden', marginBottom:8 }}>
+                  {(form.voci||[]).map((v,i)=>(
+                    <div key={v.id||i} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderBottom:i<(form.voci||[]).length-1?`0.5px solid ${T.border}`:'none', background:v.attiva?'transparent':T.surface2 }}>
+                      <input type="checkbox" checked={v.attiva!==false} onChange={()=>setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,attiva:!x.attiva}:x)}))} style={{accentColor:T.navy,width:13,height:13,flexShrink:0}}/>
+                      <input type="text" value={v.nome} onChange={e=>{const val=e.target.value;setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,nome:val}:x)}));}} style={{...inputSt,flex:1,padding:'4px 8px',fontSize:12,opacity:v.attiva!==false?1:0.5}}/>
+                      <input type="number" value={v.prezzo} onChange={e=>{const val=e.target.value;setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,prezzo:val}:x)}));}} style={{...inputSt,width:110,padding:'4px 8px',fontSize:12,textAlign:'right',opacity:v.attiva!==false?1:0.5}} placeholder="€"/>
+                      <button type="button" onClick={()=>setForm(p=>({...p,voci:p.voci.filter((_,j)=>j!==i)}))} style={{background:'none',border:'none',cursor:'pointer',color:T.red,fontSize:14,flexShrink:0,padding:'0 4px'}}>×</button>
+                    </div>
+                  ))}
+                  {(form.voci||[]).length===0 && <div style={{padding:'14px',textAlign:'center',...mono,fontSize:10,color:T.muted}}>Nessuna voce</div>}
+                </div>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
+                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,...mono,fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
+                    + Aggiungi riga
+                  </button>
+                  {(form.voci||[]).length>0 && (
+                    <span style={{...mono,fontSize:13,fontWeight:700,color:T.navy}}>
+                      Totale: {currency((form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0))}
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={{ gridColumn:'span 2' }}>
                 <label style={labelSt}>Note</label>
@@ -250,20 +282,37 @@ export default function OfferteDetailPage() {
             </div>
           </div>
         ) : (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
-            {[
-              ['N° Offerta', offerta.numero_offerta],
-              ['Data offerta', offerta.data_offerta ? new Date(offerta.data_offerta).toLocaleDateString('it-IT') : '—'],
-              ['Cliente', offerta.cliente],
-              ['Progetto', offerta.project_name||'—'],
-              ['Importo base', currency(offerta.importo_offerta_base)],
-              ['Note', offerta.note||'—'],
-            ].map(([l,v])=>(
-              <div key={l}>
-                <div style={{ ...labelSt, marginBottom:4 }}>{l}</div>
-                <div style={{ fontSize:14, color:T.ink, fontWeight: l==='Importo base'?600:400 }}>{v}</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
+              {[
+                ['N° Offerta', offerta.numero_offerta],
+                ['Data offerta', offerta.data_offerta ? new Date(offerta.data_offerta).toLocaleDateString('it-IT') : '—'],
+                ['Cliente', offerta.cliente],
+                ['Progetto', offerta.project_name||'—'],
+                ['Note', offerta.note||'—'],
+              ].map(([l,v])=>(
+                <div key={l}>
+                  <div style={{ ...labelSt, marginBottom:4 }}>{l}</div>
+                  <div style={{ fontSize:14, color:T.ink }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {/* Voci offerta */}
+            <div>
+              <div style={{ ...labelSt, marginBottom:8 }}>Voci offerta</div>
+              <div style={{ border:`1px solid ${T.border}`, borderRadius:T.radiusSm, overflow:'hidden' }}>
+                {(Array.isArray(offerta.voci) && offerta.voci.length > 0 ? offerta.voci : [{ nome: offerta.nome_offerta||'Prestazione', prezzo: offerta.importo_offerta_base, attiva:true }]).map((v,i,arr) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:i<arr.length-1?`0.5px solid ${T.border}`:'none', background:v.attiva!==false?'transparent':T.surface2, opacity:v.attiva!==false?1:0.45 }}>
+                    <span style={{ fontSize:13, color:T.ink }}>{v.nome}</span>
+                    <span style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(v.prezzo)}</span>
+                  </div>
+                ))}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', background:T.bg, borderTop:`1px solid ${T.border}` }}>
+                  <span style={{ ...mono, fontSize:10, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Totale</span>
+                  <span style={{ ...mono, fontSize:16, fontWeight:700, color:T.navy }}>{currency(offerta.importo_offerta_base)}</span>
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
@@ -318,8 +367,20 @@ export default function OfferteDetailPage() {
                 <input type="date" value={accettaForm.data_commessa} onChange={e=>setAccettaForm(p=>({...p,data_commessa:e.target.value}))} style={inputSt}/>
               </div>
               <div>
-                <label style={labelSt}>Importo base (€)</label>
-                <input type="number" value={accettaForm.importo_offerta_base} onChange={e=>setAccettaForm(p=>({...p,importo_offerta_base:e.target.value}))} style={inputSt}/>
+                <label style={labelSt}>Voci da confermare</label>
+                <div style={{border:`1px solid ${T.border}`,borderRadius:T.radiusSm,overflow:'hidden',marginBottom:8}}>
+                  {(accettaForm.voci||[]).map((v,i)=>(
+                    <div key={v.id||i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderBottom:i<(accettaForm.voci||[]).length-1?`0.5px solid ${T.border}`:'none',background:v.attiva!==false?'transparent':T.surface2}}>
+                      <input type="checkbox" checked={v.attiva!==false} onChange={()=>setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,attiva:!x.attiva}:x)}))} style={{accentColor:T.navy,width:13,height:13,flexShrink:0}}/>
+                      <span style={{flex:1,fontSize:12,color:v.attiva!==false?T.ink:T.muted,opacity:v.attiva!==false?1:0.5}}>{v.nome}</span>
+                      <input type="number" value={v.prezzo} onChange={e=>{const val=e.target.value;setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,prezzo:val}:x)}));}} style={{...inputSt,width:110,padding:'4px 8px',fontSize:12,textAlign:'right',opacity:v.attiva!==false?1:0.5}} placeholder="€"/>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:10}}>
+                  <span style={{...mono,fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
+                  <span style={{...mono,fontSize:15,fontWeight:700,color:T.navy}}>{currency((accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0))}</span>
+                </div>
               </div>
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
@@ -355,7 +416,7 @@ export default function OfferteDetailPage() {
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
-                  €{Number(accettaForm.importo_offerta_base).toLocaleString('it-IT', { minimumFractionDigits:2 })}
+                  {currency((accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0))}
                 </div>
               </div>
             </div>
