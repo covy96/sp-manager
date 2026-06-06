@@ -6,6 +6,7 @@ import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { handleListKeyDown } from "../lib/listKeyDown";
 
 const NOTE_COLORS = [
   '#FFF9C4','#F8BBD0','#C8E6C9','#BBDEFB','#E1BEE7','#FFE0B2','#FFFFFF',
@@ -243,6 +244,7 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
         value={content}
         onFocus={() => { if (!isTyping.current && onRefresh) onRefresh(); }}
         onChange={e => { if (!canEdit) return; setContent(e.target.value); saveContent(e.target.value); }}
+        onKeyDown={e => canEdit && handleListKeyDown(e, content, val => { setContent(val); saveContent(val); })}
         readOnly={!canEdit}
         placeholder={canEdit ? "Inizia a scrivere..." : ""}
         style={{

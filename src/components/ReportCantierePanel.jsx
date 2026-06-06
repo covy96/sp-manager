@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { registerGroteskaFonts, GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import { handleListKeyDown } from "../lib/listKeyDown";
 import { useStudio } from "../hooks/useStudio";
 
 // Registra i font Groteska globalmente (una volta sola)
@@ -1267,7 +1268,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Contenuto */}
               <div>
                 <FL>Contenuto del report</FL>
-                <textarea value={form.contenuto} onChange={e=>setForm(f=>({...f,contenuto:e.target.value}))}
+                <textarea value={form.contenuto} onChange={e=>setForm(f=>({...f,contenuto:e.target.value}))} onKeyDown={e=>handleListKeyDown(e,form.contenuto,val=>setForm(f=>({...f,contenuto:val})))}
                   placeholder="Descrivi cosa è stato verificato, le prescrizioni operative, l'esito del sopralluogo..."
                   rows={10} style={{ ...inputSt, resize:'vertical', minHeight:180, lineHeight:1.6 }}/>
               </div>
