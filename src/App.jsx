@@ -12,6 +12,7 @@ import MonitoraggioCommessePage from "./pages/MonitoraggioCommessePage";
 import MyTasksPage from "./pages/MyTasksPage";
 import GanttPage from "./pages/GanttPage";
 import AnalisiPage from "./pages/AnalisiPage";
+import AnalisiOffertePage from "./pages/AnalisiOffertePage";
 import OffertePage from "./pages/OffertePage";
 import OfferteDetailPage from "./pages/OfferteDetailPage";
 import ScrivaniaPage from "./pages/ScrivaniaPage";
@@ -241,6 +242,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><AnalisiPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/analisi-offerte"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><AnalisiOffertePage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
