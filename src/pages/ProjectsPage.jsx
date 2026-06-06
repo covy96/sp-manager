@@ -486,21 +486,21 @@ export default function ProjectsPage() {
     let result = projects;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      // Ricerca su tutti gli anni (bypass filtro anno)
+      // Con ricerca attiva: cerca su tutti i progetti (bypass anno e utenti)
       result = result.filter(p =>
         (p.name || "").toLowerCase().includes(q) ||
         (p.client || "").toLowerCase().includes(q)
       );
     } else {
-      // Filtro per anno solo senza ricerca
+      // Senza ricerca: applica filtro anno e utenti
       result = result.filter(p => {
         const dateStr = p.start_date || p.created_at;
         const year = dateStr ? new Date(dateStr).getFullYear() : null;
         return year === annoFiltro;
       });
-    }
-    if (selectedUserIds.length > 0) {
-      result = result.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
+      if (selectedUserIds.length > 0) {
+        result = result.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
+      }
     }
     return result;
   }, [projects, selectedUserIds, annoFiltro, searchQuery]);
