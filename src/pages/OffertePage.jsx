@@ -50,7 +50,7 @@ export default function OffertePage() {
   const [form, setForm] = useState({
     numero_offerta:'', nome_offerta:'', cliente:'',
     project_id:'', data_offerta:'',
-    voci: [],
+    voci: [], sconto: '',
     note:'',
   });
 
@@ -75,7 +75,13 @@ export default function OffertePage() {
 
   const handleSave = async e => {
     e.preventDefault();
-    const importoCalcolato = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const sconto = Number(form.sconto)||0;
+    const vociScontate = (form.voci||[]).map(v =>
+      v.attiva && sconto > 0
+        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - sconto/100) * 100) / 100 }
+        : v
+    );
+    const importoCalcolato = vociScontate.filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     if (!form.nome_offerta.trim()||!form.cliente.trim()) {
       setFormError('Compila tutti i campi obbligatori'); return;
     }
@@ -122,7 +128,7 @@ export default function OffertePage() {
       project_name: projectName,
       data_offerta: form.data_offerta||null,
       importo_offerta_base: importoCalcolato,
-      voci: form.voci||[],
+      voci: vociScontate,
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
@@ -132,7 +138,7 @@ export default function OffertePage() {
     });
     if (error) { setFormError(error.message); setSaving(false); return; }
     setModalOpen(false);
-    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], note:'' });
+    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', note:'' });
     await loadData();
     setSaving(false);
   };
@@ -521,13 +527,31 @@ export default function OffertePage() {
                     style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"'IBM Plex Mono',monospace",fontSize:10,letterSpacing:'0.06em',padding:'5px 12px',cursor:'pointer'}}>
                     + Aggiungi riga
                   </button>
-                  {/* Totale */}
-                  {(form.voci||[]).length>0 && (
-                    <div style={{marginTop:10,display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
-                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
-                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency((form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}</span>
-                    </div>
-                  )}
+                  {/* Sconto + Totale */}
+                  {(form.voci||[]).length>0 && (() => {
+                    const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                    const sc = Number(form.sconto)||0;
+                    const netto = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                    return (
+                      <div style={{marginTop:10,paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
+                        {/* Riga sconto */}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO</span>
+                          <div style={{display:'flex',alignItems:'center',gap:4}}>
+                            <input type="number" min={0} max={100} step={0.1} value={form.sconto} onChange={e=>setForm(p=>({...p,sconto:e.target.value}))}
+                              placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
+                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
+                          </div>
+                          {sc > 0 && <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(lordo-netto)}</span>}
+                        </div>
+                        {/* Totale */}
+                        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div style={{ gridColumn:'span 2' }}>
                   <label style={labelSt}>Note</label>

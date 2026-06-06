@@ -58,6 +58,7 @@ export default function OfferteDetailPage() {
         project_id: off.project_id||'',
         data_offerta: off.data_offerta||'',
         voci: vociSalvate,
+        sconto: '',
         note: off.note||'',
         numero_offerta: off.numero_offerta,
       });
@@ -70,7 +71,13 @@ export default function OfferteDetailPage() {
   const handleSave = async () => {
     setSaving(true);
     const proj = progetti.find(p=>p.id===form.project_id);
-    const totale = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const sc = Number(form.sconto)||0;
+    const vociScontate = (form.voci||[]).map(v =>
+      v.attiva!==false && sc > 0
+        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - sc/100) * 100) / 100 }
+        : v
+    );
+    const totale = vociScontate.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
       cliente: form.cliente,
@@ -78,7 +85,7 @@ export default function OfferteDetailPage() {
       project_name: proj?.name||null,
       data_offerta: form.data_offerta||null,
       importo_offerta_base: totale,
-      voci: form.voci||[],
+      voci: vociScontate,
       importo_totale: totale,
       note: form.note||null,
       numero_offerta: form.numero_offerta,
@@ -272,17 +279,34 @@ export default function OfferteDetailPage() {
                     ))}
                   </div>
                 )}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
                   <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
                     style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,...mono,fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
                     + Riga personalizzata
                   </button>
-                  {(form.voci||[]).length>0 && (
-                    <span style={{...mono,fontSize:13,fontWeight:700,color:T.navy}}>
-                      Totale: {currency((form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0))}
-                    </span>
-                  )}
                 </div>
+                {(form.voci||[]).length>0 && (() => {
+                  const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                  const sc = Number(form.sconto)||0;
+                  const netto = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                  return (
+                    <div style={{paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
+                        <span style={{...mono,fontSize:10,color:T.muted}}>SCONTO</span>
+                        <div style={{display:'flex',alignItems:'center',gap:4}}>
+                          <input type="number" min={0} max={100} step={0.1} value={form.sconto} onChange={e=>setForm(p=>({...p,sconto:e.target.value}))}
+                            placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
+                          <span style={{...mono,fontSize:12,color:T.muted}}>%</span>
+                        </div>
+                        {sc > 0 && <span style={{...mono,fontSize:12,color:T.red}}>−{currency(lordo-netto)}</span>}
+                      </div>
+                      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
+                        <span style={{...mono,fontSize:10,color:T.muted}}>TOTALE</span>
+                        <span style={{...mono,fontSize:14,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{ gridColumn:'span 2' }}>
                 <label style={labelSt}>Note</label>
