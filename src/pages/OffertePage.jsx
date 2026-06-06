@@ -76,12 +76,8 @@ export default function OffertePage() {
   const handleSave = async e => {
     e.preventDefault();
     const sconto = Number(form.sconto)||0;
-    const vociScontate = (form.voci||[]).map(v =>
-      v.attiva && sconto > 0
-        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - sconto/100) * 100) / 100 }
-        : v
-    );
-    const importoCalcolato = vociScontate.filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const importoCalcolato = sconto > 0 ? Math.round(lordo * (1 - sconto/100) * 100) / 100 : lordo;
     if (!form.nome_offerta.trim()||!form.cliente.trim()) {
       setFormError('Compila tutti i campi obbligatori'); return;
     }
@@ -128,7 +124,8 @@ export default function OffertePage() {
       project_name: projectName,
       data_offerta: form.data_offerta||null,
       importo_offerta_base: importoCalcolato,
-      voci: vociScontate,
+      voci: form.voci||[],
+      sconto: sconto,
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
@@ -184,12 +181,8 @@ export default function OffertePage() {
     }
 
     const scAcc = Number(accettaForm.sconto)||0;
-    const vociAccScontate = (accettaForm.voci||[]).map(v =>
-      v.attiva && scAcc > 0
-        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - scAcc/100) * 100) / 100 }
-        : v
-    );
-    const totaleAccetta = vociAccScontate.filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordoAcc = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const totaleAccetta = scAcc > 0 ? Math.round(lordoAcc * (1 - scAcc/100) * 100) / 100 : lordoAcc;
     const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -219,7 +212,8 @@ export default function OffertePage() {
   const handleConfermaAccetta = async () => {
     const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
     const scAcc2 = Number(accettaForm.sconto)||0;
-    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0) * (scAcc2>0 ? (1-scAcc2/100) : 1);
+    const lordoAcc2 = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const valoreNuovo = scAcc2>0 ? Math.round(lordoAcc2*(1-scAcc2/100)*100)/100 : lordoAcc2;
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);

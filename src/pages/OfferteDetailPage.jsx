@@ -58,7 +58,7 @@ export default function OfferteDetailPage() {
         project_id: off.project_id||'',
         data_offerta: off.data_offerta||'',
         voci: vociSalvate,
-        sconto: '',
+        sconto: off.sconto||'',
         note: off.note||'',
         numero_offerta: off.numero_offerta,
       });
@@ -72,12 +72,8 @@ export default function OfferteDetailPage() {
     setSaving(true);
     const proj = progetti.find(p=>p.id===form.project_id);
     const sc = Number(form.sconto)||0;
-    const vociScontate = (form.voci||[]).map(v =>
-      v.attiva!==false && sc > 0
-        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - sc/100) * 100) / 100 }
-        : v
-    );
-    const totale = vociScontate.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const totale = sc > 0 ? Math.round(lordo*(1-sc/100)*100)/100 : lordo;
     await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
       cliente: form.cliente,
@@ -85,7 +81,8 @@ export default function OfferteDetailPage() {
       project_name: proj?.name||null,
       data_offerta: form.data_offerta||null,
       importo_offerta_base: totale,
-      voci: vociScontate,
+      voci: form.voci||[],
+      sconto: sc,
       importo_totale: totale,
       note: form.note||null,
       numero_offerta: form.numero_offerta,
@@ -123,6 +120,7 @@ export default function OfferteDetailPage() {
       project_id: offerta.project_id||'',
       data_commessa: new Date().toISOString().slice(0,10),
       voci: vociSalvate,
+      sconto: offerta.sconto||'',
       numero_offerta: offerta.numero_offerta,
     });
     setAccettaModal(true);
@@ -151,12 +149,8 @@ export default function OfferteDetailPage() {
     }
 
     const scAcc = Number(accettaForm.sconto)||0;
-    const vociAccScontate = (accettaForm.voci||[]).map(v =>
-      v.attiva!==false && scAcc > 0
-        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - scAcc/100) * 100) / 100 }
-        : v
-    );
-    const totaleAccetta = vociAccScontate.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordoAcc = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const totaleAccetta = scAcc > 0 ? Math.round(lordoAcc*(1-scAcc/100)*100)/100 : lordoAcc;
     const { data:commessa, error } = await supabase.from("commesse").insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -186,7 +180,8 @@ export default function OfferteDetailPage() {
   const handleConfermaAccetta = async () => {
     const valoreOriginale = Number(offerta.importo_offerta_base);
     const scAcc2 = Number(accettaForm.sconto)||0;
-    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0) * (scAcc2>0 ? (1-scAcc2/100) : 1);
+    const lordoAcc2 = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const valoreNuovo = scAcc2>0 ? Math.round(lordoAcc2*(1-scAcc2/100)*100)/100 : lordoAcc2;
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);
@@ -353,6 +348,15 @@ export default function OfferteDetailPage() {
                     <span style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(v.prezzo)}</span>
                   </div>
                 ))}
+                {Number(offerta.sconto) > 0 && (() => {
+                  const lordo = (Array.isArray(offerta.voci) && offerta.voci.length > 0 ? offerta.voci : [{ prezzo: offerta.importo_offerta_base, attiva:true }]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                  return (
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 14px', borderTop:`0.5px solid ${T.border}`, background:T.bg }}>
+                      <span style={{ ...mono, fontSize:10, color:T.muted }}>Sconto {offerta.sconto}%</span>
+                      <span style={{ ...mono, fontSize:12, color:T.red }}>−{currency(lordo - offerta.importo_offerta_base)}</span>
+                    </div>
+                  );
+                })()}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', background:T.bg, borderTop:`1px solid ${T.border}` }}>
                   <span style={{ ...mono, fontSize:10, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Totale</span>
                   <span style={{ ...mono, fontSize:16, fontWeight:700, color:T.navy }}>{currency(offerta.importo_offerta_base)}</span>
