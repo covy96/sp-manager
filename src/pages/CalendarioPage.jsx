@@ -4,6 +4,7 @@ import { useStudio } from "../hooks/useStudio";
 import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
+import SlidingTabs from "../components/SlidingTabs";
 
 const MONTHS   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const WEEKDAYS = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
@@ -466,9 +467,18 @@ export default function CalendarioPage() {
   );
 
   // Viste disponibili
-  const VIEWS_DESKTOP = [["month","Mese"],["week","Settimana"],["3days","3 Giorni"],["today","Oggi"]];
-  const VIEWS_MOBILE  = [["3days","3 Giorni"],["month","Mese"],["today","Oggi"]];
-  const views = isMobile ? VIEWS_MOBILE : VIEWS_DESKTOP;
+  const TABS_DESKTOP = [
+    { key:'month',  label:'Mese'      },
+    { key:'week',   label:'Settimana' },
+    { key:'3days',  label:'3 Giorni'  },
+    { key:'today',  label:'Oggi'      },
+  ];
+  const TABS_MOBILE = [
+    { key:'3days',  label:'3 Giorni'  },
+    { key:'month',  label:'Mese'      },
+    { key:'today',  label:'Oggi'      },
+  ];
+  const tabs = isMobile ? TABS_MOBILE : TABS_DESKTOP;
 
   const showSidebar = viewMode==="month" || viewMode==="week" || viewMode==="3days";
 
@@ -476,55 +486,34 @@ export default function CalendarioPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: isMobile ? '10px 14px' : '12px 18px', display:'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent:'space-between', gap:10 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
 
-        {/* Riga 1 mobile: toggle vista + filtro utenti */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-          {/* Toggle vista */}
-          <div style={{ display:'flex', border:`0.5px solid ${T.ink20}`, overflow:'hidden', flex: isMobile ? 1 : 'none' }}>
-            {views.map(([m,label])=>(
-              <button key={m} onClick={()=>{setViewMode(m);if(m==="today")setRefDate(new Date(now));}} style={{
-                flex: isMobile ? 1 : 'none',
-                padding: isMobile ? '7px 0' : '6px 14px',
-                border:'none', background:viewMode===m?T.navy:'transparent',
-                color:viewMode===m?T.bg:T.muted,
-                fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 10 : 10,
-                letterSpacing:'0.06em', textTransform:'uppercase',
-                cursor:'pointer', textAlign:'center',
-              }}>{label}</button>
-            ))}
-          </div>
+        {/* Riga 1: SlidingTabs + filtro utenti */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
+          <SlidingTabs
+            tabs={tabs}
+            active={viewMode}
+            onChange={key => { setViewMode(key); if (key==="today") setRefDate(new Date(now)); }}
+          />
 
-          {/* Filtro utenti — sempre visibile */}
+          {/* Filtro utenti — stile ProjectsPage */}
           <div ref={filterRef} style={{ position:'relative', flexShrink:0 }}>
             <button onClick={()=>setShowMemberFilter(!showMemberFilter)} style={{
-              display:'flex', alignItems:'center', gap:5,
-              border:`0.5px solid ${selectedMembers.length>0?T.navy:T.ink20}`, borderRadius: T.radiusSm,
-              background:selectedMembers.length>0?T.navyLight:'transparent',
-              padding:'6px 10px', cursor:'pointer',
-              fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase',
-              color:selectedMembers.length>0?T.navy:T.muted,
-              height: isMobile ? 34 : 'auto',
+              display:'flex', alignItems:'center', gap:6,
+              border:`0.5px solid ${selectedMembers.length>0 ? T.navy : T.borderMd}`,
+              borderRadius: T.radiusSm,
+              background: selectedMembers.length>0 ? T.navyLight : 'transparent',
+              padding:'7px 14px', cursor:'pointer',
+              fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
+              letterSpacing:'0.08em', textTransform:'uppercase',
+              color: selectedMembers.length>0 ? T.navy : T.ink,
             }}>
-              {selectedMembers.length>0 ? (
-                <div style={{ display:'flex', gap:2 }}>
-                  {selectedMembers.slice(0,2).map(id=>{
-                    const m=teamMembers.find(x=>x.id===id);
-                    return m ? (
-                      <div key={id} style={{ width:18,height:18,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:600,color:'#fff' }}>
-                        {getInitials(m.user_name||m.user_email)}
-                      </div>
-                    ) : null;
-                  })}
-                  {selectedMembers.length>2&&<span style={{fontSize:9,color:T.navy}}>+{selectedMembers.length-2}</span>}
-                </div>
-              ) : "👤"}
-              {!isMobile && <span style={{ fontSize:10 }}>▾</span>}
+              {selectedMembers.length>0 ? `Utenti (${selectedMembers.length})` : `Utenti`}
             </button>
 
             {showMemberFilter && (
-              <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`0.5px solid ${T.ink20}`, zIndex:30 }}>
-                <div style={{ padding:'8px 12px', maxHeight:240, overflowY:'auto' }}>
+              <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`1px solid ${T.borderMd}`, zIndex:30 }}>
+                <div style={{ padding:8, maxHeight:240, overflowY:'auto' }}>
                   {teamMembers.map(m=>(
                     <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
                       <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
@@ -535,8 +524,8 @@ export default function CalendarioPage() {
                     </label>
                   ))}
                 </div>
-                {selectedMembers.length>0&&(
-                  <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.ink10}` }}>
+                {selectedMembers.length>0 && (
+                  <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.border}` }}>
                     <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
                       Rimuovi filtri
                     </button>
@@ -547,15 +536,15 @@ export default function CalendarioPage() {
           </div>
         </div>
 
-        {/* Riga 2 mobile / inline desktop: navigazione periodo */}
+        {/* Riga 2: navigazione periodo */}
         {viewMode!=="today" && (
-          <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent: isMobile ? 'space-between' : 'flex-start' }}>
-            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
-            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', flex: isMobile ? 1 : 'none', textAlign:'center', minWidth: isMobile ? 0 : 180 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>←</button>
+            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', flex:1, textAlign:'center' }}>
               {periodLabel}
             </div>
-            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
+            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:14, height:34 }}>→</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 10px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', height:34, whiteSpace:'nowrap' }}>Oggi</button>
           </div>
         )}
       </div>
