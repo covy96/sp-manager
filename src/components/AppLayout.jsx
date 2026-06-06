@@ -519,6 +519,7 @@ export default function AppLayout({ session, children }) {
                   <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
                   <DropItem icon={SettingsIcon} label="Gestione Servizi" onClick={() => goSettings("/impostazioni/servizi")}/>
+                  <DropItem icon={SettingsIcon} label="Voci Offerta" onClick={() => goSettings("/impostazioni/voci-offerta")}/>
                   <DropItem icon={DocumentIcon} label="Report"           onClick={() => goSettings("/impostazioni/report")}/>
                   <DropItem icon={BellIcon}     label="Notifiche"        onClick={() => goSettings("/impostazioni/notifiche")}/>
                 </div>

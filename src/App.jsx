@@ -31,6 +31,7 @@ import TimesheetPage from "./pages/TimesheetPage";
 import ProfiloPage from "./pages/settings/ProfiloPage";
 import AspettoPage from "./pages/settings/AspettoPage";
 import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
+import VociOffertaPage from "./pages/settings/VociOffertaPage";
 import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
@@ -327,6 +328,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><GestioneServiziPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/voci-offerta"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><VociOffertaPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

@@ -28,6 +28,7 @@ export default function OffertePage() {
   const [progetti, setProgetti]         = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts]     = useState([]);
+  const [vociTemplates, setVociTemplates]       = useState([]);
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
@@ -49,22 +50,24 @@ export default function OffertePage() {
   const [form, setForm] = useState({
     numero_offerta:'', nome_offerta:'', cliente:'',
     project_id:'', data_offerta:'',
-    importo_offerta_base:'',
+    voci: [],
     note:'',
   });
 
   const loadData = async () => {
     if (!studioId) return;
-    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }, { data:voci }] = await Promise.all([
       supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).is("deleted_at",null).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
       supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
       supabase.from("global_contacts").select("id,full_name").eq("studio",studioId).order("full_name",{ascending:true}),
+      supabase.from("voci_offerta_template").select("*").eq("studio",studioId).order("order",{ascending:true}),
     ]);
     setOfferte(off??[]);
     setProgetti(proj??[]);
     setServiceTemplates(svc??[]);
     setGlobalContacts(contacts??[]);
+    setVociTemplates(voci??[]);
     setLoading(false);
   };
 
@@ -72,7 +75,8 @@ export default function OffertePage() {
 
   const handleSave = async e => {
     e.preventDefault();
-    if (!form.nome_offerta.trim()||!form.cliente.trim()||!form.importo_offerta_base) {
+    const importoCalcolato = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    if (!form.nome_offerta.trim()||!form.cliente.trim()) {
       setFormError('Compila tutti i campi obbligatori'); return;
     }
     setSaving(true); setFormError('');
@@ -117,17 +121,18 @@ export default function OffertePage() {
       project_id: projectId,
       project_name: projectName,
       data_offerta: form.data_offerta||null,
-      importo_offerta_base: Number(form.importo_offerta_base),
+      importo_offerta_base: importoCalcolato,
+      voci: form.voci||[],
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
-      importo_totale: Number(form.importo_offerta_base),
+      importo_totale: importoCalcolato,
       note: form.note||null,
       stato: 'offerta',
     });
     if (error) { setFormError(error.message); setSaving(false); return; }
     setModalOpen(false);
-    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', importo_offerta_base:'', note:'' });
+    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], note:'' });
     await loadData();
     setSaving(false);
   };
@@ -135,12 +140,16 @@ export default function OffertePage() {
   const openAccetta = (o) => {
     setAccettaId(o.id);
     setOffertaOriginale(o);
+    // Carica voci dall'offerta, o crea riga singola con importo base se non ci sono voci
+    const vociSalvate = Array.isArray(o.voci) && o.voci.length > 0
+      ? o.voci.map(v => ({ ...v, attiva: v.attiva !== false }))
+      : [{ id: 'legacy', nome: o.nome_offerta||'Prestazione', prezzo: Number(o.importo_offerta_base)||0, attiva: true }];
     setAccettaForm({
       nome_commessa: o.nome_offerta,
       cliente: o.cliente,
       project_id: o.project_id||'',
       data_commessa: new Date().toISOString().slice(0,10),
-      importo_offerta_base: o.importo_offerta_base,
+      voci: vociSalvate,
       numero_offerta: o.numero_offerta,
       note: o.note||'',
     });
@@ -168,6 +177,7 @@ export default function OffertePage() {
       await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', accettaId);
     }
 
+    const totaleAccetta = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -176,15 +186,15 @@ export default function OffertePage() {
       project_id: projectId,
       project_name: projectName,
       data_commessa: accettaForm.data_commessa || new Date().toISOString().slice(0,10),
-      importo_offerta_base: Number(accettaForm.importo_offerta_base),
+      importo_offerta_base: totaleAccetta,
       perc_iva1:60, perc_contributo1:5, perc_iva2:40, perc_contributo2:4, perc_iva_finale:22,
-      importo_totale: Number(accettaForm.importo_offerta_base),
+      importo_totale: totaleAccetta,
       stato_pagamento: 'non_iniziato',
     }).select().single();
     if (cErr) { alert('Errore: '+cErr.message); setSaving(false); return; }
 
     const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
-    if (aggiornaOfferta) offerUpdate.importo_offerta_base = Number(accettaForm.importo_offerta_base);
+    if (aggiornaOfferta) offerUpdate.importo_offerta_base = totaleAccetta;
     await supabase.from('offerte').update(offerUpdate).eq('id', accettaId);
 
     setSaving(false);
@@ -196,7 +206,7 @@ export default function OffertePage() {
 
   const handleConfermaAccetta = async () => {
     const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
-    const valoreNuovo = Number(accettaForm.importo_offerta_base);
+    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);
@@ -481,8 +491,43 @@ export default function OffertePage() {
                   </div>
                 )}
                 <div style={{ gridColumn:'span 2' }}>
-                  <label style={labelSt}>Importo offerta base (€) *</label>
-                  <input type="number" min={0} step={0.01} value={form.importo_offerta_base} onChange={e=>setForm(p=>({...p,importo_offerta_base:e.target.value}))} required style={inputSt}/>
+                  <label style={labelSt}>Voci offerta</label>
+                  {/* Carica preset se voci è vuoto e si apre il modal */}
+                  <div style={{ border:`1px solid ${T.border}`, borderRadius:T.radiusSm, overflow:'hidden', marginBottom:8 }}>
+                    {(form.voci||[]).map((v,i) => (
+                      <div key={v.id||i} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', borderBottom:i<(form.voci||[]).length-1?`0.5px solid ${T.border}`:'none', background:v.attiva?'transparent':T.surface2 }}>
+                        <input type="checkbox" checked={v.attiva} onChange={()=>setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,attiva:!x.attiva}:x)}))} style={{accentColor:T.navy,width:13,height:13,flexShrink:0}}/>
+                        <input type="text" value={v.nome} onChange={e=>{const val=e.target.value;setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,nome:val}:x)}));}} style={{...inputSt,flex:1,padding:'4px 8px',fontSize:12,opacity:v.attiva?1:0.5}}/>
+                        <input type="number" value={v.prezzo} onChange={e=>{const val=e.target.value;setForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,prezzo:val}:x)}));}} style={{...inputSt,width:110,padding:'4px 8px',fontSize:12,textAlign:'right',opacity:v.attiva?1:0.5}} placeholder="€"/>
+                        <button type="button" onClick={()=>setForm(p=>({...p,voci:p.voci.filter((_,j)=>j!==i)}))} style={{background:'none',border:'none',cursor:'pointer',color:T.red,fontSize:14,lineHeight:1,flexShrink:0,padding:'0 4px'}}>×</button>
+                      </div>
+                    ))}
+                    {(form.voci||[]).length===0 && (
+                      <div style={{padding:'16px',textAlign:'center',fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>Nessuna voce — aggiungi dal preset o crea una riga</div>
+                    )}
+                  </div>
+                  {/* Preset template */}
+                  {vociTemplates.length>0 && (
+                    <div style={{marginBottom:8,display:'flex',flexWrap:'wrap',gap:4}}>
+                      {vociTemplates.filter(t=>!(form.voci||[]).some(v=>v.templateId===t.id)).map(t=>(
+                        <button type="button" key={t.id} onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`t${t.id}${Date.now()}`,templateId:t.id,nome:t.nome,prezzo:Number(t.prezzo_default)||0,attiva:true}]}))}
+                          style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:T.bg,color:T.ink,fontFamily:"'IBM Plex Mono',monospace",fontSize:10,padding:'3px 10px',cursor:'pointer'}}>
+                          + {t.nome}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
+                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"'IBM Plex Mono',monospace",fontSize:10,letterSpacing:'0.06em',padding:'5px 12px',cursor:'pointer'}}>
+                    + Aggiungi riga
+                  </button>
+                  {/* Totale */}
+                  {(form.voci||[]).length>0 && (
+                    <div style={{marginTop:10,display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
+                      <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency((form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}</span>
+                    </div>
+                  )}
                 </div>
                 <div style={{ gridColumn:'span 2' }}>
                   <label style={labelSt}>Note</label>
@@ -524,7 +569,7 @@ export default function OffertePage() {
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
-                  {currency(accettaForm.importo_offerta_base)}
+                  {currency((accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}
                 </div>
               </div>
             </div>
@@ -596,8 +641,20 @@ export default function OffertePage() {
                 <input type="date" value={accettaForm.data_commessa} onChange={e=>setAccettaForm(p=>({...p,data_commessa:e.target.value}))} style={inputSt}/>
               </div>
               <div>
-                <label style={labelSt}>Importo base (€)</label>
-                <input type="number" value={accettaForm.importo_offerta_base} onChange={e=>setAccettaForm(p=>({...p,importo_offerta_base:e.target.value}))} style={inputSt}/>
+                <label style={labelSt}>Voci da confermare</label>
+                <div style={{border:`1px solid ${T.border}`,borderRadius:T.radiusSm,overflow:'hidden',marginBottom:8}}>
+                  {(accettaForm.voci||[]).map((v,i)=>(
+                    <div key={v.id||i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderBottom:i<(accettaForm.voci||[]).length-1?`0.5px solid ${T.border}`:'none',background:v.attiva?'transparent':T.surface2}}>
+                      <input type="checkbox" checked={v.attiva} onChange={()=>setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,attiva:!x.attiva}:x)}))} style={{accentColor:T.navy,width:13,height:13,flexShrink:0}}/>
+                      <span style={{flex:1,fontSize:12,color:v.attiva?T.ink:T.muted,fontFamily:"'Space Grotesk',sans-serif",opacity:v.attiva?1:0.5}}>{v.nome}</span>
+                      <input type="number" value={v.prezzo} onChange={e=>{const val=e.target.value;setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,prezzo:val}:x)}));}} style={{...inputSt,width:110,padding:'4px 8px',fontSize:12,textAlign:'right',opacity:v.attiva?1:0.5}} placeholder="€"/>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,paddingTop:6}}>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
+                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency((accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}</span>
+                </div>
               </div>
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>

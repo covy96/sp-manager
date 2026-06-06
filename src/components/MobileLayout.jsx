@@ -225,6 +225,7 @@ export default function MobileLayout({ session, children }) {
                     { label:'Aspetto',        icon:'aspetto',  path:'/impostazioni/aspetto'        },
                     { label:'Clienti',        icon:'profilo',  path:'/impostazioni/clienti'        },
                     { label:'Servizi',        icon:'settings', path:'/impostazioni/servizi'        },
+                    { label:'Voci Offerta',   icon:'settings', path:'/impostazioni/voci-offerta'   },
                     { label:'Notifiche',      icon:'settings', path:'/impostazioni/notifiche'      },
                     { label:'Esporta dati',   icon:'esporta',  path:'/impostazioni/esporta'        },
                     { label:'Cestino',        icon:'cestino',  path:'/impostazioni/cestino'        },
