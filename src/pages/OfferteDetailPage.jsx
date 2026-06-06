@@ -22,9 +22,10 @@ export default function OfferteDetailPage() {
   const { studioId } = useStudio();
   const { T } = useTheme();
 
-  const [offerta, setOfferta]   = useState(null);
-  const [progetti, setProgetti] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [offerta, setOfferta]       = useState(null);
+  const [progetti, setProgetti]     = useState([]);
+  const [vociTemplates, setVociTemplates] = useState([]);
+  const [loading, setLoading]       = useState(true);
   const [editing, setEditing]   = useState(false);
   const [saving, setSaving]     = useState(false);
   const [form, setForm]         = useState({});
@@ -39,12 +40,14 @@ export default function OfferteDetailPage() {
   usePageTitleOnMount("Dettaglio offerta");
 
   const loadData = async () => {
-    const [{ data:off }, { data:proj }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:tmpl }] = await Promise.all([
       supabase.from("offerte").select("*").eq("id",id).single(),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
+      supabase.from("voci_offerta_template").select("*").eq("studio",studioId).order("order",{ascending:true}),
     ]);
     setOfferta(off);
     setProgetti(proj??[]);
+    setVociTemplates(tmpl??[]);
     if (off) {
       const vociSalvate = Array.isArray(off.voci) && off.voci.length > 0
         ? off.voci
@@ -257,10 +260,22 @@ export default function OfferteDetailPage() {
                   ))}
                   {(form.voci||[]).length===0 && <div style={{padding:'14px',textAlign:'center',...mono,fontSize:10,color:T.muted}}>Nessuna voce</div>}
                 </div>
+                {/* Preset template non ancora aggiunti */}
+                {vociTemplates.filter(t => !(form.voci||[]).some(v=>v.templateId===t.id)).length > 0 && (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:8}}>
+                    {vociTemplates.filter(t => !(form.voci||[]).some(v=>v.templateId===t.id)).map(t=>(
+                      <button type="button" key={t.id}
+                        onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`t${t.id}${Date.now()}`,templateId:t.id,nome:t.nome,prezzo:Number(t.prezzo_default)||0,attiva:true}]}))}
+                        style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:T.bg,color:T.ink,...mono,fontSize:10,padding:'4px 12px',cursor:'pointer'}}>
+                        + {t.nome}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                   <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
                     style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,...mono,fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
-                    + Aggiungi riga
+                    + Riga personalizzata
                   </button>
                   {(form.voci||[]).length>0 && (
                     <span style={{...mono,fontSize:13,fontWeight:700,color:T.navy}}>
