@@ -143,7 +143,7 @@ export default function AnalisiOffertePage() {
     else { setSortCol(col); setSortAsc(false); }
   };
 
-  if (!permissions.isPM) return (
+  if (!permissions.isProjectManager) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16 }}>
       <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center" }}>Questa sezione è riservata al project manager.</div>
     </div>
