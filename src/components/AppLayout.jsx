@@ -28,7 +28,7 @@ const ALL_MENU_ITEMS = [
   { label:"Fatture",      path:"/fatture",               num:"09", roles:"pm",    minPlan:"studio" },
   { divider: true },
   { label:"Team",         path:"/team",                  num:"10", roles:"all",   minPlan:"studio" },
-  { label:"Report",       path:"/report",                num:"11", roles:"pm",    minPlan:"studio" },
+  { label:"Report",       path:"/report",                num:"11", roles:"pm",    minPlan:"pro"    },
   { label:"Calendario",   path:"/calendario",            num:"12", roles:"all",   minPlan:"free"   },
   { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
   { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"pro"    },

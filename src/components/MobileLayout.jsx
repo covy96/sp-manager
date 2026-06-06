@@ -72,7 +72,7 @@ const MENU_SECTIONS = [
     title: 'Studio',
     items: [
       { label:'Team',       path:'/team',            icon:'team',       roles:'all',   minPlan:'studio' },
-      { label:'Report',     path:'/report',          icon:'report',     roles:'pm',    minPlan:'studio' },
+      { label:'Report',     path:'/report',          icon:'report',     roles:'pm',    minPlan:'pro'    },
       { label:'Calendario', path:'/calendario',      icon:'calendario', roles:'all',   minPlan:'free'   },
       { label:'Gantt',      path:'/gantt-progetti',  icon:'gantt',      roles:'pm',    minPlan:'studio' },
       { label:'Analisi',    path:'/analisi',         icon:'analisi',    roles:'owner', minPlan:'free'   },

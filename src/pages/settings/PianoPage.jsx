@@ -104,7 +104,7 @@ export default function PianoPage() {
           const isDowngrade = planOrder.indexOf(pid) < planOrder.indexOf(pianoId);
 
           return (
-            <div key={pid} style={{ background:T.surface, border:`0.5px solid ${isCurrent?T.navy:T.border}`, borderRadius: T.radiusSm, padding:'22px 20px', position:'relative' }}>
+            <div key={pid} style={{ background:T.surface, border:`0.5px solid ${isCurrent?T.navy:T.border}`, borderRadius: T.radiusSm, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
               {isCurrent && (
                 <div style={{ position:'absolute', top:12, right:12, fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'2px 6px' }}>
                   Attuale
@@ -141,7 +141,7 @@ export default function PianoPage() {
               </div>
 
               {/* Feature list */}
-              <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:20 }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:20, flex:1 }}>
                 {p.features.map((f,i) => (
                   <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
                     <span style={{ color:T.green, fontSize:12, flexShrink:0, marginTop:1 }}>✓</span>

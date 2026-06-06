@@ -56,6 +56,7 @@ export const PLANS = {
       "Progetti illimitati",
       "Commesse illimitate",
       "Tutto di Studio",
+      "Report avanzati",
       "Gantt avanzato",
       "Analisi economica avanzata",
     ],

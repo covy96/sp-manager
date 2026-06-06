@@ -4,8 +4,10 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePermissions } from "../hooks/usePermissions";
 import { useStudio } from "../hooks/useStudio";
+import { usePlan } from "../hooks/usePlan";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 
@@ -78,7 +80,9 @@ export default function ReportPage() {
   const axisSt = { tick:{ fill:T.muted, fontSize:9, fontFamily:"'IBM Plex Mono', monospace" }, axisLine:false, tickLine:false };
   const { studioId, loading:studioLoading } = useStudio();
   const permissions = usePermissions();
+  const { plan } = usePlan();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const now = new Date();
 
   // Periodo
@@ -258,6 +262,19 @@ export default function ReportPage() {
 
   if (!studioLoading && !permissions.canViewReport) return (
     <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+  );
+
+  if (plan.id !== 'pro') return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:300, gap:16 }}>
+      <div style={{ fontSize:32 }}>🔒</div>
+      <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Funzionalità Pro</div>
+      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
+        Il Report è disponibile solo per il piano Pro.<br/>Fai l'upgrade per accedere ai report avanzati.
+      </div>
+      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
+        Vedi piani →
+      </button>
+    </div>
   );
 
   return (
