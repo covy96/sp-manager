@@ -7,6 +7,7 @@ import { getOrCreateTeamMember, supabase } from "../lib/supabase";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { handleListKeyDown } from "../lib/listKeyDown";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 const NOTE_COLORS = [
   '#FFF9C4','#F8BBD0','#C8E6C9','#BBDEFB','#E1BEE7','#FFE0B2','#FFFFFF',
@@ -82,7 +83,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
 }
 
 // ── NOTA CARD ─────────────────────────────────────────────────────
-function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh }) {
+function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh, single = false }) {
   const { T, isDark } = useTheme();
   const [content, setContent]       = useState(note.content || '');
   const [color, setColor]           = useState(note.color || '#FFF9C4');
@@ -248,12 +249,16 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
         readOnly={!canEdit}
         placeholder={canEdit ? "Inizia a scrivere..." : ""}
         style={{
-          flex:1, width:'100%', minHeight:120,
+          flex:1, width:'100%',
+          minHeight: single ? 200 : 120,
+          maxHeight: single ? 'none' : undefined,
           padding:'12px 14px', boxSizing:'border-box',
           background:'transparent', border:'none', outline:'none',
           fontSize:13, fontFamily:"'Space Grotesk', sans-serif",
-          color:T.ink, lineHeight:1.7, resize:'vertical',
+          color:T.ink, lineHeight:1.7,
+          resize: single ? 'vertical' : 'none',
           cursor: canEdit ? 'text' : 'default',
+          overflow: single ? 'auto' : 'hidden',
         }}
       />
 
@@ -261,6 +266,48 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
       <div style={{ padding:'4px 10px 6px', fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, borderTop:`0.5px solid ${T.border}` }}>
         {new Date(note.updated_at || note.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short' })}
         {sharedWith.length > 0 && ` · condivisa con ${sharedWith.length}`}
+      </div>
+    </div>
+  );
+}
+
+// ── NOTA PREVIEW (card compatta per lista multi-nota) ────────────
+function NoteCardPreview({ note, onClick }) {
+  const { T, isDark } = useTheme();
+  const color = note.color || '#FFF9C4';
+  const cardStyle = isDark
+    ? { background: T.surface, border:`1px solid ${T.border}`, borderLeft:`3px solid ${color}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 14px', overflow:'hidden' }
+    : { background: color, border:`1px solid ${T.border}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 14px', overflow:'hidden' };
+
+  const preview = (note.content || '').split('\n').slice(0, 4).join('\n');
+
+  return (
+    <div style={cardStyle} onClick={onClick}>
+      <div style={{ fontSize:12, fontFamily:"'Space Grotesk', sans-serif", color:T.ink, lineHeight:1.6, whiteSpace:'pre-wrap', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:4, WebkitBoxOrient:'vertical' }}>
+        {preview || <span style={{ color:T.muted, fontStyle:'italic' }}>Nota vuota</span>}
+      </div>
+      <div style={{ marginTop:6, fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>
+        {new Date(note.updated_at || note.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short' })}
+      </div>
+    </div>
+  );
+}
+
+// ── NOTA MODAL (overlay per modifica) ────────────────────────────
+function NoteModal({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh, onClose }) {
+  const { T } = useTheme();
+  useBodyScrollLock(true);
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:540, maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
+        <NoteCard
+          note={note} currentMemberId={currentMemberId} teamMembers={teamMembers}
+          onDelete={(id) => { onDelete(id); onClose(); }} onUpdate={onUpdate} onRefresh={onRefresh}
+          single={true}
+        />
+        <button onClick={onClose} style={{ marginTop:10, alignSelf:'flex-end', background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer' }}>
+          Chiudi
+        </button>
       </div>
     </div>
   );
@@ -286,6 +333,7 @@ export default function ScrivaniaPage() {
   const [taskTab, setTaskTab]                 = useState("active");
   const [creatingNote, setCreatingNote]       = useState(false);
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
+  const [expandedNoteId, setExpandedNoteId]   = useState(null);
 
   const loadData = async () => {
     setLoading(true); setError("");
@@ -541,17 +589,36 @@ export default function ScrivaniaPage() {
             <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
               Nessuna nota. Clicca "+ Nuova nota" per iniziare.
             </div>
-          ) : notes.map(note => (
+          ) : notes.length === 1 ? (
+            /* Nota singola: visibile e modificabile direttamente */
             <NoteCard
-              key={note.id} note={note}
-              currentMemberId={currentMemberId}
-              teamMembers={teamMembers}
-              onDelete={handleNoteDelete}
-              onUpdate={handleNoteUpdate}
+              key={notes[0].id} note={notes[0]}
+              currentMemberId={currentMemberId} teamMembers={teamMembers}
+              onDelete={handleNoteDelete} onUpdate={handleNoteUpdate}
               onRefresh={() => reloadNotesRef.current(currentMemberIdRef.current, studioId)}
+              single={true}
             />
-          ))}
+          ) : (
+            /* Note multiple: preview cliccabile → modal overlay */
+            notes.map(note => (
+              <NoteCardPreview key={note.id} note={note} onClick={() => setExpandedNoteId(note.id)} />
+            ))
+          )}
         </div>
+
+        {/* Modal nota espansa */}
+        {expandedNoteId && (() => {
+          const n = notes.find(x => x.id === expandedNoteId);
+          if (!n) return null;
+          return (
+            <NoteModal
+              note={n} currentMemberId={currentMemberId} teamMembers={teamMembers}
+              onDelete={handleNoteDelete} onUpdate={handleNoteUpdate}
+              onRefresh={() => reloadNotesRef.current(currentMemberIdRef.current, studioId)}
+              onClose={() => setExpandedNoteId(null)}
+            />
+          );
+        })()}
 
       </div>
 
