@@ -19,7 +19,6 @@ const ALL_MENU_ITEMS = [
   { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all",   minPlan:"free"   },
   { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all",   minPlan:"free"   },
   { label:"Timesheet",    path:"/timesheet",             num:"03", roles:"all",   minPlan:"free"   },
-  { label:"Calendario",   path:"/calendario",            num:"04", roles:"all",   minPlan:"free"   },
   { divider: true },
   { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
   { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },
@@ -30,8 +29,9 @@ const ALL_MENU_ITEMS = [
   { divider: true },
   { label:"Team",         path:"/team",                  num:"10", roles:"all",   minPlan:"studio" },
   { label:"Report",       path:"/report",                num:"11", roles:"pm",    minPlan:"studio" },
-  { label:"Gantt",        path:"/gantt-progetti",        num:"12", roles:"pm",    minPlan:"studio" },
-  { label:"Analisi",      path:"/analisi",               num:"13", roles:"owner", minPlan:"pro"    },
+  { label:"Calendario",   path:"/calendario",            num:"12", roles:"all",   minPlan:"free"   },
+  { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
+  { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"pro"    },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };

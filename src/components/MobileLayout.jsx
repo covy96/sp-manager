@@ -55,7 +55,6 @@ const MENU_SECTIONS = [
       { label:'Dashboard',  path:'/dashboard',    icon:'dashboard',  roles:'all', minPlan:'free' },
       { label:'Scrivania',  path:'/scrivania',    icon:'scrivania',  roles:'all', minPlan:'free' },
       { label:'Timesheet',  path:'/timesheet',    icon:'timesheet',  roles:'all', minPlan:'free' },
-      { label:'Calendario', path:'/calendario',   icon:'calendario', roles:'all', minPlan:'free' },
     ],
   },
   {
@@ -72,10 +71,11 @@ const MENU_SECTIONS = [
   {
     title: 'Studio',
     items: [
-      { label:'Team',    path:'/team',            icon:'team',    roles:'all', minPlan:'studio' },
-      { label:'Report',  path:'/report',          icon:'report',  roles:'pm',  minPlan:'studio' },
-      { label:'Gantt',   path:'/gantt-progetti',  icon:'gantt',   roles:'pm',  minPlan:'studio' },
-      { label:'Analisi', path:'/analisi',         icon:'analisi', roles:'owner', minPlan:'free' },
+      { label:'Team',       path:'/team',            icon:'team',       roles:'all',   minPlan:'studio' },
+      { label:'Report',     path:'/report',          icon:'report',     roles:'pm',    minPlan:'studio' },
+      { label:'Calendario', path:'/calendario',      icon:'calendario', roles:'all',   minPlan:'free'   },
+      { label:'Gantt',      path:'/gantt-progetti',  icon:'gantt',      roles:'pm',    minPlan:'studio' },
+      { label:'Analisi',    path:'/analisi',         icon:'analisi',    roles:'owner', minPlan:'free'   },
     ],
   },
 ];
