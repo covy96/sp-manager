@@ -143,16 +143,22 @@ export default function OffertePage() {
   const openAccetta = (o) => {
     setAccettaId(o.id);
     setOffertaOriginale(o);
-    // Carica voci dall'offerta, o crea riga singola con importo base se non ci sono voci
-    const vociSalvate = Array.isArray(o.voci) && o.voci.length > 0
+    const oSconto = Number(o.sconto)||0;
+    const rawV = Array.isArray(o.voci) && o.voci.length > 0
       ? o.voci.map(v => ({ ...v, attiva: v.attiva !== false }))
       : [{ id: 'legacy', nome: o.nome_offerta||'Prestazione', prezzo: Number(o.importo_offerta_base)||0, attiva: true }];
+    const lordiV = rawV.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const alreadyDisc = oSconto > 0 && Math.abs(lordiV - Number(o.importo_offerta_base)) < 0.5;
+    const vociNorm = alreadyDisc
+      ? rawV.map(v => ({ ...v, prezzo: Math.round(Number(v.prezzo||0) / (1 - oSconto/100) * 100) / 100 }))
+      : rawV;
     setAccettaForm({
       nome_commessa: o.nome_offerta,
       cliente: o.cliente,
       project_id: o.project_id||'',
       data_commessa: new Date().toISOString().slice(0,10),
-      voci: vociSalvate,
+      voci: vociNorm,
+      sconto: oSconto||'',
       numero_offerta: o.numero_offerta,
       note: o.note||'',
     });

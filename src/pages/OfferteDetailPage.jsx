@@ -49,16 +49,23 @@ export default function OfferteDetailPage() {
     setProgetti(proj??[]);
     setVociTemplates(tmpl??[]);
     if (off) {
-      const vociSalvate = Array.isArray(off.voci) && off.voci.length > 0
+      const offSconto = Number(off.sconto)||0;
+      const rawVoci = Array.isArray(off.voci) && off.voci.length > 0
         ? off.voci
         : [{ id:'legacy', nome: off.nome_offerta||'Prestazione', prezzo: Number(off.importo_offerta_base)||0, attiva:true }];
+      // Se i prezzi sono già scontati (somma ≈ importo_offerta_base), risali agli originali
+      const lordiSalvati = rawVoci.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+      const priceAlreadyScontato = offSconto > 0 && Math.abs(lordiSalvati - Number(off.importo_offerta_base)) < 0.5;
+      const vociNorm = priceAlreadyScontato
+        ? rawVoci.map(v => ({ ...v, prezzo: Math.round(Number(v.prezzo||0) / (1 - offSconto/100) * 100) / 100 }))
+        : rawVoci;
       setForm({
         nome_offerta: off.nome_offerta,
         cliente: off.cliente,
         project_id: off.project_id||'',
         data_offerta: off.data_offerta||'',
-        voci: vociSalvate,
-        sconto: off.sconto||'',
+        voci: vociNorm,
+        sconto: offSconto||'',
         note: off.note||'',
         numero_offerta: off.numero_offerta,
       });
@@ -111,16 +118,22 @@ export default function OfferteDetailPage() {
   };
 
   const openAccetta = () => {
-    const vociSalvate = Array.isArray(offerta.voci) && offerta.voci.length > 0
+    const offSconto2 = Number(offerta.sconto)||0;
+    const rawVoci2 = Array.isArray(offerta.voci) && offerta.voci.length > 0
       ? offerta.voci.map(v=>({...v, attiva: v.attiva!==false}))
       : [{ id:'legacy', nome: offerta.nome_offerta||'Prestazione', prezzo: Number(offerta.importo_offerta_base)||0, attiva:true }];
+    const lordi2 = rawVoci2.filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const alreadyScontato2 = offSconto2 > 0 && Math.abs(lordi2 - Number(offerta.importo_offerta_base)) < 0.5;
+    const vociNorm2 = alreadyScontato2
+      ? rawVoci2.map(v => ({ ...v, prezzo: Math.round(Number(v.prezzo||0) / (1 - offSconto2/100) * 100) / 100 }))
+      : rawVoci2;
     setAccettaForm({
       nome_commessa: offerta.nome_offerta,
       cliente: offerta.cliente,
       project_id: offerta.project_id||'',
       data_commessa: new Date().toISOString().slice(0,10),
-      voci: vociSalvate,
-      sconto: offerta.sconto||'',
+      voci: vociNorm2,
+      sconto: offSconto2||'',
       numero_offerta: offerta.numero_offerta,
     });
     setAccettaModal(true);
