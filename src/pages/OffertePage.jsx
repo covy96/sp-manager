@@ -183,7 +183,13 @@ export default function OffertePage() {
       await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', accettaId);
     }
 
-    const totaleAccetta = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const scAcc = Number(accettaForm.sconto)||0;
+    const vociAccScontate = (accettaForm.voci||[]).map(v =>
+      v.attiva && scAcc > 0
+        ? { ...v, prezzo: Math.round(Number(v.prezzo||0) * (1 - scAcc/100) * 100) / 100 }
+        : v
+    );
+    const totaleAccetta = vociAccScontate.filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -212,7 +218,8 @@ export default function OffertePage() {
 
   const handleConfermaAccetta = async () => {
     const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
-    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const scAcc2 = Number(accettaForm.sconto)||0;
+    const valoreNuovo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0) * (scAcc2>0 ? (1-scAcc2/100) : 1);
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);
@@ -675,10 +682,29 @@ export default function OffertePage() {
                     </div>
                   ))}
                 </div>
-                <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,paddingTop:6}}>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
-                  <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency((accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}</span>
-                </div>
+                {/* Sconto + totale */}
+                {(() => {
+                  const lordo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                  const sc = Number(accettaForm.sconto)||0;
+                  const netto = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                  return (
+                    <div style={{paddingTop:8}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO</span>
+                        <div style={{display:'flex',alignItems:'center',gap:4}}>
+                          <input type="number" min={0} max={100} step={0.1} value={accettaForm.sconto||''} onChange={e=>setAccettaForm(p=>({...p,sconto:e.target.value}))}
+                            placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
+                        </div>
+                        {sc > 0 && <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(lordo-netto)}</span>}
+                      </div>
+                      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
