@@ -19,6 +19,7 @@ const ALL_MENU_ITEMS = [
   { label:"Dashboard",    path:"/dashboard",             num:"01", roles:"all",   minPlan:"free"   },
   { label:"Scrivania",    path:"/scrivania",             num:"02", roles:"all",   minPlan:"free"   },
   { label:"Timesheet",    path:"/timesheet",             num:"03", roles:"all",   minPlan:"free"   },
+  { label:"Calendario",   path:"/calendario",            num:"04", roles:"all",   minPlan:"free"   },
   { divider: true },
   { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
   { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },

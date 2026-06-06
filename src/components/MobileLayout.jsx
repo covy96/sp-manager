@@ -55,6 +55,7 @@ const MENU_SECTIONS = [
       { label:'Dashboard',  path:'/dashboard',    icon:'dashboard',  roles:'all', minPlan:'free' },
       { label:'Scrivania',  path:'/scrivania',    icon:'scrivania',  roles:'all', minPlan:'free' },
       { label:'Timesheet',  path:'/timesheet',    icon:'timesheet',  roles:'all', minPlan:'free' },
+      { label:'Calendario', path:'/calendario',   icon:'calendario', roles:'all', minPlan:'free' },
     ],
   },
   {
