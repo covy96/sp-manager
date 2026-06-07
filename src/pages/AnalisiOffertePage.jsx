@@ -314,21 +314,6 @@ export default function AnalisiOffertePage() {
         </div>
       </div>
 
-      {/* ── VOCI LIBERE ─────────────────────────────────────────── */}
-      {righeLibere.length > 0 && (
-        <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, overflow: "hidden" }}>
-          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}` }}>
-            <SectionHeader title="Voci libere (fuori template)" T={T} />
-          </div>
-          {righeLibere.map((r, i) => <VoceRow key={r.nome} r={r} i={i} total={totalLibere} last={i === righeLibere.length - 1} />)}
-          {totalLibere > 0 && (
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em", flex: 1 }}>Totale</div>
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700, color: T.ink }}>{currency(totalLibere)}</div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ── TABELLA OFFERTE ─────────────────────────────────────── */}
       <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, overflow: "hidden" }}>
