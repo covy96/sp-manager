@@ -457,7 +457,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate 
 }
 
 // ── TAB 3: Analisi Economica (identica ad AnalisiPage) ───────────
-function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady }) {
+function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel }) {
   const mono  = { fontFamily: "'IBM Plex Mono', monospace" };
   const lbl   = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
   const thSt  = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
@@ -472,7 +472,6 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
   const [costiInterni, setCostiInterni] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [selectedCommessa, setSelectedCommessa] = useState(null);
-  const [costiPanel, setCostiPanel]             = useState(false);
   const [editCosti, setEditCosti]               = useState({});
   const [savingCosti, setSavingCosti]           = useState(false);
   const [sortCol, setSortCol]                   = useState("margine");
@@ -747,14 +746,6 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
         </div>
       )}
 
-      {/* Bottone costi orari */}
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={() => setCostiPanel(true)}
-          style={{ background: T.navy, color: "#EEF1F6", border: "none", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 20px", cursor: "pointer", borderRadius: T.radiusSm }}>
-          ⚙ Costi orari
-        </button>
-      </div>
-
       {/* Tabella commesse */}
       <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -870,6 +861,7 @@ export default function AnalisiHubPage() {
   const [annoEco, setAnnoEco]           = useState(0);
   const [searchEco, setSearchEco]       = useState("");
   const [anniEco, setAnniEco]           = useState([0]);
+  const [costiEcoPanel, setCostiEcoPanel] = useState(false);
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
@@ -945,6 +937,10 @@ export default function AnalisiHubPage() {
               style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
               {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
             </select>
+            <button onClick={() => setCostiEcoPanel(true)}
+              style={{ background: T.navy, color: "#EEF1F6", border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 16px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
+              ⚙ Costi orari
+            </button>
           </div>
         )}
       </div>
@@ -957,7 +953,7 @@ export default function AnalisiHubPage() {
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
       )}
       {activeTab === "economica" && (
-        <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} />
+        <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} costiPanel={costiEcoPanel} setCostiPanel={setCostiEcoPanel} />
       )}
 
       <style>{`
