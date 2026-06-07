@@ -457,7 +457,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate 
 }
 
 // ── TAB 3: Analisi Economica (estratta da AnalisiPage) ────────────
-function TabEconomica({ T, studioId, navigate }) {
+function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady }) {
   const [members, setMembers]       = useState([]);
   const [timesheet, setTimesheet]   = useState([]);
   const [commesse, setCommesse]     = useState([]);
@@ -466,8 +466,6 @@ function TabEconomica({ T, studioId, navigate }) {
   const [ratePagate, setRatePagate] = useState([]);
   const [costiInterni, setCostiInterni] = useState([]);
   const [loading, setLoading]       = useState(true);
-  const [annoFiltro, setAnnoFiltro] = useState(0);
-  const [search, setSearch]         = useState("");
   const [sortCol, setSortCol]       = useState("margine");
   const [sortAsc, setSortAsc]       = useState(false);
   const [selectedCommessa, setSelectedCommessa] = useState(null);
@@ -496,6 +494,8 @@ function TabEconomica({ T, studioId, navigate }) {
     commesse.forEach(c => { const d = c.data_commessa || c.created_at; if (d) s.add(new Date(d).getFullYear()); });
     return [...s].sort((a, b) => b - a);
   }, [commesse]);
+
+  useEffect(() => { onAnniReady?.(anni); }, [anni]);
 
   const commesseFiltrate = useMemo(() => {
     if (annoFiltro === 0) return commesse;
@@ -584,15 +584,6 @@ function TabEconomica({ T, studioId, navigate }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca commessa…"
-          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 200 }} />
-        <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
-          {anni.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
-        </select>
-      </div>
-
       <Panel T={T} style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -646,6 +637,9 @@ export default function AnalisiHubPage() {
   const [incassatoPerCommessa, setIncassatoPerCommessa] = useState({});
   const [loading, setLoading]           = useState(true);
   const [annoOfferte, setAnnoOfferte]   = useState(new Date().getFullYear());
+  const [annoEco, setAnnoEco]           = useState(0);
+  const [searchEco, setSearchEco]       = useState("");
+  const [anniEco, setAnniEco]           = useState([0]);
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
@@ -713,6 +707,16 @@ export default function AnalisiHubPage() {
             {anniOfferte.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         )}
+        {activeTab === "economica" && (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <input value={searchEco} onChange={e => setSearchEco(e.target.value)} placeholder="Cerca commessa…"
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
+            <select value={annoEco} onChange={e => setAnnoEco(Number(e.target.value))}
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+              {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Contenuto tab */}
@@ -723,7 +727,7 @@ export default function AnalisiHubPage() {
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
       )}
       {activeTab === "economica" && (
-        <TabEconomica T={T} studioId={studioId} navigate={navigate} />
+        <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} />
       )}
 
       <style>{`
