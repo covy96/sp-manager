@@ -318,7 +318,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
 }
 
 // ── TAB 2: Monitoraggio Commesse ──────────────────────────────────
-function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate }) {
+function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate, isMobile }) {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [sortBy, setSortBy]             = useState("offerta");
   const [sortDir, setSortDir]           = useState("desc");
@@ -382,7 +382,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* KPI */}
-      <div style={{ display: "grid", gridTemplateColumns: permissions.canViewFinancials ? "repeat(3,1fr)" : "1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : (permissions.canViewFinancials ? "repeat(3,1fr)" : "1fr"), gap: isMobile ? 8 : 12 }}>
         <KpiCard label={`Valore contratti ${selectedYear || ""}`} value={currency(totals.val, 2)} color={T.navy} T={T} />
         {permissions.canViewFinancials && <>
           <KpiCard label="Incassato"   value={currency(totals.inc, 2)} color={T.green} T={T} />
@@ -959,7 +959,7 @@ export default function AnalisiHubPage() {
         <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
-        <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
+        <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} isMobile={isMobile} />
       )}
       {activeTab === "economica" && permissions.isOwner && (
         <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} costiPanel={costiEcoPanel} setCostiPanel={setCostiEcoPanel} isMobile={isMobile} />
