@@ -709,7 +709,6 @@ export default function OffertePage() {
                 })()}
               </div>
             </div>
-            </div>
             {/* Footer fisso */}
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 28px', borderTop:`0.5px solid ${T.border}`, flexShrink:0 }}>
               <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
