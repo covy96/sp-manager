@@ -101,7 +101,7 @@ function Panel({ title, children, T, style = {} }) {
 }
 
 // ── TAB 1: Analisi Offerte ────────────────────────────────────────
-function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno, onShowCommesse }) {
+function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno }) {
   const [ofTab, setOfTab]           = useState("tutte");
   const [hoveredVoce, setHoveredVoce] = useState(null);
   const [pieModal, setPieModal]     = useState(false);
@@ -157,7 +157,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
       {/* KPI cliccabili come filtro */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
         <KpiCard label="Tutte"     value={nTot}              T={T} active={ofTab === "tutte"}     onClick={() => setOfTab("tutte")} />
-        <KpiCard label="Accettate" value={nAcc}              T={T} active={ofTab === "accettata"} onClick={() => { setOfTab("accettata"); onShowCommesse?.(); }} />
+        <KpiCard label="Accettate" value={nAcc}              T={T} active={ofTab === "accettata"} onClick={() => setOfTab("accettata")} />
         <KpiCard label="Rifiutate" value={nRif}              T={T} active={ofTab === "rifiutata"} onClick={() => setOfTab("rifiutata")} />
         <KpiCard label="In corso"  value={nCorso}            T={T} active={ofTab === "offerta"}   onClick={() => setOfTab("offerta")} />
         <KpiCard label="Valore"    value={currency(totVal)}  T={T} />
@@ -627,6 +627,7 @@ function TabEconomica({ T, studioId, navigate }) {
 // ── MAIN PAGE ─────────────────────────────────────────────────────
 const HUB_TABS = [
   { key: "offerte",   label: "Offerte"    },
+  { key: "commesse",  label: "Commesse"   },
   { key: "economica", label: "Economica"  },
 ];
 
@@ -716,16 +717,10 @@ export default function AnalisiHubPage() {
 
       {/* Contenuto tab */}
       {activeTab === "offerte" && (
-        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} onShowCommesse={() => setActiveTab("commesse")} />
+        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} />
       )}
       {activeTab === "commesse" && (
-        <>
-          <button onClick={() => setActiveTab("offerte")}
-            style={{ alignSelf: "flex-start", background: "none", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "5px 14px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.04em" }}>
-            ← Offerte
-          </button>
-          <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
-        </>
+        <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
       )}
       {activeTab === "economica" && (
         <TabEconomica T={T} studioId={studioId} navigate={navigate} />
