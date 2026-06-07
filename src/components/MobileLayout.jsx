@@ -63,7 +63,6 @@ const MENU_SECTIONS = [
       { label:'Progetti',     path:'/progetti',               icon:'progetti',     roles:'all', minPlan:'free'   },
       { label:'Offerte',      path:'/offerte',                icon:'offerte',      roles:'pm',  minPlan:'studio' },
       { label:'Commesse',     path:'/commesse',               icon:'commesse',     roles:'all', minPlan:'free'   },
-      { label:'Monitoraggio', path:'/monitoraggio-commesse',  icon:'monitoraggio', roles:'pm',  minPlan:'studio' },
       { label:'Proforma',     path:'/proforma',               icon:'proforma',     roles:'pm',  minPlan:'studio' },
       { label:'Fatture',      path:'/fatture',                icon:'fatture',      roles:'pm',  minPlan:'studio' },
     ],
@@ -75,7 +74,7 @@ const MENU_SECTIONS = [
       { label:'Report',     path:'/report',          icon:'report',     roles:'pm',    minPlan:'pro'    },
       { label:'Calendario', path:'/calendario',      icon:'calendario', roles:'all',   minPlan:'free'   },
       { label:'Gantt',      path:'/gantt-progetti',  icon:'gantt',      roles:'pm',    minPlan:'studio' },
-      { label:'Analisi',    path:'/analisi',         icon:'analisi',    roles:'owner', minPlan:'free'   },
+      { label:'Analisi',    path:'/analisi-hub',     icon:'analisi',    roles:'pm',    minPlan:'pro'    },
     ],
   },
 ];
