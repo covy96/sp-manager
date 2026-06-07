@@ -625,15 +625,17 @@ export default function OffertePage() {
       {/* Modal accettazione */}
       {accettaModal && accettaForm && (
         <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:70, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, display:'flex', flexDirection:'column', maxHeight:'90vh', overflow:'hidden' }}>
+            {/* Header fisso */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'22px 28px 16px', borderBottom:`0.5px solid ${T.border}`, flexShrink:0 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Accetta offerta</div>
                 <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Verifica i dati prima di creare la commessa</div>
               </div>
               <button onClick={()=>setAccettaModal(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
             </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {/* Corpo scrollabile */}
+            <div style={{ display:'flex', flexDirection:'column', gap:12, overflowY:'auto', padding:'20px 28px', flex:1 }}>
               <div>
                 <label style={labelSt}>Nome commessa</label>
                 <input type="text" value={accettaForm.nome_commessa} onChange={e=>setAccettaForm(p=>({...p,nome_commessa:e.target.value}))} style={inputSt}/>
@@ -707,7 +709,9 @@ export default function OffertePage() {
                 })()}
               </div>
             </div>
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+            </div>
+            {/* Footer fisso */}
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 28px', borderTop:`0.5px solid ${T.border}`, flexShrink:0 }}>
               <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
               <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Creazione...':'Crea commessa →'}
