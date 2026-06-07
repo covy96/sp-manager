@@ -266,7 +266,10 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     });
   }
 
-  // ── Foto: verticali 2 per riga, orizzontali 1 per riga ──────────
+  // ── Foto ──────────────────────────────────────────────────────────
+  // Pagine libere (nessun testo): orizzontali 2 per pagina affiancate,
+  //   verticali 2 per riga e max 4 per pagina (2 righe).
+  // Con testo: orizzontali larghezza piena, verticali 2 per riga.
   if (fotos.length > 0) {
     newPageIfNeeded(20);
     y += 6;
@@ -274,7 +277,6 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     doc.text("FOTO", ml, y);
     y += 6;
 
-    // Carica tutte le immagini e rileva orientamento
     const loaded = await Promise.all(fotos.map(async f => {
       const b64 = await urlToBase64(f.url);
       if (!b64) return null;
@@ -288,57 +290,122 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     }));
 
     const gapX = 6;
-    let pendingPortrait = null; // tiene una foto verticale in attesa del suo paio
+    const items = loaded.filter(Boolean);
+    const hasContent = !!report.contenuto?.trim();
 
     const renderOne = (b64, x, w, h) => {
       if (b64) { try { doc.addImage(b64, "AUTO", x, y, w, h, undefined, "FAST"); } catch {} }
       else { doc.setDrawColor(220,220,220); doc.setLineWidth(0.3); doc.rect(x, y, w, h); }
     };
 
-    const flushPending = () => {
-      // Stampa il portrait rimasto in attesa da solo (occupa metà riga)
-      if (!pendingPortrait) return;
-      const w = (cw - gapX) / 2;
-      const h = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
-      newPageIfNeeded(h + 5);
-      renderOne(pendingPortrait.b64, ml, w, h);
-      y += h + 5;
-      pendingPortrait = null;
-    };
+    if (!hasContent) {
+      // ── PAGINE LIBERE ──
+      // Orizzontali: 2 affiancate per pagina
+      // Verticali: 2 per riga, 4 per pagina (2 righe)
+      let i = 0;
+      let portraitRowsOnPage = 0;
 
-    for (const item of loaded) {
-      if (!item) continue;
-      const { b64, dims } = item;
-      const isLandscape = dims.w >= dims.h;
+      while (i < items.length) {
+        const cur = items[i];
+        const isLandscape = cur.dims.w >= cur.dims.h;
 
-      if (isLandscape) {
-        // Se c'è un portrait in attesa, stampalo prima da solo
-        flushPending();
-        // Foto orizzontale: larghezza intera
-        const h = cw * (dims.h / dims.w);
-        newPageIfNeeded(h + 5);
-        renderOne(b64, ml, cw, h);
-        y += h + 5;
-      } else {
-        // Foto verticale
-        if (pendingPortrait) {
-          // Abbiamo già uno in attesa → stampa la coppia
-          const w = (cw - gapX) / 2;
-          const hL = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
-          const hR = w * (dims.h / dims.w);
-          const rowH = Math.max(hL, hR);
-          newPageIfNeeded(rowH + 5);
-          renderOne(pendingPortrait.b64, ml, w, hL);
-          renderOne(b64, ml + w + gapX, w, hR);
-          y += rowH + 5;
-          pendingPortrait = null;
+        if (isLandscape) {
+          portraitRowsOnPage = 0;
+          const next = items[i + 1];
+          const nextIsLandscape = next && next.dims.w >= next.dims.h;
+
+          if (nextIsLandscape) {
+            // 2 orizzontali affiancate
+            const w = (cw - gapX) / 2;
+            const h1 = w * (cur.dims.h / cur.dims.w);
+            const h2 = w * (next.dims.h / next.dims.w);
+            const rowH = Math.max(h1, h2);
+            newPageIfNeeded(rowH + 5);
+            renderOne(cur.b64, ml, w, h1);
+            renderOne(next.b64, ml + w + gapX, w, h2);
+            y += rowH + 5;
+            i += 2;
+          } else {
+            // Orizzontale sola: larghezza piena
+            const h = cw * (cur.dims.h / cur.dims.w);
+            newPageIfNeeded(h + 5);
+            renderOne(cur.b64, ml, cw, h);
+            y += h + 5;
+            i++;
+          }
         } else {
-          pendingPortrait = { b64, dims };
+          // Verticale: 2 per riga, poi controlla limite pagina
+          const next = items[i + 1];
+          const nextIsPortrait = next && next.dims.w < next.dims.h;
+          const w = (cw - gapX) / 2;
+
+          if (nextIsPortrait) {
+            const hL = w * (cur.dims.h / cur.dims.w);
+            const hR = w * (next.dims.h / next.dims.w);
+            const rowH = Math.max(hL, hR);
+            newPageIfNeeded(rowH + 5);
+            renderOne(cur.b64, ml, w, hL);
+            renderOne(next.b64, ml + w + gapX, w, hR);
+            y += rowH + 5;
+            i += 2;
+          } else {
+            // Verticale sola (ultima o seguita da orizzontale)
+            const h = w * (cur.dims.h / cur.dims.w);
+            newPageIfNeeded(h + 5);
+            renderOne(cur.b64, ml, w, h);
+            y += h + 5;
+            i++;
+          }
+          portraitRowsOnPage++;
+          // Dopo 2 righe di verticali (4 foto), nuova pagina
+          if (portraitRowsOnPage >= 2 && i < items.length) {
+            doc.addPage(); y = 20;
+            portraitRowsOnPage = 0;
+          }
         }
       }
+    } else {
+      // ── CON TESTO ──
+      // Orizzontali: larghezza piena (1 per riga)
+      // Verticali: 2 per riga
+      let pendingPortrait = null;
+
+      const flushPending = () => {
+        if (!pendingPortrait) return;
+        const w = (cw - gapX) / 2;
+        const h = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
+        newPageIfNeeded(h + 5);
+        renderOne(pendingPortrait.b64, ml, w, h);
+        y += h + 5;
+        pendingPortrait = null;
+      };
+
+      for (const { b64, dims } of items) {
+        const isLandscape = dims.w >= dims.h;
+        if (isLandscape) {
+          flushPending();
+          const h = cw * (dims.h / dims.w);
+          newPageIfNeeded(h + 5);
+          renderOne(b64, ml, cw, h);
+          y += h + 5;
+        } else {
+          if (pendingPortrait) {
+            const w = (cw - gapX) / 2;
+            const hL = w * (pendingPortrait.dims.h / pendingPortrait.dims.w);
+            const hR = w * (dims.h / dims.w);
+            const rowH = Math.max(hL, hR);
+            newPageIfNeeded(rowH + 5);
+            renderOne(pendingPortrait.b64, ml, w, hL);
+            renderOne(b64, ml + w + gapX, w, hR);
+            y += rowH + 5;
+            pendingPortrait = null;
+          } else {
+            pendingPortrait = { b64, dims };
+          }
+        }
+      }
+      flushPending();
     }
-    // Stampa eventuale portrait rimasto solo
-    flushPending();
   }
 
   // ── Footer personalizzato su ogni pagina ──────────────────────────
@@ -395,15 +462,22 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
   const [open, setOpen]       = useState(false);
   useBodyScrollLock(open);
-  useEscKey(() => { setOpen(false); setView("list"); setEditingId(null); setPreviewReport(null); }, open);
+  // "list" | "form" | "header" | "preview"
+  const [view, setView]           = useState("list");
+  const viewRef = useRef("list");
+  const setViewTracked = (v) => { viewRef.current = v; setView(v); };
+  useEscKey(() => {
+    if (viewRef.current !== "list") {
+      setViewTracked("list"); setEditingId(null); setPreviewReport(null);
+    } else {
+      setOpen(false); setViewTracked("list"); setEditingId(null); setPreviewReport(null);
+    }
+  }, open);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
   const [studio, setStudio]   = useState(null);
   const [contacts, setContacts] = useState([]);
-
-  // "list" | "form" | "header" | "preview"
-  const [view, setView]           = useState("list");
   const [editingId, setEditingId] = useState(null);
   const [previewReport, setPreviewReport] = useState(null); // report selezionato per anteprima
   const [previewFotos, setPreviewFotos]   = useState([]);
@@ -485,7 +559,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
     const { data } = await supabase.from("report_cantiere_foto")
       .select("*").eq("report_id", r.id).order("ordine", { ascending:true });
     setPreviewFotos(data || []);
-    setView("preview");
+    setViewTracked("preview");
   };
 
   // ── nuovo report ─────────────────────────────────────────────────
@@ -520,7 +594,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
     }
 
     setForm({ ...base, _numero:nextNum });
-    setEditingId(null); setSaveError(""); setSaveOk(false); setFotos([]); setView("form");
+    setEditingId(null); setSaveError(""); setSaveOk(false); setFotos([]); setViewTracked("form");
   };
 
   const openEdit = (r) => {
@@ -533,7 +607,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       presenti:     Array.isArray(r.presenti) ? r.presenti : [],
       _numero:      r.numero,
     });
-    setEditingId(r.id); setSaveError(""); setView("form");
+    setEditingId(r.id); setSaveError(""); setViewTracked("form");
     loadFotos(r.id);
   };
 
@@ -581,7 +655,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       setTimeout(() => setSaveOk(false), 4000);
       load();
     } else {
-      setView("list"); setEditingId(null); setFotos([]); setSaveOk(false); load();
+      setViewTracked("list"); setEditingId(null); setFotos([]); setSaveOk(false); load();
     }
   };
 
@@ -751,7 +825,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`1px solid ${T.border}`, borderRadius:`${T.radiusLg} ${T.radiusLg} 0 0`, position:'sticky', top:0, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, zIndex:1 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {view !== "list" && (
-              <button onClick={()=>{ setView("list"); setEditingId(null); setPreviewReport(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
+              <button onClick={()=>{ setViewTracked("list"); setEditingId(null); setPreviewReport(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
             )}
             <div>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -766,7 +840,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             {/* Pulsante impostazioni intestazione */}
-            <button onClick={()=>{ setOpen(false); setView("list"); setEditingId(null); }}
+            <button onClick={()=>{ setOpen(false); setViewTracked("list"); setEditingId(null); }}
               style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:22, lineHeight:1 }}>×</button>
           </div>
         </div>
@@ -1056,7 +1130,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
               {!confirmUpdateAll && (
                 <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                  <Btn ghost onClick={()=>setView("list")}>← Indietro</Btn>
+                  <Btn ghost onClick={()=>setViewTracked("list")}>← Indietro</Btn>
                   <Btn onClick={handleSaveHeader} disabled={savingHeader}>
                     {savingHeader ? "Salvataggio..." : "Salva intestazione"}
                   </Btn>
@@ -1146,7 +1220,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
               {/* Azioni */}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <Btn ghost onClick={()=>{ setView("list"); setPreviewReport(null); }}>← Lista</Btn>
+                <Btn ghost onClick={()=>{ setViewTracked("list"); setPreviewReport(null); }}>← Lista</Btn>
                 <div style={{ display:'flex', gap:10 }}>
                   <Btn ghost onClick={async ()=>{
                     const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",previewReport.id).order("ordine",{ascending:true});
@@ -1326,7 +1400,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               )}
 
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <Btn ghost onClick={()=>{ setView("list"); setEditingId(null); setFotos([]); }}>← Indietro</Btn>
+                <Btn ghost onClick={()=>{ setViewTracked("list"); setEditingId(null); setFotos([]); }}>← Indietro</Btn>
                 <Btn onClick={handleSave} disabled={saving || (!form.nome_interno.trim() && !form.titolo.trim())}>
                   {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Salva report"}
                 </Btn>
