@@ -14,6 +14,7 @@ import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
 import SlidingTabs from "../components/SlidingTabs";
@@ -101,7 +102,7 @@ function Panel({ title, children, T, style = {} }) {
 }
 
 // ── TAB 1: Analisi Offerte ────────────────────────────────────────
-function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno }) {
+function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno, isMobile }) {
   const [ofTab, setOfTab]           = useState("tutte");
   const [hoveredVoce, setHoveredVoce] = useState(null);
   const [pieModal, setPieModal]     = useState(false);
@@ -155,7 +156,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* KPI cliccabili come filtro */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(120px, 1fr))", gap: isMobile ? 8 : 12 }}>
         <KpiCard label="Tutte"     value={nTot}              T={T} active={ofTab === "tutte"}     onClick={() => setOfTab("tutte")} />
         <KpiCard label="Accettate" value={nAcc}              T={T} active={ofTab === "accettata"} onClick={() => setOfTab("accettata")} />
         <KpiCard label="Rifiutate" value={nRif}              T={T} active={ofTab === "rifiutata"} onClick={() => setOfTab("rifiutata")} />
@@ -165,7 +166,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
       </div>
 
       {/* Voci + torta */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 16, alignItems: "start" }}>
         <Panel title="Voci offerta" T={T}>
           {righeVoci.length === 0
             ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: 28, textAlign: "center" }}>Nessuna voce configurata</div>
@@ -457,7 +458,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate 
 }
 
 // ── TAB 3: Analisi Economica (identica ad AnalisiPage) ───────────
-function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel }) {
+function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel, isMobile }) {
   const mono  = { fontFamily: "'IBM Plex Mono', monospace" };
   const lbl   = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
   const thSt  = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
@@ -568,7 +569,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
         </div>
 
         {/* KPI riga 1 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 10 }}>
           {[
             { l: "Valore base offerta",    v: stat.valoreBase,   color: T.ink,   sub: "senza IVA / contributi" },
             ...(stat.valoreTotale !== stat.valoreBase ? [{ l: "Valore con IVA/contributi", v: stat.valoreTotale, color: T.ink }] : []),
@@ -582,7 +583,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
           ))}
         </div>
         {/* KPI riga 2 */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 10 }}>
           {[
             { l: "Costo ore interne", v: stat.costoOre,     color: T.navy },
             { l: "Costi esterni",     v: stat.costoEsterni, color: T.muted },
@@ -728,9 +729,15 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
+      {/* Search su mobile */}
+      {isMobile && (
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca commessa…"
+          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "8px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: "100%" }} />
+      )}
+
       {/* KPI totali */}
       {commessaStats.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)", gap: isMobile ? 8 : 10 }}>
           {[
             { label: "Ore totali studio",   value: fmtOre(totOre),         color: T.ink   },
             { label: "Costo totale",        value: currency(totCosto, 2),  color: T.navy  },
@@ -850,6 +857,7 @@ export default function AnalisiHubPage() {
   const { studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
   const { plan } = usePlan();
+  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState("offerte");
   const [offerte, setOfferte]           = useState([]);
@@ -919,25 +927,27 @@ export default function AnalisiHubPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 56 }}>
 
       {/* Tabs + filtri */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <SlidingTabs tabs={permissions.isOwner ? HUB_TABS : HUB_TABS.filter(t => t.key !== "economica")} active={activeTab} onChange={setActiveTab} />
         {activeTab === "offerte" && (
           <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
-            style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+            style={{ marginLeft: isMobile ? 0 : "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
             <option value={0}>Tutti gli anni</option>
             {anniOfferte.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         )}
         {activeTab === "economica" && permissions.isOwner && (
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-            <input value={searchEco} onChange={e => setSearchEco(e.target.value)} placeholder="Cerca commessa…"
-              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
+          <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {!isMobile && (
+              <input value={searchEco} onChange={e => setSearchEco(e.target.value)} placeholder="Cerca commessa…"
+                style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
+            )}
             <select value={annoEco} onChange={e => setAnnoEco(Number(e.target.value))}
-              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
               {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
             </select>
             <button onClick={() => setCostiEcoPanel(true)}
-              style={{ background: T.navy, color: "#EEF1F6", border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 16px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
+              style={{ background: T.navy, color: "#EEF1F6", border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 14px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
               ⚙ Costi orari
             </button>
           </div>
@@ -946,13 +956,13 @@ export default function AnalisiHubPage() {
 
       {/* Contenuto tab */}
       {activeTab === "offerte" && (
-        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} />
+        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
       )}
       {activeTab === "economica" && permissions.isOwner && (
-        <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} costiPanel={costiEcoPanel} setCostiPanel={setCostiEcoPanel} />
+        <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} costiPanel={costiEcoPanel} setCostiPanel={setCostiEcoPanel} isMobile={isMobile} />
       )}
 
       <style>{`
