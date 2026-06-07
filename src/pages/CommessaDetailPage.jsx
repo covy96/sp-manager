@@ -208,6 +208,9 @@ export default function CommessaDetailPage() {
   const [rimuoviModal, setRimuoviModal]           = useState(false);
   const [rimuoviSaving, setRimuoviSaving]         = useState(false);
 
+  const [deleteCommessaModal, setDeleteCommessaModal] = useState(false);
+  const [deletingSaving, setDeletingSaving]           = useState(false);
+
   // Chiudi modal con ESC (dal più recente)
   useEscKey(() => {
     if (previewProforma)    { setPreviewProforma(null); return; }
@@ -598,7 +601,7 @@ export default function CommessaDetailPage() {
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 190, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
                   <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; setMenuOpen(false); await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Archivia commessa</button>
-                  <button onClick={async()=>{ if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.')) return; setMenuOpen(false); const {error:dErr}=await supabase.rpc('elimina_commessa',{p_commessa_id:commessaId}); if(dErr){alert('Errore: '+dErr.message);return;} navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>Elimina commessa</button>
+                  <button onClick={()=>{ setMenuOpen(false); setDeleteCommessaModal(true); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>Elimina commessa</button>
                 </div>
               )}
             </div>
@@ -1226,6 +1229,69 @@ export default function CommessaDetailPage() {
           <div><FieldLabel>Note</FieldLabel><Input value={editProformaForm.note ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditProformaModal(false)} disabled={editProformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editProformaSaving}>{editProformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
+      </Modal>
+
+      {/* ── MODAL ELIMINA COMMESSA ───────────────────────────────── */}
+      <Modal open={deleteCommessaModal} onClose={() => !deletingSaving && setDeleteCommessaModal(false)} title="Elimina commessa" width={420}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, lineHeight: 1.6 }}>
+            Sei sicuro di voler eliminare la commessa <strong>{commessa?.nome_commessa}</strong>?
+          </div>
+          {commessa?.numero_offerta ? (
+            <>
+              <div style={{ background: T.surface2, border: `1px solid ${T.border}`, padding: '12px 14px' }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Offerta collegata — N° {commessa.numero_offerta}</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  disabled={deletingSaving}
+                  onClick={async () => {
+                    setDeletingSaving(true);
+                    const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
+                    if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                    await supabase.from('offerte').update({ deleted_at: new Date().toISOString() }).eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null);
+                    navigate('/commesse');
+                  }}
+                  style={{ flex: 1, padding: '9px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                >
+                  {deletingSaving ? '...' : 'Sì, elimina entrambe'}
+                </button>
+                <button
+                  disabled={deletingSaving}
+                  onClick={async () => {
+                    setDeletingSaving(true);
+                    const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
+                    if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                    navigate('/commesse');
+                  }}
+                  style={{ flex: 1, padding: '9px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                >
+                  {deletingSaving ? '...' : 'No, solo la commessa'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <BtnGhost onClick={() => setDeleteCommessaModal(false)} disabled={deletingSaving}>Annulla</BtnGhost>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <BtnGhost onClick={() => setDeleteCommessaModal(false)} disabled={deletingSaving}>Annulla</BtnGhost>
+              <button
+                disabled={deletingSaving}
+                onClick={async () => {
+                  setDeletingSaving(true);
+                  const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
+                  if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                  navigate('/commesse');
+                }}
+                style={{ padding: '8px 18px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+              >
+                {deletingSaving ? 'Eliminazione...' : 'Elimina'}
+              </button>
+            </div>
+          )}
+        </div>
       </Modal>
 
     </div>
