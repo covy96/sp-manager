@@ -124,9 +124,9 @@ export default function AnalisiOffertePage() {
 
   const totalVoci = useMemo(() => righeVoci.reduce((s, r) => s + r.totale, 0), [righeVoci]);
 
-  // Dati per il grafico — solo voci con valore > 0
+  // Dati per il grafico — solo voci TEMPLATE con valore > 0
   const pieData = useMemo(() =>
-    righeVoci.filter(r => r.totale > 0).map((r, i) => ({
+    righeVoci.filter(r => r.isTemplate && r.totale > 0).map((r, i) => ({
       name: r.nome,
       value: r.totale,
       color: PALETTE[i % PALETTE.length],
