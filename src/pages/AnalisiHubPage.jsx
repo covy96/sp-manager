@@ -918,10 +918,9 @@ export default function AnalisiHubPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 56 }}>
 
-      {/* Badge beta + tabs + anno */}
+      {/* Tabs + filtri */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <SlidingTabs tabs={HUB_TABS} active={activeTab} onChange={setActiveTab} />
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7c3aed", background: "rgba(124,58,237,0.1)", padding: "3px 9px", borderRadius: 99 }}>beta</span>
+        <SlidingTabs tabs={permissions.isOwner ? HUB_TABS : HUB_TABS.filter(t => t.key !== "economica")} active={activeTab} onChange={setActiveTab} />
         {activeTab === "offerte" && (
           <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
             style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
@@ -929,7 +928,7 @@ export default function AnalisiHubPage() {
             {anniOfferte.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         )}
-        {activeTab === "economica" && (
+        {activeTab === "economica" && permissions.isOwner && (
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
             <input value={searchEco} onChange={e => setSearchEco(e.target.value)} placeholder="Cerca commessa…"
               style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
@@ -952,7 +951,7 @@ export default function AnalisiHubPage() {
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
       )}
-      {activeTab === "economica" && (
+      {activeTab === "economica" && permissions.isOwner && (
         <TabEconomica T={T} studioId={studioId} navigate={navigate} anno={annoEco} setAnno={setAnnoEco} search={searchEco} setSearch={setSearchEco} onAnniReady={setAnniEco} costiPanel={costiEcoPanel} setCostiPanel={setCostiEcoPanel} />
       )}
 
