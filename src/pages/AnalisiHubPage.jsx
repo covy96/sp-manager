@@ -101,16 +101,10 @@ function Panel({ title, children, T, style = {} }) {
 }
 
 // ── TAB 1: Analisi Offerte ────────────────────────────────────────
-function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate }) {
+function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno }) {
   const [ofTab, setOfTab]           = useState("tutte");
-  const [anno, setAnno]             = useState(new Date().getFullYear());
   const [hoveredVoce, setHoveredVoce] = useState(null);
   const [pieModal, setPieModal]     = useState(false);
-
-  const anni = useMemo(() => {
-    const s = new Set(offerte.map(o => new Date(o.data_offerta || o.created_at).getFullYear()).filter(Boolean));
-    return [...s].sort((a, b) => b - a);
-  }, [offerte]);
 
   const offerteFiltrate = useMemo(() => {
     let r = anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno);
@@ -159,15 +153,6 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-      {/* Anno selector */}
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <select value={anno} onChange={e => setAnno(Number(e.target.value))}
-          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
-          <option value={0}>Tutti gli anni</option>
-          {anni.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-      </div>
 
       {/* KPI cliccabili come filtro */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
@@ -660,6 +645,7 @@ export default function AnalisiHubPage() {
   const [vociTemplate, setVociTemplate] = useState([]);
   const [incassatoPerCommessa, setIncassatoPerCommessa] = useState({});
   const [loading, setLoading]           = useState(true);
+  const [annoOfferte, setAnnoOfferte]   = useState(new Date().getFullYear());
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
@@ -690,6 +676,11 @@ export default function AnalisiHubPage() {
     return m;
   }, [commesse]);
 
+  const anniOfferte = useMemo(() => {
+    const s = new Set(offerte.map(o => new Date(o.data_offerta || o.created_at).getFullYear()).filter(Boolean));
+    return [...s].sort((a, b) => b - a);
+  }, [offerte]);
+
   // ── guards ───────────────────────────────────────────────────────
   if (!permissions.isProjectManager) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
@@ -711,15 +702,22 @@ export default function AnalisiHubPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 56 }}>
 
-      {/* Badge beta + tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* Badge beta + tabs + anno */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <SlidingTabs tabs={HUB_TABS} active={activeTab} onChange={setActiveTab} />
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#7c3aed", background: "rgba(124,58,237,0.1)", padding: "3px 9px", borderRadius: 99 }}>beta</span>
+        {activeTab === "offerte" && (
+          <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
+            style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+            <option value={0}>Tutti gli anni</option>
+            {anniOfferte.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        )}
       </div>
 
       {/* Contenuto tab */}
       {activeTab === "offerte" && (
-        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} />
+        <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} />
