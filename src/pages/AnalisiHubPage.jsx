@@ -63,11 +63,26 @@ const STATI = {
 };
 
 // ── Shared UI ─────────────────────────────────────────────────────
-function KpiCard({ label, value, color, T }) {
+function KpiCard({ label, value, color, T, active, onClick }) {
   return (
-    <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, padding: "16px 18px" }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: color || T.ink, lineHeight: 1 }}>{value}</div>
+    <div
+      onClick={onClick}
+      style={{
+        background: active ? T.navy : T.surface,
+        backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+        border: `1px solid ${active ? T.navy : T.border}`,
+        borderRadius: T.radius,
+        boxShadow: active ? T.shadowMd : T.shadow,
+        padding: "16px 18px",
+        cursor: onClick ? "pointer" : "default",
+        transition: "background 180ms, box-shadow 180ms, transform 150ms",
+        transform: active ? "translateY(-1px)" : "none",
+      }}
+      onMouseEnter={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadowMd; }}
+      onMouseLeave={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadow; }}
+    >
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: active ? "rgba(255,255,255,0.65)" : T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: active ? "#fff" : (color || T.ink), lineHeight: 1 }}>{value}</div>
     </div>
   );
 }
@@ -131,10 +146,12 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate }) {
     righeVoci.filter(r => r.totale > 0).map((r, i) => ({ name: r.nome, value: r.totale, color: PALETTE[i % PALETTE.length] })),
   [righeVoci]);
 
-  const nTot   = offerteFiltrate.length;
-  const nAcc   = offerteFiltrate.filter(o => o.stato === "accettata").length;
-  const nRif   = offerteFiltrate.filter(o => o.stato === "rifiutata").length;
-  const nCorso = offerteFiltrate.filter(o => o.stato === "offerta").length;
+  // calcoli su TUTTE le offerte dell'anno (non filtrate per stato) per i contatori
+  const offerteTutte = useMemo(() => anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno), [offerte, anno]);
+  const nTot   = offerteTutte.length;
+  const nAcc   = offerteTutte.filter(o => o.stato === "accettata").length;
+  const nRif   = offerteTutte.filter(o => o.stato === "rifiutata").length;
+  const nCorso = offerteTutte.filter(o => o.stato === "offerta").length;
   const totVal = offerteFiltrate.reduce((s, o) => s + (Number(o.importo_offerta_base) || 0), 0);
 
   const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `1px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
@@ -142,24 +159,22 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* filtri offerte */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <SlidingTabs tabs={OFFERTA_TABS} active={ofTab} onChange={setOfTab} />
-        <div style={{ marginLeft: "auto" }}>
-          <select value={anno} onChange={e => setAnno(Number(e.target.value))}
-            style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
-            <option value={0}>Tutti gli anni</option>
-            {anni.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
+
+      {/* Anno selector */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <select value={anno} onChange={e => setAnno(Number(e.target.value))}
+          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+          <option value={0}>Tutti gli anni</option>
+          {anni.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
       </div>
 
-      {/* KPI */}
+      {/* KPI cliccabili come filtro */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
-        <KpiCard label="Totali"    value={nTot}              T={T} />
-        <KpiCard label="Accettate" value={nAcc}              T={T} />
-        <KpiCard label="Rifiutate" value={nRif}              T={T} />
-        <KpiCard label="In corso"  value={nCorso}            T={T} />
+        <KpiCard label="Tutte"     value={nTot}              T={T} active={ofTab === "tutte"}     onClick={() => setOfTab("tutte")} />
+        <KpiCard label="Accettate" value={nAcc}              T={T} active={ofTab === "accettata"} onClick={() => setOfTab("accettata")} />
+        <KpiCard label="Rifiutate" value={nRif}              T={T} active={ofTab === "rifiutata"} onClick={() => setOfTab("rifiutata")} />
+        <KpiCard label="In corso"  value={nCorso}            T={T} active={ofTab === "offerta"}   onClick={() => setOfTab("offerta")} />
         <KpiCard label="Valore"    value={currency(totVal)}  T={T} />
         <KpiCard label="Conv. %"   value={`${pct(nAcc, nTot)}%`} T={T} />
       </div>
