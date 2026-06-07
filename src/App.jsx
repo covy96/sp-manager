@@ -13,6 +13,7 @@ import MyTasksPage from "./pages/MyTasksPage";
 import GanttPage from "./pages/GanttPage";
 import AnalisiPage from "./pages/AnalisiPage";
 import AnalisiOffertePage from "./pages/AnalisiOffertePage";
+import AnalisiHubPage from "./pages/AnalisiHubPage";
 import OffertePage from "./pages/OffertePage";
 import OfferteDetailPage from "./pages/OfferteDetailPage";
 import ScrivaniaPage from "./pages/ScrivaniaPage";
@@ -250,6 +251,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><AnalisiOffertePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/analisi-hub"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><AnalisiHubPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />

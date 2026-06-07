@@ -33,6 +33,7 @@ const ALL_MENU_ITEMS = [
   { label:"Gantt",        path:"/gantt-progetti",        num:"13", roles:"pm",    minPlan:"studio" },
   { label:"Analisi",      path:"/analisi",               num:"14", roles:"owner", minPlan:"pro"    },
   { label:"Analisi Offerte", path:"/analisi-offerte",    num:"15", roles:"pm",    minPlan:"pro"    },
+  { label:"Analisi Hub β",  path:"/analisi-hub",         num:"16", roles:"pm",    minPlan:"pro"    },
 ];
 
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
