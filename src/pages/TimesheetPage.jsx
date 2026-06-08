@@ -122,7 +122,7 @@ export default function TimesheetPage() {
 
   useEffect(() => {
     if (!studioId) return;
-    supabase.from("projects").select("id,name,client,archived").eq("studio", studioId).eq("archived", false).order("name", { ascending: true }).then(({ data }) => setProjects(data ?? []));
+    supabase.from("projects").select("id,name,client,archived").eq("studio", studioId).order("name", { ascending: true }).then(({ data }) => setProjects(data ?? []));
     supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId).then(({ data }) => setTeamMembers(data ?? []));
   }, [studioId]);
 
@@ -140,9 +140,13 @@ export default function TimesheetPage() {
   };
 
   const filteredProjects = useMemo(() => {
-    if (!projectSearch.trim()) return projects.slice(0, 10);
-    const s = projectSearch.toLowerCase();
-    return projects.filter(p => p.name?.toLowerCase().includes(s) || p.client?.toLowerCase().includes(s)).slice(0, 10);
+    const s = projectSearch.trim().toLowerCase();
+    const all = s
+      ? projects.filter(p => p.name?.toLowerCase().includes(s) || p.client?.toLowerCase().includes(s))
+      : projects;
+    const active   = all.filter(p => !p.archived).slice(0, 10);
+    const archived = all.filter(p =>  p.archived).slice(0, 5);
+    return { active, archived };
   }, [projectSearch, projects]);
 
   const handleSelectProject = p => { setSelectedProject(p); setProjectSearch(p.name); setShowDrop(false); };
@@ -233,9 +237,14 @@ export default function TimesheetPage() {
                       style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16 }}>×</button>
                   )}
                 </div>
-                {showDrop && filteredProjects.length > 0 && (
-                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 200, overflowY: 'auto', marginTop: 2 }}>
-                    {filteredProjects.map(p => (
+                {selectedProject?.archived && (
+                  <div style={{ marginTop: 4, fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.yellow, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    ⚠ Progetto archiviato
+                  </div>
+                )}
+                {showDrop && (filteredProjects.active.length > 0 || filteredProjects.archived.length > 0) && (
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 220, overflowY: 'auto', marginTop: 2 }}>
+                    {filteredProjects.active.map(p => (
                       <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
                         style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
                         onMouseEnter={e => e.currentTarget.style.background = T.bg}
@@ -245,6 +254,21 @@ export default function TimesheetPage() {
                         {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
                       </button>
                     ))}
+                    {filteredProjects.archived.length > 0 && (
+                      <>
+                        <div style={{ padding: '6px 12px 4px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.muted, borderTop: filteredProjects.active.length > 0 ? `0.5px solid ${T.ink10}` : 'none' }}>Archiviati</div>
+                        {filteredProjects.archived.map(p => (
+                          <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
+                            style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
+                            onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.muted }}>{p.name}</div>
+                            {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
