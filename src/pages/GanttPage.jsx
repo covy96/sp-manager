@@ -261,7 +261,7 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
     if (bW > 40 && lav.descrizione) {
       const cId = `c${i}`;
       clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+5}" y="${bY}" width="${bW-10}" height="${bH}"/></clipPath>`);
-      barsSvg += `<text x="${bX+8}" y="${bY+bH*0.68}" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="400" fill="white" text-rendering="geometricPrecision" clip-path="url(#${cId})">${lav.descrizione}</text>`;
+      barsSvg += `<text x="${bX+8}" y="${bY+bH*0.68}" font-family="'Space Grotesk', sans-serif" font-size="10.5" font-weight="600" fill="white" text-rendering="geometricPrecision" clip-path="url(#${cId})">${lav.descrizione}</text>`;
     }
   });
 
@@ -1324,7 +1324,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
                       {/* Label */}
                       {barW>60&&(
-                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",fontSize:12,fontWeight:400,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:12,fontWeight:600,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
                           {lav.descrizione}
                         </div>
                       )}
