@@ -285,6 +285,7 @@ input, textarea, select, button { touch-action: manipulation; }
 
 /* ── Modal entrance ── */
 .asm-modal-bg {
+  background: rgba(14, 14, 13, 0.55);
   animation: asm-fade-in 200ms var(--ease-smooth) both;
 }
 .asm-modal-content {
