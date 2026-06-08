@@ -558,7 +558,7 @@ export default function AppLayout({ session, children }) {
       {showAccountPicker && (
         <div style={{ position:'fixed', inset:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)' }}
           onClick={() => setShowAccountPicker(false)}>
-          <div style={{ width:'100%', maxWidth:380, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:28 }}
+          <div style={{ width:'100%', maxWidth:380, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, padding:28, boxShadow:T.shadowLg }}
             onClick={e => e.stopPropagation()}>
 
             <div style={{ fontSize:16, fontWeight:600, color:T.ink, marginBottom:4 }}>Cambia account</div>

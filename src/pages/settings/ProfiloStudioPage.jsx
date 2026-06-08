@@ -206,7 +206,7 @@ export default function ProfiloStudioPage() {
       {/* Modal cambio tipo */}
       {tipoModal && (
         <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:500,background:T.surface,border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,padding:28}}>
+          <div style={{width:'100%',maxWidth:500,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm,boxShadow:T.shadowLg,padding:28}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>Cambia tipo fatturazione</div>
               <button onClick={()=>setTipoModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>

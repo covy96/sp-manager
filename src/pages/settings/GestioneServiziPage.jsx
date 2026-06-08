@@ -252,7 +252,7 @@ export default function GestioneServiziPage() {
       {/* Modal nuovo servizio */}
       {addModalOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.5)', padding:16 }}>
-          <div style={{ width:'100%', maxWidth:400, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:28 }}>
+          <div style={{ width:'100%', maxWidth:400, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding:28 }}>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:18 }}>Nuovo Servizio</div>
             <form onSubmit={handleAddService} style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <input type="text" placeholder="Nome del servizio" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} required autoFocus style={inputSt} />

@@ -121,7 +121,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   // Su mobile: modal centrato fullscreen
   if (isMobile) return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-      <div ref={ref} onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:20, maxHeight:'85vh', overflowY:'auto' }}>
+      <div ref={ref} onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding:20, maxHeight:'85vh', overflowY:'auto' }}>
         {formContent}
       </div>
     </div>
@@ -679,7 +679,7 @@ export default function ProjectDetailPage() {
       {/* EDIT MODAL */}
       {editOpen && (
         <div onClick={() => { if (!editSaving) setEditOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, background: T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Modifica Progetto</div>
               <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>×</button>

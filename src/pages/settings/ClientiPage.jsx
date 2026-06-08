@@ -279,7 +279,7 @@ export default function ClientiPage() {
 
       {addModalOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
-          <div style={{width:'100%',maxWidth:400,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:28}}>
+          <div style={{width:'100%',maxWidth:400,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,borderRadius: T.radius, boxShadow: T.shadowLg, padding:28}}>
             <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
               I clienti si aggiungono anche automaticamente dai progetti e commesse

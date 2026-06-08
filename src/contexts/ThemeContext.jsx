@@ -41,7 +41,7 @@ const LIGHT = {
   headerBg:     'rgba(232,234,240,0.75)',
   headerBorder: 'rgba(255,255,255,0.55)',
   // Glass extras
-  glassBg:      'rgba(248,249,252,0.92)',
+  glassBg:      'rgba(248,249,252,0.98)',
   glassBorder:  'rgba(255,255,255,0.85)',
   glassSheen:   'rgba(255,255,255,0.25)',
   shadow:       '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)',
@@ -86,7 +86,7 @@ const DARK = {
   sidebarNum:   'rgba(217,201,138,0.60)',
   headerBg:     'rgba(20,20,28,0.80)',
   headerBorder: 'rgba(255,255,255,0.08)',
-  glassBg:      'rgba(28,28,38,0.94)',
+  glassBg:      'rgba(28,28,38,0.98)',
   glassBorder:  'rgba(255,255,255,0.12)',
   glassSheen:   'rgba(255,255,255,0.06)',
   shadow:       '0 4px 24px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.20)',
