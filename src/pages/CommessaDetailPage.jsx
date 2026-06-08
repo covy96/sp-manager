@@ -209,6 +209,14 @@ export default function CommessaDetailPage() {
   const [rimuoviModal, setRimuoviModal]           = useState(false);
   const [rimuoviSaving, setRimuoviSaving]         = useState(false);
 
+  // ── Fatture dirette (solo modalità SRL) ──
+  const [fattureCommessa, setFattureCommessa]     = useState([]);
+  const [fatturaModal, setFatturaModal]           = useState(false);
+  const [editFatturaData, setEditFatturaData]     = useState(null);
+  const [fatturaForm, setFatturaForm]             = useState({ numero_fattura:'', data_emissione:'', data_scadenza:'', importo_totale:'', note:'' });
+  const [fatturaSaving, setFatturaSaving]         = useState(false);
+  const [fatturaError, setFatturaError]           = useState('');
+
   const [deleteCommessaModal, setDeleteCommessaModal] = useState(false);
   const [deletingSaving, setDeletingSaving]           = useState(false);
 
@@ -282,6 +290,42 @@ export default function CommessaDetailPage() {
   };
 
   useEffect(() => { if (studioId) loadData(); }, [commessaId, studioId]);
+
+  // Carica fatture dirette (tabella `fatture`) per commessa in modalità SRL
+  const loadFattureCommessa = async () => {
+    if (!commessaId) return;
+    const { data } = await supabase.from('fatture').select('*').eq('commessa_id', commessaId).is('deleted_at', null).order('data_emissione', { ascending: false });
+    setFattureCommessa(data ?? []);
+  };
+  useEffect(() => { if (isFattura && commessaId) loadFattureCommessa(); }, [commessaId, isFattura]);
+
+  const handleSaveFattura = async (e) => {
+    e.preventDefault();
+    if (!fatturaForm.numero_fattura.trim() || !fatturaForm.data_emissione) { setFatturaError('Numero fattura e data emissione obbligatori.'); return; }
+    setFatturaSaving(true); setFatturaError('');
+    const payload = { studio: studioId, commessa_id: commessaId, numero_fattura: fatturaForm.numero_fattura.trim(), data_emissione: fatturaForm.data_emissione, data_scadenza: fatturaForm.data_scadenza || null, importo_totale: Number(fatturaForm.importo_totale) || 0, note: fatturaForm.note || null };
+    if (editFatturaData) {
+      await supabase.from('fatture').update(payload).eq('id', editFatturaData.id);
+    } else {
+      await supabase.from('fatture').insert({ ...payload, pagato: false });
+    }
+    setFatturaSaving(false); setFatturaModal(false); setEditFatturaData(null);
+    loadFattureCommessa();
+  };
+  const handleSegnaPagataFattura = async (f) => {
+    const today = new Date().toISOString().slice(0,10);
+    await supabase.from('fatture').update({ pagato: true, data_pagamento: today }).eq('id', f.id);
+    setFattureCommessa(p => p.map(x => x.id === f.id ? { ...x, pagato: true, data_pagamento: today } : x));
+  };
+  const handleAnnullaPagFattura = async (f) => {
+    await supabase.from('fatture').update({ pagato: false, data_pagamento: null }).eq('id', f.id);
+    setFattureCommessa(p => p.map(x => x.id === f.id ? { ...x, pagato: false, data_pagamento: null } : x));
+  };
+  const handleDeleteFattura = async (id) => {
+    if (!window.confirm('Eliminare questa fattura?')) return;
+    await supabase.rpc('elimina_fattura', { p_id: id });
+    setFattureCommessa(p => p.filter(x => x.id !== id));
+  };
 
   // ── CALCOLATI — usa nomi campi originali ──────────────────────
   const importoBase = Number(commessa?.importo_offerta_base) || 0;
@@ -626,8 +670,75 @@ export default function CommessaDetailPage() {
       {/* PROFORMA / FATTURA */}
       <Panel>
         <SectionHeader title={isFattura ? "Fattura" : "Proforma"} action={
-          <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
+          isFattura
+            ? <BtnPrimary onClick={() => { setEditFatturaData(null); const today = new Date().toISOString().slice(0,10); setFatturaForm({ numero_fattura:'', data_emissione:today, data_scadenza:'', importo_totale:'', note:'' }); setFatturaError(''); setFatturaModal(true); }}>+ Nuova</BtnPrimary>
+            : <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
         } />
+
+        {/* ── MODALITÀ SRL: mostra fatture dalla tabella fatture ── */}
+        {isFattura ? (
+          <>
+            {fattureCommessa.filter(f => !f.pagato).length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Da pagare</div>
+                <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>{['N°','Data emissione','Scadenza','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {fattureCommessa.filter(f => !f.pagato).map(f => {
+                      const overdue = f.data_scadenza && new Date(f.data_scadenza) < new Date();
+                      return (
+                        <tr key={f.id}>
+                          <td style={tdSt}><span style={monoSt}>{f.numero_fattura}</span></td>
+                          <td style={{ ...tdSt, ...monoSt }}>{f.data_emissione ? new Date(f.data_emissione).toLocaleDateString('it-IT') : '—'}</td>
+                          <td style={{ ...tdSt, ...monoSt, color: overdue ? T.red : T.ink }}>{f.data_scadenza ? new Date(f.data_scadenza).toLocaleDateString('it-IT') : '—'}</td>
+                          <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(f.importo_totale)}</td>
+                          <td style={{ ...tdSt, textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                              <BtnPrimary onClick={() => handleSegnaPagataFattura(f)} style={{ fontSize: 10, padding: '5px 10px' }}>Segna pagata</BtnPrimary>
+                              <RowMenu open={openMenuId === `fatt-${f.id}`} onOpen={() => setOpenMenuId(`fatt-${f.id}`)} onClose={() => setOpenMenuId(null)}
+                                items={[{ label: 'Modifica', onClick: () => { setEditFatturaData(f); setFatturaForm({ numero_fattura: f.numero_fattura||'', data_emissione: f.data_emissione||'', data_scadenza: f.data_scadenza||'', importo_totale: f.importo_totale||'', note: f.note||'' }); setFatturaError(''); setFatturaModal(true); }}, { label: 'Elimina', danger: true, onClick: () => handleDeleteFattura(f.id) }]} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            )}
+            {fattureCommessa.filter(f => f.pagato).length > 0 && (
+              <div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.green, marginBottom: 8 }}>Pagate</div>
+                <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>{['N°','Data emissione','Data pag.','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {fattureCommessa.filter(f => f.pagato).map(f => (
+                      <tr key={f.id}>
+                        <td style={tdSt}><span style={monoSt}>{f.numero_fattura}</span></td>
+                        <td style={{ ...tdSt, ...monoSt }}>{f.data_emissione ? new Date(f.data_emissione).toLocaleDateString('it-IT') : '—'}</td>
+                        <td style={{ ...tdSt, ...monoSt }}>{f.data_pagamento ? new Date(f.data_pagamento).toLocaleDateString('it-IT') : '—'}</td>
+                        <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.green }}>{currency(f.importo_totale)}</td>
+                        <td style={{ ...tdSt, textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                            <button onClick={() => handleAnnullaPagFattura(f)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>annulla pag.</button>
+                            <RowMenu open={openMenuId === `fatt-paid-${f.id}`} onOpen={() => setOpenMenuId(`fatt-paid-${f.id}`)} onClose={() => setOpenMenuId(null)}
+                              items={[{ label: 'Modifica', onClick: () => { setEditFatturaData(f); setFatturaForm({ numero_fattura: f.numero_fattura||'', data_emissione: f.data_emissione||'', data_scadenza: f.data_scadenza||'', importo_totale: f.importo_totale||'', note: f.note||'' }); setFatturaError(''); setFatturaModal(true); }}, { label: 'Elimina', danger: true, onClick: () => handleDeleteFattura(f.id) }]} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            )}
+            {fattureCommessa.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>Nessuna fattura</div>}
+          </>
+        ) : (
+          <>
         {proforma.filter(p => !p.pagato).length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Da pagare</div>
@@ -683,7 +794,9 @@ export default function CommessaDetailPage() {
             </div>
           </div>
         )}
-        {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>{isFattura ? "Nessuna fattura" : "Nessuna proforma"}</div>}
+            {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>Nessuna proforma</div>}
+          </>
+        )}
       </Panel>
 
       {/* GRID COSTI + RATE */}
@@ -1104,6 +1217,21 @@ export default function CommessaDetailPage() {
           <div><FieldLabel>Note</FieldLabel><Input value={proformaForm.note} onChange={e => setProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
           {proformaError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{proformaError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setProformaModal(false)} disabled={proformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={proformaSaving}>{proformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
+        </form>
+      </Modal>
+
+      {/* Modal fattura diretta (modalità SRL) */}
+      <Modal open={fatturaModal} onClose={() => { setFatturaModal(false); setEditFatturaData(null); }} title={editFatturaData ? "Modifica Fattura" : "Nuova Fattura"} width={500}>
+        <form onSubmit={handleSaveFattura} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><FieldLabel>N° Fattura *</FieldLabel><Input value={fatturaForm.numero_fattura} onChange={e => setFatturaForm(p => ({ ...p, numero_fattura: e.target.value }))} required /></div>
+            <div><FieldLabel>Data emissione *</FieldLabel><Input type="date" value={fatturaForm.data_emissione} onChange={e => setFatturaForm(p => ({ ...p, data_emissione: e.target.value }))} required /></div>
+            <div><FieldLabel>Data scadenza</FieldLabel><Input type="date" value={fatturaForm.data_scadenza} onChange={e => setFatturaForm(p => ({ ...p, data_scadenza: e.target.value }))} /></div>
+            <div><FieldLabel>Importo €</FieldLabel><Input type="number" step="0.01" min="0" value={fatturaForm.importo_totale} onChange={e => setFatturaForm(p => ({ ...p, importo_totale: e.target.value }))} /></div>
+          </div>
+          <div><FieldLabel>Note</FieldLabel><Input value={fatturaForm.note} onChange={e => setFatturaForm(p => ({ ...p, note: e.target.value }))} /></div>
+          {fatturaError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{fatturaError}</div>}
+          <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => { setFatturaModal(false); setEditFatturaData(null); }} disabled={fatturaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={fatturaSaving}>{fatturaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
 
