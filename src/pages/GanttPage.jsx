@@ -261,7 +261,7 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
     if (bW > 40 && lav.descrizione) {
       const cId = `c${i}`;
       clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+5}" y="${bY}" width="${bW-10}" height="${bH}"/></clipPath>`);
-      barsSvg += `<text x="${bX+7}" y="${bY+bH*0.69}" font-family="'IBM Plex Mono', monospace" font-size="9" fill="white" clip-path="url(#${cId})">${lav.descrizione}</text>`;
+      barsSvg += `<text x="${bX+7}" y="${bY+bH*0.69}" font-family="'Space Grotesk', sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,0.95)" clip-path="url(#${cId})">${lav.descrizione}</text>`;
     }
   });
 
@@ -1324,7 +1324,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
                       {/* Label */}
                       {barW>60&&(
-                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.surface,letterSpacing:'0.04em',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:11,fontWeight:600,color:'rgba(255,255,255,0.95)',letterSpacing:'-0.01em',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
                           {lav.descrizione}
                         </div>
                       )}
