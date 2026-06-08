@@ -1324,7 +1324,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
                       {/* Label */}
                       {barW>60&&(
-                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:12,fontWeight:600,letterSpacing:'-0.01em',color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:12,fontWeight:600,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
                           {lav.descrizione}
                         </div>
                       )}
