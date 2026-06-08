@@ -57,20 +57,23 @@ export default function FatturePage() {
     data_scadenza:'', importo_totale:'', note:'', numero_fattura_fiscale:'',
   });
   const [proformePagate, setProformePagate] = useState([]);
+  const [proformeTutte, setProformeTutte]   = useState([]); // tutte (SRL mode)
   const [saving, setSaving]             = useState(false);
   const [formError, setFormError]       = useState('');
 
   const loadData = async () => {
     if (!studioId) return;
     setLoading(true);
-    const [{ data:fatt }, { data:comm }, { data:profPagate }] = await Promise.all([
+    const [{ data:fatt }, { data:comm }, { data:profPagate }, { data:profTutte }] = await Promise.all([
       supabase.from("fatture").select("*").eq("studio",studioId).is("deleted_at",null).order("data_emissione",{ascending:false}),
       supabase.from("commesse").select("id,nome_commessa,cliente").eq("studio",studioId),
-      supabase.from("proforma").select("*").eq("studio",studioId).eq("pagato",true).order("data_pagamento",{ascending:false}),
+      supabase.from("proforma").select("*").eq("studio",studioId).eq("pagato",true).is("deleted_at",null).order("data_pagamento",{ascending:false}),
+      supabase.from("proforma").select("*").eq("studio",studioId).is("deleted_at",null).order("created_at",{ascending:false}),
     ]);
     setFatture(fatt??[]);
     setCommesse(comm??[]);
     setProformePagate(profPagate??[]);
+    setProformeTutte(profTutte??[]);
     setLoading(false);
   };
 
@@ -80,28 +83,49 @@ export default function FatturePage() {
   const commessaCliente = id => commesse.find(c=>c.id===id)?.cliente||'—';
 
   // KPI
-  const totaleEmesso  = tipoFatturazione === 'proforma'
-    ? proformePagate.reduce((s,p)=>s+(Number(p.importo_totale)||0),0)
-    : fatture.reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
-  const totalePagato  = tipoFatturazione === 'proforma'
-    ? totaleEmesso
-    : fatture.filter(f=>f.pagato).reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
-  const daIncassare   = tipoFatturazione === 'proforma'
-    ? 0
-    : fatture.filter(f=>!f.pagato).reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
-  const scadute       = tipoFatturazione === 'proforma'
-    ? 0
-    : fatture.filter(f=>isOverdue(f.data_scadenza,f.pagato)).length;
+  const isFatturaSRL = tipoFatturazione === 'fattura';
+  const totaleEmesso  = isFatturaSRL
+    ? proformeTutte.reduce((s,p)=>s+(Number(p.importo_totale)||0),0)
+    : tipoFatturazione === 'proforma'
+      ? proformePagate.reduce((s,p)=>s+(Number(p.importo_totale)||0),0)
+      : fatture.reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
+  const totalePagato  = isFatturaSRL
+    ? proformeTutte.filter(p=>p.pagato).reduce((s,p)=>s+(Number(p.importo_totale)||0),0)
+    : tipoFatturazione === 'proforma'
+      ? totaleEmesso
+      : fatture.filter(f=>f.pagato).reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
+  const daIncassare   = isFatturaSRL
+    ? proformeTutte.filter(p=>!p.pagato).reduce((s,p)=>s+(Number(p.importo_totale)||0),0)
+    : tipoFatturazione === 'proforma'
+      ? 0
+      : fatture.filter(f=>!f.pagato).reduce((s,f)=>s+(Number(f.importo_totale)||0),0);
+  const scadute       = isFatturaSRL
+    ? proformeTutte.filter(p=>isOverdue(p.data_scadenza,p.pagato)).length
+    : tipoFatturazione === 'proforma'
+      ? 0
+      : fatture.filter(f=>isOverdue(f.data_scadenza,f.pagato)).length;
 
   const anniDisponibili = useMemo(() => {
     const anni = new Set();
     anni.add(new Date().getFullYear());
-    fatture.forEach(f => {
-      const d = f.data_emissione || f.created_at;
+    const source = isFatturaSRL ? proformeTutte : fatture;
+    source.forEach(f => {
+      const d = f.data_emissione || f.data_creazione || f.created_at;
       if (d) anni.add(new Date(d).getFullYear());
     });
     return Array.from(anni).sort((a,b)=>b-a);
-  }, [fatture]);
+  }, [fatture, proformeTutte, isFatturaSRL]);
+
+  const visibiliSRL = useMemo(() => {
+    let list = showPagate ? proformeTutte : proformeTutte.filter(p=>!p.pagato);
+    if (annoFiltro !== 0) {
+      list = list.filter(p => {
+        const d = p.data_creazione || p.created_at;
+        return d && new Date(d).getFullYear() === annoFiltro;
+      });
+    }
+    return list;
+  }, [proformeTutte, showPagate, annoFiltro]);
 
   const visibili = useMemo(() => {
     let list = showPagate ? fatture : fatture.filter(f=>!f.pagato);
@@ -224,16 +248,84 @@ export default function FatturePage() {
       {/* KPI */}
       <div style={{display:'grid',gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4,1fr)',gap:10,minWidth:0}}>
         <KpiCard label="Totale emesso"  value={currency(totaleEmesso)}  color={T.ink}
-          sub={tipoFatturazione==='proforma' ? `${proformePagate.length} proforma pagate` : `${fatture.length} fatture`}/>
+          sub={isFatturaSRL ? `${proformeTutte.length} fatture` : tipoFatturazione==='proforma' ? `${proformePagate.length} proforma pagate` : `${fatture.length} fatture`}/>
         <KpiCard label="Pagato"         value={currency(totalePagato)}  color={T.green}
-          sub={tipoFatturazione==='proforma' ? 'tutte incassate' : `${fatture.filter(f=>f.pagato).length} pagate`}/>
+          sub={isFatturaSRL ? `${proformeTutte.filter(p=>p.pagato).length} pagate` : tipoFatturazione==='proforma' ? 'tutte incassate' : `${fatture.filter(f=>f.pagato).length} pagate`}/>
         <KpiCard label="Da incassare"   value={currency(daIncassare)}   color={daIncassare>0?T.red:T.muted}
-          sub={tipoFatturazione==='proforma' ? '—' : `${fatture.filter(f=>!f.pagato).length} aperte`}/>
+          sub={isFatturaSRL ? `${proformeTutte.filter(p=>!p.pagato).length} aperte` : tipoFatturazione==='proforma' ? '—' : `${fatture.filter(f=>!f.pagato).length} aperte`}/>
         <KpiCard label="Scadute"        value={scadute}                 color={scadute>0?T.red:T.muted} sub="non pagate"/>
       </div>
 
-      {/* Tabella condizionale: proforma pagate o fatture dirette */}
-      {tipoFatturazione === 'proforma' ? (
+      {/* Tabella condizionale */}
+      {isFatturaSRL ? (
+        /* ── MODALITÀ SRL: mostra tutte le fatture (tabella proforma) ── */
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`}}>
+            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
+              {visibiliSRL.length} fatture
+            </div>
+            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+              <input type="checkbox" checked={showPagate} onChange={e=>setShowPagate(e.target.checked)} style={{accentColor:T.navy,width:13,height:13}}/>
+              <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Mostra anche pagate</span>
+            </label>
+          </div>
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse'}}>
+              <thead>
+                <tr>
+                  {[['numero_proforma','N° Fattura'],['commessa','Commessa'],['cliente','Cliente'],['data_creazione','Data emissione'],['data_scadenza','Scadenza'],['importo_totale','Importo'],['stato','Stato']].map(([col,lbl])=>(
+                    <th key={col} style={{...thSt,cursor:'pointer',userSelect:'none'}} onClick={()=>handleSortF(col)}>
+                      <span style={{display:'inline-flex',alignItems:'center',gap:4,color:sortColF===col?T.navy:T.muted}}>
+                        {lbl}<span style={{fontSize:9,opacity:sortColF===col?1:0.3}}>{sortColF===col?(sortAscF?'↑':'↓'):'↕'}</span>
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visibiliSRL.length===0 ? (
+                  <tr><td colSpan={7} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>Nessuna fattura</td></tr>
+                ) : [...visibiliSRL].sort((a,b)=>{
+                    const v = r => {
+                      if(sortColF==='commessa') return (commessaName(r.commessa_id)||'').toLowerCase();
+                      if(sortColF==='cliente') return (commessaCliente(r.commessa_id)||'').toLowerCase();
+                      if(sortColF==='importo_totale') return Number(r.importo_totale)||0;
+                      if(sortColF==='data_creazione'||sortColF==='data_scadenza') return r[sortColF]?new Date(r[sortColF]).getTime():0;
+                      return (r[sortColF]||'').toString().toLowerCase();
+                    };
+                    const vA=v(a),vB=v(b);
+                    return vA<vB?(sortAscF?-1:1):vA>vB?(sortAscF?1:-1):0;
+                  }).map(p=>{
+                  const overdue = isOverdue(p.data_scadenza, p.pagato);
+                  return (
+                    <tr key={p.id} onClick={()=>p.commessa_id&&navigate(`/commesse/${p.commessa_id}`)}
+                      style={{cursor:p.commessa_id?'pointer':'default'}}>
+                      <td style={{...tdSt,fontWeight:600}}>{p.numero_proforma}</td>
+                      <td style={{...tdSt,color:T.navy}}>{p.commessa_id ? commessaName(p.commessa_id) : '—'}</td>
+                      <td style={{...tdSt,color:T.muted}}>{p.commessa_id?commessaCliente(p.commessa_id):'—'}</td>
+                      <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11}}>{fmtDate(p.data_creazione)}</td>
+                      <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:overdue?T.red:T.ink}}>{fmtDate(p.data_scadenza)}</td>
+                      <td style={{...tdSt,fontFamily:"'IBM Plex Mono', monospace",fontSize:12,color:T.navy,fontWeight:600}}>{currency(p.importo_totale)}</td>
+                      <td style={tdSt}>
+                        {p.pagato ? (
+                          <div>
+                            <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.green,letterSpacing:'0.05em'}}>✓ PAGATA</span>
+                            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted}}>{fmtDate(p.data_pagamento)}</div>
+                          </div>
+                        ) : (
+                          <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:overdue?T.red:T.muted,letterSpacing:'0.05em'}}>
+                            {overdue?'⚠ SCADUTA':'IN ATTESA'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : tipoFatturazione === 'proforma' ? (
         <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
           <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
             {proformePagate.length} proforma pagate
