@@ -130,7 +130,8 @@ export default function CommessaDetailPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { id: commessaId } = useParams();
-  const { studioId } = useStudio();
+  const { studioId, studio } = useStudio();
+  const isFattura = studio?.tipo_fatturazione === 'fattura';
 
   const [commessa, setCommessa]           = useState(null);
   const [costiExtra, setCostiExtra]       = useState([]);
@@ -622,9 +623,9 @@ export default function CommessaDetailPage() {
         <Panel><div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.8 }}>{commessa.note_amministrative}</div></Panel>
       )}
 
-      {/* PROFORMA */}
+      {/* PROFORMA / FATTURA */}
       <Panel>
-        <SectionHeader title="Proforma" action={
+        <SectionHeader title={isFattura ? "Fattura" : "Proforma"} action={
           <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
         } />
         {proforma.filter(p => !p.pagato).length > 0 && (
@@ -682,7 +683,7 @@ export default function CommessaDetailPage() {
             </div>
           </div>
         )}
-        {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>Nessuna proforma</div>}
+        {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>{isFattura ? "Nessuna fattura" : "Nessuna proforma"}</div>}
       </Panel>
 
       {/* GRID COSTI + RATE */}
@@ -1021,10 +1022,10 @@ export default function CommessaDetailPage() {
         );
       })()}
 
-      <Modal open={proformaModal} onClose={() => setProformaModal(false)} title="Nuova Proforma" subtitle={`Importo selezionato: ${currency(importoProformaSelezionata)}`} width={600}>
+      <Modal open={proformaModal} onClose={() => setProformaModal(false)} title={isFattura ? "Nuova Fattura" : "Nuova Proforma"} subtitle={`Importo selezionato: ${currency(importoProformaSelezionata)}`} width={600}>
         <form onSubmit={handleSaveProforma} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><FieldLabel>N° Proforma *</FieldLabel><Input value={proformaForm.numero_proforma} onChange={e => setProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} required /></div>
+            <div><FieldLabel>{isFattura ? "N° Fattura *" : "N° Proforma *"}</FieldLabel><Input value={proformaForm.numero_proforma} onChange={e => setProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} required /></div>
             <div><FieldLabel>Data creazione</FieldLabel><Input type="date" value={proformaForm.data_creazione} onChange={e => setProformaForm(p => ({ ...p, data_creazione: e.target.value }))} /></div>
             <div><FieldLabel>Data scadenza *</FieldLabel><Input type="date" value={proformaForm.data_scadenza} onChange={e => setProformaForm(p => ({ ...p, data_scadenza: e.target.value }))} required /></div>
           </div>
@@ -1106,7 +1107,7 @@ export default function CommessaDetailPage() {
         </form>
       </Modal>
 
-      <Modal open={pagProformaModal} onClose={() => setPagProformaModal(false)} title="Conferma Pagamento" subtitle={selectedProforma ? `Proforma ${selectedProforma.numero_proforma} — ${currency(selectedProforma.importo_totale)}` : ""} width={420}>
+      <Modal open={pagProformaModal} onClose={() => setPagProformaModal(false)} title="Conferma Pagamento" subtitle={selectedProforma ? `${isFattura ? "Fattura" : "Proforma"} ${selectedProforma.numero_proforma} — ${currency(selectedProforma.importo_totale)}` : ""} width={420}>
         <form onSubmit={handleSavePagamento} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>N° Fattura</FieldLabel><Input value={pagProformaData.numero_fattura} onChange={e => setPagProformaData(p => ({ ...p, numero_fattura: e.target.value }))} /></div>
           <div><FieldLabel>Data Pagamento</FieldLabel><Input type="date" value={pagProformaData.data_pagamento} onChange={e => setPagProformaData(p => ({ ...p, data_pagamento: e.target.value }))} /></div>

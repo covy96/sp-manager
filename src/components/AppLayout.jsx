@@ -79,7 +79,7 @@ export default function AppLayout({ session, children }) {
   const location    = useLocation();
   const navigate    = useNavigate();
   const permissions = usePermissions();
-  const { teamMember, studioId } = useStudio();
+  const { teamMember, studioId, studio } = useStudio();
   const { pageTitle } = usePageTitle();
   const { T, theme, setTheme, isDark } = useTheme();
   const { plan } = usePlan();
@@ -178,13 +178,18 @@ export default function AppLayout({ session, children }) {
 
   useEffect(() => { setShowMac(navigator.platform.toUpperCase().includes("MAC")); }, []);
 
+  const isFattura = studio?.tipo_fatturazione === 'fattura';
+
   const menuItems = useMemo(() => ALL_MENU_ITEMS.filter(item => {
     if (item.divider) return true; // i divider passano sempre, verranno gestiti nel render
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
-    return currentPlanLevel >= required;
-  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel]);
+    if (currentPlanLevel < required) return false;
+    // Nascondi Proforma per studi con fatturazione diretta (SRL/Spa)
+    if (item.path === '/proforma' && isFattura) return false;
+    return true;
+  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel, isFattura]);
 
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || "U");
   const memberColor    = teamMember?.color || T.navy;

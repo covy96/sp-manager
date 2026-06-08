@@ -97,17 +97,21 @@ class ErrorBoundary extends React.Component {
 export default function MobileLayout({ session, children }) {
   const navigate    = useNavigate();
   const loc         = useLocation();
-  const { teamMember, studioId } = useStudio();
+  const { teamMember, studioId, studio } = useStudio();
   const permissions = usePermissions();
   const { isFree, plan }  = usePlan();
   const currentPlanLevel = PLAN_ORDER[plan?.id || 'free'];
   const { T, theme, setTheme, isDark } = useTheme();
 
+  const isFattura = studio?.tipo_fatturazione === 'fattura';
+
   const isAllowed = (item) => {
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
-    return currentPlanLevel >= required;
+    if (currentPlanLevel < required) return false;
+    if (item.path === '/proforma' && isFattura) return false;
+    return true;
   };
 
   const [menuOpen, setMenuOpen]         = useState(false);
