@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
@@ -80,12 +80,286 @@ function Modal({ open, onClose, title, children, width = 480 }) {
 }
 function Divider() { const { T } = useTheme(); return <div style={{ height: '0.5px', background: T.ink10, margin: '14px 0' }} />; }
 
+// ── HELPERS DATE ─────────────────────────────────────────────────
+function getMonday(d) {
+  const day = new Date(d); const dow = day.getDay();
+  day.setDate(day.getDate() - (dow === 0 ? 6 : dow - 1));
+  return day.toISOString().slice(0, 10);
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr); d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function addWeeks(dateStr, n) { return addDays(dateStr, n * 7); }
+function addMonths(dateStr, n) {
+  const d = new Date(dateStr); d.setMonth(d.getMonth() + n);
+  return d.toISOString().slice(0, 10);
+}
+function getMonthStart(dateStr) {
+  const d = new Date(dateStr); d.setDate(1);
+  return d.toISOString().slice(0, 10);
+}
+function getMonthEnd(dateStr) {
+  const d = new Date(dateStr); d.setMonth(d.getMonth() + 1); d.setDate(0);
+  return d.toISOString().slice(0, 10);
+}
+function formatWeekLabel(monday) {
+  const sun = addDays(monday, 6);
+  const mDate = new Date(monday); const sDate = new Date(sun);
+  const mStr = mDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  const sStr = sDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  return `${mStr} – ${sStr}`;
+}
+function formatMonthLabel(dateStr) {
+  return new Date(dateStr).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+}
+const IT_DAYS_SHORT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+
+// ── VISTA TEAM ────────────────────────────────────────────────────
+function VistaTeam({ studioId, teamMembers, projects }) {
+  const { T } = useTheme();
+  const isMobile = window.innerWidth < 768;
+
+  const [mode, setMode]             = useState('settimana'); // 'settimana' | 'mese'
+  const [weekStart, setWeekStart]   = useState(() => getMonday(new Date().toISOString().slice(0,10)));
+  const [monthStart, setMonthStart] = useState(() => getMonthStart(new Date().toISOString().slice(0,10)));
+  const [filterMember, setFilterMember] = useState('tutti'); // 'tutti' | memberId
+  const [entries, setEntries]       = useState([]);
+  const [loading, setLoading]       = useState(false);
+
+  // date range
+  const { dateFrom, dateTo, days, label } = useMemo(() => {
+    if (mode === 'settimana') {
+      const monday = weekStart;
+      const sunday = addDays(monday, 6);
+      const daysArr = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+      return { dateFrom: monday, dateTo: sunday, days: daysArr, label: formatWeekLabel(monday) };
+    } else {
+      const ms = monthStart;
+      const me = getMonthEnd(ms);
+      const daysArr = [];
+      let cur = ms;
+      while (cur <= me) { daysArr.push(cur); cur = addDays(cur, 1); }
+      return { dateFrom: ms, dateTo: me, days: daysArr, label: formatMonthLabel(ms) };
+    }
+  }, [mode, weekStart, monthStart]);
+
+  const load = useCallback(async () => {
+    if (!studioId) return;
+    setLoading(true);
+    let q = supabase.from('timesheet').select('*')
+      .eq('studio', studioId)
+      .gte('date', dateFrom)
+      .lte('date', dateTo);
+    if (filterMember !== 'tutti') q = q.eq('team_member', filterMember);
+    const { data } = await q;
+    setEntries(data ?? []);
+    setLoading(false);
+  }, [studioId, dateFrom, dateTo, filterMember]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const navigate = dir => {
+    if (mode === 'settimana') setWeekStart(p => addWeeks(p, dir));
+    else setMonthStart(p => addMonths(p, dir));
+  };
+
+  // Calcola righe della tabella
+  const tableData = useMemo(() => {
+    if (filterMember === 'tutti') {
+      // righe = membri, colonne = giorni
+      return teamMembers.map(m => {
+        const memberEntries = entries.filter(e => e.team_member === m.id);
+        const byDay = {};
+        days.forEach(d => {
+          const hrs = memberEntries.filter(e => e.date === d).reduce((s, e) => s + (Number(e.hours) || 0), 0);
+          byDay[d] = hrs;
+        });
+        const total = Object.values(byDay).reduce((s, v) => s + v, 0);
+        return { id: m.id, label: m.user_name || m.user_email || '—', byDay, total, color: m.color || avatarColor(m.user_name || m.user_email || '') };
+      }).filter(r => r.total > 0 || teamMembers.length <= 6);
+    } else {
+      // righe = progetti, colonne = giorni
+      const projectIds = [...new Set(entries.map(e => e.project_id).filter(Boolean))];
+      return projectIds.map(pid => {
+        const proj = projects.find(p => p.id === pid);
+        const projEntries = entries.filter(e => e.project_id === pid);
+        const byDay = {};
+        days.forEach(d => {
+          const hrs = projEntries.filter(e => e.date === d).reduce((s, e) => s + (Number(e.hours) || 0), 0);
+          byDay[d] = hrs;
+        });
+        const total = Object.values(byDay).reduce((s, v) => s + v, 0);
+        return { id: pid, label: proj?.name || entries.find(e => e.project_id === pid)?.project_name || '—', byDay, total, color: '#13315C' };
+      }).sort((a, b) => b.total - a.total);
+    }
+  }, [entries, teamMembers, projects, days, filterMember]);
+
+  // Colonne da mostrare (solo quelle con dati, in mese collassa a settimane)
+  const columns = useMemo(() => {
+    if (mode === 'mese') {
+      // raggruppa per settimana (lun-dom)
+      const weeks = [];
+      let i = 0;
+      while (i < days.length) {
+        const dayOfWeek = new Date(days[i]).getDay();
+        const daysToSun = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+        const end = Math.min(i + daysToSun, days.length - 1);
+        const wDays = days.slice(i, end + 1);
+        weeks.push({ key: days[i], label: `${new Date(days[i]).getDate()}/${new Date(days[i]).getMonth()+1}`, days: wDays });
+        i = end + 1;
+      }
+      return weeks.map(w => ({
+        key: w.key,
+        label: w.label,
+        getVal: (byDay) => w.days.reduce((s, d) => s + (byDay[d] || 0), 0),
+      }));
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      return days.map((d, i) => ({
+        key: d,
+        label: IT_DAYS_SHORT[i] || IT_DAYS_SHORT[new Date(d).getDay() === 0 ? 6 : new Date(d).getDay() - 1],
+        sub: new Date(d).getDate(),
+        isToday: d === today,
+        isWeekend: new Date(d).getDay() === 0 || new Date(d).getDay() === 6,
+        getVal: (byDay) => byDay[d] || 0,
+      }));
+    }
+  }, [days, mode]);
+
+  const totalByCol = useMemo(() =>
+    columns.map(col => tableData.reduce((s, row) => s + col.getVal(row.byDay), 0)),
+    [columns, tableData]
+  );
+
+  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* controlli */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {/* mode toggle */}
+        <div style={{ display: 'flex', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
+          {['settimana','mese'].map(m => (
+            <button key={m} onClick={() => setMode(m)} style={{ padding: '7px 14px', background: mode === m ? T.navy : 'transparent', color: mode === m ? T.bg : T.ink, border: 'none', cursor: 'pointer', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s' }}>
+              {m}
+            </button>
+          ))}
+        </div>
+
+        {/* navigator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.surface, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '6px 12px' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '0 2px' }}>←</button>
+          <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', minWidth: isMobile ? 90 : 130, textAlign: 'center' }}>{label}</span>
+          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '0 2px' }}>→</button>
+        </div>
+
+        {/* filter utente */}
+        <select
+          value={filterMember}
+          onChange={e => setFilterMember(e.target.value)}
+          style={{ padding: '7px 12px', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: filterMember !== 'tutti' ? T.navy : T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: 'pointer', fontWeight: filterMember !== 'tutti' ? 600 : 400 }}
+        >
+          <option value="tutti">Tutti i membri</option>
+          {teamMembers.map(m => (
+            <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>
+          ))}
+        </select>
+
+        {loading && <span style={{ ...mono, fontSize: 10, color: T.muted }}>Caricamento...</span>}
+      </div>
+
+      {/* tabella */}
+      <div style={{ overflowX: 'auto', borderRadius: T.radiusSm, border: `1px solid ${T.ink10}`, background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: mode === 'settimana' ? 500 : 400 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.ink10}` }}>
+              <th style={{ padding: '10px 16px', textAlign: 'left', ...mono, fontSize: 8.5, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, fontWeight: 400, width: isMobile ? 90 : 160 }}>
+                {filterMember === 'tutti' ? 'Persona' : 'Progetto'}
+              </th>
+              {columns.map((col, ci) => (
+                <th key={col.key} style={{ padding: '10px 8px', textAlign: 'center', ...mono, fontSize: 8.5, color: col.isToday ? T.navy : col.isWeekend ? T.muted : T.ink, fontWeight: col.isToday ? 700 : 400, background: col.isWeekend ? T.bg : 'transparent', minWidth: 48 }}>
+                  <div>{col.label}</div>
+                  {col.sub !== undefined && <div style={{ fontSize: 9, color: col.isToday ? T.navy : T.muted, marginTop: 1 }}>{col.sub}</div>}
+                </th>
+              ))}
+              <th style={{ padding: '10px 12px', textAlign: 'right', ...mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, fontWeight: 700, minWidth: 52 }}>Tot</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.length === 0 && !loading ? (
+              <tr>
+                <td colSpan={columns.length + 2} style={{ padding: '32px 16px', textAlign: 'center', ...mono, fontSize: 11, color: T.muted }}>
+                  Nessuna registrazione in questo periodo.
+                </td>
+              </tr>
+            ) : tableData.map((row, ri) => (
+              <tr key={row.id} style={{ borderBottom: ri < tableData.length - 1 ? `0.5px solid ${T.ink10}` : 'none', transition: 'background 0.1s' }}
+                onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {/* label */}
+                <td style={{ padding: '9px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {filterMember === 'tutti' && (
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: row.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8.5, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                        {getInitials(row.label)}
+                      </div>
+                    )}
+                    <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? 70 : 120 }}>{row.label}</span>
+                  </div>
+                </td>
+                {/* celle ore */}
+                {columns.map(col => {
+                  const val = col.getVal(row.byDay);
+                  return (
+                    <td key={col.key} style={{ padding: '9px 8px', textAlign: 'center', background: col.isWeekend ? T.bg : 'transparent' }}>
+                      {val > 0
+                        ? <span style={{ display: 'inline-flex', minWidth: 32, height: 22, background: `${row.color}20`, borderRadius: 5, ...mono, fontSize: 9, color: row.color, fontWeight: 700, alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{formatOre(val)}h</span>
+                        : <span style={{ ...mono, fontSize: 10, color: 'rgba(14,14,13,0.18)' }}>—</span>
+                      }
+                    </td>
+                  );
+                })}
+                {/* totale riga */}
+                <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                  <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: T.navy }}>{formatOre(row.total)}h</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {/* footer totali colonne */}
+          {tableData.length > 0 && (
+            <tfoot>
+              <tr style={{ borderTop: `1px solid ${T.ink10}`, background: T.bg }}>
+                <td style={{ padding: '8px 16px', ...mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>Totale</td>
+                {totalByCol.map((tot, ci) => (
+                  <td key={columns[ci].key} style={{ padding: '8px 8px', textAlign: 'center', background: columns[ci].isWeekend ? T.bg : 'transparent' }}>
+                    {tot > 0
+                      ? <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: T.navy }}>{formatOre(tot)}h</span>
+                      : <span style={{ ...mono, fontSize: 10, color: 'rgba(14,14,13,0.18)' }}>—</span>
+                    }
+                  </td>
+                ))}
+                <td style={{ padding: '8px 12px', textAlign: 'right', ...mono, fontSize: 11, fontWeight: 700, color: T.navy }}>
+                  {formatOre(tableData.reduce((s, r) => s + r.total, 0))}h
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function TimesheetPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Timesheet");
   const { studioId, teamMember: currentMember } = useStudio();
 
+  const [activeTab, setActiveTab]       = useState('giornaliero'); // 'giornaliero' | 'team'
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [entries, setEntries]           = useState([]);
   const [projects, setProjects]         = useState([]);
@@ -203,18 +477,39 @@ export default function TimesheetPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Timesheet</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
-            {formatDateDisplay(selectedDate)}
-          </div>
+          {activeTab === 'giornaliero' && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
+              {formatDateDisplay(selectedDate)}
+            </div>
+          )}
         </div>
-        {/* Date navigator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '4px 8px', background: T.surface }}>
-          <button onClick={() => navigateDate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>←</button>
-          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-            style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }} />
-          <button onClick={() => navigateDate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>→</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Tab switcher */}
+          <div style={{ display: 'flex', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
+            {[['giornaliero','Giornaliero'],['team','Vista team']].map(([key, label]) => (
+              <button key={key} onClick={() => setActiveTab(key)} style={{ padding: '7px 14px', background: activeTab === key ? T.navy : 'transparent', color: activeTab === key ? T.bg : T.ink, border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* Date navigator — solo tab giornaliero */}
+          {activeTab === 'giornaliero' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '4px 8px', background: T.surface }}>
+              <button onClick={() => navigateDate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>←</button>
+              <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }} />
+              <button onClick={() => navigateDate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>→</button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Vista team */}
+      {activeTab === 'team' && (
+        <VistaTeam studioId={studioId} teamMembers={teamMembers} projects={projects} />
+      )}
+
+      {activeTab === 'giornaliero' && <>
 
       {/* Add entry form */}
       {(() => {
@@ -369,7 +664,6 @@ export default function TimesheetPage() {
       {/* Edit Modal */}
       <Modal open={!!editingEntry} onClose={() => setEditingEntry(null)} title="Modifica registrazione">
         <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Progetto (readonly) */}
           <div>
             <FieldLabel>Progetto</FieldLabel>
             <div style={{ padding: '8px 12px', border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, background: T.bg, fontSize: 12, color: T.muted, fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -398,6 +692,8 @@ export default function TimesheetPage() {
           </div>
         </form>
       </Modal>
+
+      </> /* end giornaliero */}
 
     </div>
   );
