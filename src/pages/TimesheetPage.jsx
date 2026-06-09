@@ -115,25 +115,21 @@ function formatMonthLabel(dateStr) {
 }
 const IT_DAYS_SHORT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
-// ── VISTA TEAM ────────────────────────────────────────────────────
-function VistaTeam({ studioId, teamMembers, projects }) {
+// ── VISTA PERSONALE ───────────────────────────────────────────────
+function VistaTeam({ studioId, projects, currentMemberId }) {
   const { T } = useTheme();
-  const isMobile = window.innerWidth < 768;
 
-  const [mode, setMode]             = useState('settimana'); // 'settimana' | 'mese'
+  const [mode, setMode]             = useState('settimana');
   const [weekStart, setWeekStart]   = useState(() => getMonday(new Date().toISOString().slice(0,10)));
   const [monthStart, setMonthStart] = useState(() => getMonthStart(new Date().toISOString().slice(0,10)));
-  const [filterMember, setFilterMember] = useState('tutti'); // 'tutti' | memberId
   const [entries, setEntries]       = useState([]);
   const [loading, setLoading]       = useState(false);
 
-  // date range
   const { dateFrom, dateTo, days, label } = useMemo(() => {
     if (mode === 'settimana') {
       const monday = weekStart;
-      const sunday = addDays(monday, 6);
       const daysArr = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-      return { dateFrom: monday, dateTo: sunday, days: daysArr, label: formatWeekLabel(monday) };
+      return { dateFrom: monday, dateTo: addDays(monday, 6), days: daysArr, label: formatWeekLabel(monday) };
     } else {
       const ms = monthStart;
       const me = getMonthEnd(ms);
@@ -145,17 +141,16 @@ function VistaTeam({ studioId, teamMembers, projects }) {
   }, [mode, weekStart, monthStart]);
 
   const load = useCallback(async () => {
-    if (!studioId) return;
+    if (!studioId || !currentMemberId) return;
     setLoading(true);
-    let q = supabase.from('timesheet').select('*')
+    const { data } = await supabase.from('timesheet').select('*')
       .eq('studio', studioId)
+      .eq('team_member', currentMemberId)
       .gte('date', dateFrom)
       .lte('date', dateTo);
-    if (filterMember !== 'tutti') q = q.eq('team_member', filterMember);
-    const { data } = await q;
     setEntries(data ?? []);
     setLoading(false);
-  }, [studioId, dateFrom, dateTo, filterMember]);
+  }, [studioId, currentMemberId, dateFrom, dateTo]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -164,36 +159,21 @@ function VistaTeam({ studioId, teamMembers, projects }) {
     else setMonthStart(p => addMonths(p, dir));
   };
 
-  // Calcola righe della tabella
+  // righe = progetti, colonne = giorni
   const tableData = useMemo(() => {
-    if (filterMember === 'tutti') {
-      // righe = membri, colonne = giorni
-      return teamMembers.map(m => {
-        const memberEntries = entries.filter(e => e.team_member === m.id);
-        const byDay = {};
-        days.forEach(d => {
-          const hrs = memberEntries.filter(e => e.date === d).reduce((s, e) => s + (Number(e.hours) || 0), 0);
-          byDay[d] = hrs;
-        });
-        const total = Object.values(byDay).reduce((s, v) => s + v, 0);
-        return { id: m.id, label: m.user_name || m.user_email || '—', byDay, total, color: m.color || avatarColor(m.user_name || m.user_email || '') };
-      }).filter(r => r.total > 0 || teamMembers.length <= 6);
-    } else {
-      // righe = progetti, colonne = giorni
-      const projectIds = [...new Set(entries.map(e => e.project_id).filter(Boolean))];
-      return projectIds.map(pid => {
-        const proj = projects.find(p => p.id === pid);
-        const projEntries = entries.filter(e => e.project_id === pid);
-        const byDay = {};
-        days.forEach(d => {
-          const hrs = projEntries.filter(e => e.date === d).reduce((s, e) => s + (Number(e.hours) || 0), 0);
-          byDay[d] = hrs;
-        });
-        const total = Object.values(byDay).reduce((s, v) => s + v, 0);
-        return { id: pid, label: proj?.name || entries.find(e => e.project_id === pid)?.project_name || '—', byDay, total, color: '#13315C' };
-      }).sort((a, b) => b.total - a.total);
-    }
-  }, [entries, teamMembers, projects, days, filterMember]);
+    const projectIds = [...new Set(entries.map(e => e.project_id).filter(Boolean))];
+    return projectIds.map(pid => {
+      const proj = projects.find(p => p.id === pid);
+      const projEntries = entries.filter(e => e.project_id === pid);
+      const byDay = {};
+      days.forEach(d => {
+        const hrs = projEntries.filter(e => e.date === d).reduce((s, e) => s + (Number(e.hours) || 0), 0);
+        byDay[d] = hrs;
+      });
+      const total = Object.values(byDay).reduce((s, v) => s + v, 0);
+      return { id: pid, label: proj?.name || entries.find(e => e.project_id === pid)?.project_name || '—', byDay, total };
+    }).sort((a, b) => b.total - a.total);
+  }, [entries, projects, days]);
 
   // Colonne da mostrare (solo quelle con dati, in mese collassa a settimane)
   const columns = useMemo(() => {
@@ -236,37 +216,23 @@ function VistaTeam({ studioId, teamMembers, projects }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* controlli */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* mode toggle */}
+      {/* controlli — stile navigatore sistema */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {/* toggle settimana/mese integrato nel navigatore */}
+        <div style={{ display: 'flex', alignItems: 'center', background: T.surface, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', borderRight: `1px solid ${T.ink10}`, cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '7px 10px' }}>←</button>
+          <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', padding: '0 12px', minWidth: 110, textAlign: 'center' }}>{label}</span>
+          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', borderLeft: `1px solid ${T.ink10}`, cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '7px 10px' }}>→</button>
+        </div>
+        {/* settimana / mese */}
         <div style={{ display: 'flex', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
-          {['settimana','mese'].map(m => (
-            <button key={m} onClick={() => setMode(m)} style={{ padding: '7px 14px', background: mode === m ? T.navy : 'transparent', color: mode === m ? T.bg : T.ink, border: 'none', cursor: 'pointer', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s' }}>
-              {m}
+          {[['settimana','Sett.'],['mese','Mese']].map(([m, lbl]) => (
+            <button key={m} onClick={() => setMode(m)} style={{ padding: '7px 12px', background: mode === m ? T.navy : 'transparent', color: mode === m ? T.bg : T.muted, border: 'none', cursor: 'pointer', ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'background 0.15s' }}>
+              {lbl}
             </button>
           ))}
         </div>
-
-        {/* navigator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.surface, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '6px 12px' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '0 2px' }}>←</button>
-          <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', minWidth: isMobile ? 90 : 130, textAlign: 'center' }}>{label}</span>
-          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '0 2px' }}>→</button>
-        </div>
-
-        {/* filter utente */}
-        <select
-          value={filterMember}
-          onChange={e => setFilterMember(e.target.value)}
-          style={{ padding: '7px 12px', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: filterMember !== 'tutti' ? T.navy : T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', cursor: 'pointer', fontWeight: filterMember !== 'tutti' ? 600 : 400 }}
-        >
-          <option value="tutti">Tutti i membri</option>
-          {teamMembers.map(m => (
-            <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>
-          ))}
-        </select>
-
-        {loading && <span style={{ ...mono, fontSize: 10, color: T.muted }}>Caricamento...</span>}
+        {loading && <span style={{ ...mono, fontSize: 10, color: T.muted }}>...</span>}
       </div>
 
       {/* tabella */}
@@ -275,7 +241,7 @@ function VistaTeam({ studioId, teamMembers, projects }) {
           <thead>
             <tr style={{ borderBottom: `1px solid ${T.ink10}` }}>
               <th style={{ padding: '10px 16px', textAlign: 'left', ...mono, fontSize: 8.5, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, fontWeight: 400, width: isMobile ? 90 : 160 }}>
-                {filterMember === 'tutti' ? 'Persona' : 'Progetto'}
+                Progetto
               </th>
               {columns.map((col, ci) => (
                 <th key={col.key} style={{ padding: '10px 8px', textAlign: 'center', ...mono, fontSize: 8.5, color: col.isToday ? T.navy : col.isWeekend ? T.muted : T.ink, fontWeight: col.isToday ? 700 : 400, background: col.isWeekend ? T.bg : 'transparent', minWidth: 48 }}>
@@ -300,14 +266,7 @@ function VistaTeam({ studioId, teamMembers, projects }) {
               >
                 {/* label */}
                 <td style={{ padding: '9px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {filterMember === 'tutti' && (
-                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: row.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8.5, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                        {getInitials(row.label)}
-                      </div>
-                    )}
-                    <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? 70 : 120 }}>{row.label}</span>
-                  </div>
+                  <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? 70 : 120, display: 'block' }}>{row.label}</span>
                 </td>
                 {/* celle ore */}
                 {columns.map(col => {
@@ -652,7 +611,7 @@ export default function TimesheetPage() {
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Vista team
           </div>
-          <VistaTeam studioId={studioId} teamMembers={teamMembers} projects={projects} />
+          <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} />
         </div>
 
       </div>{/* fine grid */}
