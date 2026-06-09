@@ -117,7 +117,7 @@ function formatMonthLabel(dateStr) {
 const IT_DAYS_SHORT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
 // ── VISTA PERSONALE ───────────────────────────────────────────────
-function VistaTeam({ studioId, projects, currentMemberId }) {
+function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
   const { T } = useTheme();
   const isMobile = window.innerWidth < 768;
 
@@ -154,7 +154,7 @@ function VistaTeam({ studioId, projects, currentMemberId }) {
     setLoading(false);
   }, [studioId, currentMemberId, dateFrom, dateTo]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, refreshKey]);
 
   const navigate = dir => {
     if (mode === 'settimana') setWeekStart(p => addWeeks(p, dir));
@@ -322,6 +322,7 @@ export default function TimesheetPage() {
   const [teamMembers, setTeamMembers]   = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
+  const [teamRefreshKey, setTeamRefreshKey] = useState(0);
 
   const [projectSearch, setProjectSearch]   = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
@@ -395,7 +396,7 @@ export default function TimesheetPage() {
       studio: studioId,
     }).select("*").single();
     if (iErr) { setError(iErr.message); }
-    else { setEntries(p => [data, ...p]); setSelectedProject(null); setProjectSearch(""); setHours(1); setNotes(""); }
+    else { setEntries(p => [data, ...p]); setSelectedProject(null); setProjectSearch(""); setHours(1); setNotes(""); setTeamRefreshKey(k => k + 1); }
     setAdding(false);
   };
 
@@ -403,7 +404,7 @@ export default function TimesheetPage() {
     e.preventDefault(); if (!editingEntry) return; setSavingEdit(true);
     const { data, error: uErr } = await supabase.from("timesheet").update({ hours: editHours, notes: editNotes.trim() || null }).eq("id", editingEntry.id).select("*").single();
     if (uErr) alert("Errore: " + uErr.message);
-    else { setEntries(p => p.map(en => en.id === data.id ? data : en)); setEditingEntry(null); }
+    else { setEntries(p => p.map(en => en.id === data.id ? data : en)); setEditingEntry(null); setTeamRefreshKey(k => k + 1); }
     setSavingEdit(false);
   };
 
@@ -411,7 +412,7 @@ export default function TimesheetPage() {
     if (!editingEntry || !confirm("Sei sicuro di voler eliminare questa registrazione?")) return;
     const { error: dErr } = await supabase.rpc('elimina_timesheet', { p_id: editingEntry.id });
     if (dErr) { alert("Errore: " + dErr.message); return; }
-    setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null);
+    setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null); setTeamRefreshKey(k => k + 1);
   };
 
   const totalHours = useMemo(() => entries.reduce((s, en) => s + (Number(en.hours) || 0), 0), [entries]);
@@ -609,7 +610,7 @@ export default function TimesheetPage() {
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Vista team
           </div>
-          <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} />
+          <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} refreshKey={teamRefreshKey} />
         </div>
 
       </div>{/* fine grid */}
