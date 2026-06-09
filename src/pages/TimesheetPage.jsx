@@ -347,6 +347,7 @@ export default function TimesheetPage() {
       .eq("studio", studioId)
       .eq("date", date)
       .eq("team_member", currentMember.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (qErr) { setError(qErr.message); setEntries([]); } else setEntries(data ?? []);
     setLoading(false);
