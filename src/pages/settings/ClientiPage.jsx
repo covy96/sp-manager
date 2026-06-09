@@ -101,12 +101,13 @@ export default function ClientiPage() {
     const { data, error:iErr } = await supabase.from("global_contacts").insert({
       full_name:newContact.full_name.trim(), company:newContact.company.trim()||null, studio:studioId,
     }).select("*").single();
-    if (iErr) { setFormError(iErr.message); setSaving(false); return; }
+    if (iErr) { alert("ERRORE INSERT: " + JSON.stringify(iErr)); setFormError(iErr.message); setSaving(false); return; }
+    if (!data) { alert("data è null dopo insert — studioId: " + studioId); }
     setAddModalOpen(false); setNewContact({full_name:"",company:""}); setSaving(false);
     if (data) {
       setContacts(p=>[...p,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
     } else {
-      await loadAll(); // fallback: ricarica dal DB se SELECT post-insert non torna dati
+      await loadAll();
     }
   };
 
