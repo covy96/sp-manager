@@ -102,8 +102,12 @@ export default function ClientiPage() {
       full_name:newContact.full_name.trim(), company:newContact.company.trim()||null, studio:studioId,
     }).select("*").single();
     if (iErr) { setFormError(iErr.message); setSaving(false); return; }
-    setContacts(p=>[...p,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
     setAddModalOpen(false); setNewContact({full_name:"",company:""}); setSaving(false);
+    if (data) {
+      setContacts(p=>[...p,data].sort((a,b)=>a.full_name.localeCompare(b.full_name)));
+    } else {
+      await loadAll(); // fallback: ricarica dal DB se SELECT post-insert non torna dati
+    }
   };
 
   const handleDelete = async id => {
