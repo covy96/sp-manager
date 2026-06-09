@@ -149,7 +149,8 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
       .eq('studio', studioId)
       .eq('team_member', currentMemberId)
       .gte('date', dateFrom)
-      .lte('date', dateTo);
+      .lte('date', dateTo)
+      .is('deleted_at', null);
     setEntries(data ?? []);
     setLoading(false);
   }, [studioId, currentMemberId, dateFrom, dateTo]);
