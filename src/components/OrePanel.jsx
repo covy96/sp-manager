@@ -108,9 +108,10 @@ function exportOrePDF(entries, memberMap, projectName) {
     tr:hover{background:#f5f7fa}
   </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;border-bottom:2px solid #13315C;padding-bottom:10px">
-    <div>
-      <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:#0E0E0D;font-family:'Space Grotesk',sans-serif">Ore lavorate — ${projectName || 'Progetto'}</div>
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#999;margin-top:3px">Totale: ${fmtH(totalOre)} h · Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
+    <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:#0E0E0D;font-family:'Space Grotesk',sans-serif">Ore lavorate — ${projectName || 'Progetto'}</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+      <div style="font-size:20px;font-weight:700;color:#13315C;font-family:'Space Grotesk',sans-serif">${fmtH(totalOre)} h</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#999">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
     </div>
   </div>
   <table><tbody>${rows}</tbody></table>
