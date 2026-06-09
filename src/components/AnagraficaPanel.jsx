@@ -161,7 +161,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
 
   // ── WIDGET COMPATTO ──────────────────────────────────────────────
   const widget = (
-    <button onClick={() => setModalOpen(true)} style={{
+    <button onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setConfirmDelete(null); setModalOpen(true); }} style={{
       display: 'flex', alignItems: 'center', gap: 8,
       border: `1px solid ${contacts.length > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
       background: contacts.length > 0 ? T.navyLight : 'transparent',
