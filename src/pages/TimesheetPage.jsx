@@ -610,7 +610,7 @@ export default function TimesheetPage() {
         {/* ── COLONNA DESTRA: vista team ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
-            Vista team
+            Visualizza ore
           </div>
           <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} refreshKey={teamRefreshKey} />
         </div>
