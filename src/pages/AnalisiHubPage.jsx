@@ -106,6 +106,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
   const [ofTab, setOfTab]           = useState("tutte");
   const [hoveredVoce, setHoveredVoce] = useState(null);
   const [pieModal, setPieModal]     = useState(false);
+  const [voceModal, setVoceModal]   = useState(null); // { nome, color, offerte[] }
 
   const offerteFiltrate = useMemo(() => {
     let r = anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno);
@@ -137,6 +138,26 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
   }, [offerteFiltrate, vociTemplate]);
 
   const totalTemplate = useMemo(() => righeVoci.reduce((s, r) => s + r.totale, 0), [righeVoci]);
+
+  // mappa voce_key → lista offerte che la contengono
+  const voceOfferteMap = useMemo(() => {
+    const map = {};
+    for (const off of offerteFiltrate) {
+      const sconto = Number(off.sconto) || 0;
+      const voci = Array.isArray(off.voci) && off.voci.length > 0
+        ? off.voci : [{ nome: off.nome_offerta || "Prestazione", prezzo: Number(off.importo_offerta_base) || 0, attiva: true }];
+      const lordi = voci.filter(v => v.attiva !== false).reduce((s, v) => s + Number(v.prezzo || 0), 0);
+      const alreadyDisc = sconto > 0 && Math.abs(lordi - Number(off.importo_offerta_base)) < 0.5;
+      const norm = alreadyDisc ? voci.map(v => ({ ...v, prezzo: Math.round(Number(v.prezzo || 0) / (1 - sconto / 100) * 100) / 100 })) : voci;
+      for (const v of norm) {
+        if (v.attiva === false) continue;
+        const k = (v.nome || "—").trim().toLowerCase();
+        if (!map[k]) map[k] = [];
+        map[k].push({ offerta: off, prezzoVoce: Number(v.prezzo || 0) });
+      }
+    }
+    return map;
+  }, [offerteFiltrate]);
   const pieData = useMemo(() =>
     righeVoci.filter(r => r.totale > 0).map((r, i) => ({ name: r.nome, value: r.totale, color: PALETTE[i % PALETTE.length] })),
   [righeVoci]);
@@ -175,13 +196,17 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                   const idx = pieData.findIndex(p => p.name === r.nome);
                   const colore = idx >= 0 ? PALETTE[idx % PALETTE.length] : T.border;
                   const hasVal = r.totale > 0;
+                  const k = r.nome.trim().toLowerCase();
                   return (
-                    <div key={r.nome} onMouseEnter={() => setHoveredVoce(r.nome)} onMouseLeave={() => setHoveredVoce(null)}
-                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 18px", borderBottom: i < righeVoci.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === r.nome ? T.glassSheen : "transparent", transition: "background 150ms" }}>
+                    <div key={r.nome}
+                      onMouseEnter={() => setHoveredVoce(r.nome)} onMouseLeave={() => setHoveredVoce(null)}
+                      onClick={() => hasVal && setVoceModal({ nome: r.nome, color: colore, offerte: voceOfferteMap[k] || [] })}
+                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 18px", borderBottom: i < righeVoci.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === r.nome && hasVal ? T.glassSheen : "transparent", transition: "background 150ms", cursor: hasVal ? "pointer" : "default" }}>
                       <div style={{ width: 9, height: 9, borderRadius: "50%", background: hasVal ? colore : T.border, flexShrink: 0 }} />
                       <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: hasVal ? T.ink : T.muted, flex: 1 }}>{r.nome}</div>
                       {hasVal && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{pct(r.totale, totalTemplate)}%</div>}
                       <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: hasVal ? 600 : 400, color: hasVal ? T.ink : T.muted, minWidth: 100, textAlign: "right" }}>{hasVal ? currency(r.totale) : "—"}</div>
+                      {hasVal && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, opacity: hoveredVoce === r.nome ? 1 : 0, transition: "opacity 150ms" }}>↗</div>}
                     </div>
                   );
                 })}
@@ -271,6 +296,60 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
             </div>
         }
       </Panel>
+
+      {/* Modal offerte per voce */}
+      {voceModal && (
+        <div onClick={() => setVoceModal(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, boxShadow: T.shadowLg, width: "100%", maxWidth: 680, maxHeight: "80vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {/* header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "18px 24px", borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ width: 11, height: 11, borderRadius: "50%", background: voceModal.color, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: T.ink }}>{voceModal.nome}</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{voceModal.offerte.length} offert{voceModal.offerte.length === 1 ? "a" : "e"}</div>
+              </div>
+              <button onClick={() => setVoceModal(null)} style={{ background: "rgba(128,128,128,0.12)", border: "none", cursor: "pointer", color: T.muted, width: 28, height: 28, borderRadius: "50%", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+            </div>
+            {/* lista offerte */}
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {voceModal.offerte.length === 0
+                ? <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessuna offerta trovata</div>
+                : voceModal.offerte.map(({ offerta: o, prezzoVoce }, i) => {
+                    const stato = STATI[o.stato] ?? { label: o.stato, color: T.muted, bg: "transparent" };
+                    return (
+                      <div key={o.id} onClick={() => { setVoceModal(null); navigate(`/offerte/${o.id}`); }}
+                        style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 24px", borderBottom: i < voceModal.offerte.length - 1 ? `0.5px solid ${T.border}` : "none", cursor: "pointer", transition: "background 120ms" }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.glassSheen}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        {/* numero */}
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, minWidth: 60 }}>{o.numero_offerta || "—"}</div>
+                        {/* nome + cliente */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.nome_offerta || "—"}</div>
+                          {o.cliente && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{o.cliente}</div>}
+                        </div>
+                        {/* stato */}
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "3px 9px", borderRadius: 99, flexShrink: 0 }}>{stato.label}</span>
+                        {/* importo voce */}
+                        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600, color: T.ink, minWidth: 90, textAlign: "right" }}>{currency(prezzoVoce)}</div>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>→</div>
+                      </div>
+                    );
+                  })
+              }
+            </div>
+            {/* footer totale */}
+            {voceModal.offerte.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em" }}>Totale voce</div>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(voceModal.offerte.reduce((s, x) => s + x.prezzoVoce, 0))}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal torta */}
       {pieModal && (
