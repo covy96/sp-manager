@@ -1223,9 +1223,9 @@ export default function CommessaDetailPage() {
         </form>
       </Modal>
 
-      <Modal open={editProformaModal} onClose={() => setEditProformaModal(false)} title="Modifica Proforma" width={420}>
+      <Modal open={editProformaModal} onClose={() => setEditProformaModal(false)} title={isFattura ? "Modifica Fattura" : "Modifica Proforma"} width={420}>
         <form onSubmit={handleSaveEditProforma} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><FieldLabel>N° Proforma</FieldLabel><Input value={editProformaForm.numero_proforma ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} /></div>
+          <div><FieldLabel>{isFattura ? "N° Fattura" : "N° Proforma"}</FieldLabel><Input value={editProformaForm.numero_proforma ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} /></div>
           <div><FieldLabel>Data creazione</FieldLabel><Input type="date" value={editProformaForm.data_creazione ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, data_creazione: e.target.value }))} /></div>
           <div><FieldLabel>Note</FieldLabel><Input value={editProformaForm.note ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditProformaModal(false)} disabled={editProformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editProformaSaving}>{editProformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>

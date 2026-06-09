@@ -144,9 +144,9 @@ export default function TimesheetPage() {
     const all = s
       ? projects.filter(p => p.name?.toLowerCase().includes(s) || p.client?.toLowerCase().includes(s))
       : projects;
-    const active   = all.filter(p => !p.archived).slice(0, 10);
-    const archived = all.filter(p =>  p.archived).slice(0, 5);
-    return { active, archived };
+    const active   = all.filter(p => !p.archived).slice(0, s ? 20 : 10);
+    const archived = all.filter(p =>  p.archived).slice(0, s ? 20 : 5);
+    return { active, archived, isEmpty: all.length === 0 && s.length > 0 };
   }, [projectSearch, projects]);
 
   const handleSelectProject = p => { setSelectedProject(p); setProjectSearch(p.name); setShowDrop(false); };
@@ -242,7 +242,12 @@ export default function TimesheetPage() {
                     ⚠ Progetto archiviato
                   </div>
                 )}
-                {showDrop && (filteredProjects.active.length > 0 || filteredProjects.archived.length > 0) && (
+                {showDrop && filteredProjects.isEmpty && (
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, padding: '12px 14px', marginTop: 2, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+                    Nessun progetto trovato
+                  </div>
+                )}
+                {showDrop && !filteredProjects.isEmpty && (filteredProjects.active.length > 0 || filteredProjects.archived.length > 0) && (
                   <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 220, overflowY: 'auto', marginTop: 2 }}>
                     {filteredProjects.active.map(p => (
                       <button key={p.id} type="button" onClick={() => handleSelectProject(p)}

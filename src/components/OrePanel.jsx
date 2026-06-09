@@ -50,14 +50,16 @@ function exportOrePDF(entries, memberMap, projectName) {
     return null;
   };
 
-  // Raggruppa per giorno
+  // Raggruppa per giorno → per persona, con note
   const byDay = {};
   for (const e of entries) {
     if (!e.date) continue;
     const name = resolveName(e);
     if (!name) continue;
     if (!byDay[e.date]) byDay[e.date] = {};
-    byDay[e.date][name] = (byDay[e.date][name] || 0) + (Number(e.hours) || 0);
+    if (!byDay[e.date][name]) byDay[e.date][name] = { ore: 0, notes: [] };
+    byDay[e.date][name].ore += (Number(e.hours) || 0);
+    if (e.notes?.trim()) byDay[e.date][name].notes.push(e.notes.trim());
   }
 
   const days = Object.keys(byDay).sort((a, b) => a.localeCompare(b));
@@ -73,8 +75,8 @@ function exportOrePDF(entries, memberMap, projectName) {
 
   let rows = "";
   for (const day of days) {
-    const members = Object.entries(byDay[day]).sort((a,b) => b[1]-a[1]);
-    const dayTotal = members.reduce((s,[,h]) => s+h, 0);
+    const members = Object.entries(byDay[day]).sort((a,b) => b[1].ore - a[1].ore);
+    const dayTotal = members.reduce((s,[,v]) => s + v.ore, 0);
     rows += `
       <tr class="day-row">
         <td colspan="2" style="padding:10px 16px 4px; font-weight:700; font-size:11px; color:#13315C; text-transform:capitalize; border-top:2px solid #e0e4ec;">
@@ -84,12 +86,15 @@ function exportOrePDF(entries, memberMap, projectName) {
           ${fmtH(dayTotal)} h
         </td>
       </tr>`;
-    for (const [name, ore] of members) {
+    for (const [name, { ore, notes }] of members) {
       rows += `
         <tr>
           <td style="padding:4px 16px 4px 32px; font-size:10px; color:#555; width:24px;">·</td>
-          <td style="padding:4px 8px; font-size:11px; color:#1a1a1e;">${name}</td>
-          <td style="padding:4px 16px; font-size:11px; color:#555; text-align:right;">${fmtH(ore)} h</td>
+          <td style="padding:4px 8px; font-size:11px; color:#1a1a1e;">
+            ${name}
+            ${notes.length > 0 ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#888;margin-top:1px">${notes.join(' · ')}</div>` : ''}
+          </td>
+          <td style="padding:4px 16px; font-size:11px; color:#555; text-align:right; vertical-align:top;">${fmtH(ore)} h</td>
         </tr>`;
     }
   }
@@ -147,7 +152,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
     const [{ data: ts }, { data: tm }] = await Promise.all([
       supabase
         .from("timesheet")
-        .select("id, date, hours, user_name, team_member")
+        .select("id, date, hours, notes, user_name, team_member")
         .eq("project_id", projectId)
         .order("date", { ascending: false }),
       supabase
