@@ -191,7 +191,7 @@ export default function CalendarioPage() {
       setCurrentMemberId(tm.id);
 
       const [tasksRes, membersRes] = await Promise.all([
-        supabase.from("tasks").select("*").eq("studio",studioId).gte("data_pianificata",loadRange.start).lte("data_pianificata",loadRange.end),
+        supabase.from("tasks").select("*").eq("studio",studioId).gte("data_pianificata",loadRange.start).lte("data_pianificata",loadRange.end).is("deleted_at",null),
         supabase.from("team_members").select("id,user_name,user_email,color").eq("studio",studioId),
       ]);
       if (tasksRes.error) { setError(tasksRes.error.message); setLoading(false); return; }

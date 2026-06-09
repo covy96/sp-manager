@@ -244,9 +244,11 @@ export default function FatturePage() {
         <div>
           <div style={{fontSize:22,fontWeight:600,letterSpacing:'-0.03em',color:T.ink,marginBottom:4}}>Fatture</div>
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
-            {tipoFatturazione === 'proforma'
-              ? `${proformePagate.length} proforma pagate — fatture emesse`
-              : `${fatture.length} fatture emesse`
+            {isFatturaSRL
+              ? `${proformeTutte.length} fatture emesse`
+              : tipoFatturazione === 'proforma'
+                ? `${proformePagate.length} proforma pagate — fatture emesse`
+                : `${fatture.length} fatture emesse`
             }
           </div>
         </div>
@@ -256,7 +258,7 @@ export default function FatturePage() {
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          {tipoFatturazione === 'fattura' && (
+          {tipoFatturazione === 'fattura' && !isFatturaSRL && (
             <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'9px 20px',cursor:'pointer'}}>
               + Nuova fattura
             </button>

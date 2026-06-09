@@ -348,7 +348,7 @@ export default function ScrivaniaPage() {
     currentMemberIdRef.current = tm.id;
 
     const [tasksRes, membersRes, notesRes] = await Promise.all([
-      supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id),
+      supabase.from("tasks").select("*").eq("studio", studioId).eq("assigned_member", tm.id).is("deleted_at", null),
       supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId),
       supabase.rpc("get_notes_for_member", { p_studio_id: studioId, p_member_id: tm.id }),
     ]);

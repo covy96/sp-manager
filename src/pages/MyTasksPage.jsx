@@ -111,7 +111,7 @@ export default function MyTasksPage() {
     catch (e) { setError(e.message); setLoading(false); return; }
 
     const { data: tasks, error: tErr } = await supabase
-      .from("tasks").select("*").eq("studio", studioId).eq("assigned_member", teamMember.id);
+      .from("tasks").select("*").eq("studio", studioId).eq("assigned_member", teamMember.id).is("deleted_at", null);
     if (tErr) { setError(tErr.message || "Errore caricamento task"); setLoading(false); return; }
 
     const combined = tasks ?? [];
