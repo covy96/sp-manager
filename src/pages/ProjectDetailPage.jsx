@@ -604,7 +604,7 @@ export default function ProjectDetailPage() {
             {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
               <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             )}
-            <OrePanel projectId={id} studioId={studioId} />
+            <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
               <ReportCantierePanel
                 projectId={id}

@@ -43,7 +43,86 @@ function weekLabel(monday) {
   return `${fmt(monday)} – ${fmt(end)}`;
 }
 
-export default function OrePanel({ projectId, studioId }) {
+function exportOrePDF(entries, memberMap, projectName) {
+  const resolveName = (e) => {
+    if (e.user_name && e.user_name.trim()) return e.user_name.trim();
+    if (e.team_member && memberMap[e.team_member]) return memberMap[e.team_member];
+    return null;
+  };
+
+  // Raggruppa per giorno
+  const byDay = {};
+  for (const e of entries) {
+    if (!e.date) continue;
+    const name = resolveName(e);
+    if (!name) continue;
+    if (!byDay[e.date]) byDay[e.date] = {};
+    byDay[e.date][name] = (byDay[e.date][name] || 0) + (Number(e.hours) || 0);
+  }
+
+  const days = Object.keys(byDay).sort((a, b) => a.localeCompare(b));
+  if (days.length === 0) return;
+
+  const fmtH = (h) => {
+    const tot = Math.round(h * 2) / 2;
+    const w = Math.floor(tot); const m = tot % 1 === 0.5 ? 30 : 0;
+    return `${w}:${String(m).padStart(2,"0")}`;
+  };
+
+  const fmtDate = (d) => new Date(d).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  let rows = "";
+  for (const day of days) {
+    const members = Object.entries(byDay[day]).sort((a,b) => b[1]-a[1]);
+    const dayTotal = members.reduce((s,[,h]) => s+h, 0);
+    rows += `
+      <tr class="day-row">
+        <td colspan="2" style="padding:10px 16px 4px; font-weight:700; font-size:11px; color:#13315C; text-transform:capitalize; border-top:2px solid #e0e4ec;">
+          ${fmtDate(day)}
+        </td>
+        <td style="padding:10px 16px 4px; font-weight:700; font-size:11px; color:#13315C; text-align:right; border-top:2px solid #e0e4ec;">
+          ${fmtH(dayTotal)} h
+        </td>
+      </tr>`;
+    for (const [name, ore] of members) {
+      rows += `
+        <tr>
+          <td style="padding:4px 16px 4px 32px; font-size:10px; color:#555; width:24px;">·</td>
+          <td style="padding:4px 8px; font-size:11px; color:#1a1a1e;">${name}</td>
+          <td style="padding:4px 16px; font-size:11px; color:#555; text-align:right;">${fmtH(ore)} h</td>
+        </tr>`;
+    }
+  }
+
+  const totalOre = entries.reduce((s,e) => s+(Number(e.hours)||0), 0);
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Ore — ${projectName || 'Progetto'}</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Space Grotesk',sans-serif;font-size:12px;padding:24px 32px;color:#0E0E0D;background:#fff}
+    @page{size:A4 portrait;margin:14mm}
+    @media print{body{padding:0};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    table{width:100%;border-collapse:collapse}
+    tr:hover{background:#f5f7fa}
+  </style></head><body>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;border-bottom:2px solid #13315C;padding-bottom:10px">
+    <div>
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;color:#0E0E0D;font-family:'Space Grotesk',sans-serif">Ore lavorate — ${projectName || 'Progetto'}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#999;margin-top:3px">Totale: ${fmtH(totalOre)} h · Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
+    </div>
+  </div>
+  <table><tbody>${rows}</tbody></table>
+  <script>window.onload=()=>{window.print()}</script>
+  </body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
+export default function OrePanel({ projectId, studioId, projectName }) {
   const { T, isDark } = useTheme();
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
@@ -190,6 +269,16 @@ export default function OrePanel({ projectId, studioId }) {
                   active={view}
                   onChange={setView}
                 />
+                <button
+                  onClick={() => exportOrePDF(entries, memberMap, projectName)}
+                  title="Scarica PDF"
+                  style={{ background: "none", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "4px 10px", ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  PDF
+                </button>
                 <button onClick={() => setOpen(false)}
                   style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1, padding: "0 4px" }}>×</button>
               </div>
