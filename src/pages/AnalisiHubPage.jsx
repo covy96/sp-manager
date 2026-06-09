@@ -107,6 +107,18 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
   const [hoveredVoce, setHoveredVoce] = useState(null);
   const [pieModal, setPieModal]     = useState(false);
   const [voceModal, setVoceModal]   = useState(null); // { nome, color, offerte[] }
+  const [sortBy, setSortBy]         = useState("data");
+  const [sortDir, setSortDir]       = useState("desc");
+
+  const handleSort = col => {
+    if (sortBy === col) setSortDir(p => p === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortDir("desc"); }
+  };
+  const SortBtn = ({ col, label, align = "left" }) => (
+    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4, width: "100%", justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
+      {label} <span style={{ fontSize: 9 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+    </button>
+  );
 
   const offerteFiltrate = useMemo(() => {
     let r = anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno);
@@ -266,13 +278,27 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["N°","Nome offerta","Cliente","Data","Importo","Stato","Commessa"].map((h, i) => (
-                      <th key={h} style={{ ...thSt, textAlign: i >= 4 && i !== 5 ? "right" : "left" }}>{h}</th>
-                    ))}
+                    <th style={{ ...thSt, cursor: "pointer" }}><SortBtn col="numero" label="N°" /></th>
+                    <th style={{ ...thSt, cursor: "pointer" }}><SortBtn col="nome" label="Nome offerta" /></th>
+                    <th style={{ ...thSt, cursor: "pointer" }}><SortBtn col="cliente" label="Cliente" /></th>
+                    <th style={{ ...thSt, cursor: "pointer" }}><SortBtn col="data" label="Data" /></th>
+                    <th style={{ ...thSt, cursor: "pointer", textAlign: "right" }}><SortBtn col="importo" label="Importo" align="right" /></th>
+                    <th style={{ ...thSt, cursor: "pointer" }}><SortBtn col="stato" label="Stato" /></th>
+                    <th style={{ ...thSt, cursor: "pointer", textAlign: "right" }}><SortBtn col="commessa" label="Commessa" align="right" /></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {offerteFiltrate.map(o => {
+                  {[...offerteFiltrate].sort((a, b) => {
+                    const m = sortDir === "asc" ? 1 : -1;
+                    if (sortBy === "numero")   return (parseOffertaSortValue(a.numero_offerta) - parseOffertaSortValue(b.numero_offerta)) * m;
+                    if (sortBy === "nome")     return (a.nome_offerta || "").localeCompare(b.nome_offerta || "", "it") * m;
+                    if (sortBy === "cliente")  return (a.cliente || "").localeCompare(b.cliente || "", "it") * m;
+                    if (sortBy === "data")     return (new Date(a.data_offerta || a.created_at) - new Date(b.data_offerta || b.created_at)) * m;
+                    if (sortBy === "importo")  return ((Number(a.importo_offerta_base) || 0) - (Number(b.importo_offerta_base) || 0)) * m;
+                    if (sortBy === "stato")    return (a.stato || "").localeCompare(b.stato || "", "it") * m;
+                    if (sortBy === "commessa") return ((commessaByNumero[a.numero_offerta] || 0) - (commessaByNumero[b.numero_offerta] || 0)) * m;
+                    return 0;
+                  }).map(o => {
                     const stato = STATI[o.stato] ?? { label: o.stato, color: T.muted, bg: "transparent" };
                     const valComm = commessaByNumero[o.numero_offerta];
                     return (
