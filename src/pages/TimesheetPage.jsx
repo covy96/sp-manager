@@ -359,7 +359,6 @@ export default function TimesheetPage() {
   usePageTitleOnMount("Timesheet");
   const { studioId, teamMember: currentMember } = useStudio();
 
-  const [activeTab, setActiveTab]       = useState('giornaliero'); // 'giornaliero' | 'team'
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [entries, setEntries]           = useState([]);
   const [projects, setProjects]         = useState([]);
@@ -470,53 +469,41 @@ export default function TimesheetPage() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
   );
 
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* Header */}
+      {/* Header globale */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Timesheet</div>
-          {activeTab === 'giornaliero' && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
-              {formatDateDisplay(selectedDate)}
-            </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Tab switcher */}
-          <div style={{ display: 'flex', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
-            {[['giornaliero','Giornaliero'],['team','Vista team']].map(([key, label]) => (
-              <button key={key} onClick={() => setActiveTab(key)} style={{ padding: '7px 14px', background: activeTab === key ? T.navy : 'transparent', color: activeTab === key ? T.bg : T.ink, border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s' }}>
-                {label}
-              </button>
-            ))}
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
+            {formatDateDisplay(selectedDate)}
           </div>
-          {/* Date navigator — solo tab giornaliero */}
-          {activeTab === 'giornaliero' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '4px 8px', background: T.surface }}>
-              <button onClick={() => navigateDate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>←</button>
-              <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }} />
-              <button onClick={() => navigateDate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>→</button>
-            </div>
-          )}
+        </div>
+        {/* Date navigator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '4px 8px', background: T.surface }}>
+          <button onClick={() => navigateDate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>←</button>
+          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+            style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }} />
+          <button onClick={() => navigateDate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>→</button>
         </div>
       </div>
 
-      {/* Vista team */}
-      {activeTab === 'team' && (
-        <VistaTeam studioId={studioId} teamMembers={teamMembers} projects={projects} />
-      )}
+      {/* Layout a due colonne */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, alignItems: 'start' }}>
 
-      {activeTab === 'giornaliero' && <>
+        {/* ── COLONNA SINISTRA: giornaliero ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* sezione label */}
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
+            Registra ore
+          </div>
 
-      {/* Add entry form */}
-      {(() => {
-        const isMobile = window.innerWidth < 768;
-        return (
+          {/* Add entry form */}
           <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '16px 20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '2fr 140px 2fr auto', gap: 10, alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '1fr 100px auto', gap: 10, alignItems: 'end' }}>
               {/* Project search */}
               <div ref={searchRef} style={{ position: 'relative' }}>
                 <FieldLabel>Progetto</FieldLabel>
@@ -614,10 +601,8 @@ export default function TimesheetPage() {
 
             {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{error}</div>}
           </form>
-        );
-      })()}
 
-      {/* Entries */}
+          {/* Entries */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '48px 0', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : entries.length === 0 ? (
@@ -651,15 +636,26 @@ export default function TimesheetPage() {
         </div>
       )}
 
-      {/* Totale */}
-      {entries.length > 0 && (
-        <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Totale {new Date(selectedDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+          {/* Totale */}
+          {entries.length > 0 && (
+            <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Totale {new Date(selectedDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 600, color: T.navy, letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>{formatOre(totalHours)} h</div>
+            </div>
+          )}
+        </div>{/* fine colonna sinistra */}
+
+        {/* ── COLONNA DESTRA: vista team ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
+            Vista team
           </div>
-          <div style={{ fontSize: 24, fontWeight: 600, color: T.navy, letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>{formatOre(totalHours)} h</div>
+          <VistaTeam studioId={studioId} teamMembers={teamMembers} projects={projects} />
         </div>
-      )}
+
+      </div>{/* fine grid */}
 
       {/* Edit Modal */}
       <Modal open={!!editingEntry} onClose={() => setEditingEntry(null)} title="Modifica registrazione">
@@ -692,8 +688,6 @@ export default function TimesheetPage() {
           </div>
         </form>
       </Modal>
-
-      </> /* end giornaliero */}
 
     </div>
   );
