@@ -4,6 +4,7 @@ import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 import { useTheme } from "../contexts/ThemeContext";
+import SlidingTabs from "../components/SlidingTabs";
 
 function getTodayDate() { return new Date().toISOString().slice(0, 10); }
 function formatDateDisplay(dateStr) {
@@ -217,21 +218,17 @@ function VistaTeam({ studioId, projects, currentMemberId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* controlli — stile navigatore sistema */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {/* toggle settimana/mese integrato nel navigatore */}
-        <div style={{ display: 'flex', alignItems: 'center', background: T.surface, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', borderRight: `1px solid ${T.ink10}`, cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '7px 10px' }}>←</button>
-          <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', padding: '0 12px', minWidth: 110, textAlign: 'center' }}>{label}</span>
-          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', borderLeft: `1px solid ${T.ink10}`, cursor: 'pointer', color: T.muted, fontSize: 16, lineHeight: 1, padding: '7px 10px' }}>→</button>
-        </div>
-        {/* settimana / mese */}
-        <div style={{ display: 'flex', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
-          {[['settimana','Sett.'],['mese','Mese']].map(([m, lbl]) => (
-            <button key={m} onClick={() => setMode(m)} style={{ padding: '7px 12px', background: mode === m ? T.navy : 'transparent', color: mode === m ? T.bg : T.muted, border: 'none', cursor: 'pointer', ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'background 0.15s' }}>
-              {lbl}
-            </button>
-          ))}
+      {/* controlli */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <SlidingTabs
+          tabs={[{ key: 'settimana', label: 'Sett.' }, { key: 'mese', label: 'Mese' }]}
+          active={mode}
+          onChange={setMode}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', borderRight: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '5px 10px', fontSize: 13, lineHeight: 1 }}>←</button>
+          <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', padding: '0 12px', minWidth: 100, textAlign: 'center' }}>{label}</span>
+          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', borderLeft: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '5px 10px', fontSize: 13, lineHeight: 1 }}>→</button>
         </div>
         {loading && <span style={{ ...mono, fontSize: 10, color: T.muted }}>...</span>}
       </div>
@@ -463,7 +460,7 @@ export default function TimesheetPage() {
 
           {/* Add entry form */}
           <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '16px 20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '1fr 100px auto', gap: 10, alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '1fr 90px 1fr auto', gap: 10, alignItems: 'end' }}>
               {/* Project search */}
               <div ref={searchRef} style={{ position: 'relative' }}>
                 <FieldLabel>Progetto</FieldLabel>
@@ -539,7 +536,7 @@ export default function TimesheetPage() {
 
               {/* Add button — solo desktop nella griglia */}
               {!isMobile && (
-                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}>
+                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '0', width: 36, height: 36, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   +
                 </BtnPrimary>
               )}
