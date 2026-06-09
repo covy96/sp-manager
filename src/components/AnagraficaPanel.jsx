@@ -112,7 +112,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         supabase.from("project_contacts").update({ professional_role: form.professional_role }).eq("id", editingId),
         supabase.from("global_contacts").update({
           full_name: form.full_name.trim(),
-          company: form.company.trim() || null,
+          company: form.company.trim() || "",
           email: form.email.trim() || null,
           phone: form.phone.trim() || null,
         }).eq("id", pc.global_contact_id),
@@ -123,7 +123,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
       const { error: gcErr } = await supabase.from("global_contacts").insert({
         id: newGcId,
         full_name: form.full_name.trim(),
-        company: form.company.trim() || null,
+        company: form.company.trim() || "",
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         studio: studioId,
