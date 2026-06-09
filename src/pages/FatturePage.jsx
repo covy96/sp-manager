@@ -203,6 +203,25 @@ export default function FatturePage() {
     setFatture(p=>p.filter(x=>x.id!==id));
   };
 
+  // ── Handlers SRL (proforma table) ────────────────────────────────
+  const handleSRLPagata = async (f) => {
+    const today = new Date().toISOString().slice(0,10);
+    await supabase.from("proforma").update({ pagato:true, data_pagamento:today }).eq("id",f.id);
+    setProformeTutte(p=>p.map(x=>x.id===f.id?{...x,pagato:true,data_pagamento:today}:x));
+  };
+
+  const handleSRLAnnulla = async (f) => {
+    await supabase.from("proforma").update({ pagato:false, data_pagamento:null }).eq("id",f.id);
+    setProformeTutte(p=>p.map(x=>x.id===f.id?{...x,pagato:false,data_pagamento:null}:x));
+  };
+
+  const handleSRLDelete = async (id) => {
+    if (!confirm("Eliminare questa fattura? Verrà spostata nel cestino.")) return;
+    const { error } = await supabase.rpc('elimina_proforma', { p_id: id });
+    if (error) { alert('Errore: ' + error.message); return; }
+    setProformeTutte(p=>p.filter(x=>x.id!==id));
+  };
+
   // Calcola scadenza da emissione + termini
   const updateScadenza = (emissione, termini) => {
     if (!emissione||!termini) return;
@@ -442,17 +461,16 @@ export default function FatturePage() {
                       <td style={{...tdSt,whiteSpace:'nowrap'}} onClick={e=>e.stopPropagation()}>
                         <div style={{display:'flex',gap:6}}>
                           {!f.pagato && (
-                            <button onClick={()=>handleSegnaComePagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleSRLPagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
                               Segna pagata
                             </button>
                           )}
                           {f.pagato && (
-                            <button onClick={()=>handleAnnullaPagamento(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleSRLAnnulla(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.muted,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>
                               Annulla pag.
                             </button>
                           )}
-                          <button onClick={()=>openEdit(f)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>···</button>
-                          <button onClick={()=>handleDelete(f.id)} style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,color:T.red,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>×</button>
+                          <button onClick={()=>handleSRLDelete(f.id)} style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,color:T.red,fontFamily:"'IBM Plex Mono', monospace",fontSize:9,padding:'4px 10px',cursor:'pointer'}}>×</button>
                         </div>
                       </td>
                     </tr>
