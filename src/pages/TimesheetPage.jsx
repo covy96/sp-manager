@@ -118,6 +118,7 @@ const IT_DAYS_SHORT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 // ── VISTA PERSONALE ───────────────────────────────────────────────
 function VistaTeam({ studioId, projects, currentMemberId }) {
   const { T } = useTheme();
+  const isMobile = window.innerWidth < 768;
 
   const [mode, setMode]             = useState('settimana');
   const [weekStart, setWeekStart]   = useState(() => getMonday(new Date().toISOString().slice(0,10)));
