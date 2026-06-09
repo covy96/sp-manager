@@ -390,15 +390,29 @@ export default function TimesheetPage() {
     if (!selectedProject) { setError("Seleziona un progetto"); return; }
     if (!hours || hours <= 0) { setError("Inserisci un numero di ore valido"); return; }
     setAdding(true); setError("");
-    const { data, error: iErr } = await supabase.from("timesheet").insert({
-      project_id: selectedProject.id, project_name: selectedProject.name,
-      date: selectedDate, hours, notes: notes.trim() || null,
-      team_member: currentMember?.id,
-      user_name: currentMember?.user_name || currentMember?.user_email || "Utente",
-      studio: studioId,
-    }).select("*").single();
-    if (iErr) { setError(iErr.message); }
-    else { setEntries(p => [data, ...p]); setSelectedProject(null); setProjectSearch(""); setHours(1); setNotes(""); setTeamRefreshKey(k => k + 1); }
+
+    // Se esiste già una voce per lo stesso progetto in questa data, somma le ore
+    const existing = entries.find(en => en.project_id === selectedProject.id && en.date === selectedDate);
+    if (existing) {
+      const newHours = (Number(existing.hours) || 0) + Number(hours);
+      const mergedNotes = [existing.notes, notes.trim()].filter(Boolean).join(" — ") || null;
+      const { data, error: uErr } = await supabase.from("timesheet")
+        .update({ hours: newHours, notes: mergedNotes })
+        .eq("id", existing.id)
+        .select("*").single();
+      if (uErr) { setError(uErr.message); }
+      else { setEntries(p => p.map(en => en.id === data.id ? data : en)); setSelectedProject(null); setProjectSearch(""); setHours(1); setNotes(""); setTeamRefreshKey(k => k + 1); }
+    } else {
+      const { data, error: iErr } = await supabase.from("timesheet").insert({
+        project_id: selectedProject.id, project_name: selectedProject.name,
+        date: selectedDate, hours, notes: notes.trim() || null,
+        team_member: currentMember?.id,
+        user_name: currentMember?.user_name || currentMember?.user_email || "Utente",
+        studio: studioId,
+      }).select("*").single();
+      if (iErr) { setError(iErr.message); }
+      else { setEntries(p => [data, ...p]); setSelectedProject(null); setProjectSearch(""); setHours(1); setNotes(""); setTeamRefreshKey(k => k + 1); }
+    }
     setAdding(false);
   };
 
