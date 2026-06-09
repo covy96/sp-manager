@@ -118,21 +118,27 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         }).eq("id", pc.global_contact_id),
       ]);
     } else {
-      // Create new global_contact + project_contact link
-      const { data: gc, error: gcErr } = await supabase.from("global_contacts").insert({
+      // Genera ID client-side per evitare dipendenza dal SELECT post-insert (RLS)
+      const newGcId = crypto.randomUUID();
+      const { error: gcErr } = await supabase.from("global_contacts").insert({
+        id: newGcId,
         full_name: form.full_name.trim(),
         company: form.company.trim() || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         studio: studioId,
-      }).select("*").single();
+      });
 
-      if (!gcErr && gc) {
+      if (!gcErr) {
         await supabase.from("project_contacts").insert({
           project_id: projectId,
-          global_contact_id: gc.id,
+          global_contact_id: newGcId,
           professional_role: form.professional_role,
         });
+      } else {
+        alert("Errore salvataggio contatto: " + gcErr.message);
+        setSaving(false);
+        return;
       }
     }
 
