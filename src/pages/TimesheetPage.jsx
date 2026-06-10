@@ -476,8 +476,8 @@ export default function TimesheetPage() {
           </div>
 
           {/* Add entry form */}
-          <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '16px 20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px' : '1fr 90px 1fr auto', gap: 10, alignItems: 'end' }}>
+          <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 90px' : '1fr 90px 1fr auto', gap: 10, alignItems: 'end' }}>
               {/* Project search */}
               <div ref={searchRef} style={{ position: 'relative' }}>
                 <FieldLabel>Progetto</FieldLabel>
@@ -561,14 +561,14 @@ export default function TimesheetPage() {
 
             {/* Note + submit su mobile — seconda riga */}
             {isMobile && (
-              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div>
                   <FieldLabel>Note (opzionale)</FieldLabel>
                   <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Descrizione attività..."
                     style={{ ...selectSt }} />
                 </div>
-                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ padding: '8px 16px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  +
+                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ width: '100%', padding: '10px', justifyContent: 'center', display: 'flex', alignItems: 'center', fontSize: 13, letterSpacing: '0.08em' }}>
+                  {adding ? "..." : "+ Aggiungi"}
                 </BtnPrimary>
               </div>
             )}
@@ -603,7 +603,7 @@ export default function TimesheetPage() {
               </div>
               {/* Hours */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 20, fontWeight: 600, color: T.navy, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}>{formatOre(en.hours)} h</div>
+                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 600, color: T.navy, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}>{formatOre(en.hours)} h</div>
               </div>
             </button>
           ))}
@@ -621,12 +621,14 @@ export default function TimesheetPage() {
           )}
         </div>{/* fine colonna sinistra */}
 
-        {/* ── COLONNA DESTRA: vista team ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* ── COLONNA DESTRA: visualizza ore ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Visualizza ore
           </div>
-          <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} refreshKey={teamRefreshKey} />
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <VistaTeam studioId={studioId} projects={projects} currentMemberId={currentMember?.id} refreshKey={teamRefreshKey} />
+          </div>
         </div>
 
       </div>{/* fine grid */}
