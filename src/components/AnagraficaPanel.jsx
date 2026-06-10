@@ -69,13 +69,14 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   const [copyModal, setCopyModal]       = useState(false);
   const [projects, setProjects]         = useState([]);
   const [projectSearch, setProjectSearch] = useState("");
-  const [selectedSource, setSelectedSource] = useState(null); // { id, name }
+  const [selectedSource, setSelectedSource] = useState(null);
   const [sourceContacts, setSourceContacts] = useState([]);
+  const [selectedIds, setSelectedIds]       = useState(new Set()); // IDs selezionati per import
   const [loadingSource, setLoadingSource]   = useState(false);
   const [copying, setCopying]               = useState(false);
 
   const openCopyModal = async () => {
-    setCopyModal(true); setSelectedSource(null); setSourceContacts([]); setProjectSearch("");
+    setCopyModal(true); setSelectedSource(null); setSourceContacts([]); setProjectSearch(""); setSelectedIds(new Set());
     const { data } = await supabase.from("projects").select("id,name,client").eq("studio", studioId).eq("archived", false).neq("id", projectId).order("name", { ascending: true });
     setProjects(data || []);
   };
@@ -84,13 +85,26 @@ export default function AnagraficaPanel({ projectId, studioId }) {
     setSelectedSource(proj); setLoadingSource(true);
     const { data } = await supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id", proj.id).not("global_contact_id", "is", null);
     setSourceContacts(data || []);
+    setSelectedIds(new Set((data || []).map(pc => pc.id)));
     setLoadingSource(false);
   };
 
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => {
+    if (selectedIds.size === sourceContacts.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(sourceContacts.map(pc => pc.id)));
+  };
+
   const handleCopy = async () => {
-    if (!sourceContacts.length) return;
+    const toImport = sourceContacts.filter(pc => selectedIds.has(pc.id));
+    if (!toImport.length) return;
     setCopying(true);
-    for (const pc of sourceContacts) {
+    for (const pc of toImport) {
       const gc = pc.global_contacts || {};
       const newId = crypto.randomUUID();
       const { error: gcErr } = await supabase.from("global_contacts").insert({
@@ -446,45 +460,66 @@ export default function AnagraficaPanel({ projectId, studioId }) {
             </div>
           </div>
 
-          {/* Preview contatti */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+          {/* Preview contatti con spunte */}
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {!selectedSource ? (
               <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>← Seleziona un progetto</div>
             ) : loadingSource ? (
               <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
             ) : sourceContacts.length === 0 ? (
               <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun contatto in questo progetto</div>
-            ) : sourceContacts.map((pc, i) => {
-              const gc = pc.global_contacts || {};
-              return (
-                <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i < sourceContacts.length - 1 ? `0.5px solid ${T.border}` : 'none' }}>
-                  <Avatar name={gc.full_name} size={30} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gc.full_name || '—'}</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>{pc.professional_role}</span>
-                      {gc.company && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{gc.company}</span>}
-                    </div>
-                  </div>
+            ) : <>
+              {/* Seleziona tutti */}
+              <button onClick={toggleAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'none', border: 'none', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${selectedIds.size === sourceContacts.length ? T.navy : T.borderMd}`, background: selectedIds.size === sourceContacts.length ? T.navy : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 120ms' }}>
+                  {selectedIds.size === sourceContacts.length && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  {selectedIds.size > 0 && selectedIds.size < sourceContacts.length && <div style={{ width: 8, height: 2, background: T.navy, borderRadius: 1 }} />}
                 </div>
-              );
-            })}
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>
+                  {selectedIds.size === sourceContacts.length ? 'Deseleziona tutti' : 'Seleziona tutti'}
+                </span>
+              </button>
+              {sourceContacts.map((pc, i) => {
+                const gc = pc.global_contacts || {};
+                const sel = selectedIds.has(pc.id);
+                return (
+                  <button key={pc.id} onClick={() => toggleSelect(pc.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: i < sourceContacts.length - 1 ? `0.5px solid ${T.border}` : 'none', background: sel ? `${T.navy}08` : 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'background 120ms' }}
+                    onMouseEnter={e => { if (!sel) e.currentTarget.style.background = T.surface2; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = sel ? `${T.navy}08` : 'transparent'; }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navy : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 120ms' }}>
+                      {sel && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <Avatar name={gc.full_name} size={28} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gc.full_name || '—'}</div>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>{pc.professional_role}</span>
+                        {gc.company && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{gc.company}</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </>}
           </div>
         </div>
 
         {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderTop: `0.5px solid ${T.border}` }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
-            {selectedSource && !loadingSource ? `${sourceContacts.length} contatt${sourceContacts.length === 1 ? 'o' : 'i'} da importare` : ''}
+            {selectedSource && !loadingSource && sourceContacts.length > 0
+              ? `${selectedIds.size} di ${sourceContacts.length} selezionat${selectedIds.size === 1 ? 'o' : 'i'}`
+              : ''}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setCopyModal(false)}
               style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
               Annulla
             </button>
-            <button onClick={handleCopy} disabled={copying || !selectedSource || sourceContacts.length === 0}
-              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: copying || !selectedSource || sourceContacts.length === 0 ? 'not-allowed' : 'pointer', opacity: copying || !selectedSource || sourceContacts.length === 0 ? 0.5 : 1 }}>
-              {copying ? 'Importazione...' : 'Importa contatti'}
+            <button onClick={handleCopy} disabled={copying || selectedIds.size === 0}
+              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: copying || selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: copying || selectedIds.size === 0 ? 0.5 : 1 }}>
+              {copying ? 'Importazione...' : `Importa ${selectedIds.size > 0 ? selectedIds.size : ''} contatt${selectedIds.size === 1 ? 'o' : 'i'}`}
             </button>
           </div>
         </div>
