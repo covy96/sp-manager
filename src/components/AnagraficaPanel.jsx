@@ -59,11 +59,53 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   const [modalOpen, setModalOpen] = useState(false);
   useBodyScrollLock(modalOpen);
   useEscKey(() => setModalOpen(false), modalOpen);
-  const [editingId, setEditingId] = useState(null); // project_contacts.id being edited
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+
+  // ── Copia da progetto ────────────────────────────────────────────
+  const [copyModal, setCopyModal]       = useState(false);
+  const [projects, setProjects]         = useState([]);
+  const [projectSearch, setProjectSearch] = useState("");
+  const [selectedSource, setSelectedSource] = useState(null); // { id, name }
+  const [sourceContacts, setSourceContacts] = useState([]);
+  const [loadingSource, setLoadingSource]   = useState(false);
+  const [copying, setCopying]               = useState(false);
+
+  const openCopyModal = async () => {
+    setCopyModal(true); setSelectedSource(null); setSourceContacts([]); setProjectSearch("");
+    const { data } = await supabase.from("projects").select("id,name,client").eq("studio", studioId).eq("archived", false).neq("id", projectId).order("name", { ascending: true });
+    setProjects(data || []);
+  };
+
+  const loadSourceContacts = async (proj) => {
+    setSelectedSource(proj); setLoadingSource(true);
+    const { data } = await supabase.from("project_contacts").select("*, global_contacts(*)").eq("project_id", proj.id).not("global_contact_id", "is", null);
+    setSourceContacts(data || []);
+    setLoadingSource(false);
+  };
+
+  const handleCopy = async () => {
+    if (!sourceContacts.length) return;
+    setCopying(true);
+    for (const pc of sourceContacts) {
+      const gc = pc.global_contacts || {};
+      const newId = crypto.randomUUID();
+      const { error: gcErr } = await supabase.from("global_contacts").insert({
+        id: newId, full_name: gc.full_name || "", company: gc.company || "",
+        email: gc.email || null, phone: gc.phone || null, studio: studioId,
+      });
+      if (!gcErr) {
+        await supabase.from("project_contacts").insert({
+          project_id: projectId, global_contact_id: newId,
+          professional_role: pc.professional_role,
+        });
+      }
+    }
+    setCopying(false); setCopyModal(false); loadContacts();
+  };
 
   useEffect(() => {
     if (!projectId || !studioId) return;
@@ -339,12 +381,17 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
-          <div>
-            {editingId && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 16, borderTop: `0.5px solid ${T.border}`, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {editingId ? (
               <button onClick={() => { setEditingId(null); setForm(EMPTY_FORM); }}
                 style={{ border: 'none', background: 'transparent', color: T.muted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer', padding: 0 }}>
                 ← Aggiungi nuovo
+              </button>
+            ) : (
+              <button onClick={openCopyModal}
+                style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                ⎘ Copia da progetto
               </button>
             )}
           </div>
@@ -354,8 +401,90 @@ export default function AnagraficaPanel({ projectId, studioId }) {
               Chiudi
             </button>
             <button onClick={handleSave} disabled={saving || !form.full_name.trim()}
-              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1 }}>
+              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1, borderRadius: T.radiusSm }}>
               {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi contatto"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Modal copia da progetto ──────────────────────────────────────
+  const copyModalEl = copyModal && (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.55)', padding: 16 }}>
+      <div style={{ width: '100%', maxWidth: 560, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', maxHeight: '80vh', overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div style={{ padding: '20px 24px 16px', borderBottom: `0.5px solid ${T.border}` }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>Copia anagrafica da progetto</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 3 }}>Seleziona un progetto per importarne i contatti</div>
+        </div>
+
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Lista progetti */}
+          <div style={{ width: 220, borderRight: `0.5px solid ${T.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ padding: '10px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+              <input
+                type="text" placeholder="Cerca progetto..." value={projectSearch}
+                onChange={e => setProjectSearch(e.target.value)}
+                style={{ width: '100%', padding: '6px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}
+              />
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {projects
+                .filter(p => !projectSearch.trim() || (p.name || '').toLowerCase().includes(projectSearch.toLowerCase()) || (p.client || '').toLowerCase().includes(projectSearch.toLowerCase()))
+                .map(p => (
+                  <button key={p.id} onClick={() => loadSourceContacts(p)}
+                    style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: selectedSource?.id === p.id ? T.navyLight : 'transparent', border: 'none', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer', transition: 'background 120ms' }}
+                    onMouseEnter={e => { if (selectedSource?.id !== p.id) e.currentTarget.style.background = T.surface2; }}
+                    onMouseLeave={e => { if (selectedSource?.id !== p.id) e.currentTarget.style.background = 'transparent'; }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: selectedSource?.id === p.id ? T.navy : T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.client}</div>}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          {/* Preview contatti */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+            {!selectedSource ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>← Seleziona un progetto</div>
+            ) : loadingSource ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+            ) : sourceContacts.length === 0 ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun contatto in questo progetto</div>
+            ) : sourceContacts.map((pc, i) => {
+              const gc = pc.global_contacts || {};
+              return (
+                <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: i < sourceContacts.length - 1 ? `0.5px solid ${T.border}` : 'none' }}>
+                  <Avatar name={gc.full_name} size={30} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gc.full_name || '—'}</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>{pc.professional_role}</span>
+                      {gc.company && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{gc.company}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderTop: `0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            {selectedSource && !loadingSource ? `${sourceContacts.length} contatt${sourceContacts.length === 1 ? 'o' : 'i'} da importare` : ''}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setCopyModal(false)}
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
+              Annulla
+            </button>
+            <button onClick={handleCopy} disabled={copying || !selectedSource || sourceContacts.length === 0}
+              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: copying || !selectedSource || sourceContacts.length === 0 ? 'not-allowed' : 'pointer', opacity: copying || !selectedSource || sourceContacts.length === 0 ? 0.5 : 1 }}>
+              {copying ? 'Importazione...' : 'Importa contatti'}
             </button>
           </div>
         </div>
@@ -369,6 +498,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
     <>
       {widget}
       {modal}
+      {copyModalEl}
     </>
   );
 }
