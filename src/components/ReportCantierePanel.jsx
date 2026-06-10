@@ -440,8 +440,8 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     }
   }
 
-  const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\- ]/g,"").trim() || "report";
-  doc.save(`${safeTitle}_sopralluogo_${report.numero}.pdf`);
+  const safeTitle = (report.titolo || "report").replace(/[^a-zA-Z0-9_\-\. ]/g,"").trim() || "report";
+  doc.save(`${safeTitle}.pdf`);
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
