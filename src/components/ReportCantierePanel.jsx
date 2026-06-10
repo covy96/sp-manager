@@ -576,6 +576,12 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       telefono:  "",
     };
 
+    // Contatti anagrafica correnti → mappa per confronto
+    const anagraficaPresenti = contacts.map(pc => {
+      const gc = pc.global_contacts || {};
+      return { figura: pc.professional_role || "—", azienda: gc.company || "", referente: gc.full_name || "", email: gc.email || "", telefono: gc.phone || "" };
+    });
+
     if (reports.length > 0) {
       // Report successivi: riprendi i presenti dall'ultimo report
       const lastPresenti = Array.isArray(reports[0]?.presenti) ? reports[0].presenti : [];
@@ -583,14 +589,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       const withoutDL = lastPresenti.filter(p =>
         !(p.figura === "Direttore Lavori" && (p.azienda === dlEntry.azienda || p.referente === dlEntry.referente))
       );
-      base.presenti = [dlEntry, ...withoutDL];
+      // Aggiungi contatti anagrafica che non sono già presenti (confronto per nome referente)
+      const existingNames = new Set(withoutDL.map(p => (p.referente || "").toLowerCase().trim()));
+      const nuovi = anagraficaPresenti.filter(p => !existingNames.has((p.referente || "").toLowerCase().trim()));
+      base.presenti = [dlEntry, ...withoutDL, ...nuovi];
     } else {
       // Primo report: DL + contatti progetto
-      const contactPresenti = contacts.map(pc => {
-        const gc = pc.global_contacts || {};
-        return { figura:pc.professional_role||"—", azienda:gc.company||"", referente:gc.full_name||"", email:gc.email||"", telefono:gc.phone||"" };
-      });
-      base.presenti = [dlEntry, ...contactPresenti];
+      base.presenti = [dlEntry, ...anagraficaPresenti];
     }
 
     setForm({ ...base, _numero:nextNum });
