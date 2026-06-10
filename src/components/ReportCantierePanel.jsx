@@ -195,7 +195,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
   // ── Metadati ─────────────────────────────────────────────────────
   const meta = [
     ["Progetto",       project?.name || "—"],
-    ["Cliente",        project?.client || "—"],
+    ["Committente",    project?.client || "—"],
     ["Luogo",          report.luogo || project?.address || "—"],
     ["Data e ora",     formatDt(report.data_ora)],
     ["Sopralluogo N.", String(report.numero)],

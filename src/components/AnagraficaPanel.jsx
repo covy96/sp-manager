@@ -5,7 +5,7 @@ import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 
 const FIGURE_PROFESSIONALI = [
-  "Cliente",
+  "Committente",
   "Progettista",
   "Direttore Lavori",
   "Coordinatore della Sicurezza",
@@ -338,7 +338,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                 onChange={e => setForm(p => ({ ...p, professional_role: e.target.value }))}
                 onFocus={() => setForm(p => ({ ...p, _roleFocus: true }))}
                 onBlur={() => setTimeout(() => setForm(p => ({ ...p, _roleFocus: false })), 150)}
-                placeholder="Es. Cliente, Impresa, o scrivi liberamente..."
+                placeholder="Es. Committente, Impresa, o scrivi liberamente..."
                 style={inputSt}
                 autoComplete="off"
               />
