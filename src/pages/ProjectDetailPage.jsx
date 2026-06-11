@@ -780,12 +780,6 @@ export default function ProjectDetailPage() {
               <div
                 key={group.category}
                 data-col-idx={gi}
-                draggable
-                onDragStart={(e) => {
-                  const tag = e.target.tagName.toLowerCase();
-                  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) { e.preventDefault(); return; }
-                  setDragColIdx(gi); setDragOverIdx(gi);
-                }}
                 onDragOver={e => { e.preventDefault(); setDragOverIdx(gi); }}
                 onDrop={() => {
                   if (dragColIdx !== null && dragColIdx !== gi) {
@@ -823,6 +817,8 @@ export default function ProjectDetailPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     {/* Drag handle */}
                     <span
+                      draggable
+                      onDragStart={(e) => { e.stopPropagation(); setDragColIdx(gi); setDragOverIdx(gi); }}
                       title="Trascina per riordinare"
                       style={{ fontSize: 13, color: T.muted, cursor: 'grab', userSelect: 'none', flexShrink: 0, lineHeight: 1, touchAction: 'none' }}>
                       ⠿
