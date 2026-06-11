@@ -602,7 +602,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                     <input type="text" value={form.protocollo} onChange={e => setField("protocollo", e.target.value)} placeholder="Es. OSP-2024-001" style={inputSt}/>
                   </div>
                   <div>
-                    <FieldLabel T={T}>Data inizio</FieldLabel>
+                    <FieldLabel T={T}>Data di rilascio autorizzazione</FieldLabel>
                     <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
                   </div>
                   <div style={{ gridColumn:"span 2" }}>
