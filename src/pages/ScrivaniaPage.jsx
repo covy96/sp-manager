@@ -447,7 +447,10 @@ export default function ScrivaniaPage() {
       studio: studioId,
       author_id: currentMemberId,
     }).select('*').single();
-    if (!err && data) setNotes(p => [data, ...p]);
+    if (!err && data) {
+      setNotes(p => [data, ...p]);
+      if (isMobile) setExpandedNoteId(data.id); // su mobile apri subito la nota
+    }
     setCreatingNote(false);
   };
 
