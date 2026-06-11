@@ -79,7 +79,7 @@ export default function ProformaPage() {
         setProformaList(pData);
         const ids = [...new Set(pData.map(p => p.commessa_id).filter(Boolean))];
         if (ids.length > 0) {
-          const { data: commesse } = await supabase.from("commesse").select("id,nome_commessa,cliente").in("id", ids);
+          const { data: commesse } = await supabase.from("commesse").select("id,nome_commessa,cliente").in("id", ids).eq("studio", studioId);
           setCommesseMap(Object.fromEntries((commesse || []).map(c => [c.id, c])));
         }
       } catch (e) { setError(e.message); }

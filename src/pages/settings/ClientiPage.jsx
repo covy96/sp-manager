@@ -65,7 +65,7 @@ export default function ClientiPage() {
       const [{ data:cts, error:cErr }, { data:projs }, { data:comms }, { data:pcLinks }] = await Promise.all([
         supabase.from("global_contacts").select("*").eq("studio",studioId).order("full_name",{ascending:true}),
         supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("archived",false),
-        supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId),
+        supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId).is("deleted_at",null),
         // ID dei global_contacts usati come anagrafica di progetto — vanno esclusi dalla scheda clienti
         supabase.from("project_contacts").select("global_contact_id").not("global_contact_id","is",null),
       ]);

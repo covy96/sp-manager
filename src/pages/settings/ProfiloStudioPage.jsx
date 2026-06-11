@@ -69,7 +69,7 @@ export default function ProfiloStudioPage() {
       const [{ data:st }, { count:nProj }, { count:nComm }, { count:nMem }] = await Promise.all([
         supabase.from("studios").select("*").eq("id", studioId).single(),
         supabase.from("projects").select("*",{count:'exact',head:true}).eq("studio",studioId).eq("archived",false),
-        supabase.from("commesse").select("*",{count:'exact',head:true}).eq("studio",studioId),
+        supabase.from("commesse").select("*",{count:'exact',head:true}).eq("studio",studioId).is("deleted_at",null),
         supabase.from("team_members").select("*",{count:'exact',head:true}).eq("studio",studioId).eq("active",true),
       ]);
       setStudioData(st);

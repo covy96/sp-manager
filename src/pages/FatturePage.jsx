@@ -68,7 +68,7 @@ export default function FatturePage() {
     setLoading(true);
     const [{ data:fatt }, { data:comm }, { data:profPagate }, { data:profTutte }] = await Promise.all([
       supabase.from("fatture").select("*").eq("studio",studioId).is("deleted_at",null).order("data_emissione",{ascending:false}),
-      supabase.from("commesse").select("id,nome_commessa,cliente").eq("studio",studioId),
+      supabase.from("commesse").select("id,nome_commessa,cliente").eq("studio",studioId).is("deleted_at",null),
       supabase.from("proforma").select("*").eq("studio",studioId).eq("pagato",true).is("deleted_at",null).order("data_pagamento",{ascending:false}),
       supabase.from("proforma").select("*").eq("studio",studioId).is("deleted_at",null).order("created_at",{ascending:false}),
     ]);

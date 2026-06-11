@@ -448,7 +448,7 @@ export default function ProjectsPage() {
 
   const loadCommesseList = async () => {
     if (!studioId) return;
-    const { data } = await supabase.from("commesse").select("id,nome_commessa,numero_offerta").eq("studio", studioId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("commesse").select("id,nome_commessa,numero_offerta").eq("studio", studioId).is("deleted_at", null).order("created_at", { ascending: false });
     setCommesseList(data ?? []);
   };
 

@@ -263,7 +263,7 @@ export default function DashboardPage() {
 
         // 2. Task aperti — filtrati per utente se scope=mine
         let taskQ = supabase.from("tasks").select("*", { count: "exact", head: true })
-          .eq("studio", studioId).neq("status", "completed").is("parent_task_id", null);
+          .eq("studio", studioId).neq("status", "completed").is("parent_task_id", null).is("deleted_at", null);
         if (!isAll && memberId) taskQ = taskQ.eq("assigned_member", memberId);
         const { count: taskCount } = await taskQ;
         setOpenTasks(taskCount || 0);
@@ -279,7 +279,7 @@ export default function DashboardPage() {
 
         // 4. Credito da incassare (sempre tutto lo studio)
         const { data: commesse } = await supabase
-          .from("commesse").select("id, importo_offerta_base").eq("studio", studioId);
+          .from("commesse").select("id, importo_offerta_base").eq("studio", studioId).is("deleted_at", null);
         const totalCommesse = (commesse || []).reduce((s, c) => s + (Number(c.importo_offerta_base) || 0), 0);
         const commessaIds = (commesse || []).map(c => c.id);
         const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);
@@ -294,7 +294,7 @@ export default function DashboardPage() {
             .eq("studio", studioId).eq("assigned_member", memberId)
             .eq("data_pianificata", today)
             .neq("status", "completed")
-            .is("parent_task_id", null)
+            .is("parent_task_id", null).is("deleted_at", null)
             .order("created_at", { ascending: true });
           setTodayTasks(allTodayTasks || []);
 
@@ -302,7 +302,7 @@ export default function DashboardPage() {
             .from("tasks").select("*, projects(name)")
             .eq("assigned_member", memberId).eq("studio", studioId)
             .neq("status", "completed").lt("data_pianificata", today)
-            .is("parent_task_id", null).order("data_pianificata", { ascending: true });
+            .is("parent_task_id", null).is("deleted_at", null).order("data_pianificata", { ascending: true });
           setOverdueTasks(overdue || []);
         }
 
@@ -314,7 +314,7 @@ export default function DashboardPage() {
             .eq("studio", studioId).eq("assigned_member", memberId)
             .eq("data_pianificata", nwDay)
             .neq("status", "completed")
-            .is("parent_task_id", null)
+            .is("parent_task_id", null).is("deleted_at", null)
             .order("created_at", { ascending: true });
           setTomorrowTasks(tmTasks || []);
         }

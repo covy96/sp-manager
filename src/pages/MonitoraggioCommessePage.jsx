@@ -87,7 +87,7 @@ export default function MonitoraggioCommessePage() {
     const loadData = async () => {
       setLoading(true); setError("");
       const [cR, pR] = await Promise.all([
-        supabase.from("commesse").select("*").eq("studio", studioId),
+        supabase.from("commesse").select("*").eq("studio", studioId).is("deleted_at", null),
         supabase.from("pagamenti").select("commessa_id,importo"),
       ]);
       if (cR.error) { setError(cR.error.message); setLoading(false); return; }

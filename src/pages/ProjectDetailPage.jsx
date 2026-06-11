@@ -322,7 +322,7 @@ export default function ProjectDetailPage() {
         ? supabase.from("global_contacts").select("id,full_name").eq("studio", studioId).order("full_name", { ascending: true })
         : Promise.resolve({ data: [], error: null });
       const [pR, tR, mR, sR, gcR] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
+        supabase.from("projects").select("*").eq("id", projectId).eq("studio", studioId).maybeSingle(),
         supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
         membersQ,
         supabase.from("service_task_templates").select("*").eq("studio", studioId).order("order", { ascending: true }),

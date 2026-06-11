@@ -144,7 +144,7 @@ export default function TeamPage() {
       supabase.auth.getUser(),
       supabase.from("team_members").select("*").eq("studio", studioId).order("user_name", { ascending: true }),
       supabase.from("timesheet").select("team_member,hours").is("deleted_at", null).gte("date", monday).lte("date", sunday),
-      supabase.from("tasks").select("assigned_member,status,project_id"),
+      supabase.from("tasks").select("assigned_member,status,project_id").eq("studio", studioId).is("deleted_at", null),
     ]);
 
     if (authError || !authData?.user?.id) { setError(authError?.message || "Utente non autenticato."); setLoading(false); return; }
