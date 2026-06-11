@@ -741,11 +741,12 @@ export default function ProjectDetailPage() {
 
             // ── Touch drag handlers ─────────────────────────────────
             const handleTouchStart = (e) => {
+              const tag = e.target.tagName.toLowerCase();
+              if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
               const ref = touchDragRef.current;
               ref.fromIdx = gi;
               ref.timer = setTimeout(() => {
                 ref.active = true;
-                // haptic feedback if available
                 if (navigator.vibrate) navigator.vibrate(40);
                 setDragColIdx(gi);
               }, 500);
@@ -780,7 +781,11 @@ export default function ProjectDetailPage() {
                 key={group.category}
                 data-col-idx={gi}
                 draggable
-                onDragStart={() => { setDragColIdx(gi); setDragOverIdx(gi); }}
+                onDragStart={(e) => {
+                  const tag = e.target.tagName.toLowerCase();
+                  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) { e.preventDefault(); return; }
+                  setDragColIdx(gi); setDragOverIdx(gi);
+                }}
                 onDragOver={e => { e.preventDefault(); setDragOverIdx(gi); }}
                 onDrop={() => {
                   if (dragColIdx !== null && dragColIdx !== gi) {
