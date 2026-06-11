@@ -154,6 +154,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
         .from("timesheet")
         .select("id, date, hours, notes, user_name, team_member")
         .eq("project_id", projectId)
+        .is("deleted_at", null)
         .order("date", { ascending: false }),
       supabase
         .from("team_members")

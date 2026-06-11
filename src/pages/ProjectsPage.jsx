@@ -460,7 +460,7 @@ export default function ProjectsPage() {
       if (pErr) throw pErr;
       setProjects(projectsData ?? []);
 
-      const { data: tsData } = await supabase.from("timesheet").select("project_id, hours").eq("studio", studioId);
+      const { data: tsData } = await supabase.from("timesheet").select("project_id, hours").eq("studio", studioId).is("deleted_at", null);
       setTimesheetByProject((tsData || []).reduce((acc, t) => ({ ...acc, [t.project_id]: (acc[t.project_id] || 0) + (Number(t.hours) || 0) }), {}));
 
       const { data: taskData } = await supabase.from("tasks").select("project_id, status, parent_task_id").eq("studio", studioId).is("parent_task_id", null);

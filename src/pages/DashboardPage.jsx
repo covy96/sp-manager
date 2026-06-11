@@ -273,7 +273,7 @@ export default function DashboardPage() {
         if (memberId) {
           const { data: times } = await supabase
             .from("timesheet").select("hours")
-            .eq("team_member", memberId).gte("date", mondayStr);
+            .eq("team_member", memberId).is("deleted_at", null).gte("date", mondayStr);
           setWeekHours((times || []).reduce((s, t) => s + (Number(t.hours) || 0), 0));
         }
 

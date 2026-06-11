@@ -140,9 +140,9 @@ export default function ReportPage() {
     setLoading(true); setError("");
     try {
       const [tsRes, pRes, allRes, mRes] = await Promise.all([
-        supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",range.start).lte("date",range.end).order("date",{ascending:true}),
+        supabase.from("timesheet").select("*").eq("studio",studioId).is("deleted_at",null).gte("date",range.start).lte("date",range.end).order("date",{ascending:true}),
         supabase.from("projects").select("id,name,client").eq("studio",studioId),
-        supabase.from("timesheet").select("*").eq("studio",studioId).gte("date",`${selectedYear}-01-01`).lte("date",`${selectedYear}-12-31`),
+        supabase.from("timesheet").select("*").eq("studio",studioId).is("deleted_at",null).gte("date",`${selectedYear}-01-01`).lte("date",`${selectedYear}-12-31`),
         supabase.from("team_members").select("id,user_name").eq("studio",studioId),
       ]);
       if (tsRes.error) throw tsRes.error;

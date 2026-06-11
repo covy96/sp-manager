@@ -589,7 +589,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
     const load = async () => {
       const [{ data: mem }, { data: ts }, { data: comm }, { data: ce }, { data: co }, { data: rp }, { data: ci }] = await Promise.all([
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio", studioId).eq("active", true),
-        supabase.from("timesheet").select("project_id,hours,team_member").eq("studio", studioId),
+        supabase.from("timesheet").select("project_id,hours,team_member").eq("studio", studioId).is("deleted_at", null),
         supabase.from("commesse").select("id,project_id,nome_commessa,cliente,numero_offerta,importo_offerta_base,importo_totale,data_commessa,created_at,archived").eq("studio", studioId).is("deleted_at", null),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio", studioId),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio", studioId),

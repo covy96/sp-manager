@@ -48,7 +48,7 @@ export default function ProgettoArchiviotoRecapPage() {
       ] = await Promise.all([
         supabase.from("projects").select("*").eq("id", id).single(),
         supabase.from("tasks").select("*").eq("project_id", id).is("deleted_at", null),
-        supabase.from("timesheet").select("*").eq("project_id", id).eq("studio", studioId),
+        supabase.from("timesheet").select("*").eq("project_id", id).eq("studio", studioId).is("deleted_at", null),
         supabase.from("team_members").select("id, user_name, user_email, color").eq("studio", studioId),
         supabase.from("commesse").select("id, nome_commessa, importo_offerta_base, importo_totale, importo_incassato, stato_pagamento, archived").eq("project_id", id),
       ]);

@@ -141,7 +141,7 @@ export default function TeamPage() {
     const [{ data: authData, error: authError }, membersR, weekTsR, tasksR] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from("team_members").select("*").eq("studio", studioId).order("user_name", { ascending: true }),
-      supabase.from("timesheet").select("team_member,hours").gte("date", monday).lte("date", sunday),
+      supabase.from("timesheet").select("team_member,hours").is("deleted_at", null).gte("date", monday).lte("date", sunday),
       supabase.from("tasks").select("assigned_member,status,project_id"),
     ]);
 

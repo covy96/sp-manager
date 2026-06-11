@@ -91,7 +91,7 @@ export default function EsportaDatiPage() {
           .eq('studio', studioId).is('deleted_at', null).order('name');
 
         const { data: ts } = await supabase.from('timesheet')
-          .select('project_id, hours').eq('studio', studioId);
+          .select('project_id, hours').eq('studio', studioId).is('deleted_at', null);
 
         const orePerProg = {};
         (ts ?? []).forEach(t => {
