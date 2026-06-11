@@ -313,14 +313,11 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     if (!projectId || projectId === "null" || projectId === "undefined") { navigate("/progetti"); return; }
+    if (!studioId) return;
     const loadData = async () => {
       setLoading(true); setError("");
-      const membersQ = studioId
-        ? supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true })
-        : Promise.resolve({ data: [], error: null });
-      const gcQ = studioId
-        ? supabase.from("global_contacts").select("id,full_name").eq("studio", studioId).order("full_name", { ascending: true })
-        : Promise.resolve({ data: [], error: null });
+      const membersQ = supabase.from("team_members").select("id,user_name,user_email").eq("studio", studioId).order("user_name", { ascending: true });
+      const gcQ = supabase.from("global_contacts").select("id,full_name").eq("studio", studioId).order("full_name", { ascending: true });
       const [pR, tR, mR, sR, gcR] = await Promise.all([
         supabase.from("projects").select("*").eq("id", projectId).eq("studio", studioId).maybeSingle(),
         supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
