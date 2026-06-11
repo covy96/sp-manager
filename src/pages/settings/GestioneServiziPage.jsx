@@ -69,7 +69,7 @@ export default function GestioneServiziPage() {
       .insert({ service_name:newServiceName.trim(), order:maxOrder+1, studio:studioId, task_templates:[] })
       .select("*").single();
     if (iErr) setError(iErr.message);
-    else { setServices(p => [...p, data].sort((a,b) => (a.order||0)-(b.order||0))); setAddModalOpen(false); setNewServiceName(""); }
+    else { setServices(p => [...p, data].sort((a,b) => (a.order||0)-(b.order||0))); setAddModalOpen(false); setNewServiceName(""); showToast("Servizio aggiunto", "success"); }
     setSaving(false);
   };
 
@@ -80,7 +80,7 @@ export default function GestioneServiziPage() {
       .update({ service_name:editName.trim() })
       .eq("id", editingService.id).select("*").single();
     if (uErr) setError(uErr.message);
-    else { setServices(p => p.map(s => s.id===editingService.id ? { ...s, service_name:data.service_name } : s)); setEditingService(null); setEditName(""); }
+    else { setServices(p => p.map(s => s.id===editingService.id ? { ...s, service_name:data.service_name } : s)); setEditingService(null); setEditName(""); showToast("Servizio aggiornato", "success"); }
     setSaving(false);
   };
 

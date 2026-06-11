@@ -181,7 +181,8 @@ export default function MyTasksPage() {
       {/* Task attivi per progetto */}
       {Object.keys(groupedActive).length === 0 ? (
         <Panel>
-          <div style={{ textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0' }}>
+          <div style={{ textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '32px 0', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+            <div style={{ fontSize:28, opacity:0.2 }}>✅</div>
             Nessun task attivo assegnato.
           </div>
         </Panel>

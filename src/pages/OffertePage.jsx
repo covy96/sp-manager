@@ -138,6 +138,7 @@ export default function OffertePage() {
     if (error) { setFormError(error.message); setSaving(false); return; }
     setModalOpen(false);
     setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', note:'' });
+    showToast("Offerta creata", "success");
     await loadData();
     setSaving(false);
   };
@@ -213,6 +214,7 @@ export default function OffertePage() {
     setSaving(false);
     setAccettaModal(false);
     setAllineaModal(false);
+    showToast("Offerta accettata — commessa creata", "success");
     await loadData();
     navigate(`/commesse/${commessa.id}`);
   };
@@ -233,6 +235,7 @@ export default function OffertePage() {
   const handleRifiuta = async (offerta) => {
     if (!confirm(`Rifiutare l'offerta "${offerta.nome_offerta}"?`)) return;
     await supabase.from("offerte").update({ stato:'rifiutata' }).eq("id",offerta.id);
+    showToast("Offerta rifiutata", "success");
     await loadData();
   };
 
@@ -245,6 +248,7 @@ export default function OffertePage() {
     if (!confirm(`Spostare "${offerta.nome_offerta}" nel cestino?`)) return;
     const { error } = await supabase.rpc('elimina_offerta', { p_offerta_id: offerta.id });
     if (error) { showToast('Errore: ' + error.message); return; }
+    showToast("Offerta eliminata", "success");
     await loadData();
   };
 
@@ -344,8 +348,10 @@ export default function OffertePage() {
       {/* Lista offerte */}
       <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
         {visibili.length === 0 ? (
-          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius }}>
-            <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta</div>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
+            <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
+            <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta trovata</div>
+            <button onClick={()=>setModalOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
@@ -429,7 +435,7 @@ export default function OffertePage() {
                 </div>
                 <div style={{ gridColumn:'span 2' }}>
                   <label style={labelSt}>Nome offerta *</label>
-                  <input type="text" value={form.nome_offerta} onChange={e=>setForm(p=>({...p,nome_offerta:e.target.value}))} required autoFocus style={inputSt}/>
+                  <input type="text" value={form.nome_offerta} onChange={e=>setForm(p=>({...p,nome_offerta:e.target.value}))} required autoFocus placeholder="Es. Ristrutturazione appartamento" style={inputSt}/>
                 </div>
                 <div style={{ gridColumn:'span 2', position:'relative' }}>
                   <label style={labelSt}>Cliente *</label>

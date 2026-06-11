@@ -102,7 +102,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
                 <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
                   Archivia
                 </button>
-                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.'))return;await onDelete(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:'#ff453a',fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
+                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.'))return;await onDelete(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.red,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
                   Elimina
                 </button>
               </div>
@@ -301,6 +301,7 @@ export default function CommessePage() {
 
     // Reset
     resetModal();
+    showToast("Commessa creata", "success");
     await loadData();
     await loadFreeProjects();
     setSaving(false);
@@ -389,7 +390,11 @@ export default function CommessePage() {
       ) : error ? (
         <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
       ) : commesseFiltrate.length===0 ? (
-        <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:48,textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
+        <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:'56px 32px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+          <div style={{fontSize:32,opacity:0.25}}>📋</div>
+          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
+          {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{marginTop:4,background:T.navy,color:T.bg,border:'none',borderRadius:T.radiusSm,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer'}}>+ Nuova commessa</button>}
+        </div>
       ) : (
         <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
           {commesseFiltrate.map(c=>(
@@ -618,7 +623,7 @@ export default function CommessePage() {
                       await supabase.from('offerte').update({deleted_at:new Date().toISOString()}).eq('studio',deleteModal.studio).eq('numero_offerta',deleteModal.numero_offerta).is('deleted_at',null);
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
-                    style={{ flex:1, padding:'9px 10px', background:'#b91c1c', color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                    style={{ flex:1, padding:'9px 10px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                   >{deletingSaving?'...':'Sì, elimina entrambe'}</button>
                   <button
                     disabled={deletingSaving}
@@ -646,7 +651,7 @@ export default function CommessePage() {
                     if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                     setDeleteModal(null);setDeletingSaving(false);await loadData();
                   }}
-                  style={{ padding:'8px 18px', background:'#b91c1c', color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                  style={{ padding:'8px 18px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                 >{deletingSaving?'Eliminazione...':'Elimina'}</button>
               </div>
             )}

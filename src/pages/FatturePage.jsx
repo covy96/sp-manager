@@ -184,6 +184,7 @@ export default function FatturePage() {
       await supabase.from("fatture").insert({...payload,pagato:false});
     }
     setSaving(false); setModalOpen(false);
+    showToast(editFattura ? "Fattura aggiornata" : "Fattura creata", "success");
     loadData();
   };
 
@@ -203,6 +204,7 @@ export default function FatturePage() {
     const { error } = await supabase.rpc('elimina_fattura', { p_id: id });
     if (error) { showToast('Errore: ' + error.message); return; }
     setFatture(p=>p.filter(x=>x.id!==id));
+    showToast("Fattura eliminata", "success");
   };
 
   // ── Handlers SRL (proforma table) ────────────────────────────────
@@ -222,6 +224,7 @@ export default function FatturePage() {
     const { error } = await supabase.rpc('elimina_proforma', { p_id: id });
     if (error) { showToast('Errore: ' + error.message); return; }
     setProformeTutte(p=>p.filter(x=>x.id!==id));
+    showToast("Fattura eliminata", "success");
   };
 
   // Calcola scadenza da emissione + termini
@@ -307,7 +310,10 @@ export default function FatturePage() {
               </thead>
               <tbody>
                 {visibiliSRL.length===0 ? (
-                  <tr><td colSpan={7} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>Nessuna fattura</td></tr>
+                  <tr><td colSpan={7} style={{...tdSt,textAlign:'center',color:T.muted,padding:'40px 0'}}>
+                    <div style={{fontSize:24,opacity:0.2,marginBottom:8}}>🧾</div>
+                    <div>Nessuna fattura</div>
+                  </td></tr>
                 ) : [...visibiliSRL].sort((a,b)=>{
                     const v = r => {
                       if(sortColF==='commessa') return (commessaName(r.commessa_id)||'').toLowerCase();
@@ -425,7 +431,10 @@ export default function FatturePage() {
               </thead>
               <tbody>
                 {visibili.length===0 ? (
-                  <tr><td colSpan={8} style={{...tdSt,textAlign:'center',color:T.muted,padding:'32px 0'}}>Nessuna fattura</td></tr>
+                  <tr><td colSpan={8} style={{...tdSt,textAlign:'center',color:T.muted,padding:'40px 0'}}>
+                    <div style={{fontSize:24,opacity:0.2,marginBottom:8}}>🧾</div>
+                    <div>Nessuna fattura</div>
+                  </td></tr>
                 ) : [...visibili].sort((a,b)=>{
                     const v = r => {
                       if(sortColF==='commessa') return (r.commessa_nome||'').toLowerCase();
@@ -499,7 +508,7 @@ export default function FatturePage() {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
                 <div>
                   <label style={lbSt}>N° Fattura *</label>
-                  <input type="text" value={form.numero_fattura} onChange={e=>setForm(p=>({...p,numero_fattura:e.target.value}))} required autoFocus style={inputSt}/>
+                  <input type="text" value={form.numero_fattura} onChange={e=>setForm(p=>({...p,numero_fattura:e.target.value}))} required autoFocus placeholder="Es. 001/2026" style={inputSt}/>
                 </div>
                 <div>
                   <label style={lbSt}>N° Fattura fiscale</label>

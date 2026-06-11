@@ -30,7 +30,7 @@ export default function CommessePanel({ commesse = [] }) {
         letterSpacing:'0.08em', textTransform:'uppercase',
       }}>
         € Commesse
-        <span style={{ background:T.navy, color:'#EEF1F6', borderRadius:10, padding:'1px 7px', fontSize:9, fontWeight:600 }}>
+        <span style={{ background:T.navy, color:T.bg, borderRadius:10, padding:'1px 7px', fontSize:9, fontWeight:600 }}>
           {commesse.length}
         </span>
       </button>

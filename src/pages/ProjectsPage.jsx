@@ -203,7 +203,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
             <button onClick={e => { e.stopPropagation(); onArchive(project, e); }} style={{
               display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted,
+              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#b45309',
               letterSpacing: '0.05em',
             }}>Archivia</button>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete(project); }} style={{
@@ -635,6 +635,7 @@ export default function ProjectsPage() {
     const { error } = await supabase.rpc('elimina_progetto', { p_project_id: project.id });
     if (error) { showToast('Errore: ' + error.message); return; }
     setProjects(prev => prev.filter(p => p.id !== project.id));
+    showToast("Progetto eliminato", "success");
   };
   const handleArchiveProject = async () => {
     if (!projectToArchive) return;
@@ -658,6 +659,7 @@ export default function ProjectsPage() {
     setArchiveModalOpen(false);
     setProjectToArchive(null);
     setArchiveLoading(false);
+    showToast("Progetto archiviato", "success");
     await loadData();
 
     // Controlla commessa collegata

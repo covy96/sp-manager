@@ -1021,7 +1021,7 @@ export default function AnalisiHubPage() {
       <div style={{ fontSize: 32 }}>🔒</div>
       <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 600, color: T.ink }}>Funzionalità Pro</div>
       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, textAlign: "center", maxWidth: 360 }}>Disponibile solo per il piano Pro.</div>
-      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: "#EEF1F6", border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
+      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
     </div>
   );
   if (loading) return (
@@ -1052,7 +1052,7 @@ export default function AnalisiHubPage() {
               {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
             </select>
             <button onClick={() => setCostiEcoPanel(true)}
-              style={{ background: T.navy, color: "#EEF1F6", border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 14px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
+              style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 14px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
               ⚙ Costi orari
             </button>
           </div>

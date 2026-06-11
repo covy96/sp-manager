@@ -271,7 +271,7 @@ export default function ReportPage() {
       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
         Il Report è disponibile solo per il piano Pro.<br/>Fai l'upgrade per accedere ai report avanzati.
       </div>
-      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:'#EEF1F6', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
+      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
         Vedi piani →
       </button>
     </div>

@@ -58,7 +58,7 @@ export function ToastProvider({ children }) {
     setToasts(p => p.filter(t => t.id !== id));
   }, []);
 
-  const showToast = useCallback((message, type = "error", duration = 4000) => {
+  const showToast = useCallback((message, type = "error", duration = type === "success" ? 1500 : 4000) => {
     const id = Date.now() + Math.random();
     setToasts(p => [...p, { id, message, type }]);
     timerRefs.current[id] = setTimeout(() => remove(id), duration);

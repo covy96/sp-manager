@@ -60,11 +60,11 @@ function FieldLabel({ children }) {
   const { T } = useTheme();
   return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
-function Input({ value, onChange, type = "text", required }) {
+function Input({ value, onChange, type = "text", required, placeholder }) {
   const { T } = useTheme();
   const [focus, setFocus] = useState(false);
   return (
-    <input type={type} value={value} onChange={onChange} required={required}
+    <input type={type} value={value} onChange={onChange} required={required} placeholder={placeholder}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
       style={{ width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }} />
   );
@@ -206,6 +206,7 @@ export default function TeamPage() {
     setSelectedMember(p => ({ ...p, role_internal:editRole, custom_permissions:null }));
     setEditPerms({});
     setSaving(false);
+    showToast("Ruolo aggiornato", "success");
   };
 
   // ── salvataggio permessi ──────────────────────────────────────────
@@ -223,6 +224,7 @@ export default function TeamPage() {
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, custom_permissions:toSave } : m));
     setSelectedMember(p => ({ ...p, custom_permissions:toSave }));
     setSaving(false);
+    showToast("Permessi salvati", "success");
   };
 
   // ── salvataggio colore ────────────────────────────────────────────
@@ -234,6 +236,7 @@ export default function TeamPage() {
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, color:editColor } : m));
     setSelectedMember(p => ({ ...p, color:editColor }));
     setSaving(false);
+    showToast("Colore aggiornato", "success");
   };
 
   // ── rimozione utente ──────────────────────────────────────────────
@@ -245,6 +248,7 @@ export default function TeamPage() {
     setMembers(p => p.filter(m => m.id !== selectedMember.id));
     setSelectedMember(null);
     setConfirmRemove(false);
+    showToast("Membro rimosso", "success");
     setRemoving(false);
   };
 
@@ -262,6 +266,7 @@ export default function TeamPage() {
     setMembers(p => [...p, data].sort((a, b) => a.user_name.localeCompare(b.user_name, "it")));
     setStatsByMember(p => ({ ...p, [data.id]:{ weeklyHours:0, activeTasks:0, totalTasks:0, completedTasks:0, projects:0 } }));
     setSaving(false); setModalOpen(false);
+    showToast("Membro aggiunto", "success");
   };
 
   const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
@@ -623,8 +628,8 @@ export default function TeamPage() {
               <button onClick={() => { if (!saving) setModalOpen(false); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
             </div>
             <form onSubmit={handleSaveMember} style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <div><FieldLabel>Nome *</FieldLabel><Input value={formData.user_name} onChange={e => setFormData(p => ({ ...p, user_name:e.target.value }))} required/></div>
-              <div><FieldLabel>Email *</FieldLabel><Input type="email" value={formData.user_email} onChange={e => setFormData(p => ({ ...p, user_email:e.target.value }))} required/></div>
+              <div><FieldLabel>Nome *</FieldLabel><Input value={formData.user_name} onChange={e => setFormData(p => ({ ...p, user_name:e.target.value }))} required placeholder="Mario Rossi"/></div>
+              <div><FieldLabel>Email *</FieldLabel><Input type="email" value={formData.user_email} onChange={e => setFormData(p => ({ ...p, user_email:e.target.value }))} required placeholder="mario@studio.it"/></div>
               <div>
                 <FieldLabel>Ruolo *</FieldLabel>
                 <select value={formData.role_internal} onChange={e => setFormData(p => ({ ...p, role_internal:e.target.value }))} required
