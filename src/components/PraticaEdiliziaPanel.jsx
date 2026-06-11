@@ -45,11 +45,11 @@ function serializeNote(nota, varianti) {
 const EMPTY_FORM = {
   categoria:"", tipo_pratica:"", protocollo:"",
   data_presentazione:"", data_protocollazione:"",
-  data_fine_lavori:"", nota:"", varianti:[],
+  nota:"", varianti:[],
 };
 
 function fmtDate(d) {
-  if (!d) return "—";
+  if (!d) return null;
   return new Date(d).toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" });
 }
 
@@ -58,6 +58,88 @@ function FieldLabel({ children, required, T }) {
   return (
     <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:5 }}>
       {children}{required && <span style={{ color:T.red, marginLeft:2 }}>*</span>}
+    </div>
+  );
+}
+
+// ── MODAL FINE LAVORI ─────────────────────────────────────────────
+function FineLavoriModal({ pratica, onClose, onSaved }) {
+  const { T } = useTheme();
+  const showToast = useToast();
+  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const inputSt = {
+    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
+    background:T.surface, color:T.ink, fontSize:12,
+    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+  };
+
+  const [data, setData]   = useState(pratica.data_fine_lavori||"");
+  const [nota, setNota]   = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useBodyScrollLock(true);
+  useEscKey(() => onClose(), true);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const { error } = await supabase.from("pratiche_edilizie")
+      .update({ data_fine_lavori: data||null, updated_at: new Date().toISOString() })
+      .eq("id", pratica.id);
+    setSaving(false);
+    if (error) { showToast("Errore: "+error.message); return; }
+    showToast("Fine lavori salvata", "success");
+    onSaved();
+    onClose();
+  };
+
+  const handleRemove = async () => {
+    if (!confirm("Rimuovere la data di fine lavori?")) return;
+    setSaving(true);
+    await supabase.from("pratiche_edilizie").update({ data_fine_lavori: null }).eq("id", pratica.id);
+    setSaving(false);
+    showToast("Fine lavori rimossa", "success");
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:80, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.6)", padding:16 }}>
+      <div style={{ width:"100%", maxWidth:440, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28 }}>
+
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Fine lavori</div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>
+              {pratica.tipo_pratica}{pratica.protocollo ? ` · ${pratica.protocollo}` : ""}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
+        </div>
+
+        <div style={{ marginBottom:16 }}>
+          <FieldLabel T={T} required>Data fine lavori</FieldLabel>
+          <input type="date" value={data} onChange={e => setData(e.target.value)}
+            style={{ ...inputSt, ...mono, fontSize:11 }}/>
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:14, borderTop:`0.5px solid ${T.border}`, gap:8 }}>
+          {pratica.data_fine_lavori ? (
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"7px 14px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+              Rimuovi
+            </button>
+          ) : <div/>}
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+              Annulla
+            </button>
+            <button onClick={handleSave} disabled={saving || !data}
+              style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!data ? "not-allowed" : "pointer", opacity: saving||!data ? 0.6 : 1 }}>
+              {saving ? "Salvataggio..." : "Salva"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -105,7 +187,6 @@ function VariantiModal({ pratica, onClose, onSaved }) {
     <div style={{ position:"fixed", inset:0, zIndex:80, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.6)", padding:16 }}>
       <div style={{ width:"100%", maxWidth:580, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"88vh", overflowY:"auto" }}>
 
-        {/* Header */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
           <div>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Varianti edilizie</div>
@@ -116,7 +197,6 @@ function VariantiModal({ pratica, onClose, onSaved }) {
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
         </div>
 
-        {/* Lista varianti esistenti */}
         {localV.length > 0 && (
           <div style={{ marginBottom:16, display:"flex", flexDirection:"column", gap:6 }}>
             {localV.map(v => (
@@ -171,7 +251,6 @@ function VariantiModal({ pratica, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
           <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
             Annulla
@@ -210,14 +289,16 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const [variantiOpen, setVariantiOpen]           = useState(false);
   const [variantePraticaId, setVariantePraticaId] = useState(null);
 
-  // Blocca scroll solo quando non c'è il modale varianti (che ha suo lock)
-  useBodyScrollLock(listOpen && !variantiOpen);
-  useBodyScrollLock(formOpen && !variantiOpen);
+  const [fineLavoriOpen, setFineLavoriOpen]           = useState(false);
+  const [fineLavoriPraticaId, setFineLavoriPraticaId] = useState(null);
+
+  useBodyScrollLock(listOpen && !variantiOpen && !fineLavoriOpen);
+  useBodyScrollLock(formOpen && !variantiOpen && !fineLavoriOpen);
   useEscKey(() => {
-    if (variantiOpen) return; // gestito da VariantiModal
+    if (variantiOpen || fineLavoriOpen) return;
     if (formOpen)  { setFormOpen(false);  return; }
     if (listOpen)  { setListOpen(false);  }
-  }, (listOpen || formOpen) && !variantiOpen);
+  }, (listOpen || formOpen) && !variantiOpen && !fineLavoriOpen);
 
   // ── LOAD ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -250,7 +331,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       protocollo:           p.protocollo||"",
       data_presentazione:   p.data_presentazione||"",
       data_protocollazione: p.data_protocollazione||"",
-      data_fine_lavori:     p.data_fine_lavori||"",
       nota,
       varianti,
     });
@@ -268,7 +348,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       protocollo:           form.protocollo||null,
       data_presentazione:   form.data_presentazione||null,
       data_protocollazione: form.data_protocollazione||null,
-      data_fine_lavori:     form.data_fine_lavori||null,
       note:                 serializeNote(form.nota, form.varianti),
       updated_at:           new Date().toISOString(),
     };
@@ -307,12 +386,26 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
     return n;
   });
 
-  const variantePratica = variantePraticaId ? pratiche.find(p => p.id === variantePraticaId) : null;
+  const variantePratica   = variantePraticaId   ? pratiche.find(p => p.id === variantePraticaId)   : null;
+  const fineLavoriPratica = fineLavoriPraticaId  ? pratiche.find(p => p.id === fineLavoriPraticaId) : null;
 
   if (loading) return null;
 
-  const totale = pratiche.length;
+  const totale     = pratiche.length;
   const isSameDate = SAME_DATE.includes(form.tipo_pratica);
+
+  // Bottone azione inline
+  const ActionBtn = ({ onClick, active, children }) => (
+    <button onClick={onClick} style={{
+      ...mono, fontSize:9,
+      color: active ? T.navy : T.muted,
+      background:"none",
+      border:`0.5px solid ${active ? T.navy : T.border}`,
+      borderRadius:T.radiusSm, padding:"2px 8px", cursor:"pointer", flexShrink:0,
+    }}>
+      {children}
+    </button>
+  );
 
   return (
     <>
@@ -320,7 +413,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       <button onClick={() => setListOpen(true)} style={{
         display:"flex", alignItems:"center", gap:8,
         border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm,
-        background: totale > 0 ? T.navyLight||"rgba(19,49,92,0.07)" : "transparent",
+        background: totale > 0 ? (T.navyLight||"rgba(19,49,92,0.07)") : "transparent",
         height:34, padding:"0 12px", cursor:"pointer",
       }}>
         <span style={{ ...mono, fontSize:9, letterSpacing:"0.15em", textTransform:"uppercase", color:T.navy, fontWeight:600 }}>
@@ -335,7 +428,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       {/* ── MODAL LISTA ────────────────────────────────────────── */}
       {listOpen && (
         <div style={{ position:"fixed", inset:0, zIndex:60, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.5)", padding:16 }}>
-          <div style={{ width:"100%", maxWidth:640, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"88vh", overflowY:"auto" }}>
+          <div style={{ width:"100%", maxWidth:680, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"88vh", overflowY:"auto" }}>
 
             {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
@@ -365,38 +458,38 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                       {items.map(p => {
                         const { varianti } = parseNote(p.note);
                         const isEdilizia = cat.id === "edilizia";
+                        const hasFl = !!p.data_fine_lavori;
                         return (
                           <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, marginBottom:4, flexWrap:"wrap" }}>
+                            {/* Badge tipo */}
                             <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 7px", flexShrink:0 }}>
                               {p.tipo_pratica}
                             </span>
-                            <div style={{ flex:1, minWidth:120 }}>
+                            {/* Info: protocollo + data pres. */}
+                            <div style={{ flex:1, minWidth:80 }}>
                               {p.protocollo && <span style={{ ...mono, fontSize:10, color:T.ink }}>{p.protocollo}</span>}
                               {p.data_presentazione && (
                                 <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft: p.protocollo?8:0 }}>
                                   pres. {fmtDate(p.data_presentazione)}
                                 </span>
                               )}
-                              {p.data_fine_lavori && (
-                                <span style={{ ...mono, fontSize:9, color:"#1a6b3c", marginLeft:8 }}>
-                                  FL {fmtDate(p.data_fine_lavori)}
-                                </span>
-                              )}
                             </div>
-                            {isEdilizia && (
-                              <button onClick={() => { setVariantePraticaId(p.id); setVariantiOpen(true); }} style={{
-                                ...mono, fontSize:9,
-                                color: varianti.length ? T.navy : T.muted,
-                                background:"none",
-                                border:`0.5px solid ${varianti.length ? T.navy : T.border}`,
-                                borderRadius:T.radiusSm, padding:"2px 8px", cursor:"pointer", flexShrink:0,
-                              }}>
-                                {varianti.length ? `Varianti (${varianti.length})` : "+ Variante"}
-                              </button>
-                            )}
-                            <button onClick={() => openEdit(p)} style={{ ...mono, fontSize:9, color:T.muted, background:"none", border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, padding:"2px 8px", cursor:"pointer", flexShrink:0 }}>
-                              Modifica
-                            </button>
+                            {/* Azioni edilizia */}
+                            {isEdilizia && <>
+                              <ActionBtn
+                                active={hasFl}
+                                onClick={() => { setFineLavoriPraticaId(p.id); setFineLavoriOpen(true); }}>
+                                {hasFl ? `FL ${fmtDate(p.data_fine_lavori)}` : "Fine lavori"}
+                              </ActionBtn>
+                              <ActionBtn
+                                active={varianti.length > 0}
+                                onClick={() => { setVariantePraticaId(p.id); setVariantiOpen(true); }}>
+                                {varianti.length > 0 ? `Varianti (${varianti.length})` : "Variante"}
+                              </ActionBtn>
+                            </>}
+                            {/* Modifica */}
+                            <ActionBtn active={false} onClick={() => openEdit(p)}>Modifica</ActionBtn>
+                            {/* Elimina */}
                             <button onClick={() => handleDelete(p.id)} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:15, lineHeight:1, flexShrink:0, padding:"0 2px" }}>×</button>
                           </div>
                         );
@@ -425,7 +518,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
         <div style={{ position:"fixed", inset:0, zIndex:70, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.55)", padding:16 }}>
           <div style={{ width:"100%", maxWidth:620, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"90vh", overflowY:"auto" }}>
 
-            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
               <div style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:"-0.02em" }}>
                 {editingId ? "Modifica pratica" : "Nuova pratica"}
@@ -487,11 +579,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                       <input type="date" value={form.data_protocollazione} onChange={e => setField("data_protocollazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
                     </div>
                   )}
-                  <div>
-                    <FieldLabel T={T}>Data fine lavori</FieldLabel>
-                    <input type="date" value={form.data_fine_lavori} onChange={e => setField("data_fine_lavori", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
-                  </div>
-                  <div style={{ gridColumn: isSameDate ? "span 2" : "span 1" }}>
+                  <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>
                     <input type="text" value={form.nota} onChange={e => setField("nota", e.target.value)} placeholder="Note aggiuntive..." style={inputSt}/>
                   </div>
@@ -509,7 +597,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                   </div>
                   <div>
                     <FieldLabel T={T}>Data scadenza</FieldLabel>
-                    <input type="date" value={form.data_fine_lavori} onChange={e => setField("data_fine_lavori", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                    <input type="date" value={form.data_fine_lavori||""} onChange={e => setField("data_fine_lavori", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
                   </div>
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>
@@ -587,6 +675,15 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── MODAL FINE LAVORI ──────────────────────────────────── */}
+      {fineLavoriOpen && fineLavoriPratica && (
+        <FineLavoriModal
+          pratica={fineLavoriPratica}
+          onClose={() => setFineLavoriOpen(false)}
+          onSaved={load}
+        />
       )}
 
       {/* ── MODAL VARIANTI ─────────────────────────────────────── */}
