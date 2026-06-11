@@ -600,9 +600,7 @@ export default function ProjectDetailPage() {
           </div>
           {/* Pulsanti */}
           <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-            {selectedServices.some(s => s.toUpperCase().includes('PRATICA EDILIZIA')) && (
-              <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
-            )}
+            <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
               <ReportCantierePanel
