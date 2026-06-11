@@ -791,8 +791,6 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       dipendenza_id: newRow.dipendenza_id || null,
     };
     const { data, error } = await supabase.from("lavorazioni_gantt").insert(payload).select();
-    console.log('ERROR:', JSON.stringify(error));
-    console.log('PAYLOAD:', JSON.stringify(payload));
     if (!error) {
       setNewRow({ descrizione:'', operatore:'', dipendenza_id:'', data_inizio: toISO(new Date()), data_fine: toISO(addDays(new Date(), 6)), durata_giorni:7 });
       await loadData();

@@ -39,7 +39,6 @@ function Toggle({ checked, onChange, disabled = false }) {
 
 export default function NotifichePage() {
   const { T } = useTheme();
-  console.log('NotifichePage rendering');
   usePageTitleOnMount("Notifiche");
   const { teamMember } = useStudio();
 

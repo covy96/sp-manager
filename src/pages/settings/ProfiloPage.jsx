@@ -38,7 +38,6 @@ function Panel({ title, subtitle, children }) {
 
 export default function ProfiloPage() {
   const { T } = useTheme();
-  console.log('ProfiloPage rendering');
   usePageTitleOnMount("Profilo");
   const { teamMember } = useStudio();
 
