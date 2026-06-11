@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useToast } from "../../contexts/ToastContext";
 
 function getInitials(text) {
   if (!text) return "?";
@@ -19,6 +20,7 @@ function avatarColor(seed = "") {
 
 export default function ProgettiArchiviatiPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Progetti Archiviati");
   const navigate = useNavigate();
   const { studioId } = useStudio();
@@ -59,7 +61,7 @@ export default function ProgettiArchiviatiPage() {
   const handleUnarchive = async id => {
     setRestoring(id);
     const { error: e } = await supabase.from("projects").update({ archived: false }).eq("id", id);
-    if (e) alert("Errore: " + e.message); else setProjects(p => p.filter(x => x.id !== id));
+    if (e) showToast("Errore: " + e.message); else setProjects(p => p.filter(x => x.id !== id));
     setRestoring(null);
   };
 

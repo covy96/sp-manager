@@ -7,9 +7,11 @@ import { usePlan, PLANS } from "../../hooks/usePlan";
 import { usePermissions } from "../../hooks/usePermissions";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function PianoPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Piano");
   const navigate = useNavigate();
   const { teamMember, studioId } = useStudio();
@@ -44,7 +46,7 @@ export default function PianoPage() {
   }, [searchParams]);
 
   const handleUpgrade = async (planId) => {
-    if (!teamMember?.id || !studioId) { alert("Errore: utente o studio non trovato"); return; }
+    if (!teamMember?.id || !studioId) { showToast("Errore: utente o studio non trovato"); return; }
 
     const priceEnvMap = { studio:"VITE_STRIPE_STUDIO_PRICE_ID", pro:"VITE_STRIPE_PRO_PRICE_ID" };
     const priceId = import.meta.env[priceEnvMap[planId]];
@@ -63,7 +65,7 @@ export default function PianoPage() {
       if (error) throw new Error(error.message);
       if (data?.url) window.location.href = data.url;
       else throw new Error("Nessun URL di checkout ricevuto");
-    } catch(e) { alert("Errore durante l'upgrade: "+e.message); setLoading(false); }
+    } catch(e) { showToast("Errore durante l'upgrade: "+e.message); setLoading(false); }
   };
 
   const handleManageSubscription = async () => {
@@ -75,7 +77,7 @@ export default function PianoPage() {
       });
       if (error) throw new Error(error.message);
       if (data?.url) window.location.href = data.url;
-    } catch(e) { alert("Errore: "+e.message); setLoading(false); }
+    } catch(e) { showToast("Errore: "+e.message); setLoading(false); }
   };
 
   const planOrder = ["free","studio","pro"];

@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useEscKey } from '../hooks/useEscKey';
+import { useToast } from "../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -126,6 +127,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function CommessaDetailPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Commessa");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -420,7 +422,7 @@ export default function CommessaDetailPage() {
   const handleDeleteRata = async id => {
     if (!window.confirm("Eliminare questa rata? Verrà spostata nel cestino.")) return;
     const { error: dErr } = await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (dErr) { alert("Errore eliminazione: " + dErr.message); return; }
+    if (dErr) { showToast("Errore eliminazione: " + dErr.message); return; }
     setOpenMenuId(null); await loadData();
   };
 
@@ -454,7 +456,7 @@ export default function CommessaDetailPage() {
   const handleDeleteCollab = async id => {
     if (!window.confirm("Eliminare questo collaboratore? Verrà spostato nel cestino.")) return;
     const { error } = await supabase.rpc('elimina_collaboratore', { p_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     setOpenMenuId(null); await loadData();
   };
 
@@ -479,7 +481,7 @@ export default function CommessaDetailPage() {
   const handleDeleteCostoInterno = async (id) => {
     if (!confirm('Eliminare questo costo interno? Verrà spostato nel cestino.')) return;
     const { error } = await supabase.rpc('elimina_costo_interno', { p_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     await loadData();
   };
 
@@ -535,7 +537,7 @@ export default function CommessaDetailPage() {
         .in("id", proformaToDelete.costo_extra_ids);
     }
     const { error: pErr } = await supabase.rpc('elimina_proforma', { p_id: proformaToDelete.id });
-    if (pErr) { alert('Errore: ' + pErr.message); return; }
+    if (pErr) { showToast('Errore: ' + pErr.message); return; }
     setOpenMenuId(null); await loadData();
   };
 
@@ -1250,7 +1252,7 @@ export default function CommessaDetailPage() {
                   onClick={async () => {
                     setDeletingSaving(true);
                     const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
-                    if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                    if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                     await supabase.from('offerte').update({ deleted_at: new Date().toISOString() }).eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null);
                     navigate('/commesse');
                   }}
@@ -1263,7 +1265,7 @@ export default function CommessaDetailPage() {
                   onClick={async () => {
                     setDeletingSaving(true);
                     const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
-                    if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                    if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                     navigate('/commesse');
                   }}
                   style={{ flex: 1, padding: '9px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
@@ -1283,7 +1285,7 @@ export default function CommessaDetailPage() {
                 onClick={async () => {
                   setDeletingSaving(true);
                   const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
-                  if (error) { alert('Errore: ' + error.message); setDeletingSaving(false); return; }
+                  if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                   navigate('/commesse');
                 }}
                 style={{ padding: '8px 18px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}

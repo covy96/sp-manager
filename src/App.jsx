@@ -54,6 +54,7 @@ import CookieBanner from "./components/CookieBanner";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ToastProvider } from "./contexts/ToastContext";
 
 function ProtectedLayout({ session, children }) {
   if (!session) {
@@ -111,6 +112,7 @@ export default function App({ session }) {
 
   return (
     <ThemeProvider>
+    <ToastProvider>
     <CookieBanner />
     <Routes>
       <Route
@@ -441,6 +443,7 @@ export default function App({ session }) {
       <Route path="/termini" element={<TerminiPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </ToastProvider>
     </ThemeProvider>
   );
 }

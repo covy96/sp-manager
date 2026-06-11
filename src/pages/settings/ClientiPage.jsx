@@ -7,6 +7,7 @@ import { backfillContacts } from "../../utils/backfillContacts";
 import { useTheme } from '../../contexts/ThemeContext';
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useEscKey } from "../../hooks/useEscKey";
+import { useToast } from "../../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
@@ -34,6 +35,7 @@ function FieldLabel({ children }) {
 
 export default function ClientiPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   const isMobile = useIsMobile();
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
@@ -109,7 +111,7 @@ export default function ClientiPage() {
   const handleDelete = async id => {
     if (!confirm("Eliminare questo cliente?")) return;
     const { error:dErr } = await supabase.from("global_contacts").delete().eq("id",id);
-    if (dErr) alert("Errore: "+dErr.message);
+    if (dErr) showToast("Errore: "+dErr.message);
     else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 

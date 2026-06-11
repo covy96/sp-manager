@@ -9,6 +9,7 @@ import { calcolaIncassato } from "../lib/utils";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
+import { useToast } from "../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -131,6 +132,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function CommessePage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Commesse");
   const navigate = useNavigate();
   const { studioId, studioLoading, teamMember } = useStudio();
@@ -612,7 +614,7 @@ export default function CommessePage() {
                     onClick={async()=>{
                       setDeletingSaving(true);
                       const {error}=await supabase.rpc('elimina_commessa',{p_commessa_id:deleteModal.id});
-                      if(error){alert('Errore: '+error.message);setDeletingSaving(false);return;}
+                      if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                       await supabase.from('offerte').update({deleted_at:new Date().toISOString()}).eq('studio',deleteModal.studio).eq('numero_offerta',deleteModal.numero_offerta).is('deleted_at',null);
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
@@ -623,7 +625,7 @@ export default function CommessePage() {
                     onClick={async()=>{
                       setDeletingSaving(true);
                       const {error}=await supabase.rpc('elimina_commessa',{p_commessa_id:deleteModal.id});
-                      if(error){alert('Errore: '+error.message);setDeletingSaving(false);return;}
+                      if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
                     style={{ flex:1, padding:'9px 10px', background:'transparent', color:T.ink, border:`1px solid ${T.borderMd}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
@@ -641,7 +643,7 @@ export default function CommessePage() {
                   onClick={async()=>{
                     setDeletingSaving(true);
                     const {error}=await supabase.rpc('elimina_commessa',{p_commessa_id:deleteModal.id});
-                    if(error){alert('Errore: '+error.message);setDeletingSaving(false);return;}
+                    if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                     setDeleteModal(null);setDeletingSaving(false);await loadData();
                   }}
                   style={{ padding:'8px 18px', background:'#b91c1c', color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}

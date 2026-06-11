@@ -8,6 +8,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { handleListKeyDown } from "../lib/listKeyDown";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useToast } from "../contexts/ToastContext";
 
 const NOTE_COLORS = [
   '#FFF9C4','#F8BBD0','#C8E6C9','#BBDEFB','#E1BEE7','#FFE0B2','#FFFFFF',
@@ -316,6 +317,7 @@ function NoteModal({ note, currentMemberId, teamMembers, onDelete, onUpdate, onR
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function ScrivaniaPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   const isMobile = useIsMobile();
   usePageTitleOnMount("Scrivania");
   const { studioId } = useStudio();
@@ -464,7 +466,7 @@ export default function ScrivaniaPage() {
       p_member_id: currentMemberId,
     });
     if (error) {
-      alert('Errore: ' + error.message);
+      showToast('Errore: ' + error.message);
       // Ripristina ricaricando dal DB
       const mid = currentMemberIdRef.current;
       if (mid) reloadNotesRef.current(mid, studioId);

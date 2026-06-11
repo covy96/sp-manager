@@ -10,6 +10,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
 import SlidingTabs from "../components/SlidingTabs";
+import { useToast } from "../contexts/ToastContext";
 
 // ── COLORI / HELPERS ─────────────────────────────────────────────
 const PREDEFINED_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490","#0a84ff","#30d158","#ff9f0a","#ff453a","#bf5af2","#64d2ff"];
@@ -101,6 +102,7 @@ function RoleBadge({ role }) {
 export default function TeamPage() {
   usePageTitleOnMount("Team");
   const { T } = useTheme();
+  const showToast = useToast();
   const isMobile = useIsMobile();
   const { studioId, loading: studioLoading, teamMember: currentMember } = useStudio();
   const permissions = usePermissions();
@@ -199,7 +201,7 @@ export default function TeamPage() {
     if (!selectedMember || selectedMember.id === currentMember?.id) return;
     setSaving(true);
     const { error: e } = await supabase.from("team_members").update({ role_internal:editRole, custom_permissions:null }).eq("id", selectedMember.id);
-    if (e) { alert("Errore: " + e.message); setSaving(false); return; }
+    if (e) { showToast("Errore: " + e.message); setSaving(false); return; }
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, role_internal:editRole, custom_permissions:null } : m));
     setSelectedMember(p => ({ ...p, role_internal:editRole, custom_permissions:null }));
     setEditPerms({});
@@ -217,7 +219,7 @@ export default function TeamPage() {
     }
     const toSave = Object.keys(overrides).length > 0 ? overrides : null;
     const { error: e } = await supabase.from("team_members").update({ custom_permissions:toSave }).eq("id", selectedMember.id);
-    if (e) { alert("Errore: " + e.message); setSaving(false); return; }
+    if (e) { showToast("Errore: " + e.message); setSaving(false); return; }
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, custom_permissions:toSave } : m));
     setSelectedMember(p => ({ ...p, custom_permissions:toSave }));
     setSaving(false);
@@ -228,7 +230,7 @@ export default function TeamPage() {
     if (!selectedMember) return;
     setSaving(true);
     const { error: e } = await supabase.from("team_members").update({ color:editColor }).eq("id", selectedMember.id);
-    if (e) { alert("Errore: " + e.message); setSaving(false); return; }
+    if (e) { showToast("Errore: " + e.message); setSaving(false); return; }
     setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, color:editColor } : m));
     setSelectedMember(p => ({ ...p, color:editColor }));
     setSaving(false);
@@ -239,7 +241,7 @@ export default function TeamPage() {
     if (!selectedMember) return;
     setRemoving(true);
     const { error: e } = await supabase.from("team_members").delete().eq("id", selectedMember.id);
-    if (e) { alert("Errore: " + e.message); setRemoving(false); return; }
+    if (e) { showToast("Errore: " + e.message); setRemoving(false); return; }
     setMembers(p => p.filter(m => m.id !== selectedMember.id));
     setSelectedMember(null);
     setConfirmRemove(false);

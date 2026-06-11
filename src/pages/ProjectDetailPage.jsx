@@ -15,6 +15,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { notifyTaskAssigned } from '../lib/notifications';
+import { useToast } from "../contexts/ToastContext";
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -264,6 +265,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Progetto");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -440,7 +442,7 @@ export default function ProjectDetailPage() {
     if (!window.confirm("Archiviare questo progetto?")) return;
     setArchiving(true);
     const { error: aErr } = await supabase.from("projects").update({ archived: true }).eq("id", id);
-    if (aErr) { alert("Errore: " + aErr.message); setArchiving(false); return; }
+    if (aErr) { showToast("Errore: " + aErr.message); setArchiving(false); return; }
     navigate("/progetti");
   };
 
@@ -631,7 +633,7 @@ export default function ProjectDetailPage() {
                     if (!window.confirm(`Eliminare il progetto "${project?.name}"? Verrà spostato nel cestino.`)) return;
                     setMenuOpen(false);
                     const { error: dErr } = await supabase.rpc('elimina_progetto', { p_project_id: id });
-                    if (dErr) { alert('Errore: ' + dErr.message); return; }
+                    if (dErr) { showToast('Errore: ' + dErr.message); return; }
                     navigate('/progetti');
                   }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
                     Elimina progetto

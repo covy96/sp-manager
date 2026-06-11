@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
+import { useToast } from "../contexts/ToastContext";
 
 export default function JoinStudioPage({ session }) {
   const navigate = useNavigate();
+  const showToast = useToast();
   const [step, setStep]         = useState(1);
   const [inviteCode, setInviteCode] = useState("");
   const [studio, setStudio]     = useState(null);
@@ -163,7 +165,7 @@ export default function JoinStudioPage({ session }) {
               className="text-[#0a84ff] hover:underline"
               onClick={async () => {
                 await supabase.auth.resend({ type: "signup", email });
-                alert("Email inviata!");
+                showToast("Email inviata!", "success");
               }}
             >
               Rinvia

@@ -3,6 +3,7 @@ import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useToast } from "../../contexts/ToastContext";
 
 const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true,
@@ -39,6 +40,7 @@ function Toggle({ checked, onChange, disabled = false }) {
 
 export default function NotifichePage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Notifiche");
   const { teamMember } = useStudio();
 
@@ -80,7 +82,7 @@ export default function NotifichePage() {
       setPushLoading(true); setPushError("");
       let perm = Notification.permission;
       if (perm === "default") perm = await Notification.requestPermission();
-      if (perm !== "granted") { alert("Abilita le notifiche nelle impostazioni del browser."); setPushLoading(false); return; }
+      if (perm !== "granted") { showToast("Abilita le notifiche nelle impostazioni del browser.", "warning"); setPushLoading(false); return; }
       await Promise.race([navigator.serviceWorker.register("/firebase-messaging-sw.js"), new Promise((_,r) => setTimeout(() => r(new Error("SW timeout")), 5000))]);
       let richiediFCMToken;
       try {
@@ -103,7 +105,7 @@ export default function NotifichePage() {
         const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
         if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
       }
-    } catch (e) { alert("Errore: " + e.message); }
+    } catch (e) { showToast("Errore: " + e.message); }
     finally { setPushLoading(false); }
   };
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, seedServiceTaskTemplates } from "../lib/supabase";
+import { useToast } from "../contexts/ToastContext";
 
 function generateInviteCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -28,6 +29,7 @@ const TIPO_FATTURAZIONE = [
 
 export default function CreateStudioPage({ session }) {
   const navigate = useNavigate();
+  const showToast = useToast();
   const [step, setStep]                     = useState(1);
   const [studioName, setStudioName]         = useState("");
   const [tipoFatturazione, setTipoFatturazione] = useState("proforma");
@@ -169,7 +171,7 @@ export default function CreateStudioPage({ session }) {
               className="text-[#0a84ff] hover:underline"
               onClick={async () => {
                 await supabase.auth.resend({ type: "signup", email });
-                alert("Email inviata!");
+                showToast("Email inviata!", "success");
               }}
             >
               Rinvia

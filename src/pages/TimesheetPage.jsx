@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 import { useTheme } from "../contexts/ThemeContext";
 import SlidingTabs from "../components/SlidingTabs";
+import { useToast } from "../contexts/ToastContext";
 
 function getTodayDate() { return new Date().toISOString().slice(0, 10); }
 function formatDateDisplay(dateStr) {
@@ -314,6 +315,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function TimesheetPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Timesheet");
   const { studioId, teamMember: currentMember } = useStudio();
 
@@ -419,7 +421,7 @@ export default function TimesheetPage() {
   const handleSaveEdit = async e => {
     e.preventDefault(); if (!editingEntry) return; setSavingEdit(true);
     const { data, error: uErr } = await supabase.from("timesheet").update({ hours: editHours, notes: editNotes.trim() || null }).eq("id", editingEntry.id).select("*").single();
-    if (uErr) alert("Errore: " + uErr.message);
+    if (uErr) showToast("Errore: " + uErr.message);
     else { setEntries(p => p.map(en => en.id === data.id ? data : en)); setEditingEntry(null); setTeamRefreshKey(k => k + 1); }
     setSavingEdit(false);
   };
@@ -427,7 +429,7 @@ export default function TimesheetPage() {
   const handleDeleteEntry = async () => {
     if (!editingEntry || !confirm("Sei sicuro di voler eliminare questa registrazione?")) return;
     const { error: dErr } = await supabase.rpc('elimina_timesheet', { p_id: editingEntry.id });
-    if (dErr) { alert("Errore: " + dErr.message); return; }
+    if (dErr) { showToast("Errore: " + dErr.message); return; }
     setEntries(p => p.filter(en => en.id !== editingEntry.id)); setEditingEntry(null); setTeamRefreshKey(k => k + 1);
   };
 

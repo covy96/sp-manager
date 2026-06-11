@@ -633,7 +633,7 @@ export default function ProjectsPage() {
   const handleDeleteProject = async (project) => {
     if (!window.confirm(`Eliminare il progetto "${project.name}"? Verrà spostato nel cestino.`)) return;
     const { error } = await supabase.rpc('elimina_progetto', { p_project_id: project.id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     setProjects(prev => prev.filter(p => p.id !== project.id));
   };
   const handleArchiveProject = async () => {

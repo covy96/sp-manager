@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import { useToast } from "../contexts/ToastContext";
 
 const FIGURE_PROFESSIONALI = [
   "Committente",
@@ -47,6 +48,7 @@ const EMPTY_FORM = { professional_role: "Contatto", full_name: "", company: "", 
 
 export default function AnagraficaPanel({ projectId, studioId }) {
   const { T } = useTheme();
+  const showToast = useToast();
 
   const inputSt = {
     width: '100%', padding: '7px 10px', boxSizing: 'border-box',
@@ -192,7 +194,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           professional_role: form.professional_role,
         });
       } else {
-        alert("Errore salvataggio contatto: " + gcErr.message);
+        showToast("Errore salvataggio contatto: " + gcErr.message);
         setSaving(false);
         return;
       }

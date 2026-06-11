@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { useToast } from "../contexts/ToastContext";
 
 // Normalizzazione robusta: lowercase, trim, rimuove accenti, collassa spazi
 function nk(s) {
@@ -40,6 +41,7 @@ function FieldLabel({ children }) {
 
 export default function ClientiPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Clienti");
   const { studioId } = useStudio();
   const isMobile = useIsMobile();
@@ -118,7 +120,7 @@ export default function ClientiPage() {
   const handleDelete = async id => {
     if (!confirm("Eliminare questo cliente? Verrà spostato nel cestino.")) return;
     const { error:dErr } = await supabase.rpc('elimina_contatto', { p_id: id });
-    if (dErr) { alert("Errore: "+dErr.message); return; }
+    if (dErr) { showToast("Errore: "+dErr.message); return; }
     setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null);
   };
 

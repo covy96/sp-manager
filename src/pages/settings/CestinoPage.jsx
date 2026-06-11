@@ -3,6 +3,7 @@ import { useStudio } from '../../hooks/useStudio';
 import { useTheme } from '../../contexts/ThemeContext';
 import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { supabase } from '../../lib/supabase';
+import { useToast } from "../../contexts/ToastContext";
 
 const CATEGORIE = [
   { id: 'projects',      label: 'Progetti',          icon: '📁', rpc: 'cestino_projects',
@@ -58,6 +59,7 @@ const TABELLA_REALE = {
 export default function CestinoPage() {
   usePageTitleOnMount('Cestino');
   const { studioId } = useStudio();
+  const showToast = useToast();
   const { T } = useTheme();
   const [byCategory, setByCategory] = useState({});
   const [loading, setLoading]       = useState(true);
@@ -98,7 +100,7 @@ export default function CestinoPage() {
     } else {
       ({ error } = await supabase.rpc('ripristina_item', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId }));
     }
-    if (error) alert('Errore ripristino: ' + error.message);
+    if (error) showToast('Errore ripristino: ' + error.message);
     setRestoring(null);
     await loadAll();
   };
@@ -107,7 +109,7 @@ export default function CestinoPage() {
     if (!confirm(`Eliminare definitivamente "${item._nome}"? Questa azione è irreversibile.`)) return;
     setRestoring(item.id);
     const { error } = await supabase.rpc('elimina_definitivo', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId });
-    if (error) alert('Errore eliminazione: ' + error.message);
+    if (error) showToast('Errore eliminazione: ' + error.message);
     setRestoring(null);
     await loadAll();
   };

@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
+import { useToast } from "../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -32,6 +33,7 @@ function KpiCard({ label, value, color, sub }) {
 
 export default function FatturePage() {
   const { T } = useTheme();
+  const showToast = useToast();
   const isMobile = useIsMobile();
   usePageTitleOnMount("Fatture");
   const navigate = useNavigate();
@@ -199,7 +201,7 @@ export default function FatturePage() {
   const handleDelete = async (id) => {
     if (!confirm("Eliminare questa fattura? Verrà spostata nel cestino.")) return;
     const { error } = await supabase.rpc('elimina_fattura', { p_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     setFatture(p=>p.filter(x=>x.id!==id));
   };
 
@@ -218,7 +220,7 @@ export default function FatturePage() {
   const handleSRLDelete = async (id) => {
     if (!confirm("Eliminare questa fattura? Verrà spostata nel cestino.")) return;
     const { error } = await supabase.rpc('elimina_proforma', { p_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     setProformeTutte(p=>p.filter(x=>x.id!==id));
   };
 

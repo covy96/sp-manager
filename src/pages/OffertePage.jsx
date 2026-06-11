@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
+import { useToast } from "../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -20,6 +21,7 @@ const STATI = {
 export default function OffertePage() {
   usePageTitleOnMount("Offerte");
   const navigate  = useNavigate();
+  const showToast = useToast();
   const { studioId } = useStudio();
   const { T } = useTheme();
   const isMobile = useIsMobile();
@@ -180,7 +182,7 @@ export default function OffertePage() {
         gantt_enabled: false,
         archived: false,
       }).select().single();
-      if (pErr) { alert('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
+      if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
       projectName = newProj.name;
       await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', accettaId);
@@ -202,7 +204,7 @@ export default function OffertePage() {
       importo_totale: totaleAccetta,
       stato_pagamento: 'non_iniziato',
     }).select().single();
-    if (cErr) { alert('Errore: '+cErr.message); setSaving(false); return; }
+    if (cErr) { showToast('Errore: '+cErr.message); setSaving(false); return; }
 
     const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
     if (aggiornaOfferta) offerUpdate.importo_offerta_base = totaleAccetta;
@@ -242,7 +244,7 @@ export default function OffertePage() {
   const handleElimina = async (offerta) => {
     if (!confirm(`Spostare "${offerta.nome_offerta}" nel cestino?`)) return;
     const { error } = await supabase.rpc('elimina_offerta', { p_offerta_id: offerta.id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     await loadData();
   };
 

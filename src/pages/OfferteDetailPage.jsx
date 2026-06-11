@@ -5,6 +5,7 @@ import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
+import { useToast } from "../contexts/ToastContext";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -18,6 +19,7 @@ const STATI = {
 
 export default function OfferteDetailPage() {
   const { id } = useParams();
+  const showToast = useToast();
   const navigate = useNavigate();
   const { studioId } = useStudio();
   const { T } = useTheme();
@@ -113,7 +115,7 @@ export default function OfferteDetailPage() {
   const handleElimina = async () => {
     if (!confirm(`Spostare "${offerta?.nome_offerta}" nel cestino?`)) return;
     const { error } = await supabase.rpc('elimina_offerta', { p_offerta_id: id });
-    if (error) { alert('Errore: ' + error.message); return; }
+    if (error) { showToast('Errore: ' + error.message); return; }
     navigate('/offerte');
   };
 
@@ -155,7 +157,7 @@ export default function OfferteDetailPage() {
         gantt_enabled: false,
         archived: false,
       }).select().single();
-      if (pErr) { alert('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
+      if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
       projectName = newProj.name;
       await supabase.from('offerte').update({ project_id:newProj.id, project_name:newProj.name }).eq('id', id);
@@ -177,7 +179,7 @@ export default function OfferteDetailPage() {
       importo_totale: totaleAccetta,
       stato_pagamento: 'non_iniziato',
     }).select().single();
-    if (error) { alert('Errore: '+error.message); setSaving(false); return; }
+    if (error) { showToast('Errore: '+error.message); setSaving(false); return; }
 
     // Aggiorna stato offerta (e valore se richiesto)
     const offerUpdate = { stato:'accettata', commessa_id:commessa.id };

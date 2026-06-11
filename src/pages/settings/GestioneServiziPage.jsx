@@ -4,6 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from '../../contexts/ThemeContext';
 import { useEscKey } from "../../hooks/useEscKey";
+import { useToast } from "../../contexts/ToastContext";
 
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   const { T } = useTheme();
@@ -24,6 +25,7 @@ function BtnGhost({ children, onClick, disabled, danger, style={} }) {
 
 export default function GestioneServiziPage() {
   const { T } = useTheme();
+  const showToast = useToast();
   usePageTitleOnMount("Gestione Servizi");
   const { studioId } = useStudio();
   const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
@@ -85,7 +87,7 @@ export default function GestioneServiziPage() {
   const handleDeleteService = async id => {
     if (!confirm("Sei sicuro di voler eliminare questo servizio? Verranno eliminate anche le task predefinite.")) return;
     const { error:dErr } = await supabase.from("service_task_templates").delete().eq("id", id);
-    if (dErr) alert("Errore: " + dErr.message);
+    if (dErr) showToast("Errore: " + dErr.message);
     else { setServices(p => p.filter(s => s.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
@@ -100,7 +102,7 @@ export default function GestioneServiziPage() {
       .from("service_task_templates")
       .update({ task_templates:updated })
       .eq("id", service.id);
-    if (uErr) { alert("Errore: " + uErr.message); return; }
+    if (uErr) { showToast("Errore: " + uErr.message); return; }
     setServices(p => p.map(s => s.id===service.id ? { ...s, task_templates:updated } : s));
     setNewTaskInput("");
   };
@@ -112,7 +114,7 @@ export default function GestioneServiziPage() {
       .from("service_task_templates")
       .update({ task_templates:updated })
       .eq("id", service.id);
-    if (uErr) { alert("Errore: " + uErr.message); return; }
+    if (uErr) { showToast("Errore: " + uErr.message); return; }
     setServices(p => p.map(s => s.id===service.id ? { ...s, task_templates:updated } : s));
   };
 
@@ -125,7 +127,7 @@ export default function GestioneServiziPage() {
       .from("service_task_templates")
       .update({ task_templates:current })
       .eq("id", service.id);
-    if (uErr) { alert("Errore: " + uErr.message); return; }
+    if (uErr) { showToast("Errore: " + uErr.message); return; }
     setServices(p => p.map(s => s.id===service.id ? { ...s, task_templates:current } : s));
   };
 
