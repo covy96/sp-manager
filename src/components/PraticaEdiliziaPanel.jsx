@@ -28,18 +28,18 @@ function catFromTipo(tipo) {
   return "edilizia";
 }
 
-// Varianti e nota testuale serializzate nel campo `note` come JSON
+// note field serializzato come JSON: { note, varianti, fl_protocollo }
 function parseNote(raw) {
-  if (!raw) return { nota:"", varianti:[] };
+  if (!raw) return { nota:"", varianti:[], flProtocollo:"" };
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === "object") return { nota: p.note||"", varianti: p.varianti||[] };
+    if (p && typeof p === "object") return { nota: p.note||"", varianti: p.varianti||[], flProtocollo: p.fl_protocollo||"" };
   } catch {}
-  return { nota: raw, varianti:[] };
+  return { nota: raw, varianti:[], flProtocollo:"" };
 }
-function serializeNote(nota, varianti) {
-  if (!varianti?.length) return nota||null;
-  return JSON.stringify({ note: nota||"", varianti });
+function serializeNote(nota, varianti, flProtocollo) {
+  if (!varianti?.length && !flProtocollo) return nota||null;
+  return JSON.stringify({ note: nota||"", varianti: varianti||[], fl_protocollo: flProtocollo||"" });
 }
 
 const EMPTY_FORM = {
@@ -74,17 +74,19 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
     fontFamily:"'Space Grotesk', sans-serif", outline:"none",
   };
 
-  const [data, setData]   = useState(pratica.data_fine_lavori||"");
-  const [nota, setNota]   = useState("");
-  const [saving, setSaving] = useState(false);
+  const { varianti: existingV, flProtocollo: existingFlProt, nota: existingNota } = parseNote(pratica.note);
+  const [data, setData]             = useState(pratica.data_fine_lavori||"");
+  const [protocollo, setProtocollo] = useState(existingFlProt);
+  const [saving, setSaving]         = useState(false);
 
   useBodyScrollLock(true);
   useEscKey(() => onClose(), true);
 
   const handleSave = async () => {
     setSaving(true);
+    const newNote = serializeNote(existingNota, existingV, protocollo);
     const { error } = await supabase.from("pratiche_edilizie")
-      .update({ data_fine_lavori: data||null, updated_at: new Date().toISOString() })
+      .update({ data_fine_lavori: data||null, note: newNote, updated_at: new Date().toISOString() })
       .eq("id", pratica.id);
     setSaving(false);
     if (error) { showToast("Errore: "+error.message); return; }
@@ -96,7 +98,8 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
   const handleRemove = async () => {
     if (!confirm("Rimuovere la data di fine lavori?")) return;
     setSaving(true);
-    await supabase.from("pratiche_edilizie").update({ data_fine_lavori: null }).eq("id", pratica.id);
+    const clearNote = serializeNote(existingNota, existingV, "");
+    await supabase.from("pratiche_edilizie").update({ data_fine_lavori: null, note: clearNote }).eq("id", pratica.id);
     setSaving(false);
     showToast("Fine lavori rimossa", "success");
     onSaved();
@@ -117,10 +120,17 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
         </div>
 
-        <div style={{ marginBottom:16 }}>
-          <FieldLabel T={T} required>Data fine lavori</FieldLabel>
-          <input type="date" value={data} onChange={e => setData(e.target.value)}
-            style={{ ...inputSt, ...mono, fontSize:11 }}/>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+          <div>
+            <FieldLabel T={T} required>Data fine lavori</FieldLabel>
+            <input type="date" value={data} onChange={e => setData(e.target.value)}
+              style={{ ...inputSt, ...mono, fontSize:11 }}/>
+          </div>
+          <div>
+            <FieldLabel T={T}>N° Protocollo</FieldLabel>
+            <input type="text" value={protocollo} onChange={e => setProtocollo(e.target.value)}
+              placeholder="Es. PG. 12345" style={inputSt}/>
+          </div>
         </div>
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:14, borderTop:`0.5px solid ${T.border}`, gap:8 }}>
@@ -173,8 +183,8 @@ function VariantiModal({ pratica, onClose, onSaved }) {
 
   const saveAll = async () => {
     setSaving(true);
-    const { nota } = parseNote(pratica.note);
-    const noteStr  = serializeNote(nota, localV);
+    const { nota, flProtocollo } = parseNote(pratica.note);
+    const noteStr  = serializeNote(nota, localV, flProtocollo);
     const { error } = await supabase.from("pratiche_edilizie").update({ note: noteStr }).eq("id", pratica.id);
     setSaving(false);
     if (error) { showToast("Errore: "+error.message); return; }
@@ -348,7 +358,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       protocollo:           form.protocollo||null,
       data_presentazione:   form.data_presentazione||null,
       data_protocollazione: form.data_protocollazione||null,
-      note:                 serializeNote(form.nota, form.varianti),
+      note:                 serializeNote(form.nota, form.varianti, ""),
       updated_at:           new Date().toISOString(),
     };
     if (editingId) {
