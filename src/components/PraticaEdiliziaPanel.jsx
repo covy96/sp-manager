@@ -605,10 +605,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                     <FieldLabel T={T}>Data inizio</FieldLabel>
                     <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
                   </div>
-                  <div>
-                    <FieldLabel T={T}>Data scadenza</FieldLabel>
-                    <input type="date" value={form.data_fine_lavori||""} onChange={e => setField("data_fine_lavori", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
-                  </div>
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>
                     <input type="text" value={form.nota} onChange={e => setField("nota", e.target.value)} placeholder="Note aggiuntive..." style={inputSt}/>
