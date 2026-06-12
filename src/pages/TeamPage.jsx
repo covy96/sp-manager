@@ -423,6 +423,14 @@ export default function TeamPage() {
                     </div>
                     <div style={{ marginTop:3 }}><RoleBadge role={m.role_internal} /></div>
                   </div>
+                  {statsByMember[m.id]?.weeklyHours > 0 && (
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.navy, fontWeight:600 }}>
+                        {formatOre(statsByMember[m.id].weeklyHours)}
+                      </div>
+                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>sett.</div>
+                    </div>
+                  )}
                   <span style={{ color:T.muted, fontSize:14 }}>{isSel ? '×' : '›'}</span>
                 </button>
               );

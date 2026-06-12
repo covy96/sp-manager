@@ -429,6 +429,11 @@ export default function ProjectDetailPage() {
     return acc;
   }, {}), [hideCompletedTasks, tasks]);
 
+  // Task senza data pianificata (backlog)
+  const backlogTasks = useMemo(() =>
+    tasks.filter(t => !t.parent_task_id && !t.data_pianificata && (!hideCompletedTasks || t.status !== "completed"))
+  , [hideCompletedTasks, tasks]);
+
   useEffect(() => {
     localStorage.setItem(TASK_VISIBILITY_KEY, hideCompletedTasks ? "hide-completed" : "show-all");
   }, [hideCompletedTasks]);
@@ -974,6 +979,63 @@ export default function ProjectDetailPage() {
               </div>
             );
           })}
+
+          {/* Colonna Backlog — task senza data pianificata */}
+          {backlogTasks.length > 0 && (
+            <div style={{
+              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
+              minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+              maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+              scrollSnapAlign: isMobile ? 'start' : 'none',
+              display: 'flex', flexDirection: 'column',
+              background: T.surface,
+              backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+              border: `1px dashed ${T.borderMd}`,
+              borderRadius: T.radius,
+              overflow: 'hidden',
+              height: isMobile ? 'auto' : '100%',
+              maxHeight: isMobile ? 'none' : '100%',
+              boxShadow: T.shadow,
+            }}>
+              {/* Header backlog */}
+              <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, color: T.muted }}>📥</span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.muted, letterSpacing: '0.05em', flex: 1 }}>
+                    Backlog
+                  </span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+                    {backlogTasks.filter(t=>t.status!=="completed").length} senza data
+                  </span>
+                </div>
+              </div>
+              {/* Task list */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+                {backlogTasks.map(task => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    teamMembers={teamMembers}
+                    categories={selectedServices}
+                    subtasks={subtasksByParent[task.id] || []}
+                    subtaskInput={subtaskInputs[task.id] ?? ""}
+                    subtaskAssignment={subtaskAssignments[task.id]}
+                    subtaskDate={subtaskDates[task.id]}
+                    onToggle={handleToggleTask}
+                    onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
+                    onSubtaskInputChange={(pid, v) => setSubtaskInputs(p => ({ ...p, [pid]: v }))}
+                    onSubtaskAssignmentChange={(pid, v) => setSubtaskAssignments(p => ({ ...p, [pid]: v }))}
+                    onSubtaskDateChange={(pid, v) => setSubtaskDates(p => ({ ...p, [pid]: v }))}
+                    onCreateSubtask={handleCreateSubtask}
+                    isUpdating={updatingTaskId === task.id}
+                    isCreatingSubtask={creatingSubtaskId === task.id}
+                    currentMemberId={teamMember?.id}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Colonna "Aggiungi colonna" — sempre in fondo */}
           {addColOpen ? (

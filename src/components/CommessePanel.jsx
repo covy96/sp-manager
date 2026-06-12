@@ -17,14 +17,16 @@ export default function CommessePanel({ commesse = [] }) {
 
   if (commesse.length === 0) return null;
 
-  const totale    = commesse.reduce((s,c)=>s+Number(c.importo_offerta_base||0),0);
-  const incassato = commesse.reduce((s,c)=>s+Number(c.importo_incassato||0),0);
+  const totale       = commesse.reduce((s,c)=>s+Number(c.importo_offerta_base||0),0);
+  const incassato    = commesse.reduce((s,c)=>s+Number(c.importo_incassato||0),0);
+  const senzaImporto = commesse.filter(c => !c.importo_offerta_base || Number(c.importo_offerta_base) === 0);
 
   return (
     <>
       <button onClick={()=>setModalOpen(true)} style={{
         display:'flex', alignItems:'center', gap:8, height:34, padding:'0 14px',
-        border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent',
+        border:`0.5px solid ${senzaImporto.length > 0 ? '#b45309' : T.borderMd}`,
+        borderRadius: T.radiusSm, background:'transparent',
         cursor:'pointer', color:T.ink,
         fontFamily:"'IBM Plex Mono', monospace", fontSize:10,
         letterSpacing:'0.08em', textTransform:'uppercase',
@@ -33,6 +35,9 @@ export default function CommessePanel({ commesse = [] }) {
         <span style={{ background:T.navy, color:T.bg, borderRadius:10, padding:'1px 7px', fontSize:9, fontWeight:600 }}>
           {commesse.length}
         </span>
+        {senzaImporto.length > 0 && (
+          <span title={`${senzaImporto.length} commessa senza importo`} style={{ color:'#b45309', fontSize:12, lineHeight:1 }}>⚠</span>
+        )}
       </button>
 
       {modalOpen && (
@@ -64,11 +69,15 @@ export default function CommessePanel({ commesse = [] }) {
                       <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>{c.cliente}</div>
                     </div>
                     <div style={{ textAlign:'right' }}>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:13, fontWeight:600, color:T.navy }}>{currency(val)}</div>
-                      {perc > 0
+                      {val === 0 ? (
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:600, color:'#b45309' }}>⚠ Importo mancante</div>
+                      ) : (
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:13, fontWeight:600, color:T.navy }}>{currency(val)}</div>
+                      )}
+                      {val > 0 && (perc > 0
                         ? <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.green, marginTop:2 }}>{perc.toFixed(0)}% incassato</div>
                         : <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>non incassato</div>
-                      }
+                      )}
                     </div>
                   </button>
                 );
