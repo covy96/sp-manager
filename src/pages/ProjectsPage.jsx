@@ -176,6 +176,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
       backdropFilter: T.blurSm,
       WebkitBackdropFilter: T.blurSm,
       boxShadow: hover ? T.shadowMd : T.shadow,
+      display: 'flex', flexDirection: 'column',
     }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -217,36 +218,42 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
       </div>
 
       {/* Content */}
-      <div onClick={() => navigate(`/progetti/${project.id}`)} style={{ cursor: 'pointer' }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', paddingRight: 24, marginBottom: 4 }}>
-          {project.name || "Progetto senza nome"}
-        </div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', marginBottom: 12 }}>
-          {project.client || "—"}
-        </div>
+      <div onClick={() => navigate(`/progetti/${project.id}`)} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-        {project.address && (
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginBottom: 10, letterSpacing: '0.02em' }}>
-            {project.address}
+        {/* Parte alta: nome + cliente + indirizzo (cresce) */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', paddingRight: 24, marginBottom: 4 }}>
+            {project.name || "Progetto senza nome"}
           </div>
-        )}
-
-        {/* Ore e task */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
-            {formatOre(hours)} h
-          </span>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
-            Task {tasks.completed}/{tasks.total}
-          </span>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', marginBottom: 4 }}>
+            {project.client || "—"}
+          </div>
+          {project.address && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.02em' }}>
+              {project.address}
+            </div>
+          )}
         </div>
 
-        {/* Progress bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ flex: 1, height: 2, background: T.border }}>
-            <div style={{ height: 2, background: T.navy, width: `${progress}%`, transition: 'width 0.3s' }} />
+        {/* Parte bassa: ore + task + barra + avatars (sempre in fondo) */}
+        <div style={{ marginTop: 14 }}>
+          {/* Ore e task */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+              {formatOre(hours)} h
+            </span>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+              Task {tasks.completed}/{tasks.total}
+            </span>
           </div>
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{progress}%</span>
+
+          {/* Progress bar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{ flex: 1, height: 2, background: T.border }}>
+              <div style={{ height: 2, background: T.navy, width: `${progress}%`, transition: 'width 0.3s' }} />
+            </div>
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{progress}%</span>
+          </div>
         </div>
 
         {/* Avatars */}
