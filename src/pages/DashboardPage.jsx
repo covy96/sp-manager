@@ -227,6 +227,7 @@ export default function DashboardPage() {
   const [todayTasks, setTodayTasks]       = useState([]);
   const [overdueTasks, setOverdueTasks]   = useState([]);
   const [tomorrowTasks, setTomorrowTasks] = useState([]);
+  const [scadenzePratiche, setScadenzePratiche] = useState([]);
 
   const greeting    = useMemo(() => {
     const h = new Date().getHours();
@@ -304,6 +305,34 @@ export default function DashboardPage() {
             .neq("status", "completed").lt("data_pianificata", today)
             .is("parent_task_id", null).is("deleted_at", null).order("data_pianificata", { ascending: true });
           setOverdueTasks(overdue || []);
+        }
+
+        // 6b. Scadenze pratiche — prossimi 30 giorni
+        const in30 = new Date(); in30.setDate(in30.getDate() + 30);
+        const in30Str = in30.toISOString().slice(0, 10);
+        { const { data: pratiche } = await supabase
+            .from("pratiche_edilizie")
+            .select("id, tipo_pratica, protocollo, data_presentazione, data_protocollazione, data_fine_lavori, project_id, projects(name)")
+            .eq("studio", studioId)
+            .or(`data_presentazione.gte.${today},data_protocollazione.gte.${today},data_fine_lavori.gte.${today}`)
+            .order("data_presentazione", { ascending: true });
+
+          // Espandi in eventi singoli, tieni solo quelli nei prossimi 30gg
+          const eventi = [];
+          for (const p of (pratiche || [])) {
+            const checks = [
+              { label: "Presentazione",   data: p.data_presentazione },
+              { label: "Protocollazione", data: p.data_protocollazione },
+              { label: "Fine lavori",     data: p.data_fine_lavori },
+            ];
+            for (const c of checks) {
+              if (c.data && c.data >= today && c.data <= in30Str) {
+                eventi.push({ ...p, eventLabel: c.label, eventDate: c.data });
+              }
+            }
+          }
+          eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+          setScadenzePratiche(eventi);
         }
 
         // 6. Task di domani (o lunedì se weekend) — sempre personali
@@ -447,6 +476,68 @@ export default function DashboardPage() {
         </Panel>
 
       </div>
+
+      {/* Scadenze pratiche prossimi 30gg */}
+      <Panel title="Scadenze pratiche — prossimi 30 giorni">
+        {scadenzePratiche.length === 0 ? (
+          <EmptyState label="Nessuna scadenza nei prossimi 30 giorni" />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {scadenzePratiche.map((ev, i) => {
+              const daysLeft = Math.round((new Date(ev.eventDate) - new Date(todayStr)) / 86400000);
+              const urgent   = daysLeft <= 7;
+              const warning  = daysLeft <= 14 && !urgent;
+              const color    = urgent ? T.red : warning ? '#b45309' : T.muted;
+              return (
+                <div key={`${ev.id}-${ev.eventLabel}`} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '9px 0', borderBottom: `0.5px solid ${T.border}`,
+                }}>
+                  {/* Pallino urgenza */}
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                    background: urgent ? T.red : warning ? '#b45309' : T.borderMd,
+                  }} />
+                  {/* Tipo pratica + progetto */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 600, color: T.ink,
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {ev.tipo_pratica}
+                      {ev.protocollo && <span style={{ fontWeight: 400, color: T.muted }}> · {ev.protocollo}</span>}
+                    </div>
+                    <div style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 9, color: T.muted, marginTop: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {ev.projects?.name || '—'} · {ev.eventLabel}
+                    </div>
+                  </div>
+                  {/* Data + giorni rimasti */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 10, color,
+                    }}>
+                      {new Date(ev.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+                    </div>
+                    <div style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 9, color, marginTop: 1,
+                    }}>
+                      {daysLeft === 0 ? 'oggi' : `tra ${daysLeft}gg`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
+
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { notifyTaskAssigned } from '../lib/notifications';
 import { useToast } from "../contexts/ToastContext";
+import { usePresence } from "../hooks/usePresence";
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -275,6 +276,14 @@ export default function ProjectDetailPage() {
   const { isPro } = usePlan();
   const id = projectId;
   const inputRefs = useRef({});
+
+  // ── PRESENZA REALTIME ──────────────────────────────────────────
+  const mePresence = teamMember ? {
+    id:    teamMember.id,
+    name:  teamMember.user_name || teamMember.user_email || "Anonimo",
+    color: teamMember.color || "#13315C",
+  } : null;
+  const othersPresent = usePresence(projectId ? `project:${projectId}` : null, mePresence);
 
   const [project, setProject]         = useState(null);
   const [tasks, setTasks]             = useState([]);
@@ -598,8 +607,33 @@ export default function ProjectDetailPage() {
               <option value="hide-completed">Nascondi completate</option>
             </select>
           </div>
-          {/* Pulsanti */}
+          {/* Pulsanti + presenze */}
           <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+            {/* Avatar presenti in tempo reale */}
+            {othersPresent.length > 0 && (
+              <div style={{ display:'flex', alignItems:'center', gap:4, marginRight:4 }}>
+                {othersPresent.slice(0, 5).map(p => (
+                  <div key={p.id} title={p.name} style={{
+                    width:28, height:28, borderRadius:'50%',
+                    background: p.color || avatarColor(p.name||"?"),
+                    border:`2px solid ${T.surface}`,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:"'Space Grotesk', sans-serif", fontSize:10, fontWeight:700,
+                    color:'#fff', flexShrink:0, cursor:'default',
+                  }}>
+                    {getInitials(p.name||"?")}
+                  </div>
+                ))}
+                {othersPresent.length > 5 && (
+                  <div style={{ width:28, height:28, borderRadius:'50%', background:T.borderMd, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+                    +{othersPresent.length - 5}
+                  </div>
+                )}
+                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginLeft:2 }}>
+                  {othersPresent.length === 1 ? `${othersPresent[0].name?.split(" ")[0]} sta guardando` : `${othersPresent.length} persone qui`}
+                </span>
+              </div>
+            )}
             <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
             <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
