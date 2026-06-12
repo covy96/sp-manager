@@ -149,10 +149,19 @@ export default function ProfiloPage() {
               onClick={async () => {
                 setNotifLoading(true); setNotifError("");
                 try {
-                  // 1. Richiedi permesso
-                  const perm = await Notification.requestPermission();
+                  // 1. Controlla/richiedi permesso
+                  let perm = Notification.permission;
+                  if (perm === "default") {
+                    perm = await Notification.requestPermission();
+                  }
+                  if (perm === "denied") {
+                    setNotifError(
+                      "Permesso negato dal browser. Su iPhone/iPad: elimina la PWA dalla schermata Home, riaggiungiila da Safari, abilita le notifiche in Impostazioni → [nome app] → Notifiche, poi riapri l'app e riprova."
+                    );
+                    setNotifLoading(false); return;
+                  }
                   if (perm !== "granted") {
-                    setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser/sistema.");
+                    setNotifError("Permesso non concesso. Riprova.");
                     setNotifLoading(false); return;
                   }
 
