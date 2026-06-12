@@ -28,18 +28,25 @@ function catFromTipo(tipo) {
   return "edilizia";
 }
 
-// note field serializzato come JSON: { note, varianti, fl_protocollo }
+// note field serializzato come JSON: { note, varianti, fl_protocollo, scadenza }
 function parseNote(raw) {
-  if (!raw) return { nota:"", varianti:[], flProtocollo:"" };
+  if (!raw) return { nota:"", varianti:[], flProtocollo:"", scadenza:null };
   try {
     const p = JSON.parse(raw);
-    if (p && typeof p === "object") return { nota: p.note||"", varianti: p.varianti||[], flProtocollo: p.fl_protocollo||"" };
+    if (p && typeof p === "object") return {
+      nota: p.note||"",
+      varianti: p.varianti||[],
+      flProtocollo: p.fl_protocollo||"",
+      scadenza: p.scadenza||null,   // { data, label, giorni }
+    };
   } catch {}
-  return { nota: raw, varianti:[], flProtocollo:"" };
+  return { nota: raw, varianti:[], flProtocollo:"", scadenza:null };
 }
-function serializeNote(nota, varianti, flProtocollo) {
-  if (!varianti?.length && !flProtocollo) return nota||null;
-  return JSON.stringify({ note: nota||"", varianti: varianti||[], fl_protocollo: flProtocollo||"" });
+function serializeNote(nota, varianti, flProtocollo, scadenza) {
+  if (!varianti?.length && !flProtocollo && !scadenza) return nota||null;
+  const obj = { note: nota||"", varianti: varianti||[], fl_protocollo: flProtocollo||"" };
+  if (scadenza) obj.scadenza = scadenza;
+  return JSON.stringify(obj);
 }
 
 const EMPTY_FORM = {
@@ -274,6 +281,115 @@ function VariantiModal({ pratica, onClose, onSaved }) {
   );
 }
 
+// ── MODAL SCADENZA ────────────────────────────────────────────────
+function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
+  const { T } = useTheme();
+  const showToast = useToast();
+  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const inputSt = {
+    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
+    background:T.surface, color:T.ink, fontSize:12,
+    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+  };
+
+  const [giorni, setGiorni] = useState("");
+  const [label, setLabel]   = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useBodyScrollLock(true);
+  useEscKey(() => onClose(), true);
+
+  const presets = [30, 60, 90, 180];
+
+  const dataCalcolata = giorni && !isNaN(parseInt(giorni)) ? (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + parseInt(giorni));
+    return d.toISOString().slice(0,10);
+  })() : null;
+
+  const handleSave = async () => {
+    if (!dataCalcolata) return;
+    setSaving(true);
+    // leggo nota corrente
+    const { data: rows } = await supabase.from("pratiche_edilizie").select("note").eq("id", praticaId).single();
+    const { nota, varianti, flProtocollo } = parseNote(rows?.note);
+    const scadenza = { data: dataCalcolata, label: label || `Scadenza ${tipoPratica}`, giorni: parseInt(giorni) };
+    const newNote = serializeNote(nota, varianti, flProtocollo, scadenza);
+    const { error } = await supabase.from("pratiche_edilizie").update({ note: newNote }).eq("id", praticaId);
+    setSaving(false);
+    if (error) { showToast("Errore: "+error.message); return; }
+    showToast("Scadenza impostata ✓", "success");
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:90, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.65)", padding:16 }}>
+      <div style={{ width:"100%", maxWidth:400, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28 }}>
+
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Scadenza pratica</div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>{tipoPratica}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
+        </div>
+
+        {/* Domanda */}
+        <div style={{ ...mono, fontSize:10, letterSpacing:"0.12em", textTransform:"uppercase", color:T.navy, marginBottom:14 }}>
+          Vuoi segnare una scadenza?
+        </div>
+
+        {/* Preset giorni */}
+        <div style={{ marginBottom:12 }}>
+          <FieldLabel T={T} required>Tra quanti giorni?</FieldLabel>
+          <div style={{ display:"flex", gap:6, marginBottom:8 }}>
+            {presets.map(g => (
+              <button key={g} onClick={() => setGiorni(String(g))}
+                style={{ ...mono, fontSize:9, padding:"4px 10px",
+                  border:`0.5px solid ${giorni===String(g) ? T.navy : T.border}`,
+                  borderRadius:T.radiusSm,
+                  background: giorni===String(g) ? (T.navyLight||"rgba(19,49,92,0.07)") : "transparent",
+                  color: giorni===String(g) ? T.navy : T.muted,
+                  cursor:"pointer" }}>
+                {g}gg
+              </button>
+            ))}
+          </div>
+          <input type="number" min="1" max="1825" value={giorni}
+            onChange={e => setGiorni(e.target.value)}
+            placeholder="oppure inserisci numero..."
+            style={{ ...inputSt, ...mono, fontSize:11 }}/>
+          {dataCalcolata && (
+            <div style={{ ...mono, fontSize:9, color:T.navy, marginTop:5 }}>
+              → Scade il {fmtDate(dataCalcolata)}
+            </div>
+          )}
+        </div>
+
+        {/* Label opzionale */}
+        <div style={{ marginBottom:20 }}>
+          <FieldLabel T={T}>Etichetta (opzionale)</FieldLabel>
+          <input type="text" value={label} onChange={e => setLabel(e.target.value)}
+            placeholder={`Es. Scadenza ${tipoPratica}`}
+            style={inputSt}/>
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"space-between", gap:8, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
+            Salta
+          </button>
+          <button onClick={handleSave} disabled={saving || !dataCalcolata}
+            style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 22px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
+            {saving ? "Salvataggio..." : "Imposta scadenza"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── COMPONENTE PRINCIPALE ─────────────────────────────────────────
 export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const { T } = useTheme();
@@ -302,13 +418,19 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const [fineLavoriOpen, setFineLavoriOpen]           = useState(false);
   const [fineLavoriPraticaId, setFineLavoriPraticaId] = useState(null);
 
-  useBodyScrollLock(listOpen && !variantiOpen && !fineLavoriOpen);
-  useBodyScrollLock(formOpen && !variantiOpen && !fineLavoriOpen);
+  // scadenza: aperto dopo salvataggio pratica
+  const [scadenzaOpen, setScadenzaOpen]         = useState(false);
+  const [scadenzaPraticaId, setScadenzaPraticaId] = useState(null);
+  const [scadenzaTipo, setScadenzaTipo]           = useState("");
+
+  const anySubModal = variantiOpen || fineLavoriOpen || scadenzaOpen;
+  useBodyScrollLock(listOpen && !anySubModal);
+  useBodyScrollLock(formOpen && !anySubModal);
   useEscKey(() => {
-    if (variantiOpen || fineLavoriOpen) return;
+    if (anySubModal) return;
     if (formOpen)  { setFormOpen(false);  return; }
     if (listOpen)  { setListOpen(false);  }
-  }, (listOpen || formOpen) && !variantiOpen && !fineLavoriOpen);
+  }, (listOpen || formOpen) && !anySubModal);
 
   // ── LOAD ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -351,6 +473,12 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const handleSave = async () => {
     if (!form.tipo_pratica) return;
     setSaving(true);
+    // Recupera scadenza esistente se modifica (per non perderla)
+    let existingScadenza = null;
+    if (editingId) {
+      const { data: existing } = await supabase.from("pratiche_edilizie").select("note").eq("id", editingId).single();
+      existingScadenza = parseNote(existing?.note).scadenza;
+    }
     const payload = {
       project_id:           projectId,
       studio:               studioId,
@@ -358,20 +486,28 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       protocollo:           form.protocollo||null,
       data_presentazione:   form.data_presentazione||null,
       data_protocollazione: form.data_protocollazione||null,
-      note:                 serializeNote(form.nota, form.varianti, ""),
+      note:                 serializeNote(form.nota, form.varianti, "", existingScadenza),
       updated_at:           new Date().toISOString(),
     };
+    let savedId = editingId;
     if (editingId) {
       const { error } = await supabase.from("pratiche_edilizie").update(payload).eq("id", editingId);
       if (error) { showToast("Errore: "+error.message); setSaving(false); return; }
     } else {
-      const { error } = await supabase.from("pratiche_edilizie").insert(payload);
+      const { data: inserted, error } = await supabase.from("pratiche_edilizie").insert(payload).select("id").single();
       if (error) { showToast("Errore: "+error.message); setSaving(false); return; }
+      savedId = inserted?.id;
     }
     showToast(editingId ? "Pratica aggiornata" : "Pratica aggiunta", "success");
     setSaving(false);
     setFormOpen(false);
     load();
+    // Proponi scadenza solo su nuova pratica (o se non ne ha già una)
+    if (!existingScadenza && savedId) {
+      setScadenzaPraticaId(savedId);
+      setScadenzaTipo(form.tipo_pratica);
+      setScadenzaOpen(true);
+    }
   };
 
   // ── ELIMINA ──────────────────────────────────────────────────────
@@ -701,6 +837,16 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
         <VariantiModal
           pratica={variantePratica}
           onClose={() => setVariantiOpen(false)}
+          onSaved={load}
+        />
+      )}
+
+      {/* ── MODAL SCADENZA ─────────────────────────────────────── */}
+      {scadenzaOpen && scadenzaPraticaId && (
+        <ScadenzaModal
+          praticaId={scadenzaPraticaId}
+          tipoPratica={scadenzaTipo}
+          onClose={() => { setScadenzaOpen(false); setScadenzaPraticaId(null); }}
           onSaved={load}
         />
       )}
