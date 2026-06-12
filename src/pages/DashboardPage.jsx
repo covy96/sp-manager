@@ -311,25 +311,54 @@ export default function DashboardPage() {
         // 6b. Scadenze pratiche — prossimi 30 giorni
         const in30 = new Date(); in30.setDate(in30.getDate() + 30);
         const in30Str = in30.toISOString().slice(0, 10);
+        // Carica pratiche con protocollazione negli ultimi 90gg (per calcolare scadenze normative)
+        const from90ago = new Date(); from90ago.setDate(from90ago.getDate() - 90);
+        const from90Str = from90ago.toISOString().slice(0, 10);
         { const { data: pratiche } = await supabase
             .from("pratiche_edilizie")
             .select("id, tipo_pratica, protocollo, data_presentazione, data_protocollazione, data_fine_lavori, project_id, projects(name)")
             .eq("studio", studioId)
-            .or(`data_presentazione.gte.${today},data_protocollazione.gte.${today},data_fine_lavori.gte.${today}`)
-            .order("data_presentazione", { ascending: true });
+            .or(`data_protocollazione.gte.${from90Str},data_fine_lavori.gte.${today},data_presentazione.gte.${today}`)
+            .order("data_protocollazione", { ascending: true });
 
-          // Espandi in eventi singoli, tieni solo quelli nei prossimi 30gg
+          // Calcola scadenze regolamentari per tipo pratica
+          const addDays = (dateStr, n) => {
+            const d = new Date(dateStr); d.setDate(d.getDate() + n);
+            return d.toISOString().slice(0, 10);
+          };
+
+          const SCADENZE_NORMATIVE = {
+            "SCIA art. 22":          { giorni: 30,  label: "Scadenza SCIA art. 22 (30gg)" },
+            "SCIA art. 23":          { giorni: 30,  label: "Scadenza SCIA art. 23 (30gg)" },
+            "Permesso a Costruire":  { giorni: 90,  label: "Scadenza PdC (90gg)" },
+            "CILA":                  { giorni: null, label: null }, // nessuna scadenza normativa
+          };
+
           const eventi = [];
           for (const p of (pratiche || [])) {
-            const checks = [
-              { label: "Presentazione",   data: p.data_presentazione },
-              { label: "Protocollazione", data: p.data_protocollazione },
-              { label: "Fine lavori",     data: p.data_fine_lavori },
-            ];
-            for (const c of checks) {
-              if (c.data && c.data >= today && c.data <= in30Str) {
-                eventi.push({ ...p, eventLabel: c.label, eventDate: c.data });
+            // 1. Scadenza normativa calcolata dalla protocollazione
+            const norm = SCADENZE_NORMATIVE[p.tipo_pratica];
+            if (norm?.giorni && p.data_protocollazione) {
+              const scadDate = addDays(p.data_protocollazione, norm.giorni);
+              if (scadDate >= today && scadDate <= in30Str) {
+                eventi.push({ ...p, eventLabel: norm.label, eventDate: scadDate, isNormativa: true });
               }
+            }
+
+            // 2. Fine lavori (se inserita manualmente)
+            if (p.data_fine_lavori && p.data_fine_lavori >= today && p.data_fine_lavori <= in30Str) {
+              eventi.push({ ...p, eventLabel: "Fine lavori", eventDate: p.data_fine_lavori });
+            }
+
+            // 3. Data presentazione (solo se non edilizia — per OSAP/Insegne/ecc.)
+            const isEdilizia = ["CILA","SCIA art. 22","SCIA art. 23","Permesso a Costruire"].includes(p.tipo_pratica);
+            if (!isEdilizia && p.data_presentazione && p.data_presentazione >= today && p.data_presentazione <= in30Str) {
+              eventi.push({ ...p, eventLabel: "Presentazione", eventDate: p.data_presentazione });
+            }
+
+            // 4. Data protocollazione in arrivo (per CILA che non ha scadenza normativa)
+            if (p.tipo_pratica === "CILA" && p.data_protocollazione && p.data_protocollazione >= today && p.data_protocollazione <= in30Str) {
+              eventi.push({ ...p, eventLabel: "Protocollazione CILA", eventDate: p.data_protocollazione });
             }
           }
           eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
