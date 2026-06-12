@@ -398,7 +398,7 @@ export default function AppLayout({ session, children }) {
                             {tc.label}
                           </div>
                           {items.map(item => (
-                            <button key={item.id} onClick={() => handleResultClick(item)}
+                            <button key={item.id + (item.archived ? "_arch" : "")} onClick={() => handleResultClick(item)}
                               style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 14px', textAlign:'left', background:'none', border:'none', cursor:'pointer', borderBottom:`0.5px solid ${T.border}` }}
                               onMouseEnter={e => e.currentTarget.style.background=T.surface2}
                               onMouseLeave={e => e.currentTarget.style.background='transparent'}
@@ -406,10 +406,15 @@ export default function AppLayout({ session, children }) {
                               <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.08em', textTransform:'uppercase', color:tc.color, background:tc.bg, padding:'2px 6px', flexShrink:0, borderRadius:2 }}>
                                 {tc.label}
                               </span>
-                              <div style={{ minWidth:0 }}>
-                                <div style={{ fontSize:13, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.label}</div>
+                              <div style={{ minWidth:0, flex:1 }}>
+                                <div style={{ fontSize:13, fontWeight:600, color: item.archived ? T.muted : T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.label}</div>
                                 <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>{item.sub}</div>
                               </div>
+                              {item.archived && (
+                                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:'#b45309', background:'rgba(180,83,9,0.1)', padding:'2px 5px', borderRadius:2, flexShrink:0 }}>
+                                  archiviato
+                                </span>
+                              )}
                             </button>
                           ))}
                         </div>
