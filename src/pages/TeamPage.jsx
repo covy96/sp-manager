@@ -134,6 +134,8 @@ export default function TeamPage() {
   useEscKey(() => setModalOpen(false), modalOpen);
   const [formError, setFormError] = useState("");
   const [formData, setFormData]   = useState({ user_name:"", user_email:"", role_internal:"Architetto" });
+  const [sendInvite, setSendInvite] = useState(true);
+  const [inviteSent, setInviteSent] = useState(false);
 
   // ── load ─────────────────────────────────────────────────────────
   const loadData = async (anno) => {
@@ -285,8 +287,19 @@ export default function TeamPage() {
     if (iErr) { setFormError(iErr.message); setSaving(false); return; }
     setMembers(p => [...p, data].sort((a, b) => a.user_name.localeCompare(b.user_name, "it")));
     setStatsByMember(p => ({ ...p, [data.id]:{ weeklyHours:0, activeTasks:0, totalTasks:0, completedTasks:0, projects:0 } }));
+
+    // Invia magic link di invito se richiesto
+    if (sendInvite) {
+      const { error: invErr } = await supabase.auth.signInWithOtp({
+        email: formData.user_email.trim(),
+        options: { emailRedirectTo: window.location.origin + "/dashboard" },
+      });
+      if (invErr) { showToast("Membro aggiunto ma invito non inviato: " + invErr.message, "warning"); }
+      else { setInviteSent(true); }
+    }
+
     setSaving(false); setModalOpen(false);
-    showToast("Membro aggiunto", "success");
+    showToast(sendInvite ? "Membro aggiunto — invito inviato via email" : "Membro aggiunto", "success");
   };
 
   const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
@@ -329,7 +342,7 @@ export default function TeamPage() {
             ))}
           </select>
           {permissions.canManageUsers && (
-            <BtnPrimary onClick={() => { setFormError(""); setFormData({ user_name:"", user_email:"", role_internal:"Architetto" }); setModalOpen(true); }}>
+            <BtnPrimary onClick={() => { setFormError(""); setFormData({ user_name:"", user_email:"", role_internal:"Architetto" }); setSendInvite(true); setInviteSent(false); setModalOpen(true); }}>
               + Aggiungi membro
             </BtnPrimary>
           )}
@@ -690,6 +703,16 @@ export default function TeamPage() {
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}
                 </select>
+              </div>
+              {/* Toggle invito email */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 12px', background:T.bg, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm }}>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600, color:T.ink }}>Invia invito via email</div>
+                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>Un magic link per accedere all'app</div>
+                </div>
+                <button type="button" onClick={() => setSendInvite(p => !p)} style={{ width:40, height:22, borderRadius:11, background:sendInvite ? T.navy : T.border, border:'none', cursor:'pointer', position:'relative', transition:'background 0.15s', flexShrink:0 }}>
+                  <span style={{ position:'absolute', top:3, left:sendInvite?21:3, width:16, height:16, borderRadius:'50%', background:'#fff', transition:'left 0.15s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}/>
+                </button>
               </div>
               {formError && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red }}>{formError}</div>}
               <div style={{ height:'0.5px', background:T.border, margin:'4px 0' }}/>

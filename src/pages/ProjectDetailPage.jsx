@@ -46,11 +46,14 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const isMobile = useIsMobile();
   const ref = useRef(null);
   const [form, setForm] = useState({
-    title: task.title ?? task.name ?? "",
-    categoria: task.categoria ?? "",
-    assigned_member: task.assigned_member ?? "",
+    title:            task.title ?? task.name ?? "",
+    categoria:        task.categoria ?? "",
+    assigned_member:  task.assigned_member ?? "",
     data_pianificata: task.data_pianificata ?? "",
-    note: task.note ?? "",
+    note:             task.note ?? "",
+    is_recurring:     task.is_recurring ?? false,
+    recurrence_rule:  task.recurrence_rule ?? "weekly",
+    recurrence_end:   task.recurrence_end ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -66,7 +69,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const handleSave = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null };
+    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null, is_recurring: form.is_recurring, recurrence_rule: form.is_recurring ? form.recurrence_rule : null, recurrence_end: form.is_recurring && form.recurrence_end ? form.recurrence_end : null };
     if (!isSubtask) updates.categoria = form.categoria || null;
     await onSave(task, updates);
     setSaving(false); onClose();
@@ -115,6 +118,31 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         <label style={labelSt}>Note</label>
         <textarea rows={2} value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={{...inputSt,resize:'vertical'}}/>
       </div>
+      {/* Ricorrenza */}
+      {!isSubtask && (
+        <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:10 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: form.is_recurring ? 8 : 0 }}>
+            <label style={labelSt}>Ricorrente</label>
+            <button type="button" onClick={()=>setForm(p=>({...p,is_recurring:!p.is_recurring}))} style={{ width:36, height:20, borderRadius:10, background:form.is_recurring?T.navy:T.border, border:'none', cursor:'pointer', position:'relative', transition:'background 0.15s', flexShrink:0 }}>
+              <span style={{ position:'absolute', top:2, left:form.is_recurring?18:2, width:16, height:16, borderRadius:'50%', background:'#fff', transition:'left 0.15s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}/>
+            </button>
+          </div>
+          {form.is_recurring && (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              <select value={form.recurrence_rule} onChange={e=>setForm(p=>({...p,recurrence_rule:e.target.value}))} style={inputSt}>
+                <option value="daily">Ogni giorno</option>
+                <option value="weekly">Ogni settimana</option>
+                <option value="biweekly">Ogni 2 settimane</option>
+                <option value="monthly">Ogni mese</option>
+              </select>
+              <div>
+                <label style={labelSt}>Termina il (opzionale)</label>
+                <input type="date" value={form.recurrence_end} onChange={e=>setForm(p=>({...p,recurrence_end:e.target.value}))} style={inputSt}/>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <div style={{ display:'flex', gap:8, paddingTop:4 }}>
         <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'7px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace", letterSpacing:'0.08em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
         <button onClick={handleDelete} disabled={deleting} style={{ padding:'7px 12px', background:T.red, color:T.surface, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>{deleting?"...":"Elimina"}</button>
@@ -215,6 +243,9 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
               fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{task.title ?? task.name ?? "Task"}</button>
+            {task.is_recurring && (
+              <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:'1px 5px', flexShrink:0, opacity:0.7 }}>↻</span>
+            )}
             {assignedName && (
               <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
                 {assignedName}
@@ -417,6 +448,25 @@ export default function ProjectDetailPage() {
     if (uErr) { setTasks(prev); setError(uErr.message); }
     else {
       logActivity({ studioId, projectId: id, memberId: teamMember?.id, action: nextStatus === "completed" ? "task.completed" : "task.reopened", entityType:"task", entityId: task.id, meta:{ title: task.title } });
+      // Auto-crea prossima occorrenza se task ricorrente completata
+      if (nextStatus === "completed" && task.is_recurring && task.recurrence_rule && task.data_pianificata) {
+        const base = new Date(task.data_pianificata);
+        const offsets = { daily:1, weekly:7, biweekly:14, monthly:30 };
+        const days = offsets[task.recurrence_rule] || 7;
+        base.setDate(base.getDate() + days);
+        const nextDate = base.toISOString().slice(0,10);
+        const endDate = task.recurrence_end;
+        if (!endDate || nextDate <= endDate) {
+          const { data: nextTask } = await supabase.from("tasks").insert({
+            project_id: task.project_id, title: task.title, categoria: task.categoria,
+            status:"todo", assigned_member: task.assigned_member || null,
+            assigned_to_name: task.assigned_to_name || null,
+            data_pianificata: nextDate, order: 0, studio: studioId,
+            is_recurring: true, recurrence_rule: task.recurrence_rule, recurrence_end: endDate || null,
+          }).select("*").single();
+          if (nextTask) setTasks(p => [...p, nextTask]);
+        }
+      }
       if (task.parent_task_id) {
         const parent = optimistic.find(i => i.id === task.parent_task_id);
         const { error: pErr } = await supabase.from("tasks").update({ status: parent?.status ?? "todo" }).eq("id", task.parent_task_id);

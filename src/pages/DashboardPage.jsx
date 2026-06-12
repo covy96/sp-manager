@@ -6,6 +6,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
+import { notifyPraticaScadenza } from "../lib/notifications";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function currency(value) {
@@ -333,6 +334,17 @@ export default function DashboardPage() {
           }
           eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
           setScadenzePratiche(eventi);
+
+          // Notifica per scadenze entro 7 giorni (solo owner/pm)
+          if (studioUser?.email) {
+            eventi.filter(ev => {
+              const d = Math.round((new Date(ev.eventDate) - new Date(today)) / 86400000);
+              return d <= 7;
+            }).forEach(ev => {
+              const daysLeft = Math.round((new Date(ev.eventDate) - new Date(today)) / 86400000);
+              notifyPraticaScadenza({ studioId, userEmail: studioUser.email, tipoPratica: ev.tipo_pratica, eventLabel: ev.eventLabel, daysLeft, projectName: ev.projects?.name, projectId: ev.project_id });
+            });
+          }
         }
 
         // 6. Task di domani (o lunedì se weekend) — sempre personali

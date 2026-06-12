@@ -90,6 +90,20 @@ export async function notifyProformaScadenza({ studioId, userEmail, proformaNum,
 }
 
 /**
+ * Notifica scadenza pratica edilizia
+ */
+export async function notifyPraticaScadenza({ studioId, userEmail, tipoPratica, eventLabel, daysLeft, projectName, projectId }) {
+  await createNotification({
+    studioId, userEmail,
+    type: "pratica_scadenza",
+    title: `Scadenza pratica: ${tipoPratica}`,
+    message: `${eventLabel} di "${tipoPratica}"${projectName ? ` (${projectName})` : ""} ${daysLeft === 0 ? "è oggi" : `tra ${daysLeft} giorni`}`,
+    link: projectId ? `/progetti/${projectId}` : null,
+    projectId,
+  });
+}
+
+/**
  * Leggi notifiche non lette per un utente
  */
 export async function getUnreadNotifications(studioId, userEmail) {
