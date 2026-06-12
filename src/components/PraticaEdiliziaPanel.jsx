@@ -30,31 +30,44 @@ function catFromTipo(tipo) {
   return "edilizia";
 }
 
-// note field serializzato come JSON: { note, varianti, fl_protocollo, scadenza }
+// ── STATI PRATICA ─────────────────────────────────────────────────
+const STATI_PRATICA = [
+  { id:"in_istruttoria", label:"In istruttoria", color:"#13315C" },
+  { id:"approvata",      label:"Approvata",       color:"#16a34a" },
+  { id:"sospesa",        label:"Sospesa",          color:"#b45309" },
+  { id:"respinta",       label:"Respinta",         color:"#dc2626" },
+  { id:"ritirata",       label:"Ritirata",         color:"#6b7280" },
+];
+const DEFAULT_STATO = STATI_PRATICA[0];
+function getStato(id) { return STATI_PRATICA.find(s => s.id === id) || DEFAULT_STATO; }
+
+// note field serializzato come JSON: { note, varianti, fl_protocollo, scadenza, stato }
 function parseNote(raw) {
-  if (!raw) return { nota:"", varianti:[], flProtocollo:"", scadenza:null };
+  if (!raw) return { nota:"", varianti:[], flProtocollo:"", scadenza:null, stato:"in_istruttoria" };
   try {
     const p = JSON.parse(raw);
     if (p && typeof p === "object") return {
       nota: p.note||"",
       varianti: p.varianti||[],
       flProtocollo: p.fl_protocollo||"",
-      scadenza: p.scadenza||null,   // { data, label, giorni }
+      scadenza: p.scadenza||null,
+      stato: p.stato||"in_istruttoria",
     };
   } catch {}
-  return { nota: raw, varianti:[], flProtocollo:"", scadenza:null };
+  return { nota: raw, varianti:[], flProtocollo:"", scadenza:null, stato:"in_istruttoria" };
 }
-function serializeNote(nota, varianti, flProtocollo, scadenza) {
-  if (!varianti?.length && !flProtocollo && !scadenza) return nota||null;
+function serializeNote(nota, varianti, flProtocollo, scadenza, stato) {
+  if (!varianti?.length && !flProtocollo && !scadenza && (!stato || stato === "in_istruttoria")) return nota||null;
   const obj = { note: nota||"", varianti: varianti||[], fl_protocollo: flProtocollo||"" };
   if (scadenza) obj.scadenza = scadenza;
+  if (stato && stato !== "in_istruttoria") obj.stato = stato;
   return JSON.stringify(obj);
 }
 
 const EMPTY_FORM = {
   categoria:"", tipo_pratica:"", protocollo:"",
   data_presentazione:"", data_protocollazione:"",
-  nota:"", varianti:[],
+  nota:"", varianti:[], stato:"in_istruttoria",
 };
 
 function fmtDate(d) {
@@ -83,7 +96,7 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
     fontFamily:"'Space Grotesk', sans-serif", outline:"none",
   };
 
-  const { varianti: existingV, flProtocollo: existingFlProt, nota: existingNota } = parseNote(pratica.note);
+  const { varianti: existingV, flProtocollo: existingFlProt, nota: existingNota, scadenza: existingScad, stato: existingStato } = parseNote(pratica.note);
   const [data, setData]             = useState(pratica.data_fine_lavori||"");
   const [protocollo, setProtocollo] = useState(existingFlProt);
   const [saving, setSaving]         = useState(false);
@@ -93,7 +106,7 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
 
   const handleSave = async () => {
     setSaving(true);
-    const newNote = serializeNote(existingNota, existingV, protocollo);
+    const newNote = serializeNote(existingNota, existingV, protocollo, existingScad, existingStato);
     const { error } = await supabase.from("pratiche_edilizie")
       .update({ data_fine_lavori: data||null, note: newNote, updated_at: new Date().toISOString() })
       .eq("id", pratica.id);
@@ -107,7 +120,7 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
   const handleRemove = async () => {
     if (!confirm("Rimuovere la data di fine lavori?")) return;
     setSaving(true);
-    const clearNote = serializeNote(existingNota, existingV, "");
+    const clearNote = serializeNote(existingNota, existingV, "", existingScad, existingStato);
     await supabase.from("pratiche_edilizie").update({ data_fine_lavori: null, note: clearNote }).eq("id", pratica.id);
     setSaving(false);
     showToast("Fine lavori rimossa", "success");
@@ -192,8 +205,8 @@ function VariantiModal({ pratica, onClose, onSaved }) {
 
   const saveAll = async () => {
     setSaving(true);
-    const { nota, flProtocollo } = parseNote(pratica.note);
-    const noteStr  = serializeNote(nota, localV, flProtocollo);
+    const { nota, flProtocollo, scadenza, stato } = parseNote(pratica.note);
+    const noteStr  = serializeNote(nota, localV, flProtocollo, scadenza, stato);
     const { error } = await supabase.from("pratiche_edilizie").update({ note: noteStr }).eq("id", pratica.id);
     setSaving(false);
     if (error) { showToast("Errore: "+error.message); return; }
@@ -322,8 +335,8 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
 
   const persistScadenza = async (scadenza) => {
     const { data: rows } = await supabase.from("pratiche_edilizie").select("note").eq("id", praticaId).single();
-    const { nota, varianti, flProtocollo } = parseNote(rows?.note);
-    const newNote = serializeNote(nota, varianti, flProtocollo, scadenza);
+    const { nota, varianti, flProtocollo, stato } = parseNote(rows?.note);
+    const newNote = serializeNote(nota, varianti, flProtocollo, scadenza, stato);
     return supabase.from("pratiche_edilizie").update({ note: newNote }).eq("id", praticaId);
   };
 
@@ -488,7 +501,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   };
 
   const openEdit = (p) => {
-    const { nota, varianti } = parseNote(p.note);
+    const { nota, varianti, stato } = parseNote(p.note);
     setEditingId(p.id);
     setForm({
       categoria:            catFromTipo(p.tipo_pratica),
@@ -498,6 +511,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       data_protocollazione: p.data_protocollazione||"",
       nota,
       varianti,
+      stato: stato||"in_istruttoria",
     });
     setFormOpen(true);
   };
@@ -519,7 +533,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       protocollo:           form.protocollo||null,
       data_presentazione:   form.data_presentazione||null,
       data_protocollazione: form.data_protocollazione||null,
-      note:                 serializeNote(form.nota, form.varianti, "", existingScadenza),
+      note:                 serializeNote(form.nota, form.varianti, "", existingScadenza, form.stato),
       updated_at:           new Date().toISOString(),
     };
     let savedId = editingId;
@@ -553,6 +567,17 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
     showToast("Pratica eliminata", "success");
     logActivity({ studioId, projectId, action:"pratica.deleted", entityType:"pratica", entityId: id, meta:{ title: pratica?.tipo_pratica } });
     load();
+  };
+
+  // ── CAMBIO STATO INLINE ──────────────────────────────────────────
+  const handleChangeStato = async (pratica, newStato) => {
+    const parsed = parseNote(pratica.note);
+    const newNote = serializeNote(parsed.nota, parsed.varianti, parsed.flProtocollo, parsed.scadenza, newStato);
+    const { error } = await supabase.from("pratiche_edilizie").update({ note: newNote }).eq("id", pratica.id);
+    if (error) { showToast("Errore: "+error.message); return; }
+    // aggiorna localmente senza reload completo
+    setPratiche(prev => prev.map(p => p.id === pratica.id ? { ...p, note: newNote } : p));
+    showToast(`Stato: ${getStato(newStato).label}`, "success", 1500);
   };
 
   // ── AGGIORNAMENTO FORM ────────────────────────────────────────────
@@ -638,7 +663,8 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                         {cat.icon} {cat.label}
                       </div>
                       {items.map(p => {
-                        const { varianti, scadenza } = parseNote(p.note);
+                        const { varianti, scadenza, stato: statoId } = parseNote(p.note);
+                        const statoObj   = getStato(statoId);
                         const isEdilizia = cat.id === "edilizia";
                         const hasFl = !!p.data_fine_lavori;
                         const today = new Date().toISOString().slice(0,10);
@@ -651,6 +677,16 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                             <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 7px", flexShrink:0 }}>
                               {p.tipo_pratica}
                             </span>
+                            {/* Badge stato — select inline */}
+                            <select
+                              value={statoId || "in_istruttoria"}
+                              onChange={e => { e.stopPropagation(); handleChangeStato(p, e.target.value); }}
+                              onClick={e => e.stopPropagation()}
+                              style={{ ...mono, fontSize:9, color:statoObj.color, background:"transparent", border:`0.5px solid ${statoObj.color}`, borderRadius:T.radiusSm, padding:"1px 6px", cursor:"pointer", outline:"none", flexShrink:0 }}>
+                              {STATI_PRATICA.map(s => (
+                                <option key={s.id} value={s.id}>{s.label}</option>
+                              ))}
+                            </select>
                             {/* Info: protocollo + data pres. */}
                             <div style={{ flex:1, minWidth:80 }}>
                               {p.protocollo && <span style={{ ...mono, fontSize:10, color:T.ink }}>{p.protocollo}</span>}
@@ -857,6 +893,26 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                   </div>
                 </>}
 
+              </div>
+            )}
+
+            {/* Stato pratica — sempre visibile se categoria selezionata */}
+            {form.categoria && (
+              <div style={{ marginTop:16 }}>
+                <FieldLabel T={T}>Stato pratica</FieldLabel>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                  {STATI_PRATICA.map(s => (
+                    <button key={s.id} onClick={() => setField("stato", s.id)}
+                      style={{ ...mono, fontSize:9, letterSpacing:"0.06em", padding:"5px 12px",
+                        border:`0.5px solid ${form.stato===s.id ? s.color : T.border}`,
+                        borderRadius:T.radiusSm,
+                        background: form.stato===s.id ? s.color+"22" : "transparent",
+                        color: form.stato===s.id ? s.color : T.muted,
+                        cursor:"pointer" }}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
