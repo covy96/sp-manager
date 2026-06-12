@@ -41,7 +41,7 @@ export default function ProfiloPage() {
   usePageTitleOnMount("Profilo");
   const { teamMember } = useStudio();
 
-  const [formData, setFormData]       = useState({ nome: "", email: "" });
+  const [formData, setFormData]       = useState({ nome: "", email: "", telefono: "", specializzazione: "", avatar_url: "" });
   const [pwData, setPwData]           = useState({ newPassword: "", confirmPassword: "" });
   const [loading, setLoading]         = useState(false);
   const [pwLoading, setPwLoading]     = useState(false);
@@ -57,11 +57,24 @@ export default function ProfiloPage() {
       setNotifEnabled(Notification.permission === "granted");
     }
   }, []);
-  useEffect(() => { if (teamMember) setFormData({ nome: teamMember.user_name || "", email: teamMember.user_email || "" }); }, [teamMember]);
+  useEffect(() => {
+    if (teamMember) setFormData({
+      nome:            teamMember.user_name       || "",
+      email:           teamMember.user_email      || "",
+      telefono:        teamMember.telefono        || "",
+      specializzazione: teamMember.specializzazione || "",
+      avatar_url:      teamMember.avatar_url      || "",
+    });
+  }, [teamMember]);
 
   const handleSaveProfile = async e => {
     e.preventDefault(); setLoading(true); setMessage("");
-    const { error } = await supabase.from("team_members").update({ user_name: formData.nome }).eq("id", teamMember?.id);
+    const { error } = await supabase.from("team_members").update({
+      user_name:        formData.nome             || null,
+      telefono:         formData.telefono         || null,
+      specializzazione: formData.specializzazione || null,
+      avatar_url:       formData.avatar_url       || null,
+    }).eq("id", teamMember?.id);
     setMessage(error ? "Errore: " + error.message : "Profilo aggiornato con successo!");
     setLoading(false);
   };
@@ -87,7 +100,7 @@ export default function ProfiloPage() {
       </div>
 
       {/* Info personali */}
-      <Panel title="Informazioni personali">
+      <Panel title="Informazioni personali" subtitle="Visibili dall'Owner e dai Partner dello studio">
         <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <FieldLabel>Email</FieldLabel>
@@ -97,6 +110,25 @@ export default function ProfiloPage() {
           <div>
             <FieldLabel>Nome visualizzato</FieldLabel>
             <Input value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} placeholder="Il tuo nome" />
+          </div>
+          <div>
+            <FieldLabel>Telefono</FieldLabel>
+            <Input value={formData.telefono} onChange={e => setFormData({ ...formData, telefono: e.target.value })} placeholder="+39 333 1234567" />
+          </div>
+          <div>
+            <FieldLabel>Specializzazione</FieldLabel>
+            <Input value={formData.specializzazione} onChange={e => setFormData({ ...formData, specializzazione: e.target.value })} placeholder="Es. Progettazione residenziale, BIM..." />
+          </div>
+          <div>
+            <FieldLabel>Avatar (URL immagine)</FieldLabel>
+            <Input value={formData.avatar_url} onChange={e => setFormData({ ...formData, avatar_url: e.target.value })} placeholder="https://..." />
+            {formData.avatar_url && (
+              <div style={{ marginTop: 8 }}>
+                <img src={formData.avatar_url} alt="avatar"
+                  onError={e => e.target.style.display = 'none'}
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${T.border}` }} />
+              </div>
+            )}
           </div>
           {message && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: msgColor }}>{message}</div>}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
