@@ -51,6 +51,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     assigned_member:  task.assigned_member ?? "",
     data_pianificata: task.data_pianificata ?? "",
     note:             task.note ?? "",
+    priority:         task.priority ?? "",
     is_recurring:     task.is_recurring ?? false,
     recurrence_rule:  task.recurrence_rule ?? "weekly",
     recurrence_end:   task.recurrence_end ?? "",
@@ -69,7 +70,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const handleSave = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null, is_recurring: form.is_recurring, recurrence_rule: form.is_recurring ? form.recurrence_rule : null, recurrence_end: form.is_recurring && form.recurrence_end ? form.recurrence_end : null };
+    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null, priority: form.priority || null, is_recurring: form.is_recurring, recurrence_rule: form.is_recurring ? form.recurrence_rule : null, recurrence_end: form.is_recurring && form.recurrence_end ? form.recurrence_end : null };
     if (!isSubtask) updates.categoria = form.categoria || null;
     await onSave(task, updates);
     setSaving(false); onClose();
@@ -113,6 +114,22 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
       <div>
         <label style={labelSt}>Data pianificata</label>
         <input type="date" value={form.data_pianificata} onChange={e=>setForm(p=>({...p,data_pianificata:e.target.value}))} style={inputSt}/>
+      </div>
+      {/* Priorità */}
+      <div>
+        <label style={labelSt}>Priorità</label>
+        <div style={{ display:'flex', gap:6 }}>
+          {[{id:"", label:"Normale", color:"#6b7280"},{id:"bassa", label:"Bassa", color:"#2563eb"},{id:"media", label:"Media", color:"#d97706"},{id:"alta", label:"Alta", color:"#dc2626"}].map(p => (
+            <button key={p.id} type="button" onClick={()=>setForm(f=>({...f,priority:p.id}))}
+              style={{ flex:1, padding:'5px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.05em',
+                border:`0.5px solid ${form.priority===p.id ? p.color : T.border}`,
+                borderRadius:T.radiusSm, cursor:'pointer',
+                background: form.priority===p.id ? p.color+"22" : "transparent",
+                color: form.priority===p.id ? p.color : T.muted }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <label style={labelSt}>Note</label>
@@ -236,6 +253,9 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {task.priority === "alta" && <span title="Alta priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#dc2626', flexShrink:0 }}/>}
+            {task.priority === "media" && <span title="Media priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#d97706', flexShrink:0 }}/>}
+            {task.priority === "bassa" && <span title="Bassa priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#2563eb', flexShrink:0 }}/>}
             <button onClick={() => setPopupOpen(v => !v)} style={{
               flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 12, color: done ? T.muted : T.ink,
@@ -320,6 +340,9 @@ export default function ProjectDetailPage() {
 
   const [project, setProject]         = useState(null);
   const [tasks, setTasks]             = useState([]);
+  const [totaleOreProgetto, setTotaleOreProgetto] = useState(0);
+  const [budgetEditOpen, setBudgetEditOpen]        = useState(false);
+  const [budgetInput, setBudgetInput]              = useState("");
   const [teamMembers, setTeamMembers] = useState([]);
   const [completedCategories, setCompletedCategories] = useState({});
   const [hideCompletedTasks, setHideCompletedTasks] = useState(
@@ -379,6 +402,8 @@ export default function ProjectDetailPage() {
       setCommesseProgetto(commProg ?? []);
       const { data: allComm } = await supabase.from('commesse').select('id,nome_commessa,numero_offerta').eq('studio', studioId).eq('archived', false).order('created_at', { ascending: false });
       setCommesseList(allComm ?? []);
+      const { data: tsRows } = await supabase.from('timesheet').select('hours').eq('project_id', projectId).is('deleted_at', null);
+      setTotaleOreProgetto((tsRows || []).reduce((s, r) => s + (Number(r.hours) || 0), 0));
       setLoading(false);
     };
     loadData();
@@ -555,6 +580,14 @@ export default function ProjectDetailPage() {
     }
     setProject(p => p ? { ...p, ...payload } : p);
     setEditSaving(false); setEditOpen(false);
+  };
+
+  const handleSaveBudgetOre = async () => {
+    const val = parseFloat(budgetInput) || 0;
+    await supabase.from("projects").update({ budget_ore: val }).eq("id", id);
+    setProject(p => p ? { ...p, budget_ore: val } : p);
+    setBudgetEditOpen(false);
+    showToast(`Budget ore aggiornato: ${val}h`, "success");
   };
 
   const handleToggleCategory = async category => {
@@ -747,6 +780,45 @@ export default function ProjectDetailPage() {
             <span style={{ marginRight: 6 }}>Indirizzo:</span>{project.address ?? "N/D"}
           </div>
         </div>
+
+        {/* Budget ore vs consuntivo */}
+        {(() => {
+          const budget = Number(project.budget_ore) || 0;
+          const perc   = budget > 0 ? Math.min((totaleOreProgetto / budget) * 100, 100) : 0;
+          const over   = budget > 0 && totaleOreProgetto > budget;
+          const barColor = over ? '#dc2626' : perc > 80 ? '#d97706' : '#16a34a';
+          return (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Ore</span>
+                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: over ? '#dc2626' : T.ink, fontWeight:600 }}>
+                  {totaleOreProgetto.toFixed(1)}h{budget > 0 ? ` / ${budget}h` : ""}
+                </span>
+                {over && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:'#dc2626', border:'0.5px solid #dc2626', borderRadius:2, padding:'1px 4px' }}>SFORATO</span>}
+                <button onClick={() => { setBudgetInput(String(budget||"")); setBudgetEditOpen(v=>!v); }}
+                  style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, textDecoration:'underline', marginLeft:'auto' }}>
+                  {budget > 0 ? "modifica budget" : "imposta budget"}
+                </button>
+              </div>
+              {budget > 0 && (
+                <div style={{ height:3, background:T.border, borderRadius:2, marginTop:4 }}>
+                  <div style={{ height:3, width:`${perc}%`, background:barColor, borderRadius:2, transition:'width 0.3s' }}/>
+                </div>
+              )}
+              {budgetEditOpen && (
+                <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center' }}>
+                  <input type="number" min="0" value={budgetInput} onChange={e=>setBudgetInput(e.target.value)}
+                    placeholder="Es. 120" autoFocus
+                    style={{ width:80, padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none' }}
+                    onKeyDown={e=>{ if(e.key==='Enter') handleSaveBudgetOre(); if(e.key==='Escape') setBudgetEditOpen(false); }}/>
+                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>ore</span>
+                  <button onClick={handleSaveBudgetOre} style={{ padding:'4px 10px', background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, cursor:'pointer' }}>Salva</button>
+                  <button onClick={()=>setBudgetEditOpen(false)} style={{ padding:'4px 8px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9 }}>×</button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Team avatars */}
         {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (

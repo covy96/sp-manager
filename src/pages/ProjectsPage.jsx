@@ -400,6 +400,8 @@ export default function ProjectsPage() {
   const filterRef                               = useRef(null);
   const [searchQuery, setSearchQuery]           = useState("");
   const [userFilterReady, setUserFilterReady]   = useState(false);
+  const [clientFilter, setClientFilter]         = useState("");
+  const [sortBy, setSortBy]                     = useState("recenti");
 
   const [isModalOpen, setIsModalOpen]           = useState(false);
   const [modalStep, setModalStep]               = useState(1);
@@ -489,17 +491,20 @@ export default function ProjectsPage() {
     supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId).order("user_name", { ascending: true }).then(({ data }) => setTeamMembers(data ?? []));
   }, [studioId]);
 
+  const clientiDisponibili = useMemo(() => {
+    const s = new Set(projects.map(p => p.client).filter(Boolean));
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [projects]);
+
   const filteredProjects = useMemo(() => {
     let result = projects;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      // Con ricerca attiva: cerca su tutti i progetti (bypass anno e utenti)
       result = result.filter(p =>
         (p.name || "").toLowerCase().includes(q) ||
         (p.client || "").toLowerCase().includes(q)
       );
     } else {
-      // Senza ricerca: applica filtro anno e utenti
       result = result.filter(p => {
         const dateStr = p.start_date || p.created_at;
         const year = dateStr ? new Date(dateStr).getFullYear() : null;
@@ -509,8 +514,25 @@ export default function ProjectsPage() {
         result = result.filter(p => Array.isArray(p.assigned_users) && p.assigned_users.some(id => selectedUserIds.includes(id)));
       }
     }
+    // Filtro cliente
+    if (clientFilter) {
+      result = result.filter(p => p.client === clientFilter);
+    }
+    // Ordinamento
+    if (sortBy === "nome") {
+      result = [...result].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    } else if (sortBy === "completamento") {
+      result = [...result].sort((a, b) => {
+        const ta = tasksByProject[a.id] ?? { total:0, completed:0 };
+        const tb = tasksByProject[b.id] ?? { total:0, completed:0 };
+        const pa = ta.total > 0 ? ta.completed / ta.total : 0;
+        const pb = tb.total > 0 ? tb.completed / tb.total : 0;
+        return pb - pa;
+      });
+    }
+    // default "recenti": già ordinati per created_at dal DB
     return result;
-  }, [projects, selectedUserIds, annoFiltro, searchQuery]);
+  }, [projects, selectedUserIds, annoFiltro, searchQuery, clientFilter, sortBy, tasksByProject]);
 
   const anniDisponibili = useMemo(() => {
     const anni = new Set(projects.map(p => {
@@ -718,10 +740,23 @@ export default function ProjectsPage() {
                 style={{ flex: '1 1 0', minWidth: 0, maxWidth: 200, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', opacity: searchQuery ? 0.4 : 1 }}>
                 {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+              {clientiDisponibili.length > 0 && (
+                <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
+                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                  <option value="">Tutti i clienti</option>
+                  {clientiDisponibili.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                <option value="recenti">Più recenti</option>
+                <option value="nome">Nome A–Z</option>
+                <option value="completamento">% Completamento</option>
               </select>
               <div ref={filterRef} style={{ position: 'relative' }}>
                 <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>Utenti ({selectedUserIds.length})</BtnGhost>
@@ -737,7 +772,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
@@ -761,6 +796,19 @@ export default function ProjectsPage() {
                 style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
                 {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
+              {clientiDisponibili.length > 0 && (
+                <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
+                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                  <option value="">Tutti i clienti</option>
+                  {clientiDisponibili.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                <option value="recenti">Più recenti</option>
+                <option value="nome">Nome A–Z</option>
+                <option value="completamento">% Completamento</option>
+              </select>
               <div ref={filterRef} style={{ position: 'relative' }}>
                 <BtnGhost onClick={() => setFilterOpen(!filterOpen)}>Utenti ({selectedUserIds.length})</BtnGhost>
                 {filterOpen && (
@@ -775,7 +823,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => setSelectedUserIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
