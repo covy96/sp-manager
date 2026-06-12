@@ -151,7 +151,7 @@ function ScrollBox({ children, maxHeight = 160 }) {
 }
 
 // ── PROJECT CARD ─────────────────────────────────────────────────
-function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers, onEdit, onArchive, onDelete, navigate }) {
+function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers, onEdit, onArchive, onDelete, navigate, draggable, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const { T } = useTheme();
   const hours = timesheetByProject[project.id] || 0;
   const tasks = tasksByProject[project.id] || { total: 0, completed: 0 };
@@ -169,16 +169,26 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
   }, []);
 
   return (
-    <div className="asm-card" style={{
-      background: hover ? T.surface2 : T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.radius,
-      padding: 20, position: 'relative', transition: 'all 0.15s',
-      backdropFilter: T.blurSm,
-      WebkitBackdropFilter: T.blurSm,
-      boxShadow: hover ? T.shadowMd : T.shadow,
-      display: 'flex', flexDirection: 'column',
-    }}
+    <div className="asm-card"
+      draggable={draggable}
+      onDragStart={draggable ? e => { e.dataTransfer.effectAllowed = "move"; onDragStart(); } : undefined}
+      onDragOver={draggable ? e => { e.preventDefault(); onDragOver(); } : undefined}
+      onDrop={draggable ? e => { e.preventDefault(); onDrop(); } : undefined}
+      onDragEnd={draggable ? onDragEnd : undefined}
+      style={{
+        background: hover ? T.surface2 : T.surface,
+        border: `1px solid ${isDragOver ? T.navy : T.border}`,
+        borderRadius: T.radius,
+        padding: 20, position: 'relative', transition: 'all 0.15s',
+        backdropFilter: T.blurSm,
+        WebkitBackdropFilter: T.blurSm,
+        boxShadow: isDragOver ? T.shadowMd : hover ? T.shadowMd : T.shadow,
+        display: 'flex', flexDirection: 'column',
+        opacity: isDragging ? 0.35 : 1,
+        cursor: draggable ? 'grab' : 'default',
+        outline: isDragOver ? `2px dashed ${T.navy}` : 'none',
+        outlineOffset: 2,
+      }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -403,6 +413,9 @@ export default function ProjectsPage() {
   const [userFilterReady, setUserFilterReady]   = useState(false);
   const [clientFilter, setClientFilter]         = useState("");
   const [sortBy, setSortBy]                     = useState("recenti");
+  const [customOrder, setCustomOrder]           = useState([]);
+  const [dragId, setDragId]                     = useState(null);
+  const [dragOverId, setDragOverId]             = useState(null);
 
   const [isModalOpen, setIsModalOpen]           = useState(false);
   const [modalStep, setModalStep]               = useState(1);
@@ -455,6 +468,40 @@ export default function ProjectsPage() {
     }
   }, [teamMember?.id]);
 
+  // Carica ordine personalizzato dal localStorage (per-utente)
+  useEffect(() => {
+    if (!studioId || !teamMember?.id) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`sp_proj_order_${studioId}_${teamMember.id}`) || "[]");
+      if (Array.isArray(saved)) setCustomOrder(saved);
+    } catch {}
+  }, [studioId, teamMember?.id]);
+
+  const saveCustomOrder = (order) => {
+    if (!studioId || !teamMember?.id) return;
+    localStorage.setItem(`sp_proj_order_${studioId}_${teamMember.id}`, JSON.stringify(order));
+    setCustomOrder(order);
+  };
+
+  const handleDragStart = (projectId) => setDragId(projectId);
+  const handleDragOver  = (projectId) => { if (projectId !== dragId) setDragOverId(projectId); };
+  const handleDrop      = (targetId) => {
+    if (!dragId || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
+    // Ottieni l'ordine corrente visibile (ids dei progetti filtrati)
+    const ids = filteredProjectsOrdered.map(p => p.id);
+    const from = ids.indexOf(dragId);
+    const to   = ids.indexOf(targetId);
+    if (from === -1 || to === -1) { setDragId(null); setDragOverId(null); return; }
+    const next = [...ids];
+    next.splice(from, 1);
+    next.splice(to, 0, dragId);
+    // Salva l'ordine completo: unisci con progetti non visibili attualmente
+    const allIds = projects.map(p => p.id);
+    const unseen = allIds.filter(id => !next.includes(id));
+    saveCustomOrder([...next, ...unseen]);
+    setDragId(null); setDragOverId(null);
+  };
+  const handleDragEnd = () => { setDragId(null); setDragOverId(null); };
 
   const loadCommesseList = async () => {
     if (!studioId) return;
@@ -497,7 +544,7 @@ export default function ProjectsPage() {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [projects]);
 
-  const filteredProjects = useMemo(() => {
+  const filteredProjectsOrdered = useMemo(() => {
     let result = projects;
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -530,10 +577,19 @@ export default function ProjectsPage() {
         const pb = tb.total > 0 ? tb.completed / tb.total : 0;
         return pb - pa;
       });
+    } else if (sortBy === "recenti" && customOrder.length > 0) {
+      // Applica ordine personalizzato dell'utente
+      result = [...result].sort((a, b) => {
+        const ai = customOrder.indexOf(a.id);
+        const bi = customOrder.indexOf(b.id);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
     }
-    // default "recenti": già ordinati per created_at dal DB
     return result;
-  }, [projects, selectedUserIds, annoFiltro, searchQuery, clientFilter, sortBy, tasksByProject]);
+  }, [projects, selectedUserIds, annoFiltro, searchQuery, clientFilter, sortBy, tasksByProject, customOrder]);
 
   const anniDisponibili = useMemo(() => {
     const anni = new Set(projects.map(p => {
@@ -847,21 +903,35 @@ export default function ProjectsPage() {
         <div style={{ textAlign: 'center', padding: 64, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : error ? (
         <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
-      ) : filteredProjects.length === 0 ? (
+      ) : filteredProjectsOrdered.length === 0 ? (
         <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
           {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-          {filteredProjects.map(project => (
-            <ProjectCard
-              key={project.id} project={project}
-              timesheetByProject={timesheetByProject} tasksByProject={tasksByProject}
-              teamMembers={teamMembers} onEdit={openEditModal}
-              onArchive={openArchiveModal} onDelete={handleDeleteProject} navigate={navigate}
-            />
-          ))}
-        </div>
+        <>
+          {sortBy === "recenti" && !isMobile && (
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+              ↕ Trascina per riordinare
+            </div>
+          )}
+          <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+            {filteredProjectsOrdered.map(project => (
+              <ProjectCard
+                key={project.id} project={project}
+                timesheetByProject={timesheetByProject} tasksByProject={tasksByProject}
+                teamMembers={teamMembers} onEdit={openEditModal}
+                onArchive={openArchiveModal} onDelete={handleDeleteProject} navigate={navigate}
+                draggable={sortBy === "recenti" && !isMobile}
+                isDragging={dragId === project.id}
+                isDragOver={dragOverId === project.id}
+                onDragStart={() => handleDragStart(project.id)}
+                onDragOver={() => handleDragOver(project.id)}
+                onDrop={() => handleDrop(project.id)}
+                onDragEnd={handleDragEnd}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* Toast */}
