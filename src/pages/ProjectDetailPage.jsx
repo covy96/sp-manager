@@ -1101,7 +1101,7 @@ export default function ProjectDetailPage() {
                     onSubtaskInputChange={(pid, v) => setSubtaskInputs(p => ({ ...p, [pid]: v }))}
                     onSubtaskAssignmentChange={(pid, v) => setSubtaskAssignments(p => ({ ...p, [pid]: v }))}
                     onSubtaskDateChange={(pid, v) => setSubtaskDates(p => ({ ...p, [pid]: v }))}
-                    onCreateSubtask={handleCreateSubtask}
+                    onCreateSubtask={createSubtask}
                     isUpdating={updatingTaskId === task.id}
                     isCreatingSubtask={creatingSubtaskId === task.id}
                     currentMemberId={teamMember?.id}
