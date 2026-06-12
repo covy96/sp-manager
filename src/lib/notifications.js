@@ -18,7 +18,7 @@ export async function createNotification({ studioId, userEmail, type, title, mes
   // Controlla le preferenze del destinatario
   const { data: member } = await supabase
     .from("team_members")
-    .select("notification_preferences, fcm_token, fcm_tokens")
+    .select("notification_preferences, fcm_token, fcm_tokens, web_push_subscription")
     .eq("user_email", userEmail)
     .eq("studio", studioId)
     .single();
@@ -40,13 +40,20 @@ export async function createNotification({ studioId, userEmail, type, title, mes
 
   if (error) { console.error("Errore creazione notifica:", error.message); return; }
 
-  // Invia a tutti i dispositivi registrati
+  // Invia a tutti i dispositivi FCM registrati
   const tokens = (member?.fcm_tokens?.length ? member.fcm_tokens : member?.fcm_token ? [member.fcm_token] : []);
   tokens.forEach(fcm_token => {
     supabase.functions.invoke("send-push-notification", {
       body: { fcm_token, title, message, link: link || "/", notification_id: notif?.id || "" },
-    }).catch(e => console.warn("Push send error:", e.message));
+    }).catch(e => console.warn("Push send error (FCM):", e.message));
   });
+
+  // Invia via Web Push nativo (Safari, Firefox)
+  if (member?.web_push_subscription) {
+    supabase.functions.invoke("send-push-notification", {
+      body: { web_push_subscription: member.web_push_subscription, title, body: message, link: link || "/", notification_id: notif?.id || "" },
+    }).catch(e => console.warn("Push send error (WebPush):", e.message));
+  }
 }
 
 /**

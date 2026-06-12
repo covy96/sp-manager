@@ -149,19 +149,58 @@ export default function ProfiloPage() {
               onClick={async () => {
                 setNotifLoading(true); setNotifError("");
                 try {
+                  // 1. Richiedi permesso
                   const perm = await Notification.requestPermission();
-                  if (perm !== "granted") { setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser."); setNotifLoading(false); return; }
-                  let token = null;
+                  if (perm !== "granted") {
+                    setNotifError("Permesso negato. Abilitalo nelle impostazioni del browser/sistema.");
+                    setNotifLoading(false); return;
+                  }
+
+                  // 2. Prova prima FCM (Chrome/Android/Edge)
+                  let fcmToken = null;
                   try {
                     const fb = await import('../../lib/firebase');
-                    token = await fb.richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-                  } catch(e) {
-                    console.warn('Firebase non disponibile:', e);
+                    fcmToken = await fb.richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
+                  } catch(e) { console.warn('FCM non disponibile:', e); }
+
+                  if (fcmToken) {
+                    // FCM funziona (Chrome, Edge, Android)
+                    const { error } = await supabase.from("team_members")
+                      .update({ fcm_token: fcmToken, web_push_subscription: null })
+                      .eq("id", teamMember?.id);
+                    if (error) throw new Error(error.message);
+                    setNotifEnabled(true);
+                    setNotifLoading(false); return;
                   }
-                  if (!token) { setNotifError("Impossibile ottenere il token FCM."); setNotifLoading(false); return; }
-                  const { error } = await supabase.from("team_members").update({ fcm_token: token }).eq("id", teamMember?.id);
-                  if (error) setNotifError("Errore: " + error.message); else setNotifEnabled(true);
-                } catch (e) { setNotifError("Errore: " + (e.message ?? "Sconosciuto")); }
+
+                  // 3. Fallback Web Push nativo (Safari, Firefox)
+                  const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+                  if (!vapidKey) throw new Error("VAPID key non configurata");
+
+                  const swReg = await navigator.serviceWorker.register('/sw-webpush.js');
+                  await navigator.serviceWorker.ready;
+
+                  // Converti VAPID public key da base64url a Uint8Array
+                  const keyBytes = Uint8Array.from(
+                    atob(vapidKey.replace(/-/g, '+').replace(/_/g, '/')),
+                    c => c.charCodeAt(0)
+                  );
+
+                  const subscription = await swReg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: keyBytes,
+                  });
+
+                  const { error } = await supabase.from("team_members")
+                    .update({ web_push_subscription: subscription.toJSON(), fcm_token: null })
+                    .eq("id", teamMember?.id);
+                  if (error) throw new Error(error.message);
+                  setNotifEnabled(true);
+
+                } catch (e) {
+                  console.error("Errore notifiche:", e);
+                  setNotifError("Errore: " + (e.message ?? "Sconosciuto"));
+                }
                 setNotifLoading(false);
               }}
               style={{
