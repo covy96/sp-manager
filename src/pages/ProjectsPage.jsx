@@ -11,8 +11,9 @@ import { formatOre } from "../lib/utils";
 import { useEscKey } from "../hooks/useEscKey";
 
 // ── HELPERS ──────────────────────────────────────────────────────
-function getInitials(name = "") {
-  return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+function getInitials(name) {
+  const s = name ?? "";
+  return String(s).trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
 }
 const AVATAR_COLORS = ["#13315C", "#1a6b3c", "#7c3aed", "#b45309", "#be185d", "#0e7490"];
 function avatarColor(member) {
@@ -492,7 +493,7 @@ export default function ProjectsPage() {
   }, [studioId]);
 
   const clientiDisponibili = useMemo(() => {
-    const s = new Set(projects.map(p => p.client).filter(Boolean));
+    const s = new Set(projects.map(p => p.client).filter(c => c && typeof c === "string"));
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [projects]);
 

@@ -1,4 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Component } from "react";
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error("ErrorBoundary caught:", error, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, fontFamily: "monospace", color: "#dc2626" }}>
+          <strong>Errore nell'app:</strong><br />
+          {this.state.error?.message}<br /><br />
+          <button onClick={() => this.setState({ error: null })} style={{ padding: "6px 14px", cursor: "pointer" }}>
+            Riprova
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { PageTitleProvider } from "./contexts/PageTitleContext";
 import AppLayout from "./components/AppLayout";
@@ -113,6 +133,7 @@ export default function App({ session }) {
   return (
     <ThemeProvider>
     <ToastProvider>
+    <ErrorBoundary>
     <CookieBanner />
     <Routes>
       <Route
@@ -443,6 +464,7 @@ export default function App({ session }) {
       <Route path="/termini" element={<TerminiPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </ErrorBoundary>
     </ToastProvider>
     </ThemeProvider>
   );

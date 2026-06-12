@@ -414,6 +414,7 @@ export default function ProjectDetailPage() {
     const dedup = (arr) => {
       const seen = new Map();
       return arr.filter(s => {
+        if (!s || typeof s !== "string") return false; // ignora null/non-stringhe
         const key = s.trim().toLowerCase();
         if (seen.has(key)) return false;
         seen.set(key, true);
@@ -434,10 +435,11 @@ export default function ProjectDetailPage() {
 
   const groupedTasks = useMemo(() => selectedServices.map(category => {
     const isUncategorized = category === "__uncategorized__";
+    const catStr = (category && typeof category === "string") ? category.trim().toLowerCase() : "";
     // Confronto case-insensitive + trim: "Design" e "DESIGN" vanno nella stessa colonna
     const catTasks = isUncategorized
       ? tasks.filter(t => !t.categoria)
-      : tasks.filter(t => (t.categoria ?? "").trim().toLowerCase() === category.trim().toLowerCase());
+      : tasks.filter(t => (t.categoria ?? "").trim().toLowerCase() === catStr);
     const visible = catTasks.filter(t => !hideCompletedTasks || t.status !== "completed");
     return {
       category,
