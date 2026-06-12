@@ -1054,8 +1054,9 @@ export default function ProjectDetailPage() {
             );
           })}
 
-          {/* Colonna Backlog — task senza data pianificata */}
-          {backlogTasks.length > 0 && (
+          {/* Colonna Backlog nascosta su richiesta: i task senza data restano
+              comunque visibili nelle loro colonne commessa (niente doppioni). */}
+          {false && backlogTasks.length > 0 && (
             <div style={{
               flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
               minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
