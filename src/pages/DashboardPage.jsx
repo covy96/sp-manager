@@ -44,7 +44,7 @@ function getNextWorkday() {
 
 // ── SUB-COMPONENTS ────────────────────────────────────────────────
 
-function KpiCard({ label, value, note, valueColor }) {
+function KpiCard({ label, value, note, valueColor, isMobile }) {
   const { T } = useTheme();
   return (
     <div style={{
@@ -52,29 +52,33 @@ function KpiCard({ label, value, note, valueColor }) {
       backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
       border: `1px solid ${T.border}`,
       borderRadius: T.radius,
-      padding: '18px 20px',
+      padding: isMobile ? '12px 14px' : '18px 20px',
       boxShadow: T.shadow,
+      minWidth: 0,
     }}>
       <div style={{
         fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 9, letterSpacing: '0.25em',
-        textTransform: 'uppercase', color: T.muted, marginBottom: 10,
+        fontSize: 8, letterSpacing: isMobile ? '0.08em' : '0.2em',
+        textTransform: 'uppercase', color: T.muted, marginBottom: 8,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{label}</div>
       <div style={{
-        fontSize: 32, fontWeight: 600,
-        letterSpacing: '-0.04em', lineHeight: 1,
+        fontSize: isMobile ? 22 : 32, fontWeight: 600,
+        letterSpacing: '-0.03em', lineHeight: 1,
         color: valueColor || T.ink,
         fontFamily: "'Space Grotesk', sans-serif",
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{value}</div>
       <div style={{
         fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 9, color: T.muted, marginTop: 6,
+        fontSize: 8, color: T.muted, marginTop: 5,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{note}</div>
     </div>
   );
 }
 
-function Panel({ title, children }) {
+function Panel({ title, children, isMobile }) {
   const { T } = useTheme();
   return (
     <div style={{
@@ -82,13 +86,13 @@ function Panel({ title, children }) {
       backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
       border: `1px solid ${T.border}`,
       borderRadius: T.radius,
-      padding: '20px 22px',
+      padding: isMobile ? '14px 14px' : '20px 22px',
       boxShadow: T.shadow,
     }}>
       <div style={{
-        fontSize: 13, fontWeight: 600,
+        fontSize: isMobile ? 12 : 13, fontWeight: 600,
         letterSpacing: '-0.01em', color: T.ink,
-        marginBottom: 16,
+        marginBottom: 14,
         fontFamily: "'Space Grotesk', sans-serif",
       }}>{title}</div>
       {children}
@@ -385,13 +389,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 20 }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h1 style={{
-            fontSize: 28, fontWeight: 600, letterSpacing: '-0.03em',
+            fontSize: isMobile ? 20 : 28, fontWeight: 600, letterSpacing: '-0.03em',
             color: T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4,
           }}>
             {greeting}{teamMember?.user_name ? `, ${teamMember.user_name.trim().split(/\s+/)[0]}` : ""}
@@ -422,16 +426,20 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
-        <KpiCard
-          label={scope === "all" ? "Progetti Attivi — studio" : "I miei progetti attivi"}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 8 }}>
+        <KpiCard isMobile={isMobile}
+          label={scope === "all" ? "Progetti attivi studio" : "Miei progetti attivi"}
           value={activeProjects} note="in corso" valueColor={T.ink} />
-        <KpiCard label="Ore Questa Settimana" value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
-        <KpiCard
-          label={scope === "all" ? "Task da Completare — studio" : "I miei task aperti"}
+        <KpiCard isMobile={isMobile}
+          label="Ore questa settimana"
+          value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
+        <KpiCard isMobile={isMobile}
+          label={scope === "all" ? "Task da completare studio" : "Miei task aperti"}
           value={openTasks} note="aperti" valueColor={T.red} />
         {permissions.canViewFinancials && (
-          <KpiCard label="Credito da Incassare" value={currency(creditToCollect)} note="da commesse - proforma pagate" valueColor={T.green} />
+          <KpiCard isMobile={isMobile}
+            label="Credito da incassare"
+            value={currency(creditToCollect)} note="da commesse - proforma" valueColor={T.green} />
         )}
       </div>
 
@@ -439,7 +447,7 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
 
         {/* Task di oggi */}
-        <Panel title="I miei task di oggi">
+        <Panel title="I miei task di oggi" isMobile={isMobile}>
           {todayTasks.length === 0
             ? <EmptyState label="Nessun task per oggi" />
             : todayTasks.map(task => (
@@ -471,7 +479,7 @@ export default function DashboardPage() {
         </Panel>
 
         {/* Task di domani / lunedì */}
-        <Panel title={`Le mie task di ${nextWorkdayLabel}`}>
+        <Panel title={`Le mie task di ${nextWorkdayLabel}`} isMobile={isMobile}>
           {tomorrowTasks.length === 0 ? (
             <EmptyState label={`Nessuna task pianificata per ${nextWorkdayLabel.toLowerCase()}`} />
           ) : (
@@ -484,7 +492,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Scadenze pratiche */}
-      <Panel title="Scadenzario pratiche">
+      <Panel title="Scadenzario pratiche" isMobile={isMobile}>
         {scadenzePratiche.length === 0 ? (
           <EmptyState label="Nessuna scadenza impostata" />
         ) : (
