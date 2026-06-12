@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useTheme } from '../contexts/ThemeContext';
 import { useStudio } from "../hooks/useStudio";
@@ -208,6 +209,7 @@ function ProjectRow({ proj }) {
 export default function DashboardPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Dashboard");
+  const navigate = useNavigate();
   const { user: studioUser, teamMember: studioMember, studioId, loading: studioLoading } = useStudio();
   const permissions = usePermissions();
   const isMobile = useIsMobile();
@@ -320,15 +322,19 @@ export default function DashboardPage() {
             try { const p = JSON.parse(raw); return p?.scadenza || null; } catch { return null; }
           };
 
+          const cutoff14 = new Date(); cutoff14.setDate(cutoff14.getDate() - 14);
+          const cutoff14Str = cutoff14.toISOString().slice(0,10);
+
           const eventi = [];
           for (const p of (pratiche || [])) {
             const scadenza = parseNoteLocal(p.note);
             if (!scadenza?.data) continue;
-            if (scadenza.data < today) continue; // scaduta: non mostrare
+            if (scadenza.data < cutoff14Str) continue; // più vecchia di 14gg: ignora
             eventi.push({
               ...p,
               eventLabel: scadenza.label || `Scadenza ${p.tipo_pratica}`,
               eventDate: scadenza.data,
+              expired: scadenza.data < today,
             });
           }
           eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
@@ -477,31 +483,36 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Scadenze pratiche prossimi 30gg */}
-      <Panel title="Scadenze pratiche — prossimi 30 giorni">
+      {/* Scadenze pratiche */}
+      <Panel title="Scadenzario pratiche">
         {scadenzePratiche.length === 0 ? (
-          <EmptyState label="Nessuna scadenza nei prossimi 30 giorni" />
+          <EmptyState label="Nessuna scadenza impostata" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {scadenzePratiche.map((ev, i) => {
+            {scadenzePratiche.map((ev) => {
               const daysLeft = Math.round((new Date(ev.eventDate) - new Date(todayStr)) / 86400000);
-              const urgent   = daysLeft <= 7;
-              const warning  = daysLeft <= 14 && !urgent;
-              const color    = urgent ? T.red : warning ? '#b45309' : T.muted;
+              const expired  = ev.expired;
+              const urgent   = !expired && daysLeft <= 7;
+              const warning  = !expired && daysLeft <= 14 && !urgent;
+              const color    = expired ? T.red : urgent ? T.red : warning ? '#b45309' : T.muted;
               return (
-                <div key={`${ev.id}-${ev.eventLabel}`} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '9px 0', borderBottom: `0.5px solid ${T.border}`,
-                }}>
+                <div key={`${ev.id}-${ev.eventLabel}`}
+                  onClick={() => ev.project_id && navigate(`/progetti/${ev.project_id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '9px 0', borderBottom: `0.5px solid ${T.border}`,
+                    cursor: ev.project_id ? 'pointer' : 'default',
+                    opacity: expired ? 0.75 : 1,
+                  }}>
                   {/* Pallino urgenza */}
                   <span style={{
                     width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                    background: urgent ? T.red : warning ? '#b45309' : T.borderMd,
+                    background: expired ? T.red : urgent ? T.red : warning ? '#b45309' : T.borderMd,
                   }} />
                   {/* Tipo pratica + progetto */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: 12, fontWeight: 600, color: T.ink,
+                      fontSize: 12, fontWeight: 600, color: expired ? T.red : T.ink,
                       fontFamily: "'Space Grotesk', sans-serif",
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
@@ -516,19 +527,13 @@ export default function DashboardPage() {
                       {ev.projects?.name || '—'} · {ev.eventLabel}
                     </div>
                   </div>
-                  {/* Data + giorni rimasti */}
+                  {/* Data + stato */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 10, color,
-                    }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color }}>
                       {new Date(ev.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
                     </div>
-                    <div style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 9, color, marginTop: 1,
-                    }}>
-                      {daysLeft === 0 ? 'oggi' : `tra ${daysLeft}gg`}
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color, marginTop: 1 }}>
+                      {expired ? 'SCADUTA' : daysLeft === 0 ? 'oggi' : `tra ${daysLeft}gg`}
                     </div>
                   </div>
                 </div>

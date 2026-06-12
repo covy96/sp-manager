@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import { logActivity } from "../lib/activityLog";
 
 // ── TIPI E CATEGORIE ──────────────────────────────────────────────
 const CATEGORIE = [
@@ -293,12 +295,22 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
     fontFamily:"'Space Grotesk', sans-serif", outline:"none",
   };
 
-  const [giorni, setGiorni] = useState("");
-  const [label, setLabel]   = useState("");
-  const [saving, setSaving] = useState(false);
+  const [giorni, setGiorni]         = useState("");
+  const [label, setLabel]           = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [existing, setExisting]     = useState(null); // scadenza esistente
 
   useBodyScrollLock(true);
   useEscKey(() => onClose(), true);
+
+  // Carica scadenza esistente
+  useEffect(() => {
+    supabase.from("pratiche_edilizie").select("note").eq("id", praticaId).single()
+      .then(({ data }) => {
+        const sc = parseNote(data?.note).scadenza;
+        if (sc) { setExisting(sc); setLabel(sc.label||""); setGiorni(sc.giorni ? String(sc.giorni) : ""); }
+      });
+  }, [praticaId]);
 
   const presets = [30, 60, 90, 180];
 
@@ -308,18 +320,32 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
     return d.toISOString().slice(0,10);
   })() : null;
 
+  const persistScadenza = async (scadenza) => {
+    const { data: rows } = await supabase.from("pratiche_edilizie").select("note").eq("id", praticaId).single();
+    const { nota, varianti, flProtocollo } = parseNote(rows?.note);
+    const newNote = serializeNote(nota, varianti, flProtocollo, scadenza);
+    return supabase.from("pratiche_edilizie").update({ note: newNote }).eq("id", praticaId);
+  };
+
   const handleSave = async () => {
     if (!dataCalcolata) return;
     setSaving(true);
-    // leggo nota corrente
-    const { data: rows } = await supabase.from("pratiche_edilizie").select("note").eq("id", praticaId).single();
-    const { nota, varianti, flProtocollo } = parseNote(rows?.note);
     const scadenza = { data: dataCalcolata, label: label || `Scadenza ${tipoPratica}`, giorni: parseInt(giorni) };
-    const newNote = serializeNote(nota, varianti, flProtocollo, scadenza);
-    const { error } = await supabase.from("pratiche_edilizie").update({ note: newNote }).eq("id", praticaId);
+    const { error } = await persistScadenza(scadenza);
     setSaving(false);
     if (error) { showToast("Errore: "+error.message); return; }
     showToast("Scadenza impostata ✓", "success");
+    onSaved();
+    onClose();
+  };
+
+  const handleRemove = async () => {
+    if (!confirm("Rimuovere la scadenza?")) return;
+    setSaving(true);
+    const { error } = await persistScadenza(null);
+    setSaving(false);
+    if (error) { showToast("Errore: "+error.message); return; }
+    showToast("Scadenza rimossa", "success");
     onSaved();
     onClose();
   };
@@ -330,16 +356,17 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
 
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Scadenza pratica</div>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>{existing ? "Modifica scadenza" : "Imposta scadenza"}</div>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>{tipoPratica}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
         </div>
 
-        {/* Domanda */}
-        <div style={{ ...mono, fontSize:10, letterSpacing:"0.12em", textTransform:"uppercase", color:T.navy, marginBottom:14 }}>
-          Vuoi segnare una scadenza?
-        </div>
+        {existing && (
+          <div style={{ ...mono, fontSize:9, color:T.muted, background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, padding:"7px 10px", marginBottom:14 }}>
+            Scadenza attuale: <span style={{ color:T.ink }}>{fmtDate(existing.data)}</span>
+          </div>
+        )}
 
         {/* Preset giorni */}
         <div style={{ marginBottom:12 }}>
@@ -377,9 +404,15 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
         </div>
 
         <div style={{ display:"flex", justifyContent:"space-between", gap:8, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
-            Salta
-          </button>
+          {existing ? (
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"7px 14px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+              Rimuovi
+            </button>
+          ) : (
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
+              Salta
+            </button>
+          )}
           <button onClick={handleSave} disabled={saving || !dataCalcolata}
             style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 22px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
             {saving ? "Salvataggio..." : "Imposta scadenza"}
@@ -499,6 +532,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       savedId = inserted?.id;
     }
     showToast(editingId ? "Pratica aggiornata" : "Pratica aggiunta", "success");
+    logActivity({ studioId, projectId, action: editingId ? "pratica.updated" : "pratica.created", entityType:"pratica", entityId: savedId, meta:{ title: form.tipo_pratica } });
     setSaving(false);
     setFormOpen(false);
     load();
@@ -513,9 +547,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   // ── ELIMINA ──────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!confirm("Eliminare questa pratica?")) return;
+    const pratica = pratiche.find(p => p.id === id);
     const { error } = await supabase.from("pratiche_edilizie").delete().eq("id", id);
     if (error) { showToast("Errore: "+error.message); return; }
     showToast("Pratica eliminata", "success");
+    logActivity({ studioId, projectId, action:"pratica.deleted", entityType:"pratica", entityId: id, meta:{ title: pratica?.tipo_pratica } });
     load();
   };
 
@@ -602,11 +638,15 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                         {cat.icon} {cat.label}
                       </div>
                       {items.map(p => {
-                        const { varianti } = parseNote(p.note);
+                        const { varianti, scadenza } = parseNote(p.note);
                         const isEdilizia = cat.id === "edilizia";
                         const hasFl = !!p.data_fine_lavori;
+                        const today = new Date().toISOString().slice(0,10);
+                        const scadExpired = scadenza?.data && scadenza.data < today;
+                        const scadSoon   = scadenza?.data && !scadExpired && Math.round((new Date(scadenza.data) - new Date(today)) / 86400000) <= 7;
+                        const scadColor  = scadExpired ? T.red : scadSoon ? "#b45309" : T.navy;
                         return (
-                          <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, marginBottom:4, flexWrap:"wrap" }}>
+                          <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", background:T.surface, border:`0.5px solid ${scadExpired ? T.red : T.border}`, borderRadius:T.radiusSm, marginBottom:4, flexWrap:"wrap" }}>
                             {/* Badge tipo */}
                             <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 7px", flexShrink:0 }}>
                               {p.tipo_pratica}
@@ -617,6 +657,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                               {p.data_presentazione && (
                                 <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft: p.protocollo?8:0 }}>
                                   pres. {fmtDate(p.data_presentazione)}
+                                </span>
+                              )}
+                              {scadenza?.data && (
+                                <span style={{ ...mono, fontSize:9, color:scadColor, marginLeft:8, border:`0.5px solid ${scadColor}`, borderRadius:T.radiusSm, padding:"1px 5px" }}>
+                                  {scadExpired ? "SCADUTA" : `scad. ${fmtDate(scadenza.data)}`}
                                 </span>
                               )}
                             </div>
@@ -633,6 +678,12 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
                                 {varianti.length > 0 ? `Varianti (${varianti.length})` : "Variante"}
                               </ActionBtn>
                             </>}
+                            {/* Scadenza — visibile per tutte le categorie */}
+                            <ActionBtn
+                              active={!!scadenza?.data}
+                              onClick={() => { setScadenzaPraticaId(p.id); setScadenzaTipo(p.tipo_pratica); setScadenzaOpen(true); }}>
+                              {scadenza?.data ? `⏰ ${fmtDate(scadenza.data)}` : "Scadenza"}
+                            </ActionBtn>
                             {/* Modifica */}
                             <ActionBtn active={false} onClick={() => openEdit(p)}>Modifica</ActionBtn>
                             {/* Elimina */}
