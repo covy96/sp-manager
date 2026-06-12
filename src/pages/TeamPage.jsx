@@ -121,6 +121,10 @@ export default function TeamPage() {
   const [editColor, setEditColor]           = useState("");
   const [editPerms, setEditPerms]           = useState({});
   const [activeTab, setActiveTab]           = useState("role");
+  // profilo
+  const [editTelefono, setEditTelefono]             = useState("");
+  const [editSpecializzazione, setEditSpecializzazione] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl]           = useState("");
   const [saving, setSaving]                 = useState(false);
   const [confirmRemove, setConfirmRemove]   = useState(false);
   const [removing, setRemoving]             = useState(false);
@@ -192,6 +196,9 @@ export default function TeamPage() {
     setEditRole(m.role_internal || "Architetto");
     setEditColor(m.color || PREDEFINED_COLORS[0]);
     setEditPerms(m.custom_permissions || {});
+    setEditTelefono(m.telefono || "");
+    setEditSpecializzazione(m.specializzazione || "");
+    setEditAvatarUrl(m.avatar_url || "");
     setActiveTab("role");
     setConfirmRemove(false);
   };
@@ -237,6 +244,19 @@ export default function TeamPage() {
     setSelectedMember(p => ({ ...p, color:editColor }));
     setSaving(false);
     showToast("Colore aggiornato", "success");
+  };
+
+  // ── salvataggio profilo ────────────────────────────────────────────
+  const handleSaveProfilo = async () => {
+    if (!selectedMember) return;
+    setSaving(true);
+    const payload = { telefono: editTelefono||null, specializzazione: editSpecializzazione||null, avatar_url: editAvatarUrl||null };
+    const { error: e } = await supabase.from("team_members").update(payload).eq("id", selectedMember.id);
+    if (e) { showToast("Errore: " + e.message); setSaving(false); return; }
+    setMembers(p => p.map(m => m.id === selectedMember.id ? { ...m, ...payload } : m));
+    setSelectedMember(p => ({ ...p, ...payload }));
+    setSaving(false);
+    showToast("Profilo aggiornato", "success");
   };
 
   // ── rimozione utente ──────────────────────────────────────────────
@@ -438,9 +458,10 @@ export default function TeamPage() {
                   <div style={{ marginBottom:18 }}>
                     <SlidingTabs
                       tabs={[
-                        { key:"role",  label:"Ruolo" },
-                        { key:"perms", label:"Permessi" },
-                        { key:"color", label:"Colore" },
+                        { key:"role",    label:"Ruolo" },
+                        { key:"perms",   label:"Permessi" },
+                        { key:"color",   label:"Colore" },
+                        { key:"profilo", label:"Profilo" },
                       ]}
                       active={activeTab}
                       onChange={setActiveTab}
@@ -580,6 +601,37 @@ export default function TeamPage() {
                           </button>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* ── TAB: Profilo ── */}
+                  {activeTab === "profilo" && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                      <div>
+                        <FieldLabel>Telefono</FieldLabel>
+                        <Input value={editTelefono} onChange={e => setEditTelefono(e.target.value)} placeholder="+39 333 1234567"/>
+                      </div>
+                      <div>
+                        <FieldLabel>Specializzazione</FieldLabel>
+                        <Input value={editSpecializzazione} onChange={e => setEditSpecializzazione(e.target.value)} placeholder="Es. Progettazione residenziale, BIM..."/>
+                      </div>
+                      <div>
+                        <FieldLabel>URL Avatar</FieldLabel>
+                        <Input value={editAvatarUrl} onChange={e => setEditAvatarUrl(e.target.value)} placeholder="https://..."/>
+                        {editAvatarUrl && (
+                          <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:12 }}>
+                            <img src={editAvatarUrl} alt="avatar" onError={e => e.target.style.display='none'}
+                              style={{ width:44, height:44, borderRadius:'50%', objectFit:'cover', border:`0.5px solid ${T.borderMd}` }}/>
+                            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>Anteprima</span>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'flex-end', paddingTop:4 }}>
+                        <button onClick={handleSaveProfilo} disabled={saving}
+                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1, borderRadius:T.radiusSm }}>
+                          {saving ? "Salvataggio..." : "Salva profilo"}
+                        </button>
+                      </div>
                     </div>
                   )}
 

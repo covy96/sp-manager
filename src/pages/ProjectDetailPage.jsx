@@ -17,6 +17,8 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { notifyTaskAssigned } from '../lib/notifications';
 import { useToast } from "../contexts/ToastContext";
 import { usePresence } from "../hooks/usePresence";
+import ActivityLogPanel from "../components/ActivityLogPanel";
+import { logActivity } from "../lib/activityLog";
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -413,11 +415,14 @@ export default function ProjectDetailPage() {
     setUpdatingTaskId(task.id); setTasks(optimistic);
     const { error: uErr } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
     if (uErr) { setTasks(prev); setError(uErr.message); }
-    else if (task.parent_task_id) {
-      const parent = optimistic.find(i => i.id === task.parent_task_id);
-      const { error: pErr } = await supabase.from("tasks").update({ status: parent?.status ?? "todo" }).eq("id", task.parent_task_id);
-      if (pErr) { setTasks(prev); setError(pErr.message); } else setError("");
-    } else setError("");
+    else {
+      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action: nextStatus === "completed" ? "task.completed" : "task.reopened", entityType:"task", entityId: task.id, meta:{ title: task.title } });
+      if (task.parent_task_id) {
+        const parent = optimistic.find(i => i.id === task.parent_task_id);
+        const { error: pErr } = await supabase.from("tasks").update({ status: parent?.status ?? "todo" }).eq("id", task.parent_task_id);
+        if (pErr) { setTasks(prev); setError(pErr.message); } else setError("");
+      } else setError("");
+    }
     setUpdatingTaskId(null);
   };
 
@@ -441,7 +446,10 @@ export default function ProjectDetailPage() {
     if (!task?.id) return;
     const { error: dErr } = await supabase.rpc('elimina_task', { p_task_id: task.id });
     if (dErr) setError(dErr.message);
-    else { setTasks(p => p.filter(t => t.id !== task.id)); setError(""); }
+    else {
+      setTasks(p => p.filter(t => t.id !== task.id)); setError("");
+      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action:"task.deleted", entityType:"task", entityId: task.id, meta:{ title: task.title } });
+    }
   };
 
   const handleArchiveProject = async () => {
@@ -540,6 +548,7 @@ export default function ProjectDetailPage() {
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else {
       setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus();
+      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action:"task.created", entityType:"task", entityId: data.id, meta:{ title } });
       if (memberId && memberId !== teamMember?.id) {
         const assignedMember = teamMembers.find(m => m.id === memberId);
         if (assignedMember?.user_email) notifyTaskAssigned({ studioId, assignedEmail: assignedMember.user_email, taskTitle: title, projectName: project?.name || "", taskId: data.id, projectId: projectId || null });
@@ -645,6 +654,7 @@ export default function ProjectDetailPage() {
             )}
             <AnagraficaPanel projectId={id} studioId={studioId} />
             <CommessePanel commesse={commesseProgetto} />
+            <ActivityLogPanel projectId={id} studioId={studioId} />
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{
                 border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink,
