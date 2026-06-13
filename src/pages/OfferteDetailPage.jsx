@@ -189,8 +189,14 @@ export default function OfferteDetailPage() {
     if (error) { showToast('Errore: '+error.message); setSaving(false); return; }
 
     // Aggiorna stato offerta (e valore se richiesto)
-    const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
-    if (aggiornaOfferta) { offerUpdate.importo_offerta_base = totaleAccetta; offerUpdate.voci = accettaForm.voci; }
+    // Salva sempre voci e sconti aggiornati nell'offerta; importo_offerta_base solo se richiesto
+    const offerUpdate = {
+      stato: 'accettata', commessa_id: commessa.id,
+      voci: accettaForm.voci,
+      sconto: scAcc,
+      sconto_fisso: scAccF || null,
+    };
+    if (aggiornaOfferta) offerUpdate.importo_offerta_base = totaleAccetta;
     await supabase.from("offerte").update(offerUpdate).eq("id",id);
 
     setSaving(false);

@@ -649,7 +649,7 @@ export default function CommessaDetailPage() {
         <div onClick={() => setShowVociPopup(false)}
           style={{ position:'fixed', inset:0, zIndex:80, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: T.surface, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadowMd, padding:'20px 22px', width:'100%', maxWidth:420 }}>
+            style={{ background: T.bg, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', padding:'20px 22px', width:'100%', maxWidth:420 }}>
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>

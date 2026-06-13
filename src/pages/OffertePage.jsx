@@ -213,7 +213,12 @@ export default function OffertePage() {
     }).select().single();
     if (cErr) { showToast('Errore: '+cErr.message); setSaving(false); return; }
 
-    const offerUpdate = { stato:'accettata', commessa_id:commessa.id };
+    const offerUpdate = {
+      stato: 'accettata', commessa_id: commessa.id,
+      voci: accettaForm.voci,
+      sconto: scAcc,
+      sconto_fisso: scAccFisso || null,
+    };
     if (aggiornaOfferta) offerUpdate.importo_offerta_base = totaleAccetta;
     await supabase.from('offerte').update(offerUpdate).eq('id', accettaId);
 
