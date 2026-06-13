@@ -83,11 +83,25 @@ function Panel({ children, style = {} }) {
   const { T } = useTheme();
   return <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: '16px 18px', boxShadow: T.shadow, ...style }}>{children}</div>;
 }
-function KpiCard({ label, value, color }) {
+function KpiCard({ label, value, color, onClick, hint }) {
   const { T } = useTheme();
+  const [hover, setHover] = React.useState(false);
   return (
-    <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '12px 14px', minWidth: 0, overflow: 'hidden', boxShadow: T.shadow }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
+        border: `1px solid ${onClick && hover ? T.borderMd : T.border}`,
+        borderRadius: T.radiusSm, padding: '12px 14px', minWidth: 0, overflow: 'hidden',
+        boxShadow: T.shadow, cursor: onClick ? 'pointer' : 'default',
+        transition: 'border-color 0.15s',
+      }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+        {onClick && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: T.muted, opacity: 0.6 }}>↗</span>}
+      </div>
       <div style={{ fontSize: 'clamp(13px, 3.5vw, 20px)', fontWeight: 600, letterSpacing: '-0.02em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
     </div>
   );
@@ -197,6 +211,8 @@ export default function CommessaDetailPage() {
   const [proformaCostiIds, setProformaCostiIds] = useState([]);
 
   const [altreCommesse, setAltreCommesse] = useState([]);
+  const [vociOfferta, setVociOfferta]     = useState(null); // { voci, sconto, sconto_fisso } dall'offerta collegata
+  const [showVociPopup, setShowVociPopup] = useState(false);
   const [altreCommesseData, setAltreCommesseData] = useState({});
 
   const [editProformaModal, setEditProformaModal] = useState(false);
@@ -255,6 +271,12 @@ export default function CommessaDetailPage() {
 
     const { data: ci } = await supabase.from('costi_interni').select('*').eq('commessa_id', commessaId).is('deleted_at', null).order('data', { ascending:false });
     setCostiInterni(ci ?? []);
+
+    // Carica voci dall'offerta collegata (per breakdown importo base)
+    const { data: offCollegata } = await supabase
+      .from('offerte').select('voci, sconto, sconto_fisso')
+      .eq('commessa_id', commessaId).maybeSingle();
+    setVociOfferta(offCollegata ?? null);
     const { data: tm } = await supabase.from('team_members').select('id, user_name, user_email').eq('studio', studioId).eq('active', true);
     setTeamMembers(tm ?? []);
 
@@ -614,12 +636,75 @@ export default function CommessaDetailPage() {
 
       {/* KPI */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 10 }}>
-        <KpiCard label="Importo Base"  value={currency(importoBase)} />
+        <KpiCard label="Importo Base" value={currency(importoBase)}
+          onClick={vociOfferta?.voci?.length > 0 ? () => setShowVociPopup(true) : undefined} />
         <KpiCard label="Pagato"        value={currency(importoPagato)}  color={T.green} />
         <KpiCard label="Residuo"       value={currency(residuo)}         color={residuo > 0 ? T.navy : T.muted} />
         <KpiCard label="Costi Extra"   value={currency(totCostiExtra)}   color={T.muted} />
         <KpiCard label="Collaboratori" value={currency(totCollaboratori)} color={T.muted} />
       </div>
+
+      {/* Popup breakdown voci offerta */}
+      {showVociPopup && vociOfferta && (
+        <div onClick={() => setShowVociPopup(false)}
+          style={{ position:'fixed', inset:0, zIndex:80, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: T.surface, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadowMd, padding:'20px 22px', width:'100%', maxWidth:420 }}>
+            {/* Header */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+                Dettaglio importo base
+              </div>
+              <button onClick={() => setShowVociPopup(false)}
+                style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, lineHeight:1 }}>×</button>
+            </div>
+            {/* Voci */}
+            <div style={{ display:'flex', flexDirection:'column', gap:0, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow:'hidden', marginBottom:12 }}>
+              {(vociOfferta.voci || []).filter(v => v.attiva !== false).map((v, i, arr) => {
+                const lordo = (vociOfferta.voci || []).filter(x => x.attiva !== false).reduce((s,x) => s + Number(x.prezzo||0), 0);
+                const perc = lordo > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
+                return (
+                  <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.bg }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.nome}</div>
+                      <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, color:T.muted, marginTop:2 }}>{perc}% del lordo</div>
+                    </div>
+                    <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.navy, flexShrink:0, marginLeft:12 }}>{currency(v.prezzo)}</div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Sconti */}
+            {(() => {
+              const vociAttive = (vociOfferta.voci || []).filter(v => v.attiva !== false);
+              const lordo = vociAttive.reduce((s,v) => s + Number(v.prezzo||0), 0);
+              const sc = Number(vociOfferta.sconto)||0;
+              const scF = Number(vociOfferta.sconto_fisso)||0;
+              const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
+              const netto = Math.max(0, dopoPerc - scF);
+              const hasSconti = sc > 0 || scF > 0;
+              return (
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {hasSconti && lordo !== netto && (
+                    <>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted }}>
+                          Lordo{sc > 0 ? ` − sconto ${sc}%` : ''}{scF > 0 ? ` − €${scF}` : ''}
+                        </span>
+                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.red }}>−{currency(lordo - netto)}</span>
+                      </div>
+                    </>
+                  )}
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop: hasSconti ? 8 : 0, borderTop: hasSconti ? `0.5px solid ${T.border}` : 'none' }}>
+                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
+                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {commessa.note_amministrative && (
         <Panel><div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.8 }}>{commessa.note_amministrative}</div></Panel>
