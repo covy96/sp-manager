@@ -76,8 +76,8 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
         </div>
       </div>
 
-      <div style={{ flexShrink:0, marginLeft:12, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: done ? T.green : overdue ? T.red : T.muted }}>
-        {done ? '✓' : task.data_pianificata ? formatDate(task.data_pianificata) : '—'}
+      <div style={{ flexShrink:0, marginLeft:8, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: done ? T.green : overdue ? T.red : T.muted }}>
+        {done ? '✓' : task.data_pianificata ? formatDate(task.data_pianificata) : ''}
       </div>
     </div>
   );
@@ -164,8 +164,8 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
   return (
     <div style={cardStyle}>
       {/* Toolbar */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', borderBottom:`0.5px solid ${T.border}` }}>
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', borderBottom:`0.5px solid ${T.border}`, flexWrap:'wrap', gap:4 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
           {NOTE_COLORS.map(c => (
             <button key={c} onClick={() => isOwn && handleColorChange(c)} style={{
               width:13, height:13, borderRadius:'50%', background:c,
@@ -488,30 +488,31 @@ export default function ScrivaniaPage() {
   );
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap: isMobile ? 14 : 20 }}>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>Scrivania</div>
+          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>Scrivania</div>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>
             {activeTasks.length} task attive · {notes.length} note
           </div>
         </div>
         <button onClick={handleCreateNote} disabled={creatingNote} style={{
           background:T.navy, color:T.bg, border:'none',
-          fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase',
-          padding:'8px 18px', cursor: creatingNote ? 'not-allowed' : 'pointer', opacity: creatingNote ? 0.6 : 1,
+          fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
+          padding: isMobile ? '7px 14px' : '8px 18px', cursor: creatingNote ? 'not-allowed' : 'pointer', opacity: creatingNote ? 0.6 : 1,
+          flexShrink: 0,
         }}>
           {creatingNote ? '...' : '+ Nuova nota'}
         </button>
       </div>
 
       {/* Layout 50/50 — colonna singola su mobile */}
-      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:20, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 14 : 20, alignItems:'start' }}>
 
         {/* ── COLONNA TASK ── */}
-        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '14px 12px' : '16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, minWidth:0 }}>
           <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>
