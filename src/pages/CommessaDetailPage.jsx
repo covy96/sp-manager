@@ -658,48 +658,47 @@ export default function CommessaDetailPage() {
               <button onClick={() => setShowVociPopup(false)}
                 style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, lineHeight:1 }}>×</button>
             </div>
-            {/* Voci */}
-            <div style={{ display:'flex', flexDirection:'column', gap:0, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow:'hidden', marginBottom:12 }}>
-              {(vociOfferta.voci || []).filter(v => v.attiva !== false).map((v, i, arr) => {
-                const lordo = (vociOfferta.voci || []).filter(x => x.attiva !== false).reduce((s,x) => s + Number(x.prezzo||0), 0);
-                const perc = lordo > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
-                return (
-                  <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.bg }}>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.nome}</div>
-                      <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, color:T.muted, marginTop:2 }}>{perc}% del lordo</div>
-                    </div>
-                    <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.navy, flexShrink:0, marginLeft:12 }}>{currency(v.prezzo)}</div>
-                  </div>
-                );
-              })}
-            </div>
-            {/* Sconti */}
+            {/* Voci — la % è calcolata sul totale netto finale (importoBase della commessa) */}
             {(() => {
               const vociAttive = (vociOfferta.voci || []).filter(v => v.attiva !== false);
               const lordo = vociAttive.reduce((s,v) => s + Number(v.prezzo||0), 0);
-              const sc = Number(vociOfferta.sconto)||0;
-              const scF = Number(vociOfferta.sconto_fisso)||0;
-              const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
-              const netto = Math.max(0, dopoPerc - scF);
-              const hasSconti = sc > 0 || scF > 0;
+              const netto = importoBase; // fonte di verità: importo_offerta_base della commessa
+              const scontoTotale = lordo - netto;
+              const hasSconti = scontoTotale > 0.005;
               return (
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {hasSconti && lordo !== netto && (
-                    <>
+                <>
+                  <div style={{ display:'flex', flexDirection:'column', gap:0, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow:'hidden', marginBottom:12 }}>
+                    {vociAttive.map((v, i, arr) => {
+                      const perc = netto > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
+                      return (
+                        <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.surface }}>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:12, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.nome}</div>
+                            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, color:T.muted, marginTop:2 }}>{perc}% del lordo</div>
+                          </div>
+                          <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.navy, flexShrink:0, marginLeft:12 }}>{currency(v.prezzo)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    {hasSconti && (
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                         <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted }}>
-                          Lordo{sc > 0 ? ` − sconto ${sc}%` : ''}{scF > 0 ? ` − €${scF}` : ''}
+                          {Number(vociOfferta.sconto) > 0 && `Sconto ${vociOfferta.sconto}%`}
+                          {Number(vociOfferta.sconto) > 0 && Number(vociOfferta.sconto_fisso) > 0 && ' + '}
+                          {Number(vociOfferta.sconto_fisso) > 0 && `−${currency(vociOfferta.sconto_fisso)}`}
+                          {!Number(vociOfferta.sconto) && !Number(vociOfferta.sconto_fisso) && 'Sconto applicato'}
                         </span>
-                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.red }}>−{currency(lordo - netto)}</span>
+                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.red }}>−{currency(scontoTotale)}</span>
                       </div>
-                    </>
-                  )}
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop: hasSconti ? 8 : 0, borderTop: hasSconti ? `0.5px solid ${T.border}` : 'none' }}>
-                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
-                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
+                    )}
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop: hasSconti ? 8 : 0, borderTop: hasSconti ? `0.5px solid ${T.border}` : 'none' }}>
+                      <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
+                      <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
+                    </div>
                   </div>
-                </div>
+                </>
               );
             })()}
           </div>
