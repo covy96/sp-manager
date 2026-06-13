@@ -633,7 +633,13 @@ export default function OffertePage() {
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
-                  {currency((accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0))}
+                  {(() => {
+                    const lordo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                    const sc = Number(accettaForm.sconto)||0;
+                    const scF = Number(accettaForm.sconto_fisso)||0;
+                    const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
+                    return currency(Math.max(0, dopoPerc - scF));
+                  })()}
                 </div>
               </div>
             </div>
