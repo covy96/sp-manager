@@ -52,7 +52,7 @@ export default function OffertePage() {
   const [form, setForm] = useState({
     numero_offerta:'', nome_offerta:'', cliente:'',
     project_id:'', data_offerta:'',
-    voci: [], sconto: '',
+    voci: [], sconto: '', sconto_fisso: '',
     note:'',
   });
 
@@ -78,8 +78,10 @@ export default function OffertePage() {
   const handleSave = async e => {
     e.preventDefault();
     const sconto = Number(form.sconto)||0;
+    const scontoFisso = Number(form.sconto_fisso)||0;
     const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
-    const importoCalcolato = sconto > 0 ? Math.round(lordo * (1 - sconto/100) * 100) / 100 : lordo;
+    const dopoPerc = sconto > 0 ? lordo * (1 - sconto/100) : lordo;
+    const importoCalcolato = Math.max(0, Math.round((dopoPerc - scontoFisso) * 100) / 100);
     if (!form.nome_offerta.trim()||!form.cliente.trim()) {
       setFormError('Compila tutti i campi obbligatori'); return;
     }
@@ -128,6 +130,7 @@ export default function OffertePage() {
       importo_offerta_base: importoCalcolato,
       voci: form.voci||[],
       sconto: sconto,
+      sconto_fisso: scontoFisso||null,
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
@@ -137,7 +140,7 @@ export default function OffertePage() {
     });
     if (error) { setFormError(error.message); setSaving(false); return; }
     setModalOpen(false);
-    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', note:'' });
+    setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', sconto_fisso:'', note:'' });
     showToast("Offerta creata", "success");
     await loadData();
     setSaving(false);
@@ -162,6 +165,7 @@ export default function OffertePage() {
       data_commessa: new Date().toISOString().slice(0,10),
       voci: vociNorm,
       sconto: oSconto||'',
+      sconto_fisso: Number(o.sconto_fisso)||'',
       numero_offerta: o.numero_offerta,
       note: o.note||'',
     });
@@ -190,8 +194,10 @@ export default function OffertePage() {
     }
 
     const scAcc = Number(accettaForm.sconto)||0;
+    const scAccFisso = Number(accettaForm.sconto_fisso)||0;
     const lordoAcc = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
-    const totaleAccetta = scAcc > 0 ? Math.round(lordoAcc * (1 - scAcc/100) * 100) / 100 : lordoAcc;
+    const dopoPercAcc = scAcc > 0 ? lordoAcc * (1 - scAcc/100) : lordoAcc;
+    const totaleAccetta = Math.max(0, Math.round((dopoPercAcc - scAccFisso) * 100) / 100);
     const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
       studio: studioId,
       numero_offerta: accettaForm.numero_offerta,
@@ -222,8 +228,10 @@ export default function OffertePage() {
   const handleConfermaAccetta = async () => {
     const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
     const scAcc2 = Number(accettaForm.sconto)||0;
+    const scAcc2Fisso = Number(accettaForm.sconto_fisso)||0;
     const lordoAcc2 = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
-    const valoreNuovo = scAcc2>0 ? Math.round(lordoAcc2*(1-scAcc2/100)*100)/100 : lordoAcc2;
+    const dopoPerc2 = scAcc2>0 ? lordoAcc2*(1-scAcc2/100) : lordoAcc2;
+    const valoreNuovo = Math.max(0, Math.round((dopoPerc2 - scAcc2Fisso)*100)/100);
     if (valoreNuovo !== valoreOriginale) {
       setAccettaModal(false);
       setAllineaModal(true);
@@ -546,19 +554,36 @@ export default function OffertePage() {
                   {(form.voci||[]).length>0 && (() => {
                     const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
                     const sc = Number(form.sconto)||0;
-                    const netto = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                    const scF = Number(form.sconto_fisso)||0;
+                    const dopoPerc = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                    const netto = Math.max(0, dopoPerc - scF);
+                    const totaleSc = lordo - netto;
                     return (
                       <div style={{marginTop:10,paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
-                        {/* Riga sconto */}
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO</span>
+                        {/* Riga sconto % */}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:6}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO %</span>
                           <div style={{display:'flex',alignItems:'center',gap:4}}>
                             <input type="number" min={0} max={100} step={0.1} value={form.sconto} onChange={e=>setForm(p=>({...p,sconto:e.target.value}))}
                               placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
                             <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
                           </div>
-                          {sc > 0 && <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(lordo-netto)}</span>}
                         </div>
+                        {/* Riga sconto fisso € */}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO €</span>
+                          <div style={{display:'flex',alignItems:'center',gap:4}}>
+                            <input type="number" min={0} step={0.01} value={form.sconto_fisso} onChange={e=>setForm(p=>({...p,sconto_fisso:e.target.value}))}
+                              placeholder="0" style={{...inputSt,width:90,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
+                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>€</span>
+                          </div>
+                        </div>
+                        {totaleSc > 0 && (
+                          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,marginBottom:6}}>
+                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
+                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
+                          </div>
+                        )}
                         {/* Totale */}
                         <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
                           <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
@@ -696,18 +721,34 @@ export default function OffertePage() {
                 {(() => {
                   const lordo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
                   const sc = Number(accettaForm.sconto)||0;
-                  const netto = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                  const scF = Number(accettaForm.sconto_fisso)||0;
+                  const dopoPerc = sc > 0 ? lordo * (1 - sc/100) : lordo;
+                  const netto = Math.max(0, dopoPerc - scF);
+                  const totaleSc = lordo - netto;
                   return (
                     <div style={{paddingTop:8}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO</span>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:6}}>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO %</span>
                         <div style={{display:'flex',alignItems:'center',gap:4}}>
                           <input type="number" min={0} max={100} step={0.1} value={accettaForm.sconto||''} onChange={e=>setAccettaForm(p=>({...p,sconto:e.target.value}))}
                             placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
                           <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
                         </div>
-                        {sc > 0 && <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(lordo-netto)}</span>}
                       </div>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
+                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO €</span>
+                        <div style={{display:'flex',alignItems:'center',gap:4}}>
+                          <input type="number" min={0} step={0.01} value={accettaForm.sconto_fisso||''} onChange={e=>setAccettaForm(p=>({...p,sconto_fisso:e.target.value}))}
+                            placeholder="0" style={{...inputSt,width:90,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>€</span>
+                        </div>
+                      </div>
+                      {totaleSc > 0 && (
+                        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,marginBottom:6}}>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
+                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
+                        </div>
+                      )}
                       <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
                         <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
                         <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
