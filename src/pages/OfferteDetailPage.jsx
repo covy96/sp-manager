@@ -388,7 +388,7 @@ export default function OfferteDetailPage() {
             <div>
               <div style={{ ...labelSt, marginBottom:8 }}>Voci offerta</div>
               <div style={{ border:`1px solid ${T.border}`, borderRadius:T.radiusSm, overflow:'hidden' }}>
-                {(Array.isArray(offerta.voci) && offerta.voci.length > 0 ? offerta.voci : [{ nome: offerta.nome_offerta||'Prestazione', prezzo: offerta.importo_offerta_base, attiva:true }]).map((v,i,arr) => (
+                {(Array.isArray(offerta.voci) && offerta.voci.length > 0 ? offerta.voci : [{ nome: offerta.nome_offerta||'Prestazione', prezzo: Number(offerta.importo_offerta_base)||0, attiva:true }]).map((v,i,arr) => (
                   <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:i<arr.length-1?`0.5px solid ${T.border}`:'none', background:v.attiva!==false?'transparent':T.surface2, opacity:v.attiva!==false?1:0.45 }}>
                     <span style={{ fontSize:13, color:T.ink }}>{v.nome}</span>
                     <span style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(v.prezzo)}</span>

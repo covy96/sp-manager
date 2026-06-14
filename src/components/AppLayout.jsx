@@ -314,7 +314,31 @@ export default function AppLayout({ session, children }) {
           })}
         </nav>
 
-        <div style={{ padding:'12px 18px', borderTop:`1px solid ${T.sidebarBorder}` }}>
+        <div style={{ padding:'10px 12px', borderTop:`1px solid ${T.sidebarBorder}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          {/* Logo ASM — apre pagina Info */}
+          <button
+            onClick={() => navigate('/info')}
+            title="Info su SP Manager"
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: location.pathname === '/info' ? 'rgba(217,201,138,0.18)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${location.pathname === '/info' ? 'rgba(217,201,138,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.15s, border-color 0.15s',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { if (location.pathname !== '/info') { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; } }}
+            onMouseLeave={e => { if (location.pathname !== '/info') { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; } }}
+          >
+            <span style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 700, fontSize: 15, letterSpacing: '-0.04em',
+              color: location.pathname === '/info' ? '#D9C98A' : 'rgba(255,255,255,0.55)',
+              lineHeight: 1,
+            }}>A</span>
+          </button>
+
+          {/* Avatar utente */}
           <div style={{ width:28, height:28, borderRadius:'50%', background:memberColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.3)' }}>
             {avatarInitials}
           </div>

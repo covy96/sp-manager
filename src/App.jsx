@@ -70,6 +70,7 @@ import CreateStudioPage from "./pages/CreateStudioPage";
 import JoinStudioPage from "./pages/JoinStudioPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TerminiPage from "./pages/TerminiPage";
+import InfoPage from "./pages/InfoPage";
 import CookieBanner from "./components/CookieBanner";
 
 import { supabase } from "./lib/supabase";
@@ -462,6 +463,7 @@ export default function App({ session }) {
       />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/termini" element={<TerminiPage />} />
+      <Route path="/info" element={<ProtectedLayout session={session}><InfoPage /></ProtectedLayout>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
     </ErrorBoundary>

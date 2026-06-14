@@ -337,8 +337,13 @@ export default function MobileLayout({ session, children }) {
               );
             })}
 
-            {/* Divider + Logout */}
+            {/* Divider + Info + Logout */}
             <div style={{ height:0.5, background:T.border, margin:'8px 20px' }}/>
+            <button onClick={() => { setMenuOpen(false); navigate('/info'); }}
+              style={{ display:'flex', alignItems:'center', gap:14, width:'100%', padding:'13px 20px 8px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.muted, fontFamily:"'Space Grotesk', sans-serif", minHeight:48 }}>
+              <span style={{ width:20, height:20, borderRadius:5, background:T.surface2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:700, fontFamily:"'Space Grotesk', sans-serif", color:T.ink }}>A</span>
+              Info su SP Manager
+            </button>
             <button onClick={handleLogout}
               style={{ display:'flex', alignItems:'center', gap:14, width:'100%', padding:'13px 20px 20px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.red, fontFamily:"'Space Grotesk', sans-serif", minHeight:48 }}>
               <Icon d={ICONS.logout} size={20}/>

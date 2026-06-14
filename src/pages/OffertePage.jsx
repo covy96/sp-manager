@@ -79,7 +79,7 @@ export default function OffertePage() {
     e.preventDefault();
     const sconto = Number(form.sconto)||0;
     const scontoFisso = Number(form.sconto_fisso)||0;
-    const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sconto > 0 ? lordo * (1 - sconto/100) : lordo;
     const importoCalcolato = Math.max(0, Math.round((dopoPerc - scontoFisso) * 100) / 100);
     if (!form.nome_offerta.trim()||!form.cliente.trim()) {
@@ -195,7 +195,7 @@ export default function OffertePage() {
 
     const scAcc = Number(accettaForm.sconto)||0;
     const scAccFisso = Number(accettaForm.sconto_fisso)||0;
-    const lordoAcc = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordoAcc = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPercAcc = scAcc > 0 ? lordoAcc * (1 - scAcc/100) : lordoAcc;
     const totaleAccetta = Math.max(0, Math.round((dopoPercAcc - scAccFisso) * 100) / 100);
     const { data:commessa, error:cErr } = await supabase.from('commesse').insert({
@@ -234,7 +234,7 @@ export default function OffertePage() {
     const valoreOriginale = Number(offertaOriginale?.importo_offerta_base);
     const scAcc2 = Number(accettaForm.sconto)||0;
     const scAcc2Fisso = Number(accettaForm.sconto_fisso)||0;
-    const lordoAcc2 = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+    const lordoAcc2 = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc2 = scAcc2>0 ? lordoAcc2*(1-scAcc2/100) : lordoAcc2;
     const valoreNuovo = Math.max(0, Math.round((dopoPerc2 - scAcc2Fisso)*100)/100);
     if (valoreNuovo !== valoreOriginale) {
@@ -557,7 +557,7 @@ export default function OffertePage() {
                   </button>
                   {/* Sconto + Totale */}
                   {(form.voci||[]).length>0 && (() => {
-                    const lordo = (form.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                    const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
                     const sc = Number(form.sconto)||0;
                     const scF = Number(form.sconto_fisso)||0;
                     const dopoPerc = sc > 0 ? lordo * (1 - sc/100) : lordo;
@@ -639,7 +639,7 @@ export default function OffertePage() {
                 <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
                   {(() => {
-                    const lordo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                    const lordo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
                     const sc = Number(accettaForm.sconto)||0;
                     const scF = Number(accettaForm.sconto_fisso)||0;
                     const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
@@ -730,7 +730,7 @@ export default function OffertePage() {
                 </div>
                 {/* Sconto + totale */}
                 {(() => {
-                  const lordo = (accettaForm.voci||[]).filter(v=>v.attiva).reduce((s,v)=>s+Number(v.prezzo||0),0);
+                  const lordo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
                   const sc = Number(accettaForm.sconto)||0;
                   const scF = Number(accettaForm.sconto_fisso)||0;
                   const dopoPerc = sc > 0 ? lordo * (1 - sc/100) : lordo;

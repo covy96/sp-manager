@@ -15,7 +15,8 @@ export async function calcolaIncassato(commesseIds, studioId, supabase) {
       .from("suddivisione_pagamenti")
       .select("commessa_id, percentuale, importo_fisso")
       .in("commessa_id", commesseIds)
-      .eq("pagato", true),
+      .eq("pagato", true)
+      .is("deleted_at", null),
     supabase
       .from("commesse")
       .select("id, importo_offerta_base")

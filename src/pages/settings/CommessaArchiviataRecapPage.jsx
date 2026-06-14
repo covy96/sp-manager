@@ -40,11 +40,11 @@ export default function CommessaArchiviataRecapPage() {
         { data: co },
       ] = await Promise.all([
         supabase.from("commesse").select("*").eq("id", id).single(),
-        supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id).order("order"),
+        supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", id).is("deleted_at", null).order("order"),
         supabase.from("proforma").select("*").eq("commessa_id", id).is("deleted_at", null).order("created_at", { ascending:false }),
         supabase.from("proforma").select("*").contains("commessa_ids", [id]).is("deleted_at", null).order("created_at", { ascending:false }),
-        supabase.from("fatture").select("*").eq("commessa_id", id).order("data_emissione", { ascending:false }),
-        supabase.from("costi_extra").select("*").eq("commessa_id", id),
+        supabase.from("fatture").select("*").eq("commessa_id", id).is("deleted_at", null).order("data_emissione", { ascending:false }),
+        supabase.from("costi_extra").select("*").eq("commessa_id", id).is("deleted_at", null),
         supabase.from("collaboratori_esterni").select("*").eq("commessa_id", id),
       ]);
 

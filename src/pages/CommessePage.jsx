@@ -91,7 +91,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
           <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
         </div>
         <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
-          <div onClick={onClick} style={{textAlign:'right'}}>
+          <div onClick={onClick} style={{textAlign:'right',flexShrink:0}}>
             <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.03em'}}>{currency(base)}</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
           </div>

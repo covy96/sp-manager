@@ -72,7 +72,7 @@ export default function ProformaPage() {
       setLoading(true); setError("");
       try {
         const { data: proforma, error: pErr } = await supabase
-          .from("proforma").select("*").eq("studio", studioId)
+          .from("proforma").select("*").eq("studio", studioId).is("deleted_at", null)
           .order("data_creazione", { ascending: false });
         if (pErr) { setError(pErr.message); setLoading(false); return; }
         const pData = proforma || [];

@@ -11,7 +11,7 @@ import { useToast } from "../contexts/ToastContext";
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
 }
-function pct(v) { return `${Number(v).toFixed(1)}%`; }
+function pct(v) { const n = Number(v); return isNaN(n) ? '—' : `${n.toFixed(1)}%`; }
 
 // ── SHARED UI ────────────────────────────────────────────────────
 function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }) {
@@ -248,7 +248,7 @@ export default function CommessaDetailPage() {
     setLoading(true); setError("");
     const [cR, costiR, suddR, collabR] = await Promise.all([
       supabase.from("commesse").select("*").eq("id", commessaId).eq("studio", studioId).maybeSingle(),
-      supabase.from("costi_extra").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
+      supabase.from("costi_extra").select("*").eq("commessa_id", commessaId).is("deleted_at", null).order("created_at", { ascending: true }),
       supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", commessaId).is("deleted_at", null).order("numero_rata", { ascending: true }).order("created_at", { ascending: true }),
       supabase.from("collaboratori_esterni").select("*").eq("commessa_id", commessaId).order("created_at", { ascending: true }),
     ]);
@@ -291,8 +291,8 @@ export default function CommessaDetailPage() {
       const altreData = {};
       for (const ac of (altreComm ?? [])) {
         const [{ data: rate }, { data: costi }] = await Promise.all([
-          supabase.from('suddivisione_pagamenti').select('*').eq('commessa_id', ac.id).order('order'),
-          supabase.from('costi_extra').select('*').eq('commessa_id', ac.id),
+          supabase.from('suddivisione_pagamenti').select('*').eq('commessa_id', ac.id).is('deleted_at', null).order('order'),
+          supabase.from('costi_extra').select('*').eq('commessa_id', ac.id).is('deleted_at', null),
         ]);
         altreData[ac.id] = { suddivisione: rate ?? [], costiExtra: costi ?? [] };
       }
@@ -669,7 +669,7 @@ export default function CommessaDetailPage() {
                 <>
                   <div style={{ display:'flex', flexDirection:'column', gap:0, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow:'hidden', marginBottom:12 }}>
                     {vociAttive.map((v, i, arr) => {
-                      const perc = netto > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
+                      const perc = lordo > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
                       return (
                         <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.surface }}>
                           <div style={{ flex:1, minWidth:0 }}>
@@ -1165,7 +1165,7 @@ export default function CommessaDetailPage() {
                         onChange={e => setProformaRateIds(p => e.target.checked ? [...p, r.id] : p.filter(x => x !== r.id))}
                         style={{ accentColor: T.navy }} />
                       <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
-                        {r.label || r.numero_rata} — {r.importo_fisso ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(r.importo_fisso) : `${r.percentuale}%`}
+                        {r.label || (r.numero_rata != null ? `Rata ${r.numero_rata}` : '—')} — {r.importo_fisso ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(r.importo_fisso) : `${r.percentuale ?? '?'}%`}
                       </span>
                     </label>
                   );

@@ -1071,7 +1071,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                       onKeyDown={e=>{ if(e.key==='Enter') e.target.blur(); }}
                       style={{...inputSt,fontSize:10}}/>
                     {impresaSuggest?.rowId===lav.id && Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).length>0 && (
-                      <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                      <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
                         {Object.keys(impresaColorMap).filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).map(opt=>(
                           <div key={opt} onMouseDown={()=>{handleInlineEdit(lav,'operatore',opt);setImpresaSuggest(null);}}
                             style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}
@@ -1146,7 +1146,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                   placeholder="Impresa..."
                   style={{...inputSt,fontSize:10,color:T.muted}}/>
                 {impresaSuggest?.rowId==='new' && Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).length>0 && (
-                  <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
+                  <div style={{position:'absolute',top:'100%',left:0,zIndex:1000,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:130,maxHeight:160,overflowY:'auto'}}>
                     {Object.keys(impresaColorMap).filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).map(opt=>(
                       <div key={opt} onMouseDown={()=>{updateNewRow('operatore',opt);setImpresaSuggest(null);}}
                         style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,display:'flex',alignItems:'center',gap:8}}

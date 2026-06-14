@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
 import { supabase } from "../lib/supabase";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -22,6 +23,7 @@ export default function AnalisiPage() {
   const { studioId } = useStudio();
   const permissions = usePermissions();
   const { plan } = usePlan();
+  const isMobile = useIsMobile();
 
   const [members, setMembers]           = useState([]);
   const [timesheet, setTimesheet]       = useState([]);
@@ -58,10 +60,10 @@ export default function AnalisiPage() {
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio",studioId).eq("active",true),
         supabase.from("timesheet").select("project_id,hours,team_member").eq("studio",studioId).is("deleted_at",null),
         supabase.from("commesse").select("id,project_id,nome_commessa,cliente,numero_offerta,importo_offerta_base,importo_totale,data_commessa,created_at,archived").eq("studio",studioId).is("deleted_at",null),
-        supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId),
+        supabase.from("costi_extra").select("commessa_id,importo").eq("studio",studioId).is("deleted_at",null),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio",studioId),
-        supabase.from("suddivisione_pagamenti").select("commessa_id,percentuale,importo_fisso").eq("pagato",true),
-        supabase.from("costi_interni").select("*").eq("studio",studioId),
+        supabase.from("suddivisione_pagamenti").select("commessa_id,percentuale,importo_fisso").eq("pagato",true).is("deleted_at",null),
+        supabase.from("costi_interni").select("*").eq("studio",studioId).is("deleted_at",null),
       ]);
       setMembers(mem??[]);
       setTimesheet(ts??[]);
@@ -187,7 +189,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* KPI */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3,1fr)', gap:10 }}>
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Valore base offerta</div>
             <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>{currency(stat.valoreBase)}</div>
@@ -205,7 +207,7 @@ export default function AnalisiPage() {
             {stat.valoreBase>0 && <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:4 }}>{((stat.incassato/stat.valoreBase)*100).toFixed(0)}% del valore base</div>}
           </div>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3,1fr)', gap:10 }}>
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
             <div style={{ ...label, marginBottom:8 }}>Costo ore interne</div>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.03em', color:T.navy }}>{currency(stat.costoOre)}</div>
@@ -419,7 +421,7 @@ export default function AnalisiPage() {
         const totIncassato = commessaStats.reduce((s,p)=>s+p.incassato, 0);
         const totMargine   = totValore - totCosto;
         return (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap:10 }}>
             {[
               { label:'Ore totali studio',   value:fmtOre(totOre),         color:T.ink   },
               { label:'Costo totale',        value:currency(totCosto),     color:T.navy  },
