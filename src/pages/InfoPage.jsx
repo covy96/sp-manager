@@ -7,8 +7,10 @@ import AsmSeal from "../components/AsmSeal";
 const APP_VERSION = "1.0.0";
 
 const LINKS = [
-  { label: "Privacy Policy",        path: "/privacy" },
-  { label: "Termini e condizioni",  path: "/termini" },
+  { label: "Privacy Policy",           path: "/privacy" },
+  { label: "Termini e condizioni",     path: "/termini" },
+  { label: "Cookie Policy",            path: "/cookie-policy" },
+  { label: "Data Processing Agreement (DPA)", path: "/dpa" },
 ];
 
 export default function InfoPage() {
@@ -80,15 +82,11 @@ export default function InfoPage() {
         <div style={{ ...label, marginBottom: 14 }}>Azienda</div>
         <div style={row}>
           <span style={{ ...mono, fontSize: 11, color: T.muted }}>Ragione sociale</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>Architect Studio Management S.r.l.</span>
-        </div>
-        <div style={row}>
-          <span style={{ ...mono, fontSize: 11, color: T.muted }}>P.IVA</span>
-          <span style={{ ...mono, fontSize: 12, color: T.ink }}>IT 12345678901</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>Giacomo Coviello, arch. libero professionista</span>
         </div>
         <div style={rowLast}>
           <span style={{ ...mono, fontSize: 11, color: T.muted }}>Sede</span>
-          <span style={{ fontSize: 13, color: T.ink }}>Milano, Italia</span>
+          <span style={{ fontSize: 13, color: T.ink }}>Milano (MI), Italia</span>
         </div>
       </div>
 
@@ -97,8 +95,8 @@ export default function InfoPage() {
         <div style={{ ...label, marginBottom: 14 }}>Assistenza</div>
         <div style={row}>
           <span style={{ ...mono, fontSize: 11, color: T.muted }}>Email supporto</span>
-          <a href="mailto:supporto@sp-manager.it" style={{ fontSize: 13, color: T.navy, textDecoration: "none", fontWeight: 500 }}>
-            supporto@sp-manager.it
+          <a href="mailto:info@asmstudio.it" style={{ fontSize: 13, color: T.navy, textDecoration: "none", fontWeight: 500 }}>
+            info@asmstudio.it
           </a>
         </div>
         <div style={rowLast}>
@@ -126,7 +124,7 @@ export default function InfoPage() {
       {/* Footer */}
       <div style={{ textAlign: "center", paddingBottom: 40 }}>
         <div style={{ ...mono, fontSize: 9, color: T.muted, letterSpacing: "0.15em" }}>
-          © {new Date().getFullYear()} Architect Studio Management S.r.l. · Tutti i diritti riservati
+          © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
         </div>
       </div>
     </div>
