@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePlan } from "../hooks/usePlan";
 import AsmSeal from "../components/AsmSeal";
+import GuidaApp from "../components/GuidaApp";
 
 const APP_VERSION = "1.0.0";
 
@@ -18,6 +20,7 @@ export default function InfoPage() {
   const navigate  = useNavigate();
   const { T, isDark } = useTheme();
   const { plan }  = usePlan();
+  const [guidaOpen, setGuidaOpen] = useState(false);
 
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
   const label = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
@@ -48,6 +51,25 @@ export default function InfoPage() {
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 40, marginTop: 8 }}>
         <AsmSeal size="md" theme={isDark ? "dark" : "light"} showBorder showBottom />
       </div>
+
+      {/* Guida all'uso */}
+      <button
+        onClick={() => setGuidaOpen(true)}
+        style={{
+          ...card, marginBottom: 14, width: "100%", textAlign: "left", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 16,
+          border: `1px solid ${T.navy}44`,
+        }}
+      >
+        <div style={{ fontSize: 30, flexShrink: 0 }}>📘</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 3 }}>Guida all'uso</div>
+          <div style={{ ...mono, fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            Slide esplicative su come usare l'app e sfruttarla al massimo
+          </div>
+        </div>
+        <span style={{ ...mono, fontSize: 12, color: T.navy, fontWeight: 600, flexShrink: 0 }}>Apri →</span>
+      </button>
 
       {/* Prodotto */}
       <div style={{ ...card, marginBottom: 14 }}>
@@ -127,6 +149,9 @@ export default function InfoPage() {
           © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
         </div>
       </div>
+
+      {/* Modal guida */}
+      <GuidaApp open={guidaOpen} onClose={() => setGuidaOpen(false)} />
     </div>
   );
 }
