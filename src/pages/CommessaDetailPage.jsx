@@ -363,10 +363,13 @@ export default function CommessaDetailPage() {
     return fromRate + fromCosti + fromAltreRate + fromAltreCosti;
   }, [proformaRateIds, proformaCostiIds, suddivisione, costiExtra, importoBase, altreCommesseData]);
 
+  // Incassato = somma delle RATE PAGATE (stessa formula di tutte le viste e del
+  // trigger DB). NB: a DB un trigger su suddivisione_pagamenti mantiene comunque
+  // questo campo allineato; qui lo aggiorniamo subito per reattività dell'UI.
   const ricalcolaIncassato = async () => {
-    const totale = proforma
-      .filter(p => p.pagato && (p.suddivisione_pagamento_ids?.length > 0))
-      .reduce((s, p) => s + (Number(p.importo_totale) || 0), 0);
+    const totale = suddivisione
+      .filter(r => r.pagato)
+      .reduce((s, r) => s + (Number(r.importo_fisso) || (importoBase * (Number(r.percentuale) || 0) / 100)), 0);
     await supabase.from("commesse").update({ importo_incassato: totale }).eq("id", commessaId);
   };
 
