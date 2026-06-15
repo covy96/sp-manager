@@ -114,15 +114,28 @@ export default function AppLayout({ session, children }) {
       .then(({ data }) => { if (data?.name) setStudioName(data.name); });
   }, [studioId]);
 
-  // Chiudi dropdown su click esterno
+  // Chiudi dropdown su click esterno (sospeso quando la guida controlla il menu)
+  const guideControlsSettings = useRef(false);
   useEffect(() => {
     function handler(e) {
-      if (settingsRef.current && !settingsRef.current.contains(e.target)) setSettingsOpen(false);
+      if (!guideControlsSettings.current && settingsRef.current && !settingsRef.current.contains(e.target)) setSettingsOpen(false);
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchFocused(false);
       if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // La guida all'uso può aprire/chiudere il menu Impostazioni per evidenziare le voci
+  useEffect(() => {
+    const onOpen  = () => { guideControlsSettings.current = true;  setSettingsOpen(true); };
+    const onClose = () => { guideControlsSettings.current = false; setSettingsOpen(false); };
+    window.addEventListener("asm-guide-settings-open", onOpen);
+    window.addEventListener("asm-guide-settings-close", onClose);
+    return () => {
+      window.removeEventListener("asm-guide-settings-open", onOpen);
+      window.removeEventListener("asm-guide-settings-close", onClose);
+    };
   }, []);
 
   // Registra service worker all'avvio (necessario per notifiche background)
@@ -252,10 +265,10 @@ export default function AppLayout({ session, children }) {
   if (isMobile) return <MobileLayout session={session}>{children}</MobileLayout>;
 
   // ── DROPDOWN ITEM ─────────────────────────────────────────────
-  const DropItem = ({ icon: Icon, label, onClick, danger, children: ch }) => {
+  const DropItem = ({ icon: Icon, label, onClick, danger, children: ch, dataTour }) => {
     const [hover, setHover] = useState(false);
     return (
-      <button onClick={onClick}
+      <button onClick={onClick} data-tour={dataTour}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
@@ -551,9 +564,9 @@ export default function AppLayout({ session, children }) {
 
                   <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
-                  <DropItem icon={SettingsIcon} label="Gestione Servizi" onClick={() => goSettings("/impostazioni/servizi")}/>
-                  <DropItem icon={SettingsIcon} label="Voci Offerta" onClick={() => goSettings("/impostazioni/voci-offerta")}/>
-                  <DropItem icon={DocumentIcon} label="Report"           onClick={() => goSettings("/impostazioni/report")}/>
+                  <DropItem icon={SettingsIcon} label="Gestione Servizi" dataTour="/impostazioni/servizi" onClick={() => goSettings("/impostazioni/servizi")}/>
+                  <DropItem icon={SettingsIcon} label="Voci Offerta" dataTour="/impostazioni/voci-offerta" onClick={() => goSettings("/impostazioni/voci-offerta")}/>
+                  <DropItem icon={DocumentIcon} label="Report"           dataTour="/impostazioni/report" onClick={() => goSettings("/impostazioni/report")}/>
                   <DropItem icon={BellIcon}     label="Notifiche"        onClick={() => goSettings("/impostazioni/notifiche")}/>
                 </div>
 

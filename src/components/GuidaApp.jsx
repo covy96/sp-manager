@@ -384,15 +384,15 @@ const SLIDES = [
   { mock: "welcome", goto: "/dashboard", emoji: "👋", titolo: "Benvenuto in SP Manager", testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.", punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"] },
   { mock: "flow", nav: "/offerte", goto: "/offerte", emoji: "🔄", titolo: "Il flusso di lavoro", testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:", punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"] },
   { mock: "contacts", goto: "/clienti", emoji: "👤", titolo: "Anagrafica & Clienti", testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.", punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"] },
-  { mock: "services", goto: "/impostazioni/servizi", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
-  { mock: "lineitems", goto: "/impostazioni/voci-offerta", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
+  { mock: "services", nav: "/impostazioni/servizi", inSettings: true, goto: "/impostazioni/servizi", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
+  { mock: "lineitems", nav: "/impostazioni/voci-offerta", inSettings: true, goto: "/impostazioni/voci-offerta", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
   { mock: "offer", nav: "/offerte", goto: "/offerte", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
   { mock: "commesse", nav: "/commesse", goto: "/commesse", emoji: "💼", titolo: "Commesse & pagamenti", testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.", punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"] },
   { mock: "invoice", nav: "/fatture", goto: "/fatture", plan: "Studio", emoji: "🧾", titolo: "Proforma & Fatture", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
   { mock: "scrivania", nav: "/scrivania", goto: "/scrivania", emoji: "📁", titolo: "Progetti & Scrivania", testo: "Organizza il lavoro per progetto e segui le attività.", punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"] },
   { mock: "timesheet", nav: "/timesheet", goto: "/timesheet", emoji: "⏱", titolo: "Timesheet", testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.", punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"] },
   { mock: "pratiche", goto: "/progetti", emoji: "🏛", titolo: "Pratiche edilizie", testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.", punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"] },
-  { mock: "sitereport", goto: "/impostazioni/report", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
+  { mock: "sitereport", nav: "/impostazioni/report", inSettings: true, goto: "/impostazioni/report", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
   { mock: "gantt", nav: "/gantt-progetti", goto: "/gantt-progetti", plan: "Studio", emoji: "📅", titolo: "Calendario & Gantt", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
   { mock: "team", nav: "/team", goto: "/team", plan: "Studio", emoji: "👥", titolo: "Team & permessi", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
   { mock: "analytics", nav: "/analisi-hub", goto: "/analisi-hub", plan: "Pro", emoji: "📊", titolo: "Analisi & Report", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
@@ -426,7 +426,7 @@ export default function GuidaApp({ open, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Misura la voce di sidebar da evidenziare (solo desktop, se presente a schermo)
+  // Misura la voce da evidenziare (sidebar o menu Impostazioni). Solo desktop.
   useLayoutEffect(() => {
     if (!open) return;
     const measure = () => {
@@ -439,10 +439,24 @@ export default function GuidaApp({ open, onClose }) {
         setRect(null);
       }
     };
+
+    // Se la slide è di Impostazioni, apri il menu (altrimenti chiudilo)
+    if (!isMobile && s.inSettings) window.dispatchEvent(new CustomEvent("asm-guide-settings-open"));
+    else window.dispatchEvent(new CustomEvent("asm-guide-settings-close"));
+
+    // Retry: il dropdown Impostazioni si renderizza dopo l'apertura
     measure();
+    const t1 = setTimeout(measure, 90);
+    const t2 = setTimeout(measure, 220);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [open, i, isMobile, s.nav]);
+    return () => { clearTimeout(t1); clearTimeout(t2); window.removeEventListener("resize", measure); };
+  }, [open, i, isMobile, s.nav, s.inSettings]);
+
+  // Alla chiusura della guida, richiudi sempre il menu Impostazioni
+  useEffect(() => {
+    if (!open) window.dispatchEvent(new CustomEvent("asm-guide-settings-close"));
+    return () => window.dispatchEvent(new CustomEvent("asm-guide-settings-close"));
+  }, [open]);
 
   if (!open) return null;
 
@@ -520,7 +534,11 @@ export default function GuidaApp({ open, onClose }) {
   if (spotlight) {
     const PAD = 6;
     const ttWidth = 340;
-    const ttLeft = Math.max(16, Math.min(rect.left + rect.width + 18, window.innerWidth - ttWidth - 16));
+    // Se la voce è nella metà destra (es. menu Impostazioni), metti il tooltip a sinistra
+    const onRight = rect.left > window.innerWidth / 2;
+    const ttLeft = onRight
+      ? Math.max(16, rect.left - ttWidth - 18)
+      : Math.max(16, Math.min(rect.left + rect.width + 18, window.innerWidth - ttWidth - 16));
     const ttTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 380));
     return (
       <>
