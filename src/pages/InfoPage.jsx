@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { usePlan } from "../hooks/usePlan";
 import AsmSeal from "../components/AsmSeal";
-import GuidaApp from "../components/GuidaApp";
 
 const APP_VERSION = "1.0.0";
 
@@ -20,7 +18,6 @@ export default function InfoPage() {
   const navigate  = useNavigate();
   const { T, isDark } = useTheme();
   const { plan }  = usePlan();
-  const [guidaOpen, setGuidaOpen] = useState(false);
 
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
   const label = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
@@ -54,7 +51,7 @@ export default function InfoPage() {
 
       {/* Guida all'uso */}
       <button
-        onClick={() => setGuidaOpen(true)}
+        onClick={() => window.dispatchEvent(new CustomEvent("asm-open-guide"))}
         style={{
           ...card, marginBottom: 14, width: "100%", textAlign: "left", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 16,
@@ -149,9 +146,6 @@ export default function InfoPage() {
           © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
         </div>
       </div>
-
-      {/* Modal guida */}
-      <GuidaApp open={guidaOpen} onClose={() => setGuidaOpen(false)} />
     </div>
   );
 }

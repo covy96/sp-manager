@@ -8,6 +8,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
+import GuidaApp from "./GuidaApp";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
 import { getUnreadNotifications, markAllRead } from "../lib/notifications";
 import { messaging, onMessage } from "../lib/firebase";
@@ -88,6 +89,7 @@ export default function AppLayout({ session, children }) {
 
   const [showMacShortcut, setShowMac]   = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [guideOpen, setGuideOpen]       = useState(false);
   const [studioName, setStudioName]     = useState("");
   const [studioList, setStudioList]         = useState([]);
   const [showStudioPicker, setShowStudioPicker] = useState(false);
@@ -137,6 +139,27 @@ export default function AppLayout({ session, children }) {
       window.removeEventListener("asm-guide-settings-close", onClose);
     };
   }, []);
+
+  // Apertura della guida dalla pagina Info (bottone "Apri")
+  useEffect(() => {
+    const h = () => setGuideOpen(true);
+    window.addEventListener("asm-open-guide", h);
+    return () => window.removeEventListener("asm-open-guide", h);
+  }, []);
+
+  // Auto-apertura al primo accesso di ogni nuovo utente (una volta sola).
+  // Il flag è su DB (team_members.guide_seen) → vale su tutti i dispositivi.
+  const guideAutoTried = useRef(false);
+  useEffect(() => {
+    if (guideAutoTried.current) return;
+    if (!teamMember?.id || !studioId || !session?.user?.id) return;
+    guideAutoTried.current = true;
+    if (teamMember.guide_seen) return; // già vista
+    const t = setTimeout(() => setGuideOpen(true), 700); // attende il render della sidebar
+    // marca come vista su tutte le membership dell'utente
+    supabase.from("team_members").update({ guide_seen: true }).eq("user_account", session.user.id);
+    return () => clearTimeout(t);
+  }, [teamMember?.id, teamMember?.guide_seen, studioId, session?.user?.id]);
 
   // Registra service worker all'avvio (necessario per notifiche background)
   useEffect(() => {
@@ -689,6 +712,9 @@ export default function AppLayout({ session, children }) {
           </div>
         </div>
       )}
+
+      {/* Guida all'uso — auto al primo accesso + apribile da Info */}
+      <GuidaApp open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }

@@ -1,7 +1,11 @@
-import { useEffect, useState, useLayoutEffect } from "react";
+import { useEffect, useState, useLayoutEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { usePlan } from "../hooks/usePlan";
+import { usePermissions } from "../hooks/usePermissions";
+
+const PLAN_ORDER = { free: 0, studio: 1, pro: 2 };
 
 const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
@@ -380,22 +384,23 @@ function Mock({ type, T }) {
 // ══════════════════════════════════════════════════════════════════
 // nav  = voce di sidebar da evidenziare (spotlight) se presente a schermo
 // goto = pagina aperta dal pulsante "Vai →" (anche pagine non in sidebar)
-const SLIDES = [
+// roles/minPlan = filtro per ruolo (pm) e piano (studio/pro), come la sidebar
+const ALL_SLIDES = [
   { mock: "welcome", goto: "/dashboard", emoji: "👋", titolo: "Benvenuto in SP Manager", testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.", punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"] },
   { mock: "flow", nav: "/offerte", goto: "/offerte", emoji: "🔄", titolo: "Il flusso di lavoro", testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:", punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"] },
   { mock: "contacts", goto: "/clienti", emoji: "👤", titolo: "Anagrafica & Clienti", testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.", punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"] },
   { mock: "services", nav: "/impostazioni/servizi", inSettings: true, goto: "/impostazioni/servizi", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
   { mock: "lineitems", nav: "/impostazioni/voci-offerta", inSettings: true, goto: "/impostazioni/voci-offerta", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
-  { mock: "offer", nav: "/offerte", goto: "/offerte", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
+  { mock: "offer", roles: "pm", nav: "/offerte", goto: "/offerte", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
   { mock: "commesse", nav: "/commesse", goto: "/commesse", emoji: "💼", titolo: "Commesse & pagamenti", testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.", punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"] },
-  { mock: "invoice", nav: "/fatture", goto: "/fatture", plan: "Studio", emoji: "🧾", titolo: "Proforma & Fatture", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
+  { mock: "invoice", roles: "pm", minPlan: "studio", nav: "/fatture", goto: "/fatture", plan: "Studio", emoji: "🧾", titolo: "Proforma & Fatture", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
   { mock: "scrivania", nav: "/scrivania", goto: "/scrivania", emoji: "📁", titolo: "Progetti & Scrivania", testo: "Organizza il lavoro per progetto e segui le attività.", punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"] },
   { mock: "timesheet", nav: "/timesheet", goto: "/timesheet", emoji: "⏱", titolo: "Timesheet", testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.", punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"] },
   { mock: "pratiche", goto: "/progetti", emoji: "🏛", titolo: "Pratiche edilizie", testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.", punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"] },
   { mock: "sitereport", nav: "/impostazioni/report", inSettings: true, goto: "/impostazioni/report", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
-  { mock: "gantt", nav: "/gantt-progetti", goto: "/gantt-progetti", plan: "Studio", emoji: "📅", titolo: "Calendario & Gantt", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
-  { mock: "team", nav: "/team", goto: "/team", plan: "Studio", emoji: "👥", titolo: "Team & permessi", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
-  { mock: "analytics", nav: "/analisi-hub", goto: "/analisi-hub", plan: "Pro", emoji: "📊", titolo: "Analisi & Report", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
+  { mock: "gantt", roles: "pm", minPlan: "studio", nav: "/gantt-progetti", goto: "/gantt-progetti", plan: "Studio", emoji: "📅", titolo: "Calendario & Gantt", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
+  { mock: "team", minPlan: "studio", nav: "/team", goto: "/team", plan: "Studio", emoji: "👥", titolo: "Team & permessi", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
+  { mock: "analytics", roles: "pm", minPlan: "pro", nav: "/analisi-hub", goto: "/analisi-hub", plan: "Pro", emoji: "📊", titolo: "Analisi & Report", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
   { mock: "tips", emoji: "🚀", titolo: "Sfruttala al massimo", testo: "Qualche consiglio per partire con il piede giusto:", punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"] },
 ];
 
@@ -403,17 +408,31 @@ export default function GuidaApp({ open, onClose }) {
   const { T } = useTheme();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { plan } = usePlan();
+  const permissions = usePermissions();
   const [i, setI] = useState(0);
   const [rect, setRect] = useState(null); // bounding box della voce di sidebar evidenziata
 
+  // Filtra le slide per piano e permessi dell'utente (come la sidebar)
+  const slides = useMemo(() => {
+    const lvl = PLAN_ORDER[plan?.id] ?? 0;
+    return ALL_SLIDES.filter((sl) => {
+      if (sl.roles === "pm" && !permissions.isProjectManager) return false;
+      if (sl.minPlan && lvl < (PLAN_ORDER[sl.minPlan] ?? 0)) return false;
+      return true;
+    });
+  }, [plan?.id, permissions.isProjectManager]);
+
   const isFirst = i === 0;
-  const isLast = i === SLIDES.length - 1;
-  const s = SLIDES[i];
-  const next = () => setI((v) => Math.min(SLIDES.length - 1, v + 1));
+  const isLast = i === slides.length - 1;
+  const s = slides[i] || slides[0];
+  const next = () => setI((v) => Math.min(slides.length - 1, v + 1));
   const prev = () => setI((v) => Math.max(0, v - 1));
   const goTo = (path) => { onClose?.(); if (path) navigate(path); };
 
   useEffect(() => { if (open) setI(0); }, [open]);
+  // Tieni l'indice nei limiti se il set di slide cambia
+  useEffect(() => { setI((v) => Math.min(v, slides.length - 1)); }, [slides.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -477,7 +496,7 @@ export default function GuidaApp({ open, onClose }) {
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: compact ? 12 : 16 }}>
         <span style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
-          Guida · {String(i + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
+          Guida · {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
         <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
       </div>
@@ -516,7 +535,7 @@ export default function GuidaApp({ open, onClose }) {
 
       {/* Dots */}
       <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, margin: "18px 0 14px" }}>
-        {SLIDES.map((_, idx) => (
+        {slides.map((_, idx) => (
           <button key={idx} onClick={() => setI(idx)} aria-label={`Slide ${idx + 1}`}
             style={{ width: idx === i ? 18 : 7, height: 7, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: idx === i ? T.navy : T.borderMd, transition: "all 0.2s" }} />
         ))}
