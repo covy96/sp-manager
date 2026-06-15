@@ -6,6 +6,8 @@ export function useStudio() {
   const [teamMember, setTeamMember] = useState(null);
   const [studioId, setStudioId] = useState(null);
   const [studio, setStudio] = useState(null);
+  const [studioDeleted, setStudioDeleted] = useState(false);
+  const [studioDeleteAfter, setStudioDeleteAfter] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,8 +43,10 @@ setTeamMember(tm ?? null);
       const sid = tm?.studio ?? null;
       setStudioId(sid);
 
-      // Uno studio cancellato (deleted_at valorizzato) è trattato come inesistente:
-      // tutti i membri vengono di fatto cacciati fuori e rimandati all'onboarding.
+      // Gestione studio cancellato (deleted_at valorizzato):
+      // durante la retention (30gg) lo studio NON viene azzerato — manteniamo
+      // studioId così l'utente può accedere alla sola pagina di recupero dati.
+      // Lo segnaliamo con studioDeleted; il routing lo dirotta sulla pagina di export.
       if (sid) {
         const { data: st } = await supabase
           .from("studios")
@@ -51,9 +55,19 @@ setTeamMember(tm ?? null);
           .single();
         if (st && !st.deleted_at) {
           setStudio(st);
+          setStudioDeleted(false);
+          setStudioDeleteAfter(null);
+        } else if (st && st.deleted_at) {
+          // Studio in retention: tieni studioId per il recupero dati
+          setStudio(st);
+          setStudioId(sid);
+          setStudioDeleted(true);
+          setStudioDeleteAfter(st.delete_after ?? null);
         } else {
+          // Studio inesistente (già purgato): nessuno studio
           setStudio(null);
           setStudioId(null);
+          setStudioDeleted(false);
           localStorage.removeItem("asm-active-studio");
         }
       } else {
@@ -83,5 +97,5 @@ if (ownedStudio) {
     load();
   }, []);
 
-  return { user, teamMember, studioId, studio, loading };
+  return { user, teamMember, studioId, studio, studioDeleted, studioDeleteAfter, loading };
 }

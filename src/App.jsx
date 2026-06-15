@@ -73,11 +73,25 @@ import TerminiPage from "./pages/TerminiPage";
 import CookiePolicyPage from "./pages/CookiePolicyPage";
 import DpaPage from "./pages/DpaPage";
 import InfoPage from "./pages/InfoPage";
+import StudioCancellatoPage from "./pages/StudioCancellatoPage";
+import { useStudio } from "./hooks/useStudio";
 import CookieBanner from "./components/CookieBanner";
 
 import { supabase } from "./lib/supabase";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ToastProvider } from "./contexts/ToastContext";
+
+// Se lo studio è stato cancellato (in retention), l'utente può accedere
+// SOLO alla pagina di recupero/esportazione dati: tutte le altre route
+// vengono dirottate lì finché i dati non vengono purgati.
+function StudioRecoveryGate({ children }) {
+  const { studioDeleted } = useStudio();
+  // Ottimistico: mentre carica mostriamo l'app normale (nessuno spinner extra
+  // per gli utenti normali a ogni navigazione). Solo a cancellazione confermata
+  // dirottiamo sulla pagina di recupero dati.
+  if (studioDeleted) return <StudioCancellatoPage />;
+  return children;
+}
 
 function ProtectedLayout({ session, children }) {
   if (!session) {
@@ -86,7 +100,9 @@ function ProtectedLayout({ session, children }) {
 
   return (
     <PageTitleProvider>
-      <AppLayout session={session}>{children}</AppLayout>
+      <StudioRecoveryGate>
+        <AppLayout session={session}>{children}</AppLayout>
+      </StudioRecoveryGate>
     </PageTitleProvider>
   );
 }
