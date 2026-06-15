@@ -296,7 +296,7 @@ export default function AppLayout({ session, children }) {
               <div key={`div-${idx}`} style={{ margin:'6px 10px', height:'0.5px', background:'rgba(255,255,255,0.08)' }}/>
             );
             return (
-              <NavLink key={item.path} to={item.path} style={({ isActive }) => ({
+              <NavLink key={item.path} to={item.path} data-tour={item.path} style={({ isActive }) => ({
                 display:'flex', alignItems:'center', gap:10, padding:'8px 12px',
                 borderRadius:10, textDecoration:'none',
                 background: isActive ? T.sidebarActive : 'transparent',

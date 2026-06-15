@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 
@@ -377,34 +378,40 @@ function Mock({ type, T }) {
 // ══════════════════════════════════════════════════════════════════
 //  Slide della guida
 // ══════════════════════════════════════════════════════════════════
+// nav  = voce di sidebar da evidenziare (spotlight) se presente a schermo
+// goto = pagina aperta dal pulsante "Vai →" (anche pagine non in sidebar)
 const SLIDES = [
-  { mock: "welcome", emoji: "👋", titolo: "Benvenuto in SP Manager", testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.", punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"] },
-  { mock: "flow", emoji: "🔄", titolo: "Il flusso di lavoro", testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:", punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"] },
-  { mock: "contacts", emoji: "👤", titolo: "Anagrafica & Clienti", testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.", punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"] },
-  { mock: "services", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
-  { mock: "lineitems", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
-  { mock: "offer", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
-  { mock: "commesse", emoji: "💼", titolo: "Commesse & pagamenti", testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.", punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"] },
-  { mock: "invoice", emoji: "🧾", titolo: "Proforma & Fatture", plan: "Studio", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
-  { mock: "scrivania", emoji: "📁", titolo: "Progetti & Scrivania", testo: "Organizza il lavoro per progetto e segui le attività.", punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"] },
-  { mock: "timesheet", emoji: "⏱", titolo: "Timesheet", testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.", punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"] },
-  { mock: "pratiche", emoji: "🏛", titolo: "Pratiche edilizie", testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.", punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"] },
-  { mock: "sitereport", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
-  { mock: "gantt", emoji: "📅", titolo: "Calendario & Gantt", plan: "Studio", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
-  { mock: "team", emoji: "👥", titolo: "Team & permessi", plan: "Studio", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
-  { mock: "analytics", emoji: "📊", titolo: "Analisi & Report", plan: "Pro", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
+  { mock: "welcome", goto: "/dashboard", emoji: "👋", titolo: "Benvenuto in SP Manager", testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.", punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"] },
+  { mock: "flow", nav: "/offerte", goto: "/offerte", emoji: "🔄", titolo: "Il flusso di lavoro", testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:", punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"] },
+  { mock: "contacts", goto: "/clienti", emoji: "👤", titolo: "Anagrafica & Clienti", testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.", punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"] },
+  { mock: "services", goto: "/impostazioni/servizi", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
+  { mock: "lineitems", goto: "/impostazioni/voci-offerta", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
+  { mock: "offer", nav: "/offerte", goto: "/offerte", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
+  { mock: "commesse", nav: "/commesse", goto: "/commesse", emoji: "💼", titolo: "Commesse & pagamenti", testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.", punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"] },
+  { mock: "invoice", nav: "/fatture", goto: "/fatture", plan: "Studio", emoji: "🧾", titolo: "Proforma & Fatture", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
+  { mock: "scrivania", nav: "/scrivania", goto: "/scrivania", emoji: "📁", titolo: "Progetti & Scrivania", testo: "Organizza il lavoro per progetto e segui le attività.", punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"] },
+  { mock: "timesheet", nav: "/timesheet", goto: "/timesheet", emoji: "⏱", titolo: "Timesheet", testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.", punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"] },
+  { mock: "pratiche", goto: "/progetti", emoji: "🏛", titolo: "Pratiche edilizie", testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.", punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"] },
+  { mock: "sitereport", goto: "/impostazioni/report", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
+  { mock: "gantt", nav: "/gantt-progetti", goto: "/gantt-progetti", plan: "Studio", emoji: "📅", titolo: "Calendario & Gantt", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
+  { mock: "team", nav: "/team", goto: "/team", plan: "Studio", emoji: "👥", titolo: "Team & permessi", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
+  { mock: "analytics", nav: "/analisi-hub", goto: "/analisi-hub", plan: "Pro", emoji: "📊", titolo: "Analisi & Report", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
   { mock: "tips", emoji: "🚀", titolo: "Sfruttala al massimo", testo: "Qualche consiglio per partire con il piede giusto:", punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"] },
 ];
 
 export default function GuidaApp({ open, onClose }) {
   const { T } = useTheme();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [i, setI] = useState(0);
+  const [rect, setRect] = useState(null); // bounding box della voce di sidebar evidenziata
 
   const isFirst = i === 0;
   const isLast = i === SLIDES.length - 1;
+  const s = SLIDES[i];
   const next = () => setI((v) => Math.min(SLIDES.length - 1, v + 1));
   const prev = () => setI((v) => Math.max(0, v - 1));
+  const goTo = (path) => { onClose?.(); if (path) navigate(path); };
 
   useEffect(() => { if (open) setI(0); }, [open]);
 
@@ -419,65 +426,121 @@ export default function GuidaApp({ open, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Misura la voce di sidebar da evidenziare (solo desktop, se presente a schermo)
+  useLayoutEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      if (isMobile || !s.nav) { setRect(null); return; }
+      const el = document.querySelector(`[data-tour="${s.nav}"]`);
+      if (el && el.offsetParent !== null) {
+        const r = el.getBoundingClientRect();
+        setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+      } else {
+        setRect(null);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [open, i, isMobile, s.nav]);
+
   if (!open) return null;
-  const s = SLIDES[i];
 
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px", display: "flex", flexDirection: "column" }}>
+  const spotlight = !!rect;
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
-            Guida · {String(i + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
-          </span>
-          <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
-        </div>
+  const planBadge = s.plan && (
+    <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
+      Piano {s.plan}
+    </span>
+  );
 
-        {/* Mock UI */}
+  const btn = (label, onClick, primary, disabled) => (
+    <button onClick={onClick} disabled={disabled} style={{ border: primary ? "none" : `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: primary ? T.navy : "transparent", color: primary ? "#EEF1F6" : T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: primary ? "9px 22px" : "9px 18px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}>{label}</button>
+  );
+
+  // Corpo condiviso (compact = modalità spotlight, senza mock grande)
+  const Body = ({ compact }) => (
+    <>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: compact ? 12 : 16 }}>
+        <span style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
+          Guida · {String(i + 1).padStart(2, "0")} / {String(SLIDES.length).padStart(2, "0")}
+        </span>
+        <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
+      </div>
+
+      {!compact && (
         <div style={{ background: `${T.muted}10`, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 18 }}>
           <Mock type={s.mock} T={T} />
         </div>
+      )}
 
-        {/* Contenuto slide */}
-        <div style={{ minHeight: isMobile ? 140 : 124 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 22 }}>{s.emoji}</span>
-            <h2 style={{ fontSize: 19, fontWeight: 700, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>{s.titolo}</h2>
-            {s.plan && (
-              <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
-                Piano {s.plan}
-              </span>
-            )}
-          </div>
-          <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.65, margin: "0 0 14px" }}>{s.testo}</p>
-          {s.punti && (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 9 }}>
-              {s.punti.map((p, idx) => (
-                <li key={idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 13, color: T.ink, lineHeight: 1.55 }}>
-                  <span style={{ color: T.navy, fontWeight: 700, flexShrink: 0 }}>→</span>
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div style={{ minHeight: compact ? 0 : (isMobile ? 140 : 124) }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: compact ? 18 : 22 }}>{s.emoji}</span>
+          <h2 style={{ fontSize: compact ? 16 : 19, fontWeight: 700, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>{s.titolo}</h2>
+          {planBadge}
         </div>
+        <p style={{ fontSize: compact ? 13 : 14, color: T.muted, lineHeight: 1.6, margin: "0 0 12px" }}>{s.testo}</p>
+        {s.punti && (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            {s.punti.map((p, idx) => (
+              <li key={idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: compact ? 12.5 : 13, color: T.ink, lineHeight: 1.5 }}>
+                <span style={{ color: T.navy, fontWeight: 700, flexShrink: 0 }}>→</span>
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-        {/* Dots */}
-        <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, margin: "20px 0 16px" }}>
-          {SLIDES.map((_, idx) => (
-            <button key={idx} onClick={() => setI(idx)} aria-label={`Slide ${idx + 1}`}
-              style={{ width: idx === i ? 18 : 7, height: 7, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: idx === i ? T.navy : T.borderMd, transition: "all 0.2s" }} />
-          ))}
-        </div>
+      {/* Pulsante "Vai alla sezione" */}
+      {s.goto && (
+        <button onClick={() => goTo(s.goto)} style={{ marginTop: 14, width: "100%", border: `1px solid ${T.navy}55`, borderRadius: T.radiusSm, background: `${T.navy}10`, color: T.navy, ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "10px 0", cursor: "pointer", fontWeight: 600 }}>
+          Vai a questa sezione →
+        </button>
+      )}
 
-        {/* Footer */}
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
-          <button onClick={prev} disabled={isFirst} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px", cursor: isFirst ? "not-allowed" : "pointer", opacity: isFirst ? 0.4 : 1 }}>← Indietro</button>
-          {isLast
-            ? <button onClick={onClose} style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>Inizia ✓</button>
-            : <button onClick={next} style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>Avanti →</button>}
+      {/* Dots */}
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, margin: "18px 0 14px" }}>
+        {SLIDES.map((_, idx) => (
+          <button key={idx} onClick={() => setI(idx)} aria-label={`Slide ${idx + 1}`}
+            style={{ width: idx === i ? 18 : 7, height: 7, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: idx === i ? T.navy : T.borderMd, transition: "all 0.2s" }} />
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
+        {btn("← Indietro", prev, false, isFirst)}
+        {isLast ? btn("Fine ✓", onClose, true) : btn("Avanti →", next, true)}
+      </div>
+    </>
+  );
+
+  // ── Modalità SPOTLIGHT: evidenzia la voce di sidebar reale ──────
+  if (spotlight) {
+    const PAD = 6;
+    const ttWidth = 340;
+    const ttLeft = Math.max(16, Math.min(rect.left + rect.width + 18, window.innerWidth - ttWidth - 16));
+    const ttTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 380));
+    return (
+      <>
+        {/* click-catcher trasparente */}
+        <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80 }} />
+        {/* anello + dimming via box-shadow */}
+        <div style={{ position: "fixed", top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2, borderRadius: 12, border: `2px solid ${T.brass || "#D9C98A"}`, boxShadow: "0 0 0 9999px rgba(14,14,13,0.62)", zIndex: 81, pointerEvents: "none", transition: "all 0.25s ease" }} />
+        {/* tooltip */}
+        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: "88vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82, display: "flex", flexDirection: "column" }}>
+          <Body compact />
         </div>
+      </>
+    );
+  }
+
+  // ── Modalità CENTRATA: card con mockup ──────────────────────────
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px", display: "flex", flexDirection: "column" }}>
+        <Body compact={false} />
       </div>
     </div>
   );
