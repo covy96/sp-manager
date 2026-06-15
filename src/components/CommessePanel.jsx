@@ -17,8 +17,9 @@ export default function CommessePanel({ commesse = [] }) {
 
   if (commesse.length === 0) return null;
 
+  const incOf        = (c) => Number(c._incassato ?? c.importo_incassato ?? 0);
   const totale       = commesse.reduce((s,c)=>s+Number(c.importo_offerta_base||0),0);
-  const incassato    = commesse.reduce((s,c)=>s+Number(c.importo_incassato||0),0);
+  const incassato    = commesse.reduce((s,c)=>s+incOf(c),0);
   const senzaImporto = commesse.filter(c => !c.importo_offerta_base || Number(c.importo_offerta_base) === 0);
 
   return (
@@ -55,7 +56,7 @@ export default function CommessePanel({ commesse = [] }) {
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {commesse.map(c => {
                 const val  = Number(c.importo_offerta_base||0);
-                const inc  = Number(c.importo_incassato||0);
+                const inc  = incOf(c);
                 const perc = val > 0 ? (inc/val)*100 : 0;
                 return (
                   <button key={c.id}

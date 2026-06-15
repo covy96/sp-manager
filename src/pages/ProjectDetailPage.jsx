@@ -399,7 +399,21 @@ export default function ProjectDetailPage() {
       setGlobalContacts(gcR.data ?? []);
       setCompletedCategories(pR.data?.completed_categories ?? {});
       const { data: commProg } = await supabase.from('commesse').select('id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,stato_pagamento,archived').eq('project_id', projectId).eq('studio', studioId).order('created_at', { ascending: false });
-      setCommesseProgetto(commProg ?? []);
+      // Incassato live dalle RATE PAGATE (il campo importo_incassato può essere disallineato)
+      const commIds = (commProg ?? []).map(c => c.id);
+      let rateMap = {};
+      if (commIds.length) {
+        const { data: rate } = await supabase
+          .from('suddivisione_pagamenti')
+          .select('commessa_id,pagato,importo_fisso,percentuale')
+          .in('commessa_id', commIds)
+          .is('deleted_at', null);
+        (rate ?? []).filter(r => r.pagato).forEach(r => {
+          const base = Number((commProg ?? []).find(c => c.id === r.commessa_id)?.importo_offerta_base || 0);
+          rateMap[r.commessa_id] = (rateMap[r.commessa_id] || 0) + (Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100));
+        });
+      }
+      setCommesseProgetto((commProg ?? []).map(c => ({ ...c, _incassato: rateMap[c.id] || 0 })));
       const { data: allComm } = await supabase.from('commesse').select('id,nome_commessa,numero_offerta').eq('studio', studioId).eq('archived', false).order('created_at', { ascending: false });
       setCommesseList(allComm ?? []);
       const { data: tsRows } = await supabase.from('timesheet').select('hours').eq('project_id', projectId).is('deleted_at', null);

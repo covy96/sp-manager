@@ -27,6 +27,7 @@ export default function ProgettoArchiviotoRecapPage() {
   const [timesheet, setTimesheet] = useState([]);
   const [members, setMembers]   = useState([]);
   const [commesse, setCommesse] = useState([]);
+  const [rate, setRate]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [categoriAperte, setCategoriAperte] = useState(new Set());
 
@@ -57,6 +58,19 @@ export default function ProgettoArchiviotoRecapPage() {
       setTimesheet(ts ?? []);
       setMembers(mem ?? []);
       setCommesse(comm ?? []);
+
+      // Rate di pagamento di tutte le commesse del progetto (per incassato live)
+      const commIds = (comm ?? []).map(c => c.id);
+      if (commIds.length) {
+        const { data: r } = await supabase
+          .from("suddivisione_pagamenti")
+          .select("commessa_id, pagato, importo_fisso, percentuale")
+          .in("commessa_id", commIds)
+          .is("deleted_at", null);
+        setRate(r ?? []);
+      } else {
+        setRate([]);
+      }
       setLoading(false);
     };
     load();
@@ -81,9 +95,16 @@ export default function ProgettoArchiviotoRecapPage() {
     orePerMembro[nome] = (orePerMembro[nome] || 0) + Number(t.hours || 0);
   });
 
-  // Calcoli commesse
+  // Calcoli commesse — incassato dalle RATE PAGATE (coerente con la pagina commessa),
+  // non dal campo memorizzato importo_incassato che può essere disallineato.
+  const incassatoPerCommessa = (c) => {
+    const base = Number(c.importo_offerta_base || 0);
+    return rate
+      .filter(r => r.commessa_id === c.id && r.pagato)
+      .reduce((s, r) => s + (Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100)), 0);
+  };
   const valoreCommesse = commesse.reduce((s, c) => s + Number(c.importo_offerta_base || 0), 0);
-  const incassato      = commesse.reduce((s, c) => s + Number(c.importo_incassato || 0), 0);
+  const incassato      = commesse.reduce((s, c) => s + incassatoPerCommessa(c), 0);
 
   // Task per categoria
   const perCategoria = {};
@@ -223,7 +244,7 @@ export default function ProgettoArchiviotoRecapPage() {
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {commesse.map(c => {
               const tot = Number(c.importo_offerta_base||0);
-              const inc = Number(c.importo_incassato||0);
+              const inc = incassatoPerCommessa(c);
               const perc = tot > 0 ? Math.round((inc/tot)*100) : 0;
               return (
                 <button key={c.id}
