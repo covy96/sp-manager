@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
+import { usePermissions } from "../../hooks/usePermissions";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -49,6 +51,8 @@ export default function ProfiloStudioPage() {
   const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
+  const permissions = usePermissions();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const [studioData, setStudioData]   = useState(null);
@@ -57,6 +61,12 @@ export default function ProfiloStudioPage() {
   const [saving, setSaving]           = useState(false);
   const [message, setMessage]         = useState("");
   const [tipoModal, setTipoModal]     = useState(false);
+
+  // Cancellazione studio
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting]       = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const [form, setForm] = useState({
     name:'', descrizione:'', piva:'', indirizzo:'', città:'', cap:'',
@@ -113,6 +123,31 @@ export default function ProfiloStudioPage() {
       setTimeout(()=>setMessage(''), 3000);
     }
     setSaving(false);
+  };
+
+  const CONFIRM_PHRASE = "CANCELLA STUDIO";
+  const handleDeleteStudio = async () => {
+    if (deleteConfirm.trim().toUpperCase() !== CONFIRM_PHRASE) return;
+    setDeleting(true); setDeleteError("");
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-studio", {
+        body: { studioId, confirmText: deleteConfirm.trim() },
+      });
+      if (error) {
+        // Estrai il messaggio dal corpo della risposta dell'edge function se disponibile
+        let msg = error.message;
+        try { const ctx = await error.context?.json?.(); if (ctx?.error) msg = ctx.error; } catch { /* noop */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      // Studio cancellato: pulisci sessione locale e fai logout
+      localStorage.removeItem("asm-active-studio");
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (e) {
+      setDeleteError(e.message || "Errore durante la cancellazione.");
+      setDeleting(false);
+    }
   };
 
   if (loading) return (
@@ -251,6 +286,68 @@ export default function ProfiloStudioPage() {
           </div>
         </div>
       </Panel>
+
+      {/* Zona pericolosa — solo Owner */}
+      {permissions?.isOwner && (
+        <div style={{ background:T.surface, border:`1px solid ${T.red}55`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 22px', marginBottom:14 }}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.red, marginBottom:4 }}>Zona pericolosa</div>
+          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:18 }}>Azioni irreversibili sullo studio</div>
+          <div style={{ display:'flex', alignItems:isMobile?'flex-start':'center', justifyContent:'space-between', gap:16, flexDirection:isMobile?'column':'row' }}>
+            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1.7 }}>
+              Cancellare lo studio rimuove l'accesso a tutti i membri, annulla l'abbonamento Stripe<br/>
+              ed elimina tutti i dati. I dati restano recuperabili per 30 giorni, poi vengono cancellati definitivamente.
+            </div>
+            <button onClick={()=>{ setDeleteConfirm(""); setDeleteError(""); setDeleteModal(true); }}
+              style={{ background:T.red, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer', flexShrink:0, whiteSpace:'nowrap' }}>
+              Cancella studio
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal cancellazione studio */}
+      {deleteModal && (
+        <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.6)',padding:16}}>
+          <div style={{width:'100%',maxWidth:480,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.red}55`, borderRadius: T.radiusSm,boxShadow:T.shadowLg,padding:28}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+              <div style={{fontSize:16,fontWeight:600,color:T.red}}>Cancella studio</div>
+              <button onClick={()=>!deleting&&setDeleteModal(false)} style={{background:'none',border:'none',cursor:deleting?'not-allowed':'pointer',color:T.muted,fontSize:20}}>×</button>
+            </div>
+
+            <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, marginBottom:14 }}>
+              Sei sicuro di voler cancellare <strong>{studioData?.name}</strong>?
+            </div>
+            <div style={{ background:T.redLight, border:`0.5px solid ${T.red}33`, borderRadius:T.radiusSm, padding:'12px 14px', marginBottom:18 }}>
+              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.red, lineHeight:1.7 }}>
+                ⚠️ Tutti i membri verranno disconnessi dallo studio.<br/>
+                ⚠️ L'abbonamento Stripe verrà annullato.<br/>
+                ⚠️ I dati resteranno recuperabili per 30 giorni, poi eliminati definitivamente.
+              </div>
+            </div>
+
+            <label style={{...labelSt}}>Scrivi <strong style={{color:T.red}}>{CONFIRM_PHRASE}</strong> per confermare</label>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={e=>setDeleteConfirm(e.target.value)}
+              placeholder={CONFIRM_PHRASE}
+              autoFocus
+              disabled={deleting}
+              style={{...inputSt, marginBottom: deleteError?8:18}}
+            />
+            {deleteError && (
+              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.red, marginBottom:14 }}>{deleteError}</div>
+            )}
+
+            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
+              <button onClick={()=>setDeleteModal(false)} disabled={deleting} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:deleting?'not-allowed':'pointer',opacity:deleting?0.6:1}}>Annulla</button>
+              <button onClick={handleDeleteStudio} disabled={deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE} style={{background:T.red,border:'none',color:'#fff',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',borderRadius:T.radiusSm,cursor:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?'not-allowed':'pointer',opacity:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?0.5:1}}>
+                {deleting?'Cancellazione...':'Cancella definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

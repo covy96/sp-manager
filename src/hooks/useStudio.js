@@ -41,19 +41,28 @@ setTeamMember(tm ?? null);
       const sid = tm?.studio ?? null;
       setStudioId(sid);
 
+      // Uno studio cancellato (deleted_at valorizzato) è trattato come inesistente:
+      // tutti i membri vengono di fatto cacciati fuori e rimandati all'onboarding.
       if (sid) {
         const { data: st } = await supabase
           .from("studios")
           .select("*")
           .eq("id", sid)
           .single();
-setStudio(st ?? null);
+        if (st && !st.deleted_at) {
+          setStudio(st);
+        } else {
+          setStudio(null);
+          setStudioId(null);
+          localStorage.removeItem("asm-active-studio");
+        }
       } else {
         // Fallback: cerca uno studio di cui l'utente è owner (team_member senza studio)
         const { data: ownedStudio } = await supabase
           .from("studios")
           .select("*")
           .eq("owner_id", u.id)
+          .is("deleted_at", null)
           .maybeSingle();
 if (ownedStudio) {
           setStudio(ownedStudio);
