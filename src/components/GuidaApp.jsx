@@ -2,323 +2,404 @@ import { useEffect, useState } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 
-// ══════════════════════════════════════════════════════════════════
-//  Illustrazioni SVG (mockup schematici, theme-aware, nessun asset)
-// ══════════════════════════════════════════════════════════════════
-function Art({ type, c }) {
-  const common = { width: "100%", height: "100%", viewBox: "0 0 360 150", preserveAspectRatio: "xMidYMid meet", role: "img" };
-  const rc = 6; // border radius generico
+const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
-  const card = (x, y, w, h, fill = c.soft, stroke = c.frame) =>
-    <rect x={x} y={y} width={w} height={h} rx={rc} fill={fill} stroke={stroke} strokeWidth="1.2" />;
-  const line = (x, y, w, col = c.lite, h = 6) =>
-    <rect x={x} y={y} width={w} height={h} rx={h / 2} fill={col} />;
-  const arrow = (x1, x2, y) => (
-    <g stroke={c.navy} strokeWidth="1.6" fill="none">
-      <line x1={x1} y1={y} x2={x2 - 5} y2={y} />
-      <path d={`M ${x2 - 9} ${y - 4} L ${x2 - 2} ${y} L ${x2 - 9} ${y + 4}`} />
-    </g>
+// Palette accenti (coerente con i mock della landing)
+const BLUE = "#1d4ed8", PURPLE = "#7c3aed", AMBER = "#b45309";
+
+// ══════════════════════════════════════════════════════════════════
+//  Mock UI realistici (div, come nella landing) — theme-aware
+// ══════════════════════════════════════════════════════════════════
+function Card({ T, children, style = {} }) {
+  return (
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, boxShadow: T.shadow, ...style }}>
+      {children}
+    </div>
   );
+}
+
+function Stat({ T, label, value, color, bg }) {
+  return (
+    <div style={{ background: bg || T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "7px 11px", boxShadow: T.shadow }}>
+      <div style={{ ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: color || T.ink, letterSpacing: "-0.02em" }}>{value}</div>
+    </div>
+  );
+}
+
+function lbl(T) { return { ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }; }
+function track(T) { return { height: 5, background: `${T.muted}26`, borderRadius: 3 }; }
+
+function Mock({ type, T }) {
+  const green = T.green, navy = T.navy, red = T.red;
 
   switch (type) {
     case "welcome":
       return (
-        <svg {...common}>
-          {card(20, 18, 320, 114, c.soft)}
-          {card(20, 18, 78, 114, c.softer)}
-          {[34, 50, 66, 82, 98].map((y, k) => <rect key={k} x={32} y={y} width={54} height={7} rx={3.5} fill={k === 1 ? c.navy : c.lite} />)}
-          {line(116, 36, 120, c.mute, 9)}
-          {card(116, 58, 96, 56, c.softer)}
-          {card(224, 58, 96, 56, c.softer)}
-          <circle cx={140} cy={80} r={10} fill={c.navy} opacity="0.85" />
-          {line(124, 98, 80)}{line(232, 74, 72)}{line(232, 88, 56)}{line(232, 100, 64)}
-        </svg>
+        <Card T={T} style={{ overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 10px", borderBottom: `0.5px solid ${T.border}` }}>
+            {["#ff5f57", "#febc2e", "#28c840"].map((c) => <span key={c} style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />)}
+            <span style={{ ...mono, fontSize: 8, color: T.muted, marginLeft: 6 }}>SP Manager</span>
+          </div>
+          <div style={{ display: "flex" }}>
+            <div style={{ width: 74, flexShrink: 0, borderRight: `0.5px solid ${T.border}`, padding: "9px 8px", display: "flex", flexDirection: "column", gap: 7 }}>
+              {[1, 0, 0, 0, 0].map((on, k) => <div key={k} style={{ height: 6, borderRadius: 3, background: on ? navy : `${T.muted}40`, width: on ? "100%" : `${80 - k * 8}%` }} />)}
+            </div>
+            <div style={{ flex: 1, padding: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                <Stat T={T} label="Progetti" value="8" color={navy} />
+                <Stat T={T} label="Commesse" value="6" color={green} />
+                <Stat T={T} label="Ore" value="32h" color={T.ink} />
+              </div>
+              {[100, 80, 65].map((w, k) => <div key={k} style={{ height: 6, borderRadius: 3, background: `${T.muted}33`, width: `${w}%`, marginBottom: 6 }} />)}
+            </div>
+          </div>
+        </Card>
       );
-    case "flow":
+
+    case "flow": {
+      const steps = [
+        { tag: "OFFERTA", col: T.muted, val: "€52.000", sub: "Bozza" },
+        { tag: "COMMESSA", col: navy, val: "€52.000", sub: "Attiva" },
+        { tag: "FATTURA", col: green, val: "€15.600", sub: "Pagata" },
+      ];
       return (
-        <svg {...common}>
-          {card(14, 46, 92, 58)}{line(26, 60, 60, c.mute, 8)}{line(26, 76, 50)}{line(26, 88, 40)}
-          {arrow(110, 130, 75)}
-          {card(134, 46, 92, 58)}{line(146, 60, 60, c.navy, 8)}{line(146, 76, 50)}{line(146, 88, 40)}
-          {arrow(230, 250, 75)}
-          {card(254, 46, 92, 58)}{line(266, 60, 60, c.green, 8)}{line(266, 76, 50)}{line(266, 88, 40)}
-          <text x={60} y={120} fill={c.mute} fontSize="9" textAnchor="middle" fontFamily="monospace">OFFERTA</text>
-          <text x={180} y={120} fill={c.mute} fontSize="9" textAnchor="middle" fontFamily="monospace">COMMESSA</text>
-          <text x={300} y={120} fill={c.mute} fontSize="9" textAnchor="middle" fontFamily="monospace">FATTURA</text>
-        </svg>
-      );
-    case "contacts":
-      return (
-        <svg {...common}>
-          {card(40, 16, 280, 118)}
-          {[30, 66, 102].map((y, k) => (
-            <g key={k}>
-              <circle cx={66} cy={y + 16} r={12} fill={k === 0 ? c.navy : c.softer} stroke={c.frame} />
-              {line(90, y + 8, 120, c.mute, 8)}{line(90, y + 22, 80)}
-              <rect x={250} y={y + 8} width={50} height={16} rx={8} fill={c.softer} stroke={c.frame} />
-            </g>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {steps.map((s, k) => (
+            <div key={k} style={{ display: "contents" }}>
+              <Card T={T} style={{ flex: 1, padding: "9px 8px" }}>
+                <div style={{ ...mono, fontSize: 7, letterSpacing: "0.1em", color: s.col, fontWeight: 700, marginBottom: 6 }}>{s.tag}</div>
+                <div style={{ height: 5, width: "70%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 4 }} />
+                <div style={{ height: 5, width: "50%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 8 }} />
+                <div style={{ fontSize: 12, fontWeight: 700, color: s.col }}>{s.val}</div>
+                <div style={{ ...mono, fontSize: 7.5, color: T.muted }}>{s.sub}</div>
+              </Card>
+              {k < 2 && <span style={{ color: navy, fontSize: 14, flexShrink: 0 }}>→</span>}
+            </div>
           ))}
-        </svg>
+        </div>
       );
+    }
+
+    case "contacts": {
+      const rows = [
+        { i: "MR", n: "Studio Rossi S.r.l.", e: "info@studiorossi.it", c: navy },
+        { i: "GV", n: "Giulia Verdi", e: "g.verdi@mail.it", c: green },
+        { i: "AC", n: "Condominio Aurora", e: "aurora@pec.it", c: PURPLE },
+      ];
+      return (
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={lbl(T)}>Anagrafica clienti</div>
+          {rows.map((r, k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "5px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: r.c, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 8, fontWeight: 700, flexShrink: 0 }}>{r.i}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r.n}</div>
+                <div style={{ ...mono, fontSize: 8, color: T.muted }}>{r.e}</div>
+              </div>
+              <div style={{ ...mono, fontSize: 8, color: T.muted, background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 10, padding: "2px 8px", flexShrink: 0 }}>{2 + k} lavori</div>
+            </div>
+          ))}
+        </Card>
+      );
+    }
+
     case "services":
       return (
-        <svg {...common}>
-          {card(40, 16, 280, 118)}
-          {line(58, 32, 130, c.navy, 9)}
-          {[58, 80, 102].map((y, k) => (
-            <g key={k}>
-              <rect x={58} y={y} width={14} height={14} rx={4} fill={c.green} opacity={k === 2 ? 0.4 : 1} />
-              <path d={`M ${61} ${y + 7} l 3 3 l 6 -7`} stroke="#fff" strokeWidth="1.6" fill="none" />
-              {line(82, y + 4, 180 - k * 30)}
-            </g>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>🧩 Progettazione architettonica</div>
+            <div style={{ ...mono, fontSize: 8, color: T.muted }}>4 task</div>
+          </div>
+          {["Rilievo e analisi stato di fatto", "Progetto preliminare", "Progetto definitivo", "Progetto esecutivo"].map((t, k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "5px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 9, color: "#fff" }}>✓</span>
+              <div style={{ fontSize: 10, color: T.ink }}>{t}</div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
-    case "lineitems":
+
+    case "lineitems": {
+      const items = [["Progettazione architettonica", "€8.000", true], ["Pratica edilizia (CILA)", "€1.500", true], ["Direzione lavori", "€6.000", true], ["Relazione tecnica", "€800", false]];
       return (
-        <svg {...common}>
-          {card(30, 18, 300, 114)}
-          {line(44, 32, 90, c.mute, 8)}
-          <text x={300} y={40} fill={c.mute} fontSize="9" textAnchor="end" fontFamily="monospace">€</text>
-          {[56, 80, 104].map((y, k) => (
-            <g key={k}>
-              {line(44, y, 150)}
-              <rect x={250} y={y - 3} width={64} height={13} rx={6} fill={c.navy} opacity="0.85" />
-            </g>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={lbl(T)}>Voci offerta — listino</div>
+          {items.map(([n, v, on], k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: k < items.length - 1 ? `0.5px solid ${T.border}` : "none", opacity: on ? 1 : 0.5 }}>
+              <div style={{ flex: 1, fontSize: 10, fontWeight: 600, color: T.ink }}>{n}</div>
+              <div style={{ ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{v}</div>
+              <div style={{ width: 26, height: 14, borderRadius: 7, background: on ? green : `${T.muted}55`, position: "relative", flexShrink: 0 }}>
+                <div style={{ position: "absolute", top: 2, left: on ? 14 : 2, width: 10, height: 10, borderRadius: "50%", background: "#fff", transition: "all 0.2s" }} />
+              </div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
+    }
+
     case "offer":
       return (
-        <svg {...common}>
-          {card(108, 12, 144, 126, c.softer)}
-          {line(124, 28, 60, c.navy, 8)}
-          {[46, 60, 74, 88].map((y, k) => line(124, y, 112 - (k % 2) * 30))}
-          {card(124, 102, 112, 24, c.navy)}
-          <text x={180} y={118} fill="#fff" fontSize="11" textAnchor="middle" fontFamily="monospace">TOTALE €</text>
-        </svg>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>Offerta 2026/014</div>
+            <div style={{ ...mono, fontSize: 8, color: T.muted }}>Villa Lario</div>
+          </div>
+          {[["Progettazione architettonica", "€8.000"], ["Pratica edilizia", "€1.500"], ["Direzione lavori", "€6.000"]].map(([n, v], k) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `0.5px solid ${T.border}` }}>
+              <div style={{ fontSize: 9.5, color: T.ink }}>{n}</div>
+              <div style={{ ...mono, fontSize: 9.5, color: T.muted }}>{v}</div>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "7px 10px" }}>
+            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>TOTALE</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: navy }}>€15.500</div>
+          </div>
+        </Card>
       );
-    case "payments":
+
+    case "commesse":
       return (
-        <svg {...common}>
-          {card(30, 30, 300, 90)}
-          {line(46, 46, 70, c.mute, 8)}
-          <rect x={46} y={66} width={268} height={20} rx={10} fill={c.softer} stroke={c.frame} />
-          <rect x={46} y={66} width={170} height={20} rx={10} fill={c.green} />
-          <circle cx={216} cy={76} r={4} fill="#fff" />
-          <text x={50} y={106} fill={c.green} fontSize="10" fontFamily="monospace">INCASSATO</text>
-          <text x={314} y={106} fill={c.mute} fontSize="10" textAnchor="end" fontFamily="monospace">RESIDUO</text>
-        </svg>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <Stat T={T} label="Contratto" value="€52.000" color={T.ink} />
+            <Stat T={T} label="Incassato" value="€21.000" color={green} />
+            <Stat T={T} label="Residuo" value="€31.000" color={AMBER} />
+          </div>
+          <Card T={T} style={{ padding: "10px 12px" }}>
+            <div style={lbl(T)}>Rate — Torre Uffici Centro</div>
+            {[["Acconto", "30%", "€15.600", "✓ Pagato", green], ["SAL 1", "40%", "€20.800", "In attesa", T.muted], ["Saldo", "30%", "€15.600", "In attesa", T.muted]].map(([r, p, v, s, sc]) => (
+              <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: T.ink, flex: 1 }}>{r}</div>
+                <div style={{ ...mono, fontSize: 8, color: T.muted, width: 34 }}>{p}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: navy, width: 56, textAlign: "right" }}>{v}</div>
+                <div style={{ ...mono, fontSize: 8.5, color: sc, width: 60, textAlign: "right", fontWeight: sc === green ? 600 : 400 }}>{s}</div>
+              </div>
+            ))}
+          </Card>
+        </div>
       );
+
     case "invoice":
       return (
-        <svg {...common}>
-          {card(108, 12, 144, 126, c.softer)}
-          {[30, 44, 58, 72, 86].map((y, k) => line(124, y, 112 - (k % 2) * 40))}
-          <rect x={124} y={104} width={84} height={20} rx={10} fill={c.green} />
-          <text x={166} y={118} fill="#fff" fontSize="9" textAnchor="middle" fontFamily="monospace">PAGATA</text>
-          <circle cx={228} cy={112} r={12} fill="none" stroke={c.green} strokeWidth="1.6" />
-          <path d="M 223 112 l 4 4 l 7 -8" stroke={c.green} strokeWidth="1.8" fill="none" />
-        </svg>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <Stat T={T} label="Emesse" value="€73.400" color={T.ink} />
+            <Stat T={T} label="Pagate" value="€42.200" color={green} />
+            <Stat T={T} label="In attesa" value="€31.200" color={AMBER} />
+          </div>
+          <Card T={T} style={{ padding: "10px 12px" }}>
+            {[["FT 2026/001", "Blocco A — Milano", "€15.600", "PAGATA", green], ["FT 2026/002", "Villa Lario", "€20.800", "PAGATA", green], ["FT 2026/003", "Showroom Navigli", "€11.800", "IN ATTESA", T.muted]].map(([n, p, v, s, sc]) => (
+              <div key={n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `0.5px solid ${T.border}` }}>
+                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{n}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{p}</div></div>
+                <div style={{ textAlign: "right" }}><div style={{ ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{v}</div><div style={{ ...mono, fontSize: 8, color: sc, fontWeight: sc === green ? 600 : 400 }}>{s}</div></div>
+              </div>
+            ))}
+          </Card>
+        </div>
       );
-    case "projects":
+
+    case "scrivania": {
+      const tasks = [["Consegna tavole esecutive", "Blocco A — Milano", "Oggi", red], ["Verifica strutturale", "Villa Lario", "Domani", navy], ["Invio preventivo", "Showroom Navigli", "Ven 20", T.muted]];
       return (
-        <svg {...common}>
-          {[18, 134, 250].map((x, col) => (
-            <g key={col}>
-              {line(x + 6, 18, 60, c.mute, 8)}
-              {Array.from({ length: 3 - (col === 2 ? 1 : 0) }).map((_, k) => (
-                <g key={k}>{card(x, 34 + k * 34, 92, 28, c.softer)}{line(x + 10, 44 + k * 34, 50, k === 0 && col === 0 ? c.navy : c.lite)}</g>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <Stat T={T} label="Progetti" value="8" color={navy} />
+            <Stat T={T} label="Task oggi" value="5" color={red} />
+            <Stat T={T} label="Ore sett." value="32h" color={green} />
+          </div>
+          <Card T={T} style={{ padding: "10px 12px" }}>
+            <div style={lbl(T)}>Prossime scadenze</div>
+            {tasks.map((r, k) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: k < tasks.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{r[1]}</div></div>
+                <div style={{ ...mono, fontSize: 8.5, color: r[3], flexShrink: 0, marginLeft: 8, fontWeight: r[3] !== T.muted ? 600 : 400 }}>{r[2]}</div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      );
+    }
+
+    case "timesheet": {
+      const rows = [{ i: "AR", days: [8, 8, 0, 7, 8], c: navy }, { i: "MB", days: [6, 8, 8, 0, 7], c: green }, { i: "LC", days: [0, 5, 8, 8, 6], c: PURPLE }];
+      const days = ["Lun", "Mar", "Mer", "Gio", "Ven"];
+      return (
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={lbl(T)}>Settimana 22 — Blocco A Milano</div>
+          <div style={{ display: "flex", marginBottom: 5 }}>
+            <div style={{ width: 30, flexShrink: 0 }} />
+            {days.map((d) => <div key={d} style={{ flex: 1, textAlign: "center", ...mono, fontSize: 7.5, color: T.muted }}>{d}</div>)}
+            <div style={{ width: 26, ...mono, fontSize: 7.5, color: T.muted, textAlign: "right" }}>Tot</div>
+          </div>
+          {rows.map((r) => (
+            <div key={r.i} style={{ display: "flex", alignItems: "center", marginBottom: 5, paddingBottom: 5, borderBottom: `0.5px solid ${T.border}` }}>
+              <div style={{ width: 30, flexShrink: 0 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: r.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7.5, fontWeight: 700, color: "#fff" }}>{r.i}</div>
+              </div>
+              {r.days.map((h, k) => (
+                <div key={k} style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                  {h > 0
+                    ? <span style={{ display: "inline-flex", width: 22, height: 18, background: `${r.c}26`, borderRadius: 4, ...mono, fontSize: 8, color: r.c, fontWeight: 700, alignItems: "center", justifyContent: "center" }}>{h}h</span>
+                    : <span style={{ ...mono, fontSize: 9, color: `${T.muted}66` }}>—</span>}
+                </div>
               ))}
-            </g>
+              <div style={{ width: 26, textAlign: "right", ...mono, fontSize: 9, fontWeight: 700, color: navy }}>{r.days.reduce((s, v) => s + v, 0)}h</div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
-    case "timesheet":
+    }
+
+    case "pratiche": {
+      const rows = [["CILA", "Villa Lario", "Approvata", green], ["SCIA", "Showroom Navigli", "In istruttoria", BLUE], ["Permesso di Costruire", "Blocco A — Milano", "Scad. 30 Giu", AMBER]];
       return (
-        <svg {...common}>
-          {card(24, 18, 312, 114)}
-          {[0, 1, 2, 3, 4].map((cx) => <text key={cx} x={66 + cx * 56} y={36} fill={c.mute} fontSize="8" textAnchor="middle" fontFamily="monospace">{["L", "M", "M", "G", "V"][cx]}</text>)}
-          {[0, 1, 2].map((r) => (
-            <g key={r}>
-              {line(36, 54 + r * 26, 24, c.mute)}
-              {[0, 1, 2, 3, 4].map((col) => {
-                const filled = (r + col) % 2 === 0;
-                return <g key={col}><rect x={44 + col * 56} y={48 + r * 26} width={44} height={16} rx={4} fill={filled ? c.navy : c.softer} opacity={filled ? 0.85 : 1} stroke={c.frame} />
-                  {filled && <text x={66 + col * 56} y={60 + r * 26} fill="#fff" fontSize="8" textAnchor="middle" fontFamily="monospace">8h</text>}</g>;
-              })}
-            </g>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={lbl(T)}>Pratiche edilizie</div>
+          {rows.map((r, k) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+              <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{r[1]}</div></div>
+              <div style={{ ...mono, fontSize: 8, color: r[3], background: `${r[3]}1f`, border: `0.5px solid ${r[3]}44`, borderRadius: 10, padding: "2px 8px", fontWeight: 600, flexShrink: 0 }}>{r[2]}</div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
-    case "permit":
-      return (
-        <svg {...common}>
-          {card(64, 12, 130, 126, c.softer)}
-          {[30, 44, 58, 72].map((y, k) => line(80, y, 98 - (k % 2) * 30))}
-          <circle cx={150} cy={108} r={16} fill="none" stroke={c.navy} strokeWidth="1.6" strokeDasharray="3 2" />
-          <text x={150} y={112} fill={c.navy} fontSize="8" textAnchor="middle" fontFamily="monospace">OK</text>
-          {card(214, 36, 86, 78, c.softer)}
-          <rect x={214} y={36} width={86} height={20} rx={6} fill={c.amber} />
-          <text x={257} y={50} fill="#fff" fontSize="9" textAnchor="middle" fontFamily="monospace">SCADENZA</text>
-          {[66, 84, 102].map((y, k) => line(226, y, 62 - k * 14, c.lite, 5))}
-        </svg>
-      );
+    }
+
     case "sitereport":
       return (
-        <svg {...common}>
-          {card(34, 16, 150, 118, c.softer)}
-          <path d="M 46 116 L 86 70 L 110 100 L 134 60 L 172 116 Z" fill={c.navy} opacity="0.5" />
-          <circle cx={150} cy={44} r={9} fill={c.amber} />
-          {card(200, 16, 126, 118)}
-          {[32, 48, 64, 80, 96, 112].map((y, k) => line(214, y, 98 - (k % 3) * 24))}
-        </svg>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>📐 Report cantiere #3</div>
+            <div style={{ ...mono, fontSize: 8, color: T.muted }}>14 Giu 2026</div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+            {[[navy, green], [PURPLE, BLUE], [AMBER, navy]].map((g, k) => (
+              <div key={k} style={{ height: 40, borderRadius: T.radiusSm, background: `linear-gradient(135deg, ${g[0]}cc, ${g[1]}99)`, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "45%", background: "rgba(255,255,255,0.18)" }} />
+              </div>
+            ))}
+          </div>
+          {[100, 75].map((w, k) => <div key={k} style={{ height: 5, borderRadius: 3, background: `${T.muted}33`, width: `${w}%`, marginBottom: 5 }} />)}
+        </Card>
       );
-    case "gantt":
+
+    case "gantt": {
+      const bars = [{ l: "Concept design", w: 22, x: 0, c: navy }, { l: "Prog. definitivo", w: 34, x: 12, c: BLUE }, { l: "Autorizzazioni", w: 18, x: 36, c: PURPLE }, { l: "Direzione lavori", w: 30, x: 52, c: AMBER }];
+      const months = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
       return (
-        <svg {...common}>
-          {card(24, 16, 312, 118)}
-          {[0, 1, 2, 3].map((k) => <line key={k} x1={120 + k * 54} y1={28} x2={120 + k * 54} y2={124} stroke={c.frame} strokeWidth="1" />)}
-          {[{ y: 40, x: 120, w: 110, col: c.navy }, { y: 66, x: 174, w: 90, col: c.green }, { y: 92, x: 120, w: 60, col: c.amber }].map((b, k) => (
-            <g key={k}>{line(40, b.y + 4, 60, c.mute)}<rect x={b.x} y={b.y} width={b.w} height={14} rx={7} fill={b.col} /></g>
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={{ display: "flex", marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
+            <div style={{ width: 92, flexShrink: 0 }} />
+            <div style={{ flex: 1, display: "flex", justifyContent: "space-between" }}>
+              {months.map((m) => <span key={m} style={{ ...mono, fontSize: 6.5, color: T.muted }}>{m}</span>)}
+            </div>
+          </div>
+          {bars.map((b) => (
+            <div key={b.l} style={{ display: "flex", alignItems: "center", marginBottom: 5 }}>
+              <div style={{ width: 92, flexShrink: 0, fontSize: 8, fontWeight: 500, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>{b.l}</div>
+              <div style={{ flex: 1, height: 16, position: "relative" }}>
+                <div style={{ position: "absolute", left: `${b.x}%`, width: `${b.w}%`, height: "100%", background: b.c, borderRadius: 4, display: "flex", alignItems: "center", paddingLeft: 6 }}>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 7, fontWeight: 600, color: "rgba(255,255,255,0.92)", whiteSpace: "nowrap", overflow: "hidden" }}>{b.l}</span>
+                </div>
+              </div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
-    case "team":
+    }
+
+    case "team": {
+      const m = [["GC", "Giacomo C.", "Titolare", navy], ["AR", "Anna R.", "Project Mgr", green], ["LB", "Luca B.", "Architetto", PURPLE], ["SP", "Sara P.", "Collaboratore", AMBER]];
       return (
-        <svg {...common}>
-          {[0, 1, 2, 3].map((k) => (
-            <g key={k}>
-              <circle cx={70 + k * 75} cy={56} r={20} fill={k === 0 ? c.navy : c.softer} stroke={c.frame} strokeWidth="1.2" />
-              <circle cx={70 + k * 75} cy={49} r={7} fill={k === 0 ? "#fff" : c.mute} />
-              <path d={`M ${56 + k * 75} 70 a 14 10 0 0 1 28 0`} fill={k === 0 ? "#fff" : c.mute} />
-              <rect x={48 + k * 75} y={88} width={44} height={14} rx={7} fill={c.softer} stroke={c.frame} />
-              <text x={70 + k * 75} y={98} fill={c.mute} fontSize="7.5" textAnchor="middle" fontFamily="monospace">{["TITOLARE", "PM", "ARCH.", "COLLAB."][k]}</text>
-            </g>
-          ))}
-        </svg>
+        <Card T={T} style={{ padding: "12px" }}>
+          <div style={lbl(T)}>Team studio · 4 membri</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {m.map((x) => (
+              <div key={x[0]} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 8px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm }}>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", background: x[3], color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 8.5, fontWeight: 700, flexShrink: 0 }}>{x[0]}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: T.ink, whiteSpace: "nowrap" }}>{x[1]}</div>
+                  <div style={{ ...mono, fontSize: 7.5, color: T.muted }}>{x[2]}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       );
-    case "analytics":
+    }
+
+    case "analytics": {
+      const items = [["Blocco A — Milano", 52000, 21000], ["Villa Lario", 38000, 38000], ["Showroom Navigli", 29500, 12000], ["Residenza Privata", 44000, 0]];
       return (
-        <svg {...common}>
-          {card(24, 16, 312, 118)}
-          <line x1={44} y1={116} x2={320} y2={116} stroke={c.frame} strokeWidth="1.2" />
-          {[40, 62, 54, 84, 72, 100].map((h, k) => (
-            <rect key={k} x={56 + k * 44} y={116 - h} width={26} height={h} rx={4} fill={k === 5 ? c.green : c.navy} opacity={k === 5 ? 1 : 0.55 + k * 0.06} />
-          ))}
-        </svg>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+            <Stat T={T} label="Contratti" value="€163k" color={T.ink} />
+            <Stat T={T} label="Incassato" value="€71k" color={green} />
+            <Stat T={T} label="Da incass." value="€92k" color={AMBER} />
+          </div>
+          <Card T={T} style={{ padding: "10px 12px" }}>
+            {items.map(([n, v, inc], k) => {
+              const pct = Math.round((inc / v) * 100), done = pct === 100;
+              return (
+                <div key={k} style={{ marginBottom: k < items.length - 1 ? 8 : 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <div style={{ fontSize: 9.5, fontWeight: 600, color: T.ink }}>{n}</div>
+                    <div style={{ ...mono, fontSize: 8, color: done ? green : AMBER }}>{done ? "✓ Saldato" : `res. €${((v - inc) / 1000).toFixed(0)}k`}</div>
+                  </div>
+                  <div style={track(T)}><div style={{ height: 5, width: `${pct}%`, background: done ? green : navy, borderRadius: 3 }} /></div>
+                </div>
+              );
+            })}
+          </Card>
+        </div>
       );
-    case "rocket":
+    }
+
+    case "tips":
       return (
-        <svg {...common}>
-          <g transform="translate(180 78)">
-            <path d="M 0 -42 C 16 -26 16 4 0 22 C -16 4 -16 -26 0 -42 Z" fill={c.navy} />
-            <circle cx={0} cy={-14} r={7} fill={c.softer} />
-            <path d="M -12 10 L -24 26 L -8 18 Z" fill={c.amber} />
-            <path d="M 12 10 L 24 26 L 8 18 Z" fill={c.amber} />
-            <path d="M -4 22 L 0 40 L 4 22 Z" fill={c.amber} opacity="0.8" />
-          </g>
-          {[[80, 40], [280, 50], [110, 110], [260, 112]].map(([x, y], k) => (
-            <g key={k} stroke={c.mute} strokeWidth="1.4"><line x1={x - 5} y1={y} x2={x + 5} y2={y} /><line x1={x} y1={y - 5} x2={x} y2={y + 5} /></g>
+        <Card T={T} style={{ padding: "12px" }}>
+          <div style={lbl(T)}>Per iniziare</div>
+          {[["Completa il Profilo Studio", true], ["Configura Servizi e Voci offerta", true], ["Invita il tuo team", false], ["Crea la prima offerta", false]].map(([t, done], k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? green : T.muted}`, background: done ? green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 9, color: "#fff" }}>{done ? "✓" : ""}</span>
+              <div style={{ fontSize: 10.5, color: T.ink, fontWeight: done ? 400 : 600, textDecoration: done ? "line-through" : "none", opacity: done ? 0.6 : 1 }}>{t}</div>
+            </div>
           ))}
-        </svg>
+        </Card>
       );
+
     default:
-      return <svg {...common}>{card(24, 16, 312, 118)}</svg>;
+      return <Card T={T} style={{ height: 110 }} />;
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  Slide della guida (contenuti basati sulle funzioni reali dell'app)
+//  Slide della guida
 // ══════════════════════════════════════════════════════════════════
 const SLIDES = [
-  {
-    art: "welcome", emoji: "👋", titolo: "Benvenuto in SP Manager",
-    testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.",
-    punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"],
-  },
-  {
-    art: "flow", emoji: "🔄", titolo: "Il flusso di lavoro",
-    testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:",
-    punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"],
-  },
-  {
-    art: "contacts", emoji: "👤", titolo: "Anagrafica & Clienti",
-    testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.",
-    punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"],
-  },
-  {
-    art: "services", emoji: "🧩", titolo: "Gestione Servizi",
-    testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.",
-    punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"],
-  },
-  {
-    art: "lineitems", emoji: "📑", titolo: "Voci Offerta",
-    testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.",
-    punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"],
-  },
-  {
-    art: "offer", emoji: "📋", titolo: "Offerte",
-    testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.",
-    punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"],
-  },
-  {
-    art: "payments", emoji: "💼", titolo: "Commesse & pagamenti",
-    testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.",
-    punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"],
-  },
-  {
-    art: "invoice", emoji: "🧾", titolo: "Proforma & Fatture", plan: "Studio",
-    testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.",
-    punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"],
-  },
-  {
-    art: "projects", emoji: "📁", titolo: "Progetti & Scrivania",
-    testo: "Organizza il lavoro per progetto e segui le attività.",
-    punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"],
-  },
-  {
-    art: "timesheet", emoji: "⏱", titolo: "Timesheet",
-    testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.",
-    punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"],
-  },
-  {
-    art: "permit", emoji: "🏛", titolo: "Pratiche edilizie",
-    testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.",
-    punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"],
-  },
-  {
-    art: "sitereport", emoji: "📐", titolo: "Report di cantiere",
-    testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.",
-    punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"],
-  },
-  {
-    art: "gantt", emoji: "📅", titolo: "Calendario & Gantt", plan: "Studio",
-    testo: "Pianifica scadenze e lavorazioni nel tempo.",
-    punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"],
-  },
-  {
-    art: "team", emoji: "👥", titolo: "Team & permessi", plan: "Studio",
-    testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.",
-    punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"],
-  },
-  {
-    art: "analytics", emoji: "📊", titolo: "Analisi & Report", plan: "Pro",
-    testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.",
-    punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"],
-  },
-  {
-    art: "rocket", emoji: "🚀", titolo: "Sfruttala al massimo",
-    testo: "Qualche consiglio per partire con il piede giusto:",
-    punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"],
-  },
+  { mock: "welcome", emoji: "👋", titolo: "Benvenuto in SP Manager", testo: "Il gestionale per studi di architettura e professionisti tecnici: progetti, offerte, commesse, pagamenti, pratiche e team — tutto in un posto solo.", punti: ["Sfoglia con le frecce ← → o i pulsanti", "Riapri questa guida quando vuoi dalla pagina Info"] },
+  { mock: "flow", emoji: "🔄", titolo: "Il flusso di lavoro", testo: "Il cuore dell'app è il percorso che porta un lavoro dall'idea all'incasso:", punti: ["Offerta → Commessa → Proforma / Fattura", "Ogni passaggio eredita i dati dal precedente, senza riscrivere nulla"] },
+  { mock: "contacts", emoji: "👤", titolo: "Anagrafica & Clienti", testo: "La rubrica unica dello studio. Salvi una volta i dati di clienti e committenti e li richiami ovunque.", punti: ["Riusa i contatti in offerte, commesse e progetti", "Ogni cliente mostra i lavori collegati"] },
+  { mock: "services", emoji: "🧩", titolo: "Gestione Servizi", testo: "Definisci i tuoi servizi e le task predefinite per ciascuno. Quando avvii un lavoro, le attività si creano da sole.", punti: ["Imposta una volta i servizi tipici dello studio", "Riduci il lavoro manuale ad ogni nuovo progetto"] },
+  { mock: "lineitems", emoji: "📑", titolo: "Voci Offerta", testo: "Le voci predefinite con prezzo da inserire nelle offerte con un clic. Le attivi, disattivi e personalizzi per ogni offerta.", punti: ["Listino sempre pronto, niente importi a memoria", "Modifica il prezzo caso per caso quando serve"] },
+  { mock: "offer", emoji: "📋", titolo: "Offerte", testo: "Componi il preventivo scegliendo le voci e applicando sconti. Quando il cliente accetta, diventa una commessa.", punti: ["Totale calcolato in automatico", "Accettazione → commessa, in un clic"] },
+  { mock: "commesse", emoji: "💼", titolo: "Commesse & pagamenti", testo: "Ogni commessa mostra a colpo d'occhio la situazione economica.", punti: ["Importo totale, incassato e residuo sempre aggiornati", "Rate, costi extra e costi interni per il margine reale"] },
+  { mock: "invoice", emoji: "🧾", titolo: "Proforma & Fatture", plan: "Studio", testo: "Genera proforma e fatture collegate alle commesse, senza perdere il filo dei pagamenti.", punti: ["Il flusso si adatta al tipo di cliente (privato o società)", "Scadenze e stato pagamento sotto controllo"] },
+  { mock: "scrivania", emoji: "📁", titolo: "Progetti & Scrivania", testo: "Organizza il lavoro per progetto e segui le attività.", punti: ["Progetti: contenitore di ogni lavoro con dati e stato", "Scrivania: il tuo centro personale con le task assegnate a te"] },
+  { mock: "timesheet", emoji: "⏱", titolo: "Timesheet", testo: "Registra le ore lavorate su ciascun progetto: è la base per redditività e carico di lavoro.", punti: ["Inserimento giorno per giorno, con note", "Le ore alimentano report e analisi automaticamente"] },
+  { mock: "pratiche", emoji: "🏛", titolo: "Pratiche edilizie", testo: "Tieni traccia delle pratiche di ogni progetto: tipo, stato e scadenze.", punti: ["Le scadenze compaiono nello Scadenzario in Dashboard", "Non perdi più una data importante"] },
+  { mock: "sitereport", emoji: "📐", titolo: "Report di cantiere", testo: "Documenta i sopralluoghi con note e foto, ed esportali in PDF professionale.", punti: ["Allega foto e annotazioni al progetto", "Personalizza intestazione e logo da Impostazioni → Report"] },
+  { mock: "gantt", emoji: "📅", titolo: "Calendario & Gantt", plan: "Studio", testo: "Pianifica scadenze e lavorazioni nel tempo.", punti: ["Calendario: eventi, scadenze e appuntamenti", "Gantt: le fasi dei progetti su una timeline visiva"] },
+  { mock: "team", emoji: "👥", titolo: "Team & permessi", plan: "Studio", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
+  { mock: "analytics", emoji: "📊", titolo: "Analisi & Report", plan: "Pro", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
+  { mock: "tips", emoji: "🚀", titolo: "Sfruttala al massimo", testo: "Qualche consiglio per partire con il piede giusto:", punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"] },
 ];
 
 export default function GuidaApp({ open, onClose }) {
-  const { T, isDark } = useTheme();
+  const { T } = useTheme();
   const isMobile = useIsMobile();
   const [i, setI] = useState(0);
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
   const isFirst = i === 0;
   const isLast = i === SLIDES.length - 1;
@@ -339,30 +420,12 @@ export default function GuidaApp({ open, onClose }) {
   }, [open, onClose]);
 
   if (!open) return null;
-
   const s = SLIDES[i];
 
-  // Palette per le illustrazioni
-  const c = {
-    frame: T.borderMd,
-    soft: isDark ? "rgba(255,255,255,0.045)" : "rgba(19,49,92,0.04)",
-    softer: isDark ? "rgba(255,255,255,0.08)" : "rgba(19,49,92,0.07)",
-    lite: `${T.muted}66`,
-    mute: T.muted,
-    navy: T.navy,
-    green: "#1a9d5c",
-    amber: "#d97706",
-  };
-
   return (
-    <div
-      onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px", display: "flex", flexDirection: "column" }}
-      >
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px", display: "flex", flexDirection: "column" }}>
+
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <span style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
@@ -371,13 +434,13 @@ export default function GuidaApp({ open, onClose }) {
           <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
         </div>
 
-        {/* Illustrazione */}
-        <div style={{ height: isMobile ? 130 : 150, background: c.soft, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, marginBottom: 18, padding: 8, boxSizing: "border-box" }}>
-          <Art type={s.art} c={c} />
+        {/* Mock UI */}
+        <div style={{ background: `${T.muted}10`, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 18 }}>
+          <Mock type={s.mock} T={T} />
         </div>
 
         {/* Contenuto slide */}
-        <div style={{ minHeight: isMobile ? 150 : 130 }}>
+        <div style={{ minHeight: isMobile ? 140 : 124 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 22 }}>{s.emoji}</span>
             <h2 style={{ fontSize: 19, fontWeight: 700, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>{s.titolo}</h2>
@@ -408,23 +471,12 @@ export default function GuidaApp({ open, onClose }) {
           ))}
         </div>
 
-        {/* Footer navigazione */}
+        {/* Footer */}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
-          <button onClick={prev} disabled={isFirst}
-            style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px", cursor: isFirst ? "not-allowed" : "pointer", opacity: isFirst ? 0.4 : 1 }}>
-            ← Indietro
-          </button>
-          {isLast ? (
-            <button onClick={onClose}
-              style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>
-              Inizia ✓
-            </button>
-          ) : (
-            <button onClick={next}
-              style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>
-              Avanti →
-            </button>
-          )}
+          <button onClick={prev} disabled={isFirst} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px", cursor: isFirst ? "not-allowed" : "pointer", opacity: isFirst ? 0.4 : 1 }}>← Indietro</button>
+          {isLast
+            ? <button onClick={onClose} style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>Inizia ✓</button>
+            : <button onClick={next} style={{ border: "none", borderRadius: T.radiusSm, background: T.navy, color: "#EEF1F6", ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 22px", cursor: "pointer" }}>Avanti →</button>}
         </div>
       </div>
     </div>
