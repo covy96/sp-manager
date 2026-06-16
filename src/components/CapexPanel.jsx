@@ -511,17 +511,15 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
               const gPag = g.items.reduce((s, x) => s + (pagatoByVoce[x.id] || 0), 0);
               const hasExtra = g.items.length > 1;
               return (
-                <div key={g.rootId}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px' }}>{g.categoria}</span>
-                    <span style={{ ...mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{g.label}</span>
-                    {hasExtra && (
-                      <span style={{ ...mono, fontSize: 9, color: T.muted, marginLeft: 'auto' }}>tot {currency(gAcc)} · residuo {currency(gAcc - gPag)}</span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {g.items.map(v => renderAccettataCard(v, !!v.parent_id))}
-                  </div>
+                <div key={g.rootId} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {g.items.map(v => renderAccettataCard(v, !!v.parent_id))}
+                  {hasExtra && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 10, ...mono, fontSize: 9, color: T.muted, paddingRight: 28 }}>
+                      <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>Subtotale {g.label}</span>
+                      <span style={{ color: T.ink }}>tot {currency(gAcc)}</span>
+                      <span style={{ color: T.navy }}>residuo {currency(gAcc - gPag)}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
