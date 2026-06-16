@@ -282,7 +282,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const renderRigaPreventivo = (v, isExtra = false) => {
     const isDel = confirmDelete === v.id;
     return (
-      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
+      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {isExtra && <span style={{ ...mono, fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>Extra</span>}
@@ -322,7 +322,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const tabPreventivi = (
     <div>
       {/* Form inserimento / modifica */}
-      <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, background: T.bg, padding: 14, marginBottom: 18 }}>
+      <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, borderRadius: T.radius, background: T.bg, padding: 16, marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: extraParent ? T.brass : T.muted }}>
             {extraParent ? `Extra per ${extraParent.fornitore || "—"} · ${extraParent.categoria}` : editingId ? "Modifica preventivo" : "Nuovo preventivo"}
@@ -425,7 +425,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     const isOpen = expanded === v.id;
     const pags = pagamenti.filter(p => p.voce_id === v.id);
     return (
-                <div key={v.id} style={{ border: `1px solid ${T.border}`, background: isExtra ? T.surface : T.bg, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
+                <div key={v.id} style={{ border: `1px solid ${T.border}`, borderRadius: T.radius, overflow: 'hidden', background: isExtra ? T.surface : T.bg, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
                   <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', cursor: 'pointer' }}>
                     {isExtra
                       ? <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>Extra</span>
@@ -526,7 +526,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
 
           {/* Riepilogo totali */}
-          <div style={{ border: `1px solid ${T.navy}`, background: T.navyLight, padding: 14 }}>
+          <div style={{ border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <div>
                 <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale accettato</div>
@@ -566,7 +566,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   // ── MODAL ────────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
@@ -581,17 +581,19 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {/* Segmented control (stile iOS) con thumb scorrevole */}
+        <div style={{ position: 'relative', display: 'flex', background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 999, padding: 4, width: '100%', maxWidth: 360, marginBottom: 22 }}>
+          {/* thumb */}
+          <div style={{ position: 'absolute', top: 4, bottom: 4, left: 4, width: 'calc(50% - 4px)', borderRadius: 999, background: T.surface, boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04)', transform: tab === 'accettati' ? 'translateX(100%)' : 'translateX(0)', transition: 'transform 280ms cubic-bezier(0.32,0.72,0,1)' }} />
           {[["preventivi", "Preventivi", voci.length], ["accettati", "Accettati", accettate.length]].map(([key, label, count]) => (
             <button key={key} onClick={() => setTab(key)} style={{
-              border: `1px solid ${tab === key ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
-              background: tab === key ? T.navyLight : 'transparent', padding: '7px 14px', cursor: 'pointer',
+              flex: 1, position: 'relative', zIndex: 1, border: 'none', background: 'transparent', cursor: 'pointer',
+              padding: '7px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
               ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600,
-              color: tab === key ? T.navy : T.muted, display: 'flex', alignItems: 'center', gap: 7,
+              color: tab === key ? T.navy : T.muted, transition: 'color 200ms',
             }}>
               {label}
-              <span style={{ ...mono, fontSize: 9, color: tab === key ? T.navy : T.muted, opacity: 0.8 }}>{count}</span>
+              <span style={{ ...mono, fontSize: 9, color: tab === key ? T.navy : T.muted, opacity: 0.7 }}>{count}</span>
             </button>
           ))}
         </div>
