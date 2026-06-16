@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
@@ -109,6 +110,7 @@ function KpiCard({ label, value, color, onClick, hint }) {
 function RowMenu({ open, onOpen, onClose, items }) {
   const { T } = useTheme();
   const btnRef = React.useRef(null);
+  const menuRef = React.useRef(null);
   const [pos, setPos] = React.useState({ top: 0, right: 0 });
 
   const handleOpen = (e) => {
@@ -120,20 +122,45 @@ function RowMenu({ open, onOpen, onClose, items }) {
     open ? onClose() : onOpen();
   };
 
+  // Chiudi al click fuori, allo scroll o al resize (le coord sono fisse).
+  React.useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (btnRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
+      onClose();
+    };
+    const onScrollResize = () => onClose();
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('touchstart', onDocDown);
+    window.addEventListener('scroll', onScrollResize, true);
+    window.addEventListener('resize', onScrollResize);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('touchstart', onDocDown);
+      window.removeEventListener('scroll', onScrollResize, true);
+      window.removeEventListener('resize', onScrollResize);
+    };
+  }, [open, onClose]);
+
+  // La tendina va in portal su document.body: un antenato con backdrop-filter
+  // creerebbe un containing block che sballerebbe il position:fixed.
+  const menu = open ? createPortal(
+    <div ref={menuRef} style={{ position: 'fixed', top: pos.top, right: pos.right, width: 150, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, zIndex: 9999, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
+      {items.map(item => (
+        <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
+          style={{ display: 'block', width: '100%', padding: '11px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
+          {item.label}
+        </button>
+      ))}
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div style={{ position: 'relative' }}>
       <button ref={btnRef} onClick={handleOpen}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px', lineHeight: 1 }}>···</button>
-      {open && (
-        <div style={{ position: 'fixed', top: pos.top, right: pos.right, width: 150, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 999, boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
-          {items.map(item => (
-            <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
-              style={{ display: 'block', width: '100%', padding: '9px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '4px 8px', lineHeight: 1 }}>···</button>
+      {menu}
     </div>
   );
 }
