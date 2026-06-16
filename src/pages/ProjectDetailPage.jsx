@@ -10,6 +10,7 @@ import AnagraficaPanel from '../components/AnagraficaPanel';
 import OrePanel from '../components/OrePanel';
 import CommessePanel from '../components/CommessePanel';
 import ReportCantierePanel from '../components/ReportCantierePanel';
+import CapexPanel from '../components/CapexPanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -757,6 +758,7 @@ export default function ProjectDetailPage() {
               />
             )}
             <AnagraficaPanel projectId={id} studioId={studioId} />
+            {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
             <CommessePanel commesse={commesseProgetto} />
             <ActivityLogPanel projectId={id} studioId={studioId} />
             <div style={{ position: 'relative' }}>
