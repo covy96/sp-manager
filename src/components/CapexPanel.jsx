@@ -90,25 +90,30 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const totalePagato    = useMemo(() => accettate.reduce((s, v) => s + (pagatoByVoce[v.id] || 0), 0), [accettate, pagatoByVoce]);
   const totaleResiduo   = totaleAccettato - totalePagato;
 
+  // Chiave categoria normalizzata (trim + case-insensitive) così "Edile",
+  // "edile" e "Edile " finiscono nello stesso gruppo per il confronto.
+  const catKey = (c) => (c || "Altro").trim().toLowerCase() || "altro";
+
   const breakdownCategoria = useMemo(() => {
     const m = {};
     accettate.forEach(v => {
-      const cat = v.categoria || "Altro";
-      if (!m[cat]) m[cat] = { accettato: 0, pagato: 0 };
-      m[cat].accettato += Number(v.importo || 0);
-      m[cat].pagato += pagatoByVoce[v.id] || 0;
+      const k = catKey(v.categoria);
+      if (!m[k]) m[k] = { label: (v.categoria || "Altro").trim() || "Altro", accettato: 0, pagato: 0 };
+      m[k].accettato += Number(v.importo || 0);
+      m[k].pagato += pagatoByVoce[v.id] || 0;
     });
-    return Object.entries(m).sort((a, b) => b[1].accettato - a[1].accettato);
+    return Object.values(m).sort((a, b) => b.accettato - a.accettato);
   }, [accettate, pagatoByVoce]);
 
-  // Preventivi raggruppati per categoria
+  // Preventivi raggruppati per categoria (normalizzata)
   const vociPerCategoria = useMemo(() => {
     const m = {};
     voci.forEach(v => {
-      const cat = v.categoria || "Altro";
-      (m[cat] = m[cat] || []).push(v);
+      const k = catKey(v.categoria);
+      if (!m[k]) m[k] = { label: (v.categoria || "Altro").trim() || "Altro", list: [] };
+      m[k].list.push(v);
     });
-    return Object.entries(m).sort((a, b) => a[0].localeCompare(b[0]));
+    return Object.values(m).sort((a, b) => a.label.localeCompare(b.label));
   }, [voci]);
 
   // ── Azioni voce ────────────────────────────────────────────────────
@@ -316,10 +321,10 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
         <div style={{ textAlign: 'center', padding: '32px 20px', ...mono, fontSize: 11, color: T.muted }}>
           Nessun preventivo. Aggiungi il primo preventivo qui sopra.
         </div>
-      ) : vociPerCategoria.map(([cat, list]) => (
-        <div key={cat} style={{ marginBottom: 18 }}>
+      ) : vociPerCategoria.map(({ label, list }) => (
+        <div key={label.toLowerCase()} style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{cat}</span>
+            <span style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{label}</span>
             <span style={{ ...mono, fontSize: 9, color: T.muted }}>{list.length} {list.length === 1 ? "preventivo" : "preventivi"}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -438,9 +443,9 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
               <div style={{ marginTop: 14, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
                 <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Per categoria</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {breakdownCategoria.map(([cat, d]) => (
-                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 8, ...mono, fontSize: 10 }}>
-                      <span style={{ flex: 1, color: T.ink }}>{cat}</span>
+                  {breakdownCategoria.map(d => (
+                    <div key={d.label.toLowerCase()} style={{ display: 'flex', alignItems: 'center', gap: 8, ...mono, fontSize: 10 }}>
+                      <span style={{ flex: 1, color: T.ink }}>{d.label}</span>
                       <span style={{ color: T.muted }}>accettato {currency(d.accettato)}</span>
                       <span style={{ color: T.green }}>pagato {currency(d.pagato)}</span>
                       <span style={{ color: T.navy, width: 110, textAlign: 'right' }}>residuo {currency(d.accettato - d.pagato)}</span>
