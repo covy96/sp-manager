@@ -8,6 +8,7 @@
 create table if not exists capex_voci (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
+  parent_id uuid references capex_voci(id) on delete cascade, -- voce "extra" dello stesso operatore
   categoria text not null,            -- edile, elettricista, idraulico, illuminotecnica, ...
   fornitore text,
   data_preventivo date,
@@ -33,6 +34,9 @@ create table if not exists capex_pagamenti (
 -- perdere dati. Su un'installazione pulita questi ALTER non hanno effetto.
 alter table capex_voci add column if not exists project_id uuid references projects(id) on delete cascade;
 alter table capex_voci add column if not exists deleted_at timestamptz;
+-- parent_id: una voce "extra" punta al preventivo principale dello stesso
+-- operatore/fornitore (eredita categoria/fornitore, ha importo e pagamenti propri).
+alter table capex_voci add column if not exists parent_id uuid references capex_voci(id) on delete cascade;
 -- commessa_id non è più usato dall'app: rendilo opzionale (le righe vecchie
 -- restano, con project_id da assegnare manualmente).
 do $$
@@ -46,6 +50,7 @@ begin
 end $$;
 
 create index if not exists capex_voci_project_idx on capex_voci (project_id);
+create index if not exists capex_voci_parent_idx on capex_voci (parent_id);
 create index if not exists capex_pagamenti_voce_idx on capex_pagamenti (voce_id);
 
 -- ── RLS capex_voci (scoping via project_id -> projects.studio) ─────────

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -18,6 +18,7 @@ function fmtDate(d) {
   return d ? new Date(d).toLocaleDateString("it-IT") : "—";
 }
 
+// voce: preventivo principale o "extra" (parent_id valorizzato)
 const EMPTY_VOCE = { categoria: "Edile", fornitore: "", data_preventivo: "", importo: "", note: "" };
 const EMPTY_PAG = { data_pagamento: new Date().toISOString().slice(0, 10), importo: "", note: "" };
 
@@ -45,6 +46,8 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [catFocus, setCatFocus] = useState(false);
+  const [extraParent, setExtraParent] = useState(null); // preventivo a cui agganciare un "extra"
+  const modalScrollRef = useRef(null);
 
   const [expanded, setExpanded] = useState(null);   // voce_id con registro pagamenti aperto
   const [pagForm, setPagForm] = useState(EMPTY_PAG);
@@ -106,10 +109,18 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     return Object.values(m).sort((a, b) => b.accettato - a.accettato);
   }, [accettate, pagatoByVoce]);
 
-  // Preventivi raggruppati per categoria (normalizzata)
+  // Extra raggruppati per voce padre
+  const extrasByParent = useMemo(() => {
+    const m = {};
+    voci.forEach(v => { if (v.parent_id) (m[v.parent_id] = m[v.parent_id] || []).push(v); });
+    return m;
+  }, [voci]);
+
+  // Preventivi raggruppati per categoria (normalizzata) — solo voci principali,
+  // gli extra vengono annidati sotto il rispettivo padre.
   const vociPerCategoria = useMemo(() => {
     const m = {};
-    voci.forEach(v => {
+    voci.filter(v => !v.parent_id).forEach(v => {
       const k = catKey(v.categoria);
       if (!m[k]) m[k] = { label: (v.categoria || "Altro").trim() || "Altro", list: [] };
       m[k].list.push(v);
@@ -117,18 +128,43 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     return Object.values(m).sort((a, b) => a.label.localeCompare(b.label));
   }, [voci]);
 
+  // Accettati raggruppati per operatore (voce radice = parent_id || id)
+  const accettatePerOperatore = useMemo(() => {
+    const groups = {};
+    accettate.forEach(v => {
+      const rootId = v.parent_id || v.id;
+      if (!groups[rootId]) {
+        const root = voci.find(x => x.id === rootId) || v;
+        groups[rootId] = { rootId, label: root.fornitore || "—", categoria: root.categoria, items: [] };
+      }
+      groups[rootId].items.push(v);
+    });
+    Object.values(groups).forEach(g => g.items.sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0)));
+    return Object.values(groups);
+  }, [accettate, voci]);
+
   // ── Azioni voce ────────────────────────────────────────────────────
-  const resetForm = () => { setForm(EMPTY_VOCE); setEditingId(null); };
+  const resetForm = () => { setForm(EMPTY_VOCE); setEditingId(null); setExtraParent(null); };
+
+  // Avvia l'inserimento di un extra agganciato a un operatore: pre-compila
+  // categoria e fornitore dal padre (bloccati) e porta il form in cima.
+  const startAddExtra = (parent) => {
+    setEditingId(null);
+    setExtraParent(parent);
+    setForm({ categoria: parent.categoria || "", fornitore: parent.fornitore || "", data_preventivo: "", importo: "", note: "" });
+    if (modalScrollRef.current) modalScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSaveVoce = async () => {
     const importo = Number(String(form.importo).replace(",", "."));
     if (!form.categoria.trim()) { showToast("Categoria obbligatoria"); return; }
     if (!(importo >= 0)) { showToast("Importo non valido"); return; }
     setSaving(true);
+    // In modalità extra eredita categoria/fornitore dal padre.
     const payload = {
       project_id: projectId,
-      categoria: form.categoria.trim(),
-      fornitore: form.fornitore.trim() || null,
+      categoria: (extraParent ? extraParent.categoria : form.categoria).trim(),
+      fornitore: (extraParent ? extraParent.fornitore : form.fornitore)?.trim() || null,
       data_preventivo: form.data_preventivo || null,
       importo,
       note: form.note.trim() || null,
@@ -137,7 +173,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     if (editingId) {
       ({ error } = await supabase.from("capex_voci").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", editingId));
     } else {
-      ({ error } = await supabase.from("capex_voci").insert(payload));
+      ({ error } = await supabase.from("capex_voci").insert({ ...payload, parent_id: extraParent ? extraParent.id : null }));
     }
     setSaving(false);
     if (error) { showToast("Errore salvataggio: " + error.message); return; }
@@ -196,14 +232,19 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   // ── Export ───────────────────────────────────────────────────────────
   const exportXlsx = () => {
     const rows = [["Categoria", "Fornitore", "Data preventivo", "Importo", "Accettato", "Pagato", "Residuo", "Note"]];
-    voci.forEach(v => {
-      const pag = pagatoByVoce[v.id] || 0;
-      rows.push([
-        v.categoria || "", v.fornitore || "", v.data_preventivo || "",
-        Number(v.importo || 0), v.accettato ? "Sì" : "No",
-        v.accettato ? pag : "", v.accettato ? Number(v.importo || 0) - pag : "",
-        v.note || "",
-      ]);
+    // voci principali seguite dai rispettivi extra
+    voci.filter(v => !v.parent_id).forEach(v => {
+      const emit = (x, isExtra) => {
+        const pag = pagatoByVoce[x.id] || 0;
+        rows.push([
+          x.categoria || "", (isExtra ? "↳ extra " : "") + (x.fornitore || ""), x.data_preventivo || "",
+          Number(x.importo || 0), x.accettato ? "Sì" : "No",
+          x.accettato ? pag : "", x.accettato ? Number(x.importo || 0) - pag : "",
+          x.note || "",
+        ]);
+      };
+      emit(v, false);
+      (extrasByParent[v.id] || []).forEach(e => emit(e, true));
     });
     rows.push([]);
     rows.push(["", "", "Totale accettato", totaleAccettato]);
@@ -238,16 +279,17 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   );
 
   // ── Riga preventivo ──────────────────────────────────────────────────
-  const renderRigaPreventivo = (v) => {
+  const renderRigaPreventivo = (v, isExtra = false) => {
     const isDel = confirmDelete === v.id;
     return (
-      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: T.bg, border: `1px solid ${T.border}` }}>
+      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{v.fornitore || "—"}</span>
+            {isExtra && <span style={{ ...mono, fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>Extra</span>}
+            <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
             <span style={{ ...mono, fontSize: 9, color: T.muted }}>{fmtDate(v.data_preventivo)}</span>
           </div>
-          {v.note && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>{v.note}</div>}
+          {!isExtra && v.note && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>{v.note}</div>}
         </div>
         <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: T.ink, flexShrink: 0 }}>{currency(v.importo)}</div>
         {/* toggle accettato */}
@@ -280,19 +322,25 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const tabPreventivi = (
     <div>
       {/* Form inserimento / modifica */}
-      <div style={{ border: `1px solid ${T.border}`, background: T.bg, padding: 14, marginBottom: 18 }}>
-        <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 12 }}>
-          {editingId ? "Modifica preventivo" : "Nuovo preventivo"}
+      <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, background: T.bg, padding: 14, marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: extraParent ? T.brass : T.muted }}>
+            {extraParent ? `Extra per ${extraParent.fornitore || "—"} · ${extraParent.categoria}` : editingId ? "Modifica preventivo" : "Nuovo preventivo"}
+          </div>
+          {extraParent && (
+            <button onClick={resetForm} style={{ border: 'none', background: 'none', color: T.muted, ...mono, fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>✕ annulla extra</button>
+          )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.4fr 1fr 1fr', gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Categoria *</div>
             <input
               value={form.categoria}
+              disabled={!!extraParent}
               onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))}
               onFocus={() => setCatFocus(true)}
               onBlur={() => setTimeout(() => setCatFocus(false), 150)}
-              placeholder="Es. Edile, o scrivi liberamente" style={inputSt} autoComplete="off" />
+              placeholder="Es. Edile, o scrivi liberamente" style={{ ...inputSt, opacity: extraParent ? 0.6 : 1, cursor: extraParent ? 'not-allowed' : 'text' }} autoComplete="off" />
             {catFocus && (() => {
               const q = (form.categoria || '').toLowerCase();
               const matches = CATEGORIE.filter(c => c.toLowerCase().includes(q));
@@ -314,7 +362,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
           <div>
             <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Fornitore</div>
-            <input value={form.fornitore} onChange={e => setForm(p => ({ ...p, fornitore: e.target.value }))} placeholder="Es. Impresa Rossi" style={inputSt} />
+            <input value={form.fornitore} disabled={!!extraParent} onChange={e => setForm(p => ({ ...p, fornitore: e.target.value }))} placeholder="Es. Impresa Rossi" style={{ ...inputSt, opacity: extraParent ? 0.6 : 1, cursor: extraParent ? 'not-allowed' : 'text' }} />
           </div>
           <div>
             <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Data preventivo</div>
@@ -334,7 +382,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
             <button onClick={resetForm} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>Annulla</button>
           )}
           <button onClick={handleSaveVoce} disabled={saving} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
-            {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi preventivo"}
+            {saving ? "Salvataggio..." : editingId ? "Aggiorna" : extraParent ? "Aggiungi extra" : "Aggiungi preventivo"}
           </button>
         </div>
       </div>
@@ -351,34 +399,38 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
             <span style={{ ...mono, fontSize: 9, color: T.muted }}>{list.length} {list.length === 1 ? "preventivo" : "preventivi"}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {list.map(renderRigaPreventivo)}
+            {list.map(v => {
+              const extras = extrasByParent[v.id] || [];
+              return (
+                <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {renderRigaPreventivo(v, false)}
+                  {extras.map(e => renderRigaPreventivo(e, true))}
+                  <button onClick={() => startAddExtra(v)} style={{ alignSelf: 'flex-start', marginLeft: 24, border: `1px dashed ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 10px', cursor: 'pointer' }}>
+                    + Aggiungi extra
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
     </div>
   );
 
-  // ── Tab Accettati ─────────────────────────────────────────────────
-  const tabAccettati = (
-    <div>
-      {accettate.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '32px 20px', ...mono, fontSize: 11, color: T.muted }}>
-          Nessun preventivo accettato. Accetta un preventivo dalla scheda Preventivi.
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
-            {accettate.map(v => {
-              const pagato = pagatoByVoce[v.id] || 0;
-              const residuo = Number(v.importo || 0) - pagato;
-              const overpaid = pagato > Number(v.importo || 0);
-              const isOpen = expanded === v.id;
-              const pags = pagamenti.filter(p => p.voce_id === v.id);
-              return (
-                <div key={v.id} style={{ border: `1px solid ${T.border}`, background: T.bg }}>
+  // ── Card voce accettata (riusata per operatore principale + extra) ──
+  const renderAccettataCard = (v, isExtra = false) => {
+    const pagato = pagatoByVoce[v.id] || 0;
+    const residuo = Number(v.importo || 0) - pagato;
+    const overpaid = pagato > Number(v.importo || 0);
+    const isOpen = expanded === v.id;
+    const pags = pagamenti.filter(p => p.voce_id === v.id);
+    return (
+                <div key={v.id} style={{ border: `1px solid ${T.border}`, background: isExtra ? T.surface : T.bg, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
                   <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', cursor: 'pointer' }}>
-                    <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>{v.categoria}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.fornitore || "—"}</span>
+                    {isExtra
+                      ? <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>Extra</span>
+                      : <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>{v.categoria}</span>}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
                     <div style={{ display: 'flex', gap: 18, flexShrink: 0, alignItems: 'baseline' }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ ...mono, fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Accettato</div>
@@ -441,6 +493,36 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                     </div>
                   )}
                 </div>
+    );
+  };
+
+  // ── Tab Accettati ─────────────────────────────────────────────────
+  const tabAccettati = (
+    <div>
+      {accettate.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px 20px', ...mono, fontSize: 11, color: T.muted }}>
+          Nessun preventivo accettato. Accetta un preventivo dalla scheda Preventivi.
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 18 }}>
+            {accettatePerOperatore.map(g => {
+              const gAcc = g.items.reduce((s, x) => s + Number(x.importo || 0), 0);
+              const gPag = g.items.reduce((s, x) => s + (pagatoByVoce[x.id] || 0), 0);
+              const hasExtra = g.items.length > 1;
+              return (
+                <div key={g.rootId}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px' }}>{g.categoria}</span>
+                    <span style={{ ...mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{g.label}</span>
+                    {hasExtra && (
+                      <span style={{ ...mono, fontSize: 9, color: T.muted, marginLeft: 'auto' }}>tot {currency(gAcc)} · residuo {currency(gAcc - gPag)}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {g.items.map(v => renderAccettataCard(v, !!v.parent_id))}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -486,7 +568,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   // ── MODAL ────────────────────────────────────────────────────────
   const modal = modalOpen && (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+      <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
