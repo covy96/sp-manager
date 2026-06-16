@@ -307,6 +307,17 @@ export default function CommessaDetailPage() {
 
   useEffect(() => { if (studioId) loadData(); }, [commessaId, studioId]);
 
+  // Forza la suddivisione pagamenti: alla prima apertura (per montaggio) di una
+  // commessa senza rate, apri automaticamente il modale "Genera Rate".
+  // È rinviabile (vedi banner), ma riappare alla prossima apertura finché manca.
+  const forcedRataTried = React.useRef(false);
+  useEffect(() => {
+    if (forcedRataTried.current) return;
+    if (loading || !commessa) return;
+    forcedRataTried.current = true;
+    if (suddivisione.length === 0) { setRataStep("config"); setRataModal(true); }
+  }, [loading, commessa, suddivisione.length]);
+
   // ── CALCOLATI — usa nomi campi originali ──────────────────────
   const importoBase = Number(commessa?.importo_offerta_base) || 0;
 
@@ -715,8 +726,25 @@ export default function CommessaDetailPage() {
       {/* PROFORMA / FATTURA */}
       <Panel>
         <SectionHeader title={isFattura ? "Fattura" : "Proforma"} action={
-          <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
+          hasAnyRates
+            ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
+            : <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>crea prima la suddivisione pagamenti</span>
+                <BtnPrimary disabled style={{ opacity:0.5, cursor:'not-allowed' }}>+ Nuova</BtnPrimary>
+              </div>
         } />
+        {!hasAnyRates && (
+          <div onClick={() => { setRataStep("config"); setRataModal(true); }}
+            style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', marginBottom:14, cursor:'pointer',
+              background:T.redLight, border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm }}>
+            <span style={{ fontSize:15 }}>⚠️</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:T.ink }}>Suddivisione pagamenti mancante</div>
+              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>Senza rate non puoi emettere {isFattura ? "fatture" : "proforma"}. Tocca per crearla.</div>
+            </div>
+            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:T.red, whiteSpace:'nowrap' }}>Crea rate →</span>
+          </div>
+        )}
         {proforma.filter(p => !p.pagato).length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Da pagare</div>
@@ -1224,7 +1252,7 @@ export default function CommessaDetailPage() {
               </div>
             </div>
             <div><FieldLabel>Numero di rate</FieldLabel><Input type="number" value={rataCount} onChange={e => setRataCount(e.target.value)} /></div>
-            <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setRataModal(false)}>Annulla</BtnGhost><BtnPrimary onClick={initRateRows}>Avanti →</BtnPrimary></div>
+            <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setRataModal(false)}>Lo farò dopo</BtnGhost><BtnPrimary onClick={initRateRows}>Avanti →</BtnPrimary></div>
           </div>
         ) : (
           <form onSubmit={handleSaveRate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
