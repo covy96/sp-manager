@@ -5,6 +5,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import SlidingTabs from "./SlidingTabs";
 
 const CATEGORIE = [
   "Edile", "Elettricista", "Idraulico", "Illuminotecnica", "Falegnameria",
@@ -581,21 +582,16 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
         </div>
 
-        {/* Segmented control (stile iOS) con thumb scorrevole */}
-        <div style={{ position: 'relative', display: 'flex', background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 999, padding: 4, width: '100%', maxWidth: 360, marginBottom: 22 }}>
-          {/* thumb */}
-          <div style={{ position: 'absolute', top: 4, bottom: 4, left: 4, width: 'calc(50% - 4px)', borderRadius: 999, background: T.surface, boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04)', transform: tab === 'accettati' ? 'translateX(100%)' : 'translateX(0)', transition: 'transform 280ms cubic-bezier(0.32,0.72,0,1)' }} />
-          {[["preventivi", "Preventivi", voci.length], ["accettati", "Accettati", accettate.length]].map(([key, label, count]) => (
-            <button key={key} onClick={() => setTab(key)} style={{
-              flex: 1, position: 'relative', zIndex: 1, border: 'none', background: 'transparent', cursor: 'pointer',
-              padding: '7px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600,
-              color: tab === key ? T.navy : T.muted, transition: 'color 200ms',
-            }}>
-              {label}
-              <span style={{ ...mono, fontSize: 9, color: tab === key ? T.navy : T.muted, opacity: 0.7 }}>{count}</span>
-            </button>
-          ))}
+        {/* Switch Preventivi/Accettati — stesso SlidingTabs del resto dell'app */}
+        <div style={{ marginBottom: 22 }}>
+          <SlidingTabs
+            tabs={[
+              { key: "preventivi", label: `Preventivi ${voci.length}` },
+              { key: "accettati", label: `Accettati ${accettate.length}` },
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
         </div>
 
         {tab === "preventivi" ? tabPreventivi : tabAccettati}
