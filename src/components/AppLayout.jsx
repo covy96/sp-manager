@@ -148,16 +148,28 @@ export default function AppLayout({ session, children }) {
   }, []);
 
   // Auto-apertura al primo accesso di ogni nuovo utente (una volta sola).
-  // Il flag è su DB (team_members.guide_seen) → vale su tutti i dispositivi.
+  // Guardia doppia: flag locale (per-utente) che protegge SEMPRE sullo stesso
+  // dispositivo anche se il write su DB fallisce, + flag su DB
+  // (team_members.guide_seen) per la validità cross-device.
   const guideAutoTried = useRef(false);
   useEffect(() => {
     if (guideAutoTried.current) return;
     if (!teamMember?.id || !studioId || !session?.user?.id) return;
     guideAutoTried.current = true;
-    if (teamMember.guide_seen) return; // già vista
+    const localKey = `asm-guide-seen-${session.user.id}`;
+    if (teamMember.guide_seen || localStorage.getItem(localKey)) return; // già vista
     const t = setTimeout(() => setGuideOpen(true), 700); // attende il render della sidebar
-    // marca come vista su tutte le membership dell'utente
-    supabase.from("team_members").update({ guide_seen: true }).eq("user_account", session.user.id);
+    // Segna subito in locale: garantisce che non si riapra a ogni riavvio
+    // anche se l'UPDATE su DB non va a buon fine (es. RLS).
+    localStorage.setItem(localKey, "1");
+    // Marca come vista su tutte le membership dell'utente (cross-device).
+    supabase
+      .from("team_members")
+      .update({ guide_seen: true })
+      .eq("user_account", session.user.id)
+      .then(({ error }) => {
+        if (error) console.warn("[guide] impossibile salvare guide_seen su DB:", error.message);
+      });
     return () => clearTimeout(t);
   }, [teamMember?.id, teamMember?.guide_seen, studioId, session?.user?.id]);
 
