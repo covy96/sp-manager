@@ -44,6 +44,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [catFocus, setCatFocus] = useState(false);
 
   const [expanded, setExpanded] = useState(null);   // voce_id con registro pagamenti aperto
   const [pagForm, setPagForm] = useState(EMPTY_PAG);
@@ -284,10 +285,32 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           {editingId ? "Modifica preventivo" : "Nuovo preventivo"}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.4fr 1fr 1fr', gap: 10 }}>
-          <div>
+          <div style={{ position: 'relative' }}>
             <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Categoria *</div>
-            <input list="capex-categorie" value={form.categoria} onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))} placeholder="Es. Edile" style={inputSt} />
-            <datalist id="capex-categorie">{CATEGORIE.map(c => <option key={c} value={c} />)}</datalist>
+            <input
+              value={form.categoria}
+              onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))}
+              onFocus={() => setCatFocus(true)}
+              onBlur={() => setTimeout(() => setCatFocus(false), 150)}
+              placeholder="Es. Edile, o scrivi liberamente" style={inputSt} autoComplete="off" />
+            {catFocus && (() => {
+              const q = (form.categoria || '').toLowerCase();
+              const matches = CATEGORIE.filter(c => c.toLowerCase().includes(q));
+              if (matches.length === 0) return null;
+              return (
+                <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 4, zIndex: 200, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, boxShadow: T.shadowMd, overflow: 'hidden', maxHeight: 220, overflowY: 'auto' }}>
+                  {matches.map(c => (
+                    <button key={c} type="button"
+                      onMouseDown={() => { setForm(p => ({ ...p, categoria: c })); setCatFocus(false); }}
+                      style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", borderBottom: `0.5px solid ${T.border}` }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.surface2}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           <div>
             <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Fornitore</div>
