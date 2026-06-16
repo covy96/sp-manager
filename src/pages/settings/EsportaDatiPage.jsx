@@ -4,6 +4,7 @@ import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { useStudio } from '../../hooks/useStudio';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
+import { calcolaIncassato } from '../../lib/utils';
 
 function currency(v) {
   return Number(v || 0).toFixed(2);
@@ -139,8 +140,13 @@ export default function EsportaDatiPage() {
       if (selected.has('commesse')) {
         setProgress('Esportazione commesse...');
         const { data: comm } = await supabase.from('commesse')
-          .select('numero_offerta, nome_commessa, cliente, project_name, importo_offerta_base, importo_totale, importo_incassato, stato_pagamento, data_commessa, created_at')
+          .select('id, numero_offerta, nome_commessa, cliente, project_name, importo_offerta_base, importo_totale, stato_pagamento, data_commessa, created_at')
           .eq('studio', studioId).is('deleted_at', null).order('created_at', { ascending: false });
+
+        // Incassato dalle rate pagate (stessa fonte di tutte le viste)
+        const incassatoMap = (comm ?? []).length
+          ? await calcolaIncassato((comm ?? []).map(c => c.id), studioId, supabase)
+          : {};
 
         sheets.push({
           name: 'Commesse',
@@ -148,7 +154,7 @@ export default function EsportaDatiPage() {
             ['N° Offerta', 'Nome commessa', 'Cliente', 'Progetto', 'Importo base', 'Importo totale', 'Incassato', 'Residuo', 'Stato pagamento', 'Data commessa'],
             ...(comm ?? []).map(c => {
               const tot = Number(c.importo_totale || c.importo_offerta_base || 0);
-              const inc = Number(c.importo_incassato || 0);
+              const inc = Number(incassatoMap[c.id] || 0);
               return [
                 c.numero_offerta, c.nome_commessa, c.cliente, c.project_name || '',
                 currency(c.importo_offerta_base), currency(tot),
