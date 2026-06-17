@@ -9,6 +9,25 @@ function generateInviteCode() {
   return code;
 }
 
+async function avviaStripe(studioId, memberId, planId) {
+  const priceEnvMap = {
+    studio: import.meta.env.VITE_STRIPE_STUDIO_PRICE_ID,
+    pro: import.meta.env.VITE_STRIPE_PRO_PRICE_ID,
+  };
+  const priceId = priceEnvMap[planId];
+  if (!priceId) return null;
+  const { data } = await supabase.functions.invoke("create-checkout-session", {
+    body: {
+      priceId,
+      studioId,
+      userId: memberId,
+      successUrl: window.location.origin + "/impostazioni/piano?success=true",
+      cancelUrl: window.location.origin + "/dashboard",
+    },
+  });
+  return data?.url ?? null;
+}
+
 async function createStudioForUser(user, pendingStudio) {
   const code = generateInviteCode();
   const { data: studio, error: studioError } = await supabase
@@ -28,14 +47,14 @@ async function createStudioForUser(user, pendingStudio) {
     return null;
   }
 
-  const { error: memberError } = await supabase.from("team_members").insert({
+  const { data: member, error: memberError } = await supabase.from("team_members").insert({
     user_account: user.id,
     user_email: user.email,
     user_name: pendingStudio.ownerName || user.email,
     studio: studio.id,
     role_internal: "Owner",
     active: true,
-  });
+  }).select("id").single();
 
   if (memberError) {
     console.error("Errore creazione team_member:", memberError);
@@ -45,7 +64,7 @@ async function createStudioForUser(user, pendingStudio) {
   await seedServiceTaskTemplates(studio.id);
   localStorage.setItem("asm-active-studio", studio.id);
   localStorage.removeItem("asm-pending-studio");
-  return studio;
+  return { studio, memberId: member?.id };
 }
 
 export default function AuthCallbackPage() {
@@ -99,13 +118,23 @@ export default function AuthCallbackPage() {
           name: user.user_metadata.pending_studio_name,
           tipo_fatturazione: user.user_metadata.pending_studio_tipo_fatturazione || "proforma",
           ownerName: user.user_metadata.pending_studio_owner_name || user.user_metadata.full_name || user.email,
+          piano: user.user_metadata.pending_studio_piano || "free",
         };
       }
       if (pendingStudioData) {
-        const studio = await createStudioForUser(user, pendingStudioData);
-        if (!studio) {
+        const result = await createStudioForUser(user, pendingStudioData);
+        if (!result) {
           setError("Account confermato, ma si è verificato un errore nella creazione dello studio. Accedi e riprova.");
           return;
+        }
+        const piano = pendingStudioData.piano || "free";
+        if (piano !== "free") {
+          const stripeUrl = await avviaStripe(result.studio.id, result.memberId, piano);
+          if (stripeUrl) {
+            await supabase.auth.signOut();
+            window.location.href = stripeUrl;
+            return;
+          }
         }
       }
 
