@@ -453,10 +453,10 @@ function MockFatture() {
 const PLANS = [
   { id: 'free',   name: 'Free',   price: '€0',     period: '/mese', desc: 'Per iniziare',           highlight: false, cta: 'Inizia gratis', trial: false,
     features: ['1 utente interno','1 collaboratore esterno','5 progetti','5 commesse','Task e timesheet','Calendario'] },
-  { id: 'studio', name: 'Studio', price: '€14,99', period: '/mese', desc: 'Per studi in crescita',  highlight: true,  cta: '1 mese gratis →', trial: true,
-    features: ['Fino a 10 utenti','25 progetti','25 commesse','Analisi Hub e report avanzati','Proforma, fatture e CAPEX','Gantt','Supporto prioritario'] },
-  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: false, cta: '1 mese gratis →', trial: true,
-    features: ['Utenti illimitati','Progetti illimitati','Commesse illimitate','Tutto di Studio','Gantt avanzato','Backup su richiesta','Account manager'] },
+  { id: 'studio', name: 'Studio', price: '€19,99', period: '/mese', desc: 'Per studi in crescita',  highlight: false, cta: '1 mese gratis →', trial: true,
+    features: ['Fino a 5 utenti','15 progetti','15 commesse','Analisi Hub e report avanzati','Proforma, fatture e CAPEX'] },
+  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: true,  cta: '1 mese gratis →', trial: true,
+    features: ['Tutto di Studio','Utenti illimitati','Progetti illimitati','Commesse illimitate','Gantt','Report di cantiere'] },
 ];
 
 /* ─── FAQ ────────────────────────────────────────────────────── */
