@@ -676,7 +676,11 @@ export default function GuidaApp({ open, onClose }) {
     const ttLeft = onRight
       ? Math.max(16, rect.left - ttWidth - 18)
       : Math.max(16, Math.min(rect.left + rect.width + 18, window.innerWidth - ttWidth - 16));
-    const ttTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 380));
+    // Lascia sempre spazio sotto: il tooltip non deve mai uscire dalla finestra
+    // (altrimenti il footer con "Avanti →" finisce fuori schermo). maxHeight
+    // dinamico = spazio disponibile, con scroll interno per i contenuti lunghi.
+    const ttTop = Math.max(16, Math.min(rect.top - 8, window.innerHeight - 316));
+    const ttMaxH = window.innerHeight - ttTop - 16;
     return (
       <>
         {/* click-catcher trasparente */}
@@ -684,7 +688,7 @@ export default function GuidaApp({ open, onClose }) {
         {/* anello + dimming via box-shadow */}
         <div style={{ position: "fixed", top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2, borderRadius: 12, border: `2px solid ${T.brass || "#D9C98A"}`, boxShadow: "0 0 0 9999px rgba(14,14,13,0.62)", zIndex: 81, pointerEvents: "none", transition: "all 0.25s ease" }} />
         {/* tooltip */}
-        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: "88vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82, display: "flex", flexDirection: "column" }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: ttMaxH, overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82, display: "flex", flexDirection: "column" }}>
           <Body compact />
         </div>
       </>
