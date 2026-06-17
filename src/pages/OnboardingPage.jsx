@@ -9,13 +9,19 @@ function generateInviteCode() {
   return code;
 }
 
+const TIPO_FATTURAZIONE = [
+  { id: "proforma", emoji: "👤", titolo: "Privati / Persone fisiche", sub: "Proforma → Pagamento → Fattura" },
+  { id: "fattura",  emoji: "🏢", titolo: "Società (Srl, Spa, ecc.)",  sub: "Fattura → Pagamento sulla fattura" },
+];
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const [tab, setTab]               = useState("crea"); // "crea" | "unisciti"
-  const [inviteCode, setInviteCode] = useState("");
-  const [nuovoStudio, setNuovoStudio] = useState("");
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState("");
+  const [tab, setTab]                     = useState("crea"); // "crea" | "unisciti"
+  const [inviteCode, setInviteCode]       = useState("");
+  const [nuovoStudio, setNuovoStudio]     = useState("");
+  const [tipoFatt, setTipoFatt]           = useState("proforma");
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
 
   // Al mount: gestisce studio in sospeso (crea-studio) o join in sospeso (unisciti)
   useEffect(() => {
@@ -129,7 +135,7 @@ export default function OnboardingPage() {
     const code = generateInviteCode();
     const { data: studio, error: studioErr } = await supabase
       .from("studios")
-      .insert({ name: nome, owner_id: user.id, invite_code: code, piano: "free", tipo_fatturazione: "proforma" })
+      .insert({ name: nome, owner_id: user.id, invite_code: code, piano: "free", tipo_fatturazione: tipoFatt })
       .select("*").single();
 
     if (studioErr || !studio) {
@@ -249,7 +255,7 @@ export default function OnboardingPage() {
         <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
           {tab === "crea" ? (
             <form onSubmit={handleCreaStudio} className="space-y-4">
-              <p className="text-xs text-white/40">Crea un nuovo studio di architettura e diventa il titolare.</p>
+              <p className="text-xs text-white/40">Crea un nuovo studio e diventa il titolare.</p>
               <div>
                 <label className="mb-1 block text-sm font-medium text-white/80">Nome dello studio *</label>
                 <input
@@ -261,6 +267,30 @@ export default function OnboardingPage() {
                   required
                   autoFocus
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Tipo di fatturazione</label>
+                <div className="space-y-2 mt-1">
+                  {TIPO_FATTURAZIONE.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTipoFatt(t.id)}
+                      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition ${
+                        tipoFatt === t.id
+                          ? "border-[#0a84ff] bg-[#0a84ff]/15"
+                          : "border-[#48484a] bg-[#3a3a3c] hover:border-[#0a84ff]/50"
+                      }`}
+                    >
+                      <span>{t.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-white">{t.titolo}</div>
+                        <div className="text-[11px] text-white/40">{t.sub}</div>
+                      </div>
+                      {tipoFatt === t.id && <span className="text-[#0a84ff] text-xs font-bold">✓</span>}
+                    </button>
+                  ))}
+                </div>
               </div>
               {error && <p className="text-sm text-[#ff453a]">{error}</p>}
               <button type="submit" disabled={loading || !nuovoStudio.trim()} className={btnPrimary}>
