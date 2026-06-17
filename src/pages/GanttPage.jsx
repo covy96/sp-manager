@@ -3,6 +3,7 @@ import SlidingTabs from "../components/SlidingTabs";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from "../lib/supabase";
 import * as XLSX from "xlsx";
 
@@ -652,6 +653,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
 // ── PROJECT GANTT ─────────────────────────────────────────────────
 function ProjectGantt({ project, studioId, onBack, version }) {
   const { T } = useTheme();
+  const showToast = useToast();
   const [lavorazioni, setLavorazioni] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [viewMode, setViewMode]       = useState('week');
@@ -790,8 +792,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       percentuale_completamento: 0,
       dipendenza_id: newRow.dipendenza_id || null,
     };
-    const { data, error } = await supabase.from("lavorazioni_gantt").insert(payload).select();
-    if (!error) {
+    const { error } = await supabase.from("lavorazioni_gantt").insert(payload).select();
+    if (error) {
+      showToast("Errore nel salvataggio della lavorazione: " + error.message, "error");
+    } else {
       setNewRow({ descrizione:'', operatore:'', dipendenza_id:'', data_inizio: toISO(new Date()), data_fine: toISO(addDays(new Date(), 6)), durata_giorni:7 });
       await loadData();
     }
@@ -816,7 +820,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       updated.colore = value ? colorForImpresa(value, map, T.navy) : T.navy;
     }
 
-    await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
+    const { error: updateErr } = await supabase.from('lavorazioni_gantt').update(updated).eq('id', lav.id);
+    if (updateErr) { showToast("Errore salvataggio: " + updateErr.message, "error"); return; }
 
     // Propaga SEMPRE a tutte le dipendenti — non solo se delta != 0
     if (['data_inizio', 'data_fine', 'durata_giorni'].includes(field)) {

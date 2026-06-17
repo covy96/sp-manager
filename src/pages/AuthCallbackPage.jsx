@@ -147,11 +147,13 @@ export default function AuthCallbackPage() {
           const { data: existing } = await supabase
             .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
 
+          let joinError = null;
           if (existing) {
-            await supabase.from("team_members")
+            const { error } = await supabase.from("team_members")
               .update({ studio: pendingJoin.studioId }).eq("id", existing.id);
+            joinError = error;
           } else {
-            await supabase.from("team_members").insert({
+            const { error } = await supabase.from("team_members").insert({
               user_account: user.id,
               user_email: user.email,
               user_name: pendingJoin.memberName || user.email,
@@ -159,6 +161,13 @@ export default function AuthCallbackPage() {
               role_internal: "Collaboratore Interno",
               active: true,
             });
+            joinError = error;
+          }
+
+          if (joinError) {
+            console.error("Errore join studio:", joinError);
+            setError("Account confermato ma errore nell'accesso allo studio. Riprova dal login.");
+            return;
           }
 
           await seedServiceTaskTemplates(pendingJoin.studioId);
