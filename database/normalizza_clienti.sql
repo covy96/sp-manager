@@ -38,10 +38,11 @@ update offerte o set cliente = c.canonical
   where o.studio = c.studio and lower(btrim(o.cliente)) = c.key and o.cliente <> c.canonical;
 
 -- Allinea anche la rubrica (global_contacts) alla grafia canonica
+-- NB: global_contacts in questo DB non ha la colonna deleted_at.
 update global_contacts g set full_name = c.canonical
   from _canon_clienti c
   where g.studio = c.studio and lower(btrim(g.full_name)) = c.key
-    and g.deleted_at is null and g.full_name <> c.canonical;
+    and g.full_name <> c.canonical;
 
 -- ── PARTE B — Unisci i contatti duplicati in rubrica (OPZIONALE) ───
 -- Ripunta i collegamenti dei contatti duplicati a uno solo e mette gli
@@ -63,14 +64,14 @@ update global_contacts g set full_name = c.canonical
 --               + (case when btrim(coalesce(company,'')) <> '' then 1 else 0 end)) desc,
 --               created_at asc) as keep_id
 --   from global_contacts
---   where deleted_at is null and full_name is not null and btrim(full_name) <> '' and studio is not null
+--   where full_name is not null and btrim(full_name) <> '' and studio is not null
 -- )
 -- select id, keep_id from ranked where rn > 1;
 --
 -- update project_contacts pc set global_contact_id = d.keep_id
 --   from _gc_dups d where pc.global_contact_id = d.id;
 --
--- update global_contacts set deleted_at = now() where id in (select id from _gc_dups);
+-- delete from global_contacts where id in (select id from _gc_dups);
 --
 -- drop table _gc_dups;
 
