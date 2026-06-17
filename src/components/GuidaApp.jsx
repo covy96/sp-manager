@@ -688,7 +688,7 @@ export default function GuidaApp({ open, onClose }) {
         {/* anello + dimming via box-shadow */}
         <div style={{ position: "fixed", top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2, borderRadius: 12, border: `2px solid ${T.brass || "#D9C98A"}`, boxShadow: "0 0 0 9999px rgba(14,14,13,0.62)", zIndex: 81, pointerEvents: "none", transition: "all 0.25s ease" }} />
         {/* tooltip */}
-        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: ttMaxH, overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82, display: "flex", flexDirection: "column" }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: ttMaxH, overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82 }}>
           <Body compact />
         </div>
       </>
@@ -698,7 +698,7 @@ export default function GuidaApp({ open, onClose }) {
   // ── Modalità CENTRATA: card con mockup ──────────────────────────
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px", display: "flex", flexDirection: "column" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px" }}>
         <Body compact={false} />
       </div>
     </div>
