@@ -1372,6 +1372,25 @@ export default function GanttPage() {
       .then(({data})=>{ setProjects(data??[]); setLoading(false); });
   }, [studioId]);
 
+  // Sincronizza la browser history con la navigazione interna del Gantt
+  // così il tasto ← del browser funziona correttamente
+  useEffect(() => {
+    if (selectedProject && selectedVersion) {
+      window.history.pushState({ gantt: 'editor' }, '');
+    } else if (selectedProject) {
+      window.history.pushState({ gantt: 'versions' }, '');
+    }
+  }, [!!selectedProject, !!selectedVersion]);
+
+  useEffect(() => {
+    const handlePop = () => {
+      if (selectedVersion) { setSelectedVersion(null); return; }
+      if (selectedProject) { setSelectedProject(null); return; }
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [selectedVersion, selectedProject]);
+
   // Progetto + Versione → Gantt editor
   if (selectedProject && selectedVersion) return (
     <ProjectGantt
