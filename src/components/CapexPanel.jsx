@@ -117,11 +117,14 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     return m;
   }, [voci]);
 
-  // Preventivi raggruppati per categoria (normalizzata) — solo voci principali,
-  // gli extra vengono annidati sotto il rispettivo padre.
+  // Preventivi raggruppati per categoria (normalizzata) — voci principali +
+  // extra orfani (il cui padre è stato eliminato) trattati come top-level.
   const vociPerCategoria = useMemo(() => {
+    const parentIds = new Set(voci.filter(v => !v.parent_id).map(v => v.id));
     const m = {};
-    voci.filter(v => !v.parent_id).forEach(v => {
+    voci.forEach(v => {
+      // Mostra come top-level: voci senza parent, oppure extra il cui padre non esiste più
+      if (v.parent_id && parentIds.has(v.parent_id)) return; // extra normale, gestito dal padre
       const k = catKey(v.categoria);
       if (!m[k]) m[k] = { label: (v.categoria || "Altro").trim() || "Altro", list: [] };
       m[k].list.push(v);
@@ -201,9 +204,14 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   };
 
   const softDeleteVoce = async (v) => {
-    const { error } = await supabase.from("capex_voci").update({ deleted_at: new Date().toISOString() }).eq("id", v.id);
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("capex_voci").update({ deleted_at: now }).eq("id", v.id);
     setConfirmDelete(null);
     if (error) { showToast("Errore eliminazione: " + error.message); return; }
+    // Cascade: elimina anche gli extra figli
+    if (!v.parent_id) {
+      await supabase.from("capex_voci").update({ deleted_at: now }).eq("parent_id", v.id);
+    }
     load();
   };
 
