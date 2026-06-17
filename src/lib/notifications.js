@@ -121,18 +121,30 @@ export async function getUnreadNotifications(studioId, userEmail) {
     .eq("user_email", userEmail)
     .eq("read", false)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(50);
   return data ?? [];
 }
 
 /**
- * Segna come lette
+ * Segna tutte le notifiche non lette come lette
  */
 export async function markAllRead(studioId, userEmail) {
-  await supabase
+  const { error } = await supabase
     .from("notifications")
     .update({ read: true })
     .eq("studio", studioId)
     .eq("user_email", userEmail)
     .eq("read", false);
+  if (error) console.error("Errore markAllRead:", error.message);
+}
+
+/**
+ * Segna una singola notifica come letta
+ */
+export async function markOneRead(notifId) {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", notifId);
+  if (error) console.error("Errore markOneRead:", error.message);
 }

@@ -10,7 +10,7 @@ import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
 import GuidaApp from "./GuidaApp";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
-import { getUnreadNotifications, markAllRead } from "../lib/notifications";
+import { getUnreadNotifications, markAllRead, markOneRead } from "../lib/notifications";
 import { messaging, onMessage } from "../lib/firebase";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
@@ -207,9 +207,11 @@ export default function AppLayout({ session, children }) {
   useEffect(() => {
     if (!studioId || !session?.user?.email) return;
     const email = session.user.email;
-    const ch = supabase.channel(`notifs-${studioId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `studio=eq.${studioId}` },
-        ({ new: row }) => { if (row.user_email === email && !row.read) setUnreadNotifs(p => [row, ...p]); })
+    const ch = supabase.channel(`notifs-${studioId}-${email}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'notifications',
+        filter: `studio=eq.${studioId}`,
+      }, ({ new: row }) => { if (row.user_email === email && !row.read) setUnreadNotifs(p => [row, ...p]); })
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [studioId, session?.user?.email]);
@@ -534,7 +536,7 @@ export default function AppLayout({ session, children }) {
                     {unreadNotifs.length > 0 ? `${unreadNotifs.length} non lette` : 'Notifiche'}
                   </span>
                   {unreadNotifs.length > 0 && (
-                    <button onClick={() => { markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
+                    <button onClick={async () => { await markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
                       style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, letterSpacing:'0.05em' }}>
                       Segna tutto letto
                     </button>
@@ -547,7 +549,7 @@ export default function AppLayout({ session, children }) {
                     </div>
                   ) : unreadNotifs.map(n => (
                     <button key={n.id}
-                      onClick={() => { if (n.link) navigate(n.link); setBellOpen(false); markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
+                      onClick={async () => { setBellOpen(false); await markOneRead(n.id); setUnreadNotifs(p => p.filter(x => x.id !== n.id)); if (n.link) navigate(n.link); }}
                       style={{ display:'block', width:'100%', padding:'12px 14px', textAlign:'left', background:'none', border:'none', cursor: n.link ? 'pointer' : 'default', borderBottom:`0.5px solid ${T.border}` }}
                       onMouseEnter={e => e.currentTarget.style.background=T.border}
                       onMouseLeave={e => e.currentTarget.style.background='transparent'}
