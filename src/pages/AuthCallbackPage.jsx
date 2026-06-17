@@ -88,17 +88,24 @@ export default function AuthCallbackPage() {
       const user = session.user;
 
       // ── Caso 1: studio da creare (da /crea-studio) ──
+      // Prova prima localStorage; fallback ai metadati utente (email aperta in browser diverso)
+      let pendingStudioData = null;
       const rawStudio = localStorage.getItem("asm-pending-studio");
       if (rawStudio) {
-        try {
-          const pendingStudio = JSON.parse(rawStudio);
-          const studio = await createStudioForUser(user, pendingStudio);
-          if (!studio) {
-            setError("Account confermato, ma si è verificato un errore nella creazione dello studio. Accedi e riprova.");
-            return;
-          }
-        } catch (e) {
-          console.error("Errore parsing pending studio:", e);
+        try { pendingStudioData = JSON.parse(rawStudio); } catch (e) { /* ignorato */ }
+      }
+      if (!pendingStudioData && user.user_metadata?.pending_studio_name) {
+        pendingStudioData = {
+          name: user.user_metadata.pending_studio_name,
+          tipo_fatturazione: user.user_metadata.pending_studio_tipo_fatturazione || "proforma",
+          ownerName: user.user_metadata.pending_studio_owner_name || user.user_metadata.full_name || user.email,
+        };
+      }
+      if (pendingStudioData) {
+        const studio = await createStudioForUser(user, pendingStudioData);
+        if (!studio) {
+          setError("Account confermato, ma si è verificato un errore nella creazione dello studio. Accedi e riprova.");
+          return;
         }
       }
 

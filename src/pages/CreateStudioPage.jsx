@@ -70,7 +70,14 @@ export default function CreateStudioPage({ session }) {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: `${nome.trim()} ${cognome.trim()}` } },
+      options: {
+        data: {
+          full_name: `${nome.trim()} ${cognome.trim()}`,
+          pending_studio_name: pendingStudio.name,
+          pending_studio_tipo_fatturazione: pendingStudio.tipo_fatturazione,
+          pending_studio_owner_name: pendingStudio.ownerName,
+        },
+      },
     });
 
     if (signUpError) {

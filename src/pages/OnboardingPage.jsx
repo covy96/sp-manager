@@ -22,12 +22,22 @@ export default function OnboardingPage() {
       if (!user) { setLoading(false); return; }
 
       // ── Caso 1: studio da creare (da /crea-studio) ──
+      // Fallback ai metadati utente se localStorage è assente (browser diverso)
+      let pendingStudio = null;
       const rawStudio = localStorage.getItem("asm-pending-studio");
       if (rawStudio) {
+        try { pendingStudio = JSON.parse(rawStudio); } catch (e) { /* ignorato */ }
+      }
+      if (!pendingStudio && user.user_metadata?.pending_studio_name) {
+        pendingStudio = {
+          name: user.user_metadata.pending_studio_name,
+          tipo_fatturazione: user.user_metadata.pending_studio_tipo_fatturazione || "proforma",
+          ownerName: user.user_metadata.pending_studio_owner_name || user.user_metadata.full_name || user.email,
+        };
+      }
+      if (pendingStudio) {
         try {
-          const pendingStudio = JSON.parse(rawStudio);
           const code = generateInviteCode();
-
           const { data: studio, error: studioErr } = await supabase
             .from("studios")
             .insert({
@@ -61,7 +71,7 @@ export default function OnboardingPage() {
           window.location.href = "/dashboard";
           return;
         } catch (e) {
-          console.error("Errore parsing pending studio:", e);
+          console.error("Errore creazione studio da pending:", e);
         }
       }
 

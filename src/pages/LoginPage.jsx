@@ -139,8 +139,8 @@ export default function LoginPage({ session }) {
 
           <p className="text-center text-sm text-white/50">
             Non hai un account?{" "}
-            <Link to="/register" className="text-[#0a84ff] hover:underline">
-              Registrati
+            <Link to="/crea-studio" className="text-[#0a84ff] hover:underline">
+              Crea il tuo studio
             </Link>
           </p>
         </form>
