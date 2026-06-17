@@ -268,8 +268,8 @@ export default function CommessePage() {
 
     // 2. Gestisci progetto
     if (projectMode==="existing" && selectedProjectId) {
-      await supabase.from("commesse").update({project_id:selectedProjectId}).eq("id",newC.id);
-      await supabase.from("projects").update({commessa_id:newC.id}).eq("id",selectedProjectId);
+      const { error: linkErr } = await supabase.from("commesse").update({project_id:selectedProjectId}).eq("id",newC.id);
+      if (!linkErr) await supabase.from("projects").update({commessa_id:newC.id}).eq("id",selectedProjectId);
 
     } else if (projectMode==="new") {
       if (!newProjectData.name.trim()) { setFormError("Il nome del progetto è obbligatorio."); setSaving(false); return; }
@@ -287,7 +287,8 @@ export default function CommessePage() {
       };
       const { data:newP, error:pErr } = await supabase.from("projects").insert(projectPayload).select("*").single();
       if (pErr) { setFormError("Commessa creata, ma errore nel progetto: "+pErr.message); setSaving(false); return; }
-      await supabase.from("commesse").update({project_id:newP.id}).eq("id",newC.id);
+      const { error: linkErr2 } = await supabase.from("commesse").update({project_id:newP.id}).eq("id",newC.id);
+      if (linkErr2) showToast("Commessa creata, ma errore nel collegamento progetto: " + linkErr2.message);
 
       // Crea task predefinite
       const taskInserts=[];

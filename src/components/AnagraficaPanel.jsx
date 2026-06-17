@@ -114,10 +114,11 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         email: gc.email || null, phone: gc.phone || null, studio: studioId,
       });
       if (!gcErr) {
-        await supabase.from("project_contacts").insert({
+        const { error: pcErr } = await supabase.from("project_contacts").insert({
           project_id: projectId, global_contact_id: newId,
           professional_role: pc.professional_role,
         });
+        if (pcErr) showToast("Errore copia contatto: " + pcErr.message);
       }
     }
     setCopying(false); setCopyModal(false); loadContacts();
@@ -166,7 +167,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
     if (editingId) {
       // Update existing
       const pc = contacts.find(c => c.id === editingId);
-      await Promise.all([
+      const [roleRes, gcRes] = await Promise.all([
         supabase.from("project_contacts").update({ professional_role: form.professional_role }).eq("id", editingId),
         supabase.from("global_contacts").update({
           full_name: form.full_name.trim(),
@@ -175,6 +176,11 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           phone: form.phone.trim() || null,
         }).eq("id", pc.global_contact_id),
       ]);
+      if (roleRes.error || gcRes.error) {
+        showToast("Errore aggiornamento contatto: " + (roleRes.error?.message || gcRes.error?.message));
+        setSaving(false);
+        return;
+      }
     } else {
       // Genera ID client-side per evitare dipendenza dal SELECT post-insert (RLS)
       const newGcId = crypto.randomUUID();
@@ -207,8 +213,8 @@ export default function AnagraficaPanel({ projectId, studioId }) {
 
   const handleDelete = async (pc) => {
     setDeleting(true);
-    await supabase.from("project_contacts").delete().eq("id", pc.id);
-    // Also delete the global_contact (it belongs only to this project)
+    const { error: pcErr } = await supabase.from("project_contacts").delete().eq("id", pc.id);
+    if (pcErr) { showToast("Errore eliminazione: " + pcErr.message); setDeleting(false); return; }
     if (pc.global_contact_id) {
       await supabase.from("global_contacts").delete().eq("id", pc.global_contact_id);
     }

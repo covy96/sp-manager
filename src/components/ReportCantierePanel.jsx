@@ -682,7 +682,8 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
     }
 
     // 4. Soft-delete del report
-    await supabase.rpc("elimina_report_cantiere", { p_id: id });
+    const { error: delErr } = await supabase.rpc("elimina_report_cantiere", { p_id: id });
+    if (delErr) { showToast("Errore eliminazione report: " + delErr.message); return; }
     setConfirmDel(null); load();
   };
 
@@ -698,10 +699,11 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       const { error: upErr } = await supabase.storage.from("report-foto").upload(path, compressed, { contentType:"image/jpeg", upsert:false });
       if (upErr) continue;
       const { data:{ publicUrl } } = supabase.storage.from("report-foto").getPublicUrl(path);
-      await supabase.from("report_cantiere_foto").insert({
+      const { error: insErr } = await supabase.from("report_cantiere_foto").insert({
         studio: studioId, report_id: editingId,
         url: publicUrl, ordine: fotos.length,
       });
+      if (insErr) showToast("Errore salvataggio foto: " + insErr.message);
     }
     await loadFotos(editingId);
     setUploadingFoto(false);
@@ -709,8 +711,8 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   };
 
   const handleFotoDelete = async (foto) => {
-    await supabase.from("report_cantiere_foto").delete().eq("id", foto.id);
-    // Rimuovi anche dallo storage
+    const { error: delErr } = await supabase.from("report_cantiere_foto").delete().eq("id", foto.id);
+    if (delErr) { showToast("Errore eliminazione foto: " + delErr.message); return; }
     const path = foto.url.split("/report-foto/")[1]?.split("?")[0];
     if (path) await supabase.storage.from("report-foto").remove([path]);
     setFotos(f => f.filter(x => x.id !== foto.id));
