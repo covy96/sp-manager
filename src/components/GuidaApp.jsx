@@ -418,6 +418,56 @@ function Mock({ type, T }) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  Finta pagina progetto interattiva: pill cliccabili → anteprima
+// ══════════════════════════════════════════════════════════════════
+function ProjectDemo({ T }) {
+  const navy = T.navy;
+  const pills = [
+    { key: "anagrafica", label: "ANAGRAFICA", mock: "contacts" },
+    { key: "capex", label: "CAPEX", mock: "capex" },
+    { key: "report", label: "REPORT", mock: "sitereport" },
+    { key: "pratiche", label: "PRATICHE", mock: "pratiche" },
+    { key: "gantt", label: "GANTT", mock: "gantt" },
+  ];
+  const [active, setActive] = useState("capex");
+  const cur = pills.find((p) => p.key === active) || pills[0];
+
+  return (
+    <div>
+      {/* Header progetto */}
+      <Card T={T} style={{ padding: "10px 12px", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, letterSpacing: "-0.02em" }}>Villa Lario</div>
+            <div style={{ ...mono, fontSize: 7.5, color: T.muted }}>Progetto · Como</div>
+          </div>
+          <span style={{ ...mono, fontSize: 7.5, color: T.green, background: `${T.green}1a`, border: `0.5px solid ${T.green}44`, borderRadius: 10, padding: "2px 8px" }}>In corso</span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {pills.map((p) => {
+            const on = p.key === active;
+            return (
+              <button key={p.key} onClick={() => setActive(p.key)} style={{
+                ...mono, fontSize: 7.5, fontWeight: 600, letterSpacing: "0.1em",
+                border: `0.5px solid ${on ? navy : T.border}`, borderRadius: 6,
+                background: on ? `${navy}14` : T.surface, color: on ? navy : T.muted,
+                padding: "5px 9px", cursor: "pointer",
+              }}>{p.label}</button>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Anteprima dello strumento selezionato */}
+      <div style={{ ...mono, fontSize: 7.5, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: 6, textAlign: "center" }}>
+        Anteprima · {cur.label} — tocca le pill sopra
+      </div>
+      <Mock type={cur.mock} T={T} />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  Slide della guida
 // ══════════════════════════════════════════════════════════════════
 // nav  = voce di sidebar da evidenziare (spotlight) se presente a schermo
@@ -442,6 +492,7 @@ const ALL_SLIDES = [
   { mock: "tips", emoji: "🚀", titolo: "Sfruttala al massimo", testo: "Qualche consiglio per partire con il piede giusto:", punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"] },
 
   // ── GUIDA PRATICA — how-to passo passo (cat: "pratica") ──────────
+  { cat: "pratica", demo: "project", goto: "/progetti", cta: "Apri un progetto vero →", emoji: "🧪", titolo: "Esplora un progetto", testo: "Dentro un progetto trovi tutto in pill, in alto. Qui è una demo: tocca le pill per vedere cosa fa ciascuno strumento.", punti: ["ANAGRAFICA, CAPEX, REPORT, PRATICHE, GANTT: ognuna apre il suo strumento", "Tocca le pill qui sopra per l'anteprima, poi apri un progetto vero"] },
   { cat: "pratica", mock: "tips", goto: "/scrivania", cta: "Vai alla Scrivania →", emoji: "🧭", titolo: "Da dove si parte", testo: "L'ordine consigliato per impostare lo studio e avviare il primo lavoro:", punti: ["Profilo Studio → dati e codice invito per il team", "Impostazioni → Servizi e Voci offerta (il tuo listino)", "Crea un cliente, poi la prima offerta", "Offerta accettata → commessa → suddivisione pagamenti → fatture"] },
   { cat: "pratica", mock: "offer", roles: "pm", goto: "/offerte", cta: "Vai alle Offerte →", emoji: "📋", titolo: "Compilare un'offerta", testo: "Dall'idea al preventivo pronto da inviare, in pochi passaggi.", punti: ["Offerte → + Nuova: scegli il cliente (o creane uno al volo)", "Aggiungi le voci dal listino o scrivile a mano", "Applica sconti e personalizza i prezzi voce per voce", "Il totale si calcola da solo; salva la bozza", "Quando il cliente accetta, trasformala in commessa con un clic"] },
   { cat: "pratica", mock: "commesse", nav: "/commesse", goto: "/commesse", cta: "Vai alle Commesse →", emoji: "💳", titolo: "Impostare la suddivisione pagamenti", testo: "Senza le rate non puoi emettere proforma/fatture: falla appena crei la commessa.", punti: ["Apri la commessa → sezione Suddivisione Pagamenti → + Rate", "Scegli a percentuale o a importo fisso e il numero di rate", "Controlla che il totale torni (100% o l'importo della commessa)", "Salva: ora puoi generare proforma e fatture collegate"] },
@@ -570,7 +621,7 @@ export default function GuidaApp({ open, onClose }) {
 
       {!compact && (
         <div style={{ background: `${T.muted}10`, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 18 }}>
-          <Mock type={s.mock} T={T} />
+          {s.demo === "project" ? <ProjectDemo T={T} /> : <Mock type={s.mock} T={T} />}
         </div>
       )}
 
