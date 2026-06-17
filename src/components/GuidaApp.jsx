@@ -4,6 +4,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { usePlan } from "../hooks/usePlan";
 import { usePermissions } from "../hooks/usePermissions";
+import SlidingTabs from "./SlidingTabs";
 
 const PLAN_ORDER = { free: 0, studio: 1, pro: 2 };
 
@@ -374,6 +375,43 @@ function Mock({ type, T }) {
         </Card>
       );
 
+    case "capex": {
+      const rows = [["Edile", "Impresa Rossi", "€80.000", true], ["Edile", "Costruzioni Blu", "€72.000", false], ["Serramenti", "Vetraria Sole", "€18.500", true]];
+      return (
+        <Card T={T} style={{ padding: "10px 12px" }}>
+          <div style={lbl(T)}>CAPEX — preventivi cantiere</div>
+          {rows.map(([cat, forn, val, acc], k) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ ...mono, fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", color: navy, border: `0.5px solid ${navy}55`, borderRadius: 4, padding: "1px 5px", flexShrink: 0 }}>{cat}</span>
+              <div style={{ flex: 1, fontSize: 9.5, color: T.ink }}>{forn}</div>
+              <div style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.ink }}>{val}</div>
+              <span style={{ ...mono, fontSize: 8, color: acc ? green : T.muted, fontWeight: acc ? 600 : 400, width: 62, textAlign: "right" }}>{acc ? "✓ Accettato" : "—"}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "6px 10px" }}>
+            <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>ACCETTATO</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: navy }}>€98.500</span>
+          </div>
+        </Card>
+      );
+    }
+
+    case "install":
+      return (
+        <Card T={T} style={{ padding: "12px" }}>
+          <div style={lbl(T)}>Installa sul dispositivo</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[["📲", "Safari · iOS", "Aggiungi a Home"], ["⋮", "Chrome · Android", "Installa app"], ["💻", "Desktop", "Installa"]].map(([ic, app, act], k) => (
+              <div key={k} style={{ flex: 1, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding: "10px 6px", textAlign: "center", background: T.surface2 }}>
+                <div style={{ fontSize: 17, marginBottom: 4 }}>{ic}</div>
+                <div style={{ fontSize: 8.5, fontWeight: 700, color: T.ink }}>{app}</div>
+                <div style={{ ...mono, fontSize: 7, color: T.muted, marginTop: 2 }}>{act}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      );
+
     default:
       return <Card T={T} style={{ height: 110 }} />;
   }
@@ -402,6 +440,15 @@ const ALL_SLIDES = [
   { mock: "team", minPlan: "studio", nav: "/team", goto: "/team", plan: "Studio", emoji: "👥", titolo: "Team & permessi", testo: "Invita i collaboratori e assegna a ciascuno il ruolo giusto.", punti: ["Condividi il codice invito (in Profilo Studio)", "Ruoli da Titolare a Collaboratore, con permessi su misura"] },
   { mock: "analytics", roles: "pm", minPlan: "pro", nav: "/analisi-hub", goto: "/analisi-hub", plan: "Pro", emoji: "📊", titolo: "Analisi & Report", testo: "Trasforma i dati in decisioni con viste aggregate su economia e produttività.", punti: ["Analisi: KPI, incassi, margini, andamento offerte", "Report: ore per progetto e per membro, esportabili"] },
   { mock: "tips", emoji: "🚀", titolo: "Sfruttala al massimo", testo: "Qualche consiglio per partire con il piede giusto:", punti: ["Completa Profilo Studio, Servizi e Voci offerta", "Esporta i dati quando vuoi · Aiuto: info@asmstudio.it"] },
+
+  // ── GUIDA PRATICA — how-to passo passo (cat: "pratica") ──────────
+  { cat: "pratica", mock: "offer", roles: "pm", goto: "/offerte", emoji: "📋", titolo: "Compilare un'offerta", testo: "Dall'idea al preventivo pronto da inviare, in pochi passaggi.", punti: ["Offerte → + Nuova: scegli il cliente (o creane uno al volo)", "Aggiungi le voci dal listino o scrivile a mano", "Applica sconti e personalizza i prezzi voce per voce", "Il totale si calcola da solo; salva la bozza", "Quando il cliente accetta, trasformala in commessa con un clic"] },
+  { cat: "pratica", mock: "commesse", nav: "/commesse", goto: "/commesse", emoji: "💳", titolo: "Impostare la suddivisione pagamenti", testo: "Senza le rate non puoi emettere proforma/fatture: falla appena crei la commessa.", punti: ["Apri la commessa → sezione Suddivisione Pagamenti → + Rate", "Scegli a percentuale o a importo fisso e il numero di rate", "Controlla che il totale torni (100% o l'importo della commessa)", "Salva: ora puoi generare proforma e fatture collegate"] },
+  { cat: "pratica", mock: "capex", minPlan: "pro", goto: "/progetti", plan: "Pro", emoji: "🏗", titolo: "Compilare il CAPEX", testo: "Il quadro economico del cantiere lato committente: preventivi, accettazione e pagamenti (separato dalla marginalità dello studio).", punti: ["Apri un progetto e tocca la pill CAPEX in alto", "Tab Preventivi: aggiungi i preventivi per categoria (edile, impianti…)", "Confronta più preventivi nella stessa categoria e segna 'Accettato'", "Aggiungi 'extra' collegati allo stesso operatore per le varianti", "Tab Accettati: registra i pagamenti e segui pagato / residuo"] },
+  { cat: "pratica", mock: "sitereport", nav: "/impostazioni/report", inSettings: true, goto: "/impostazioni/report", emoji: "📐", titolo: "Compilare un report di cantiere", testo: "Documenta il sopralluogo e generane un PDF professionale.", punti: ["Apri il progetto e tocca la pill REPORT → nuovo report", "Inserisci data e note del sopralluogo", "Allega le foto da telefono o computer", "Esporta in PDF con intestazione e logo dello studio", "Personalizza intestazione/logo da Impostazioni → Report"] },
+  { cat: "pratica", mock: "pratiche", goto: "/progetti", emoji: "🏛", titolo: "Compilare una pratica edilizia", testo: "Tieni traccia di tipo, protocollo, stato e scadenze di ogni pratica.", punti: ["Apri il progetto e tocca la pill PRATICHE", "Aggiungi la pratica: tipo (CILA, SCIA, PdC…), protocollo, stato", "Imposta le date e le eventuali scadenze", "Le scadenze compaiono nello Scadenzario in Dashboard"] },
+  { cat: "pratica", mock: "gantt", minPlan: "studio", nav: "/gantt-progetti", goto: "/gantt-progetti", plan: "Studio", emoji: "📅", titolo: "Creare un Gantt", testo: "Pianifica le fasi del progetto su una timeline visiva.", punti: ["Calendario & Gantt → seleziona il progetto", "Aggiungi le lavorazioni con data di inizio e fine", "Trascina le barre per spostare o allungare le fasi", "Salva versioni diverse per confrontare le pianificazioni"] },
+  { cat: "pratica", mock: "install", emoji: "📲", titolo: "Installare l'app sul dispositivo", testo: "SP Manager è installabile come app (PWA): schermo intero e notifiche, senza store.", punti: ["iPhone/iPad: in Safari → Condividi → 'Aggiungi a Home'", "Android: in Chrome → menu ⋮ → 'Installa app'", "Mac/Windows: in Chrome/Edge, icona 'Installa' nella barra indirizzi", "Apri l'app installata per ricevere le notifiche push"] },
 ];
 
 export default function GuidaApp({ open, onClose }) {
@@ -411,17 +458,21 @@ export default function GuidaApp({ open, onClose }) {
   const { plan } = usePlan();
   const permissions = usePermissions();
   const [i, setI] = useState(0);
+  const [cat, setCat] = useState("generale"); // blocco attivo: generale | pratica
   const [rect, setRect] = useState(null); // bounding box della voce di sidebar evidenziata
 
-  // Filtra le slide per piano e permessi dell'utente (come la sidebar)
+  // Filtra le slide per piano e permessi dell'utente (come la sidebar) e per blocco
   const slides = useMemo(() => {
     const lvl = PLAN_ORDER[plan?.id] ?? 0;
     return ALL_SLIDES.filter((sl) => {
+      if ((sl.cat || "generale") !== cat) return false;
       if (sl.roles === "pm" && !permissions.isProjectManager) return false;
       if (sl.minPlan && lvl < (PLAN_ORDER[sl.minPlan] ?? 0)) return false;
       return true;
     });
-  }, [plan?.id, permissions.isProjectManager]);
+  }, [plan?.id, permissions.isProjectManager, cat]);
+
+  const changeCat = (c) => { setCat(c); setI(0); };
 
   const isFirst = i === 0;
   const isLast = i === slides.length - 1;
@@ -430,7 +481,7 @@ export default function GuidaApp({ open, onClose }) {
   const prev = () => setI((v) => Math.max(0, v - 1));
   const goTo = (path) => { onClose?.(); if (path) navigate(path); };
 
-  useEffect(() => { if (open) setI(0); }, [open]);
+  useEffect(() => { if (open) { setI(0); setCat("generale"); } }, [open]);
   // Tieni l'indice nei limiti se il set di slide cambia
   useEffect(() => { setI((v) => Math.min(v, slides.length - 1)); }, [slides.length]);
 
@@ -499,6 +550,15 @@ export default function GuidaApp({ open, onClose }) {
           Guida · {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
         <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
+      </div>
+
+      {/* Switch tra i due blocchi della guida */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: compact ? 12 : 16 }}>
+        <SlidingTabs
+          tabs={[{ key: "generale", label: "Generale" }, { key: "pratica", label: "Pratica" }]}
+          active={cat}
+          onChange={changeCat}
+        />
       </div>
 
       {!compact && (
