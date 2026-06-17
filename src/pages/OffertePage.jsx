@@ -119,11 +119,16 @@ export default function OffertePage() {
       }
     }
 
+    // Aggancia alla grafia di un contatto esistente (no nuove varianti di case)
+    const _ct = form.cliente.trim();
+    const _match = globalContacts.find(c => (c.full_name||"").trim().toLowerCase() === _ct.toLowerCase());
+    const clienteCanonico = _match ? _match.full_name : _ct;
+
     const { error } = await supabase.from("offerte").insert({
       studio: studioId,
       numero_offerta: form.numero_offerta||`OFF.${Date.now()}`,
       nome_offerta: form.nome_offerta.trim(),
-      cliente: form.cliente.trim(),
+      cliente: clienteCanonico,
       project_id: projectId,
       project_name: projectName,
       data_offerta: form.data_offerta||null,

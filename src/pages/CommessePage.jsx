@@ -247,7 +247,10 @@ export default function CommessePage() {
       setSaving(false);
       return;
     }
-    const cliente=clientInput.trim();
+    // Aggancia alla grafia di un contatto esistente (no nuove varianti di case)
+    const _ct=clientInput.trim();
+    const _match=globalContacts.find(c=>(c.full_name||"").trim().toLowerCase()===_ct.toLowerCase());
+    const cliente=_match?_match.full_name:_ct;
 
     // 1. Crea commessa
     const payload = {

@@ -674,8 +674,12 @@ export default function ProjectsPage() {
       return;
     }
     const assignedUsers = formData.selectedMembers.length > 0 ? formData.selectedMembers : (teamMember?.id ? [teamMember.id] : []);
-    const payload = { name: formData.name.trim(), client: formData.client.trim(), address: formData.address.trim() || null, start_date: formData.startDate || null, status: "planning", total_hours: 0, servizi_selezionati: formData.selectedServices, assigned_users: assignedUsers, studio: studioId, gantt_enabled: !!formData.gantt_enabled };
-    await upsertContact(formData.client);
+    // Aggancia alla grafia di un contatto esistente (no nuove varianti di case)
+    const _ct = formData.client.trim();
+    const _match = globalContacts.find(c => (c.full_name || "").trim().toLowerCase() === _ct.toLowerCase());
+    const clientCanon = _match ? _match.full_name : _ct;
+    const payload = { name: formData.name.trim(), client: clientCanon, address: formData.address.trim() || null, start_date: formData.startDate || null, status: "planning", total_hours: 0, servizi_selezionati: formData.selectedServices, assigned_users: assignedUsers, studio: studioId, gantt_enabled: !!formData.gantt_enabled };
+    await upsertContact(clientCanon);
     const { data: newProject, error: insertError } = await supabase.from("projects").insert(payload).select("*").single();
     if (insertError) { setFormError(insertError.message); setSaveLoading(false); return; }
     if (formData.selectedCommessaId) {
@@ -709,8 +713,11 @@ export default function ProjectsPage() {
 
   const handleEditProject = async e => {
     e.preventDefault(); if (!editProject) return; setEditLoading(true);
-    const payload = { name: editFormData.name.trim(), client: editFormData.client.trim(), address: editFormData.address?.trim() || null, start_date: editFormData.start_date || null, servizi_selezionati: editFormData.selectedServices, assigned_users: editFormData.selectedMembers, gantt_enabled: !!editFormData.gantt_enabled };
-    await upsertContact(editFormData.client);
+    const _ect = editFormData.client.trim();
+    const _ematch = globalContacts.find(c => (c.full_name || "").trim().toLowerCase() === _ect.toLowerCase());
+    const editClientCanon = _ematch ? _ematch.full_name : _ect;
+    const payload = { name: editFormData.name.trim(), client: editClientCanon, address: editFormData.address?.trim() || null, start_date: editFormData.start_date || null, servizi_selezionati: editFormData.selectedServices, assigned_users: editFormData.selectedMembers, gantt_enabled: !!editFormData.gantt_enabled };
+    await upsertContact(editClientCanon);
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", editProject.id);
     if (!uErr) {
       const newCid = editFormData.selectedCommessaId || null;
