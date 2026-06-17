@@ -354,6 +354,69 @@ function MockReport() {
   );
 }
 
+/* ─── MOCK ANALISI HUB ───────────────────────────────────────── */
+function MockAnalisiHub() {
+  const offerte = [
+    { n: 'Blocco A — Milano',   v: '€52.000', s: 'In corso',  sc: APP.navy },
+    { n: 'Villa Lario',          v: '€38.000', s: 'Accettata', sc: APP.green },
+    { n: 'Showroom Navigli',     v: '€29.500', s: 'In attesa', sc: APP.muted },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+        <Stat label="Offerte tot."  value="12"      color={APP.ink}/>
+        <Stat label="Valore"        value="€214k"   color={APP.navy}/>
+        <Stat label="Conversione"   value="68%"     color={APP.green}/>
+      </div>
+      <Card style={{ padding: '10px 12px' }}>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Offerte recenti</div>
+        {offerte.map((o, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < offerte.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{o.n}</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>{o.v}</span>
+              <span style={{ ...mono, fontSize: 8.5, color: o.sc, fontWeight: o.sc !== APP.muted ? 600 : 400 }}>{o.s}</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+/* ─── MOCK PREVENTIVO CAPEX ──────────────────────────────────── */
+function MockPreventivo() {
+  const voci = [
+    { cat: 'Progettazione',  desc: 'Onorario professionale',   v: '€18.000', tipo: 'Opex' },
+    { cat: 'Strutture',      desc: 'Calcolo strutturale',      v: '€4.500',  tipo: 'Opex' },
+    { cat: 'Arredi',         desc: 'Cucina e living',          v: '€32.000', tipo: 'Capex' },
+    { cat: 'Impianti',       desc: 'Elettrico + termico',      v: '€9.800',  tipo: 'Capex' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        <Stat label="Totale Opex"  value="€22.500" color={APP.navy}/>
+        <Stat label="Totale Capex" value="€41.800" color="#b45309"/>
+      </div>
+      <Card style={{ padding: '10px 12px' }}>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Voci preventivo — Residenza Privata</div>
+        {voci.map((v, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < voci.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{v.desc}</div>
+              <div style={{ ...mono, fontSize: 8, color: APP.muted }}>{v.cat}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>{v.v}</span>
+              <span style={{ ...mono, fontSize: 8, color: v.tipo === 'Capex' ? '#b45309' : APP.green, background: v.tipo === 'Capex' ? 'rgba(180,83,9,0.1)' : 'rgba(26,107,60,0.1)', padding: '2px 5px', borderRadius: 3 }}>{v.tipo}</span>
+            </div>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
 /* ─── MOCK ANALISI FATTURE ───────────────────────────────────── */
 function MockFatture() {
   return (
@@ -388,16 +451,17 @@ function MockFatture() {
 
 /* ─── PIANI ──────────────────────────────────────────────────── */
 const PLANS = [
-  { id: 'free',   name: 'Free',   price: '€0',     period: '/mese', desc: 'Per iniziare',           highlight: false, cta: 'Inizia gratis',
+  { id: 'free',   name: 'Free',   price: '€0',     period: '/mese', desc: 'Per iniziare',           highlight: false, cta: 'Inizia gratis', trial: false,
     features: ['1 utente interno','1 collaboratore esterno','5 progetti','5 commesse','Task e timesheet','Calendario'] },
-  { id: 'studio', name: 'Studio', price: '€14,99', period: '/mese', desc: 'Per studi in crescita',  highlight: true,  cta: 'Prova Studio',
-    features: ['Fino a 10 utenti','25 progetti','25 commesse','Report avanzati','Proforma e fatture','Gantt','Supporto prioritario'] },
-  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: false, cta: 'Prova Pro',
+  { id: 'studio', name: 'Studio', price: '€14,99', period: '/mese', desc: 'Per studi in crescita',  highlight: true,  cta: '1 mese gratis →', trial: true,
+    features: ['Fino a 10 utenti','25 progetti','25 commesse','Analisi Hub e report avanzati','Proforma, fatture e CAPEX','Gantt','Supporto prioritario'] },
+  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: false, cta: '1 mese gratis →', trial: true,
     features: ['Utenti illimitati','Progetti illimitati','Commesse illimitate','Tutto di Studio','Gantt avanzato','Backup su richiesta','Account manager'] },
 ];
 
 /* ─── FAQ ────────────────────────────────────────────────────── */
 const FAQ_DATA = [
+  { q: 'Come funziona il mese gratuito?',           a: 'I piani Studio e Pro includono 30 giorni di prova gratuita. Al momento dell\'iscrizione inserisci i dati della carta su Stripe — non viene addebitato nulla per i primi 30 giorni. Dal secondo mese l\'abbonamento si rinnova automaticamente. Puoi disdire in qualsiasi momento prima della scadenza.' },
   { q: 'ASM è adatto a studi piccoli?',             a: 'Sì, è pensato per studi da 1 a 20 persone. Scala con te — inizia gratis e passa a un piano superiore solo quando cresci.' },
   { q: 'I miei dati sono al sicuro?',               a: 'I dati sono archiviati su infrastruttura cloud europea con backup automatici. Puoi esportare tutto in qualsiasi momento — i tuoi dati sono sempre tuoi.' },
   { q: 'È necessario installare qualcosa?',         a: 'No, ASM è interamente web-based. Funziona su qualsiasi browser. Su smartphone si installa come app in un tap (PWA), senza passare dall\'App Store.' },
@@ -445,7 +509,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
     containerRef.current?.scrollTo({ top: idx * window.innerHeight, behavior: 'smooth' });
   };
 
-  const SECTIONS = ['hero','scrivania','gantt','commesse','timesheet','monitoraggio','report','fatture','pricing','faq','cta'];
+  const SECTIONS = ['hero','scrivania','gantt','commesse','timesheet','monitoraggio','report','fatture','analisi-hub','preventivo','pricing','faq','cta'];
   const gridCols = isMobile ? '1fr' : '1fr 1fr';
   const h2 = isMobile ? 28 : 48;
   const pad = isMobile ? '80px 22px 40px' : '0 64px';
@@ -475,7 +539,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         ) : (
           <>
             <div style={{ display: 'flex', gap: 28 }}>
-              {[['Funzionalità',1],['Pricing',8],['FAQ',9]].map(([label,idx]) => (
+              {[['Funzionalità',1],['Pricing',10],['FAQ',11]].map(([label,idx]) => (
                 <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: activeSection===0?'rgba(238,241,246,0.75)':C.muted }}>{label}</button>
               ))}
             </div>
@@ -491,7 +555,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
       {/* Mobile menu */}
       {isMobile && menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(238,241,246,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
-          {[['Funzionalità',1],['Pricing',8],['FAQ',9]].map(([label,idx]) => (
+          {[['Funzionalità',1],['Pricing',10],['FAQ',11]].map(([label,idx]) => (
             <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 14, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: C.ink }}>{label}</button>
           ))}
           <div style={{ width: 40, height: '0.5px', background: 'rgba(14,14,13,0.15)' }}/>
@@ -524,7 +588,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               Tutto il tuo studio.<br/><span style={{ color: C.brass }}>Un solo posto.</span>
             </h1>
             <p style={{ ...mono, fontSize: isMobile?12:13, lineHeight: 1.85, color: 'rgba(238,241,246,0.45)', margin: `0 auto ${isMobile?28:40}px`, maxWidth: 440 }}>
-              Progetti, Gantt, commesse, timesheet e analisi.<br/>Fatto per architetti — non per contabili.
+              Progetti, Gantt, commesse, timesheet e analisi.<br/>Fatto per architetti — non per contabili.<br/><span style={{ color: 'rgba(217,201,138,0.55)' }}>1 mese gratuito su tutti i piani a pagamento.</span>
             </p>
             <div style={{ display: 'flex', flexDirection: isMobile?'column':'row', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
               {isMobile && <button onClick={onLogin} style={{ background: '#EEF1F6', border: 'none', color: C.ink, padding: '13px 28px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: '100%' }}>Accedi all'app →</button>}
@@ -574,6 +638,14 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
             title:'Hai sempre chiaro\ncosa è stato pagato.',
             desc:'Tieni traccia di ogni proforma e fattura emessa, con stato pagamento in tempo reale e storico completo.',
             features:['Collegate alle commesse','Proforma e fattura diretta','Scadenze evidenziate automaticamente','Storico completo esportabile'] },
+          { idx:8, label:'Analisi Hub', num:'08', bg:C.ink,         dark:true,  textColor:'rgba(238,241,246,0.6)', accent:C.brass, mockLabel:'Analisi', mock:<MockAnalisiHub/>,  flip:true,
+            title:"Tutte le offerte,\nun colpo d’occhio.",
+            desc:'Un hub centralizzato per analizzare lo stato delle offerte, il valore prodotto e il tasso di conversione. Tieni il polso della crescita commerciale dello studio.',
+            features:['Stato e valore di ogni offerta','Tasso di conversione','Analisi per cliente e periodo','Confronto offerte → commesse'] },
+          { idx:9, label:'Preventivi CAPEX', num:'09', bg:C.paper,    dark:false, textColor:'rgba(14,14,13,0.7)', accent:C.navy, mockLabel:'Offerte', mock:<MockPreventivo/>,   flip:false,
+            title:'Separa CAPEX e OPEX\nnello stesso preventivo.',
+            desc:'Distingui automaticamente le voci di spesa corrente (OPEX) da quelle in conto capitale (CAPEX). Utile per clienti privati e società.',
+            features:['Voci CAPEX e OPEX nello stesso preventivo','Totali separati per categoria','Esportazione PDF differenziata','Collegate alle commesse'] },
         ].map(({ idx, label, num, bg, dark, textColor, accent, mockLabel, mock, flip, title, desc, features }) => (
           <section key={idx} style={{ height: '100vh', scrollSnapAlign: 'start', background: bg, display: 'grid', gridTemplateColumns: gridCols, overflowY: isMobile?'auto':'hidden' }}>
             {/* testo — se flip e non mobile va a destra */}
@@ -611,12 +683,18 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
             {PLANS.map((plan, i) => (
               <div key={plan.id} style={{ padding: isMobile?'24px 20px':'36px 32px', display: 'flex', flexDirection: 'column', borderRight: (!isMobile&&i<2)?'0.5px solid rgba(14,14,13,0.1)':'none', border: isMobile?`0.5px solid ${plan.highlight?C.navy:'rgba(14,14,13,0.1)'}`:undefined, background: plan.highlight ? C.navy : '#fff', position: 'relative' }}>
                 {plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', background: C.brass, color: C.ink, padding: '3px 8px' }}>Consigliato</div>}
+                {plan.trial && !plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(26,107,60,0.12)', color: '#1a6b3c', padding: '3px 8px', border: '0.5px solid rgba(26,107,60,0.25)' }}>30 giorni gratis</div>}
                 <div style={{ ...mono, fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: plan.highlight?C.brass:C.muted, marginBottom: 4 }}>{plan.name}</div>
                 <div style={{ ...mono, fontSize: 10, color: plan.highlight?'rgba(238,241,246,0.45)':C.muted, marginBottom: 16 }}>{plan.desc}</div>
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: plan.trial ? 6 : 20 }}>
                   <span style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', color: plan.highlight?'#EEF1F6':C.ink }}>{plan.price}</span>
                   <span style={{ ...mono, fontSize: 10, color: plan.highlight?'rgba(238,241,246,0.45)':C.muted }}>{plan.period}</span>
                 </div>
+                {plan.trial && (
+                  <div style={{ ...mono, fontSize: 9, color: plan.highlight ? 'rgba(217,201,138,0.7)' : '#1a6b3c', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span>✓</span><span>1° mese gratuito — poi {plan.price}{plan.period}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1, marginBottom: 20 }}>
                   {plan.features.map((f, fi) => (
                     <div key={fi} style={{ display: 'flex', gap: 8 }}>
@@ -656,9 +734,9 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
             <h2 style={{ fontSize: isMobile?30:62, fontWeight: 600, letterSpacing: '-0.04em', color: '#EEF1F6', lineHeight: 1.06, marginBottom: 16 }}>
               Il tuo studio merita<br/><span style={{ color: C.brass }}>uno strumento su misura.</span>
             </h2>
-            <p style={{ ...mono, fontSize: 12, lineHeight: 1.85, color: 'rgba(238,241,246,0.4)', maxWidth: 380, margin: '0 auto 36px' }}>Inizia gratuitamente. Nessuna carta di credito richiesta.</p>
+            <p style={{ ...mono, fontSize: 12, lineHeight: 1.85, color: 'rgba(238,241,246,0.4)', maxWidth: 420, margin: '0 auto 36px' }}>1 mese di prova gratuita su Studio e Pro. Inserisci i dati su Stripe — nessun addebito per 30 giorni. Disdici quando vuoi.</p>
             <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'13px 28px':'16px 48px', ...mono, fontSize: isMobile?11:13, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
-              Crea il tuo studio gratuitamente →
+              Inizia il mese gratuito →
             </button>
             <div style={{ marginTop: 14 }}>
               <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>

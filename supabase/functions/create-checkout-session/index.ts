@@ -37,6 +37,7 @@ serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { studioId, userId },
+      subscription_data: { trial_period_days: 30 },
     });
 
     return new Response(
