@@ -86,7 +86,7 @@ export default function OfferteDetailPage() {
     const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
     const totale = Math.max(0, Math.round((dopoPerc - scF)*100)/100);
-    await supabase.from("offerte").update({
+    const { error: saveErr } = await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
       cliente: form.cliente,
       project_id: form.project_id||null,
@@ -101,18 +101,21 @@ export default function OfferteDetailPage() {
       numero_offerta: form.numero_offerta,
     }).eq("id",id);
     setSaving(false);
+    if (saveErr) { showToast("Errore salvataggio: " + saveErr.message); return; }
     setEditing(false);
     await loadData();
   };
 
   const handleRifiuta = async () => {
     if (!confirm("Rifiutare questa offerta?")) return;
-    await supabase.from("offerte").update({ stato:'rifiutata' }).eq("id",id);
+    const { error } = await supabase.from("offerte").update({ stato:'rifiutata' }).eq("id",id);
+    if (error) { showToast("Errore: " + error.message); return; }
     await loadData();
   };
 
   const handleRipristina = async () => {
-    await supabase.from("offerte").update({ stato:'offerta' }).eq("id",id);
+    const { error } = await supabase.from("offerte").update({ stato:'offerta' }).eq("id",id);
+    if (error) { showToast("Errore: " + error.message); return; }
     await loadData();
   };
 

@@ -178,12 +178,17 @@ export default function FatturePage() {
       note: form.note||null,
       numero_fattura_fiscale: form.numero_fattura_fiscale||null,
     };
+    let saveError = null;
     if (editFattura) {
-      await supabase.from("fatture").update(payload).eq("id",editFattura.id);
+      const { error } = await supabase.from("fatture").update(payload).eq("id",editFattura.id);
+      saveError = error;
     } else {
-      await supabase.from("fatture").insert({...payload,pagato:false});
+      const { error } = await supabase.from("fatture").insert({...payload,pagato:false});
+      saveError = error;
     }
-    setSaving(false); setModalOpen(false);
+    setSaving(false);
+    if (saveError) { setFormError("Errore salvataggio: " + saveError.message); return; }
+    setModalOpen(false);
     showToast(editFattura ? "Fattura aggiornata" : "Fattura creata", "success");
     loadData();
   };
