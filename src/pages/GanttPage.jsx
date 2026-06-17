@@ -751,9 +751,23 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     );
   }, [lavorazioni]);
 
-  // Range: 2 settimane fa → 1 anno avanti
-  const startDate = useMemo(()=>getMondayOf(addDays(new Date(),-14)), []);
-  const totalDays = 393; // ~13 mesi
+  // Range: la settimana prima della lavorazione più antica (o 2 settimane fa se non ci sono dati)
+  const startDate = useMemo(() => {
+    const defaultStart = getMondayOf(addDays(new Date(), -14));
+    const dates = lavorazioni.map(l => l.data_inizio).filter(Boolean);
+    if (!dates.length) return defaultStart;
+    const earliest = new Date(dates.reduce((min, d) => d < min ? d : min));
+    const weekBeforeEarliest = getMondayOf(addDays(earliest, -7));
+    return weekBeforeEarliest < defaultStart ? weekBeforeEarliest : defaultStart;
+  }, [lavorazioni]);
+  const totalDays = useMemo(() => {
+    const defaultDays = 393; // ~13 mesi
+    const dates = lavorazioni.map(l => l.data_fine).filter(Boolean);
+    if (!dates.length) return defaultDays;
+    const latest = new Date(dates.reduce((max, d) => d > max ? d : max));
+    const daysNeeded = diffDays(startDate, addDays(latest, 30)) + 1;
+    return Math.max(defaultDays, daysNeeded);
+  }, [lavorazioni, startDate]);
   const totalW    = totalDays * dayW;
   const todayX    = diffDays(startDate, new Date()) * dayW;
   const timeHeaders = useMemo(()=>buildTimeHeaders(startDate, totalDays, dayW), [startDate, totalDays, dayW]);
