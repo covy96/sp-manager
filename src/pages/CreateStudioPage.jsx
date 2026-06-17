@@ -81,6 +81,15 @@ export default function CreateStudioPage({ session }) {
     });
 
     if (signUpError) {
+      const msg = signUpError.message?.toLowerCase() ?? "";
+      const alreadyExists = msg.includes("already registered") || msg.includes("already been registered") || msg.includes("user already");
+      if (alreadyExists) {
+        // Account esiste già: salva pending studio e manda al login
+        // localStorage è già settato sopra, l'OnboardingPage lo userà dopo il login
+        setLoading(false);
+        navigate(`/login?pending_studio=1&email=${encodeURIComponent(email.trim())}`);
+        return;
+      }
       localStorage.removeItem("asm-pending-studio");
       setError(signUpError.message);
       setLoading(false);

@@ -11,8 +11,10 @@ function generateInviteCode() {
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const [tab, setTab]               = useState("crea"); // "crea" | "unisciti"
   const [inviteCode, setInviteCode] = useState("");
-  const [loading, setLoading]       = useState(true);  // parte true: controlla pending studio
+  const [nuovoStudio, setNuovoStudio] = useState("");
+  const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
 
   // Al mount: gestisce studio in sospeso (crea-studio) o join in sospeso (unisciti)
@@ -114,6 +116,44 @@ export default function OnboardingPage() {
     checkPending();
   }, []);
 
+  const handleCreaStudio = async (e) => {
+    e.preventDefault();
+    const nome = nuovoStudio.trim();
+    if (!nome) return;
+    setLoading(true);
+    setError("");
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("Utente non autenticato."); setLoading(false); return; }
+
+    const code = generateInviteCode();
+    const { data: studio, error: studioErr } = await supabase
+      .from("studios")
+      .insert({ name: nome, owner_id: user.id, invite_code: code, piano: "free", tipo_fatturazione: "proforma" })
+      .select("*").single();
+
+    if (studioErr || !studio) {
+      setError("Errore creazione studio: " + (studioErr?.message || "riprova"));
+      setLoading(false);
+      return;
+    }
+
+    const ownerName = user.user_metadata?.full_name || user.email;
+    await supabase.from("team_members").insert({
+      user_account: user.id,
+      user_email: user.email,
+      user_name: ownerName,
+      studio: studio.id,
+      role_internal: "Owner",
+      active: true,
+    });
+
+    await seedServiceTaskTemplates(studio.id);
+    localStorage.setItem("asm-active-studio", studio.id);
+    localStorage.removeItem("asm-pending-studio");
+    window.location.href = "/dashboard";
+  };
+
   const handleJoin = async (e) => {
     e.preventDefault();
     const code = inviteCode.trim().toUpperCase();
@@ -179,49 +219,85 @@ export default function OnboardingPage() {
     );
   }
 
+  const inputCls = "w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#0a84ff]";
+  const btnPrimary = "w-full rounded-lg bg-[#0a84ff] py-2.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50 transition";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#1c1c1e] p-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">Unisciti allo studio</h1>
-          <p className="mt-2 text-sm text-white/50">
-            Inserisci il codice invito ricevuto dal titolare del tuo studio.
-          </p>
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-white">Configura il tuo accesso</h1>
+          <p className="mt-2 text-sm text-white/50">Crea un nuovo studio o unisciti a uno esistente.</p>
+        </div>
+
+        {/* Tab switcher */}
+        <div className="mb-4 flex rounded-xl border border-[#48484a] bg-[#2c2c2e] p-1">
+          <button
+            onClick={() => { setTab("crea"); setError(""); }}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === "crea" ? "bg-[#0a84ff] text-white" : "text-white/50 hover:text-white"}`}
+          >
+            Crea studio
+          </button>
+          <button
+            onClick={() => { setTab("unisciti"); setError(""); }}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === "unisciti" ? "bg-[#0a84ff] text-white" : "text-white/50 hover:text-white"}`}
+          >
+            Unisciti con codice
+          </button>
         </div>
 
         <div className="rounded-xl border border-[#48484a] bg-[#2c2c2e] p-6">
-          <form onSubmit={handleJoin} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-white/80">Codice invito *</label>
-              <input
-                type="text"
-                value={inviteCode}
-                onChange={e => setInviteCode(e.target.value.toUpperCase())}
-                placeholder="Es. ABC123"
-                maxLength={6}
-                className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2.5 text-center font-mono text-xl tracking-widest text-white outline-none placeholder:text-white/30 focus:border-[#0a84ff]"
-                required
-                autoFocus
-              />
-            </div>
-            {error && <p className="text-sm text-[#ff453a]">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || inviteCode.trim().length < 6}
-              className="w-full rounded-lg bg-[#0a84ff] py-2.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50 transition"
-            >
-              {loading ? "Verifica in corso..." : "Accedi allo Studio"}
-            </button>
-          </form>
+          {tab === "crea" ? (
+            <form onSubmit={handleCreaStudio} className="space-y-4">
+              <p className="text-xs text-white/40">Crea un nuovo studio di architettura e diventa il titolare.</p>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Nome dello studio *</label>
+                <input
+                  type="text"
+                  value={nuovoStudio}
+                  onChange={e => setNuovoStudio(e.target.value)}
+                  placeholder="Es. Studio Rossi Architetti"
+                  className={inputCls}
+                  required
+                  autoFocus
+                />
+              </div>
+              {error && <p className="text-sm text-[#ff453a]">{error}</p>}
+              <button type="submit" disabled={loading || !nuovoStudio.trim()} className={btnPrimary}>
+                {loading ? "Creazione in corso..." : "Crea Studio →"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleJoin} className="space-y-4">
+              <p className="text-xs text-white/40">Inserisci il codice invito ricevuto dal titolare del tuo studio.</p>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-white/80">Codice invito *</label>
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="Es. ABC123"
+                  maxLength={6}
+                  className="w-full rounded-lg border border-[#48484a] bg-[#3a3a3c] px-3 py-2.5 text-center font-mono text-xl tracking-widest text-white outline-none placeholder:text-white/30 focus:border-[#0a84ff]"
+                  required
+                  autoFocus
+                />
+              </div>
+              {error && <p className="text-sm text-[#ff453a]">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading || inviteCode.trim().length < 6}
+                className={btnPrimary}
+              >
+                {loading ? "Verifica in corso..." : "Accedi allo Studio"}
+              </button>
+            </form>
+          )}
         </div>
 
-        <p className="mt-4 text-center text-sm text-white/40">
-          Vuoi creare un nuovo studio?{" "}
-          <button
-            onClick={() => navigate("/crea-studio")}
-            className="text-[#0a84ff] hover:underline"
-          >
-            Crea studio
+        <p className="mt-4 text-center text-xs text-white/30">
+          <button onClick={() => supabase.auth.signOut().then(() => navigate("/login"))} className="hover:text-white/60 transition">
+            Esci dall'account
           </button>
         </p>
       </div>

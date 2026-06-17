@@ -13,6 +13,7 @@ export default function LoginPage({ session }) {
   const [resendSuccess, setResendSuccess] = useState(false);
 
   const confirmed = searchParams.get("confirmed") === "1";
+  const pendingStudio = searchParams.get("pending_studio") === "1";
 
   if (session) {
     return <Navigate to="/dashboard" replace />;
@@ -66,6 +67,15 @@ export default function LoginPage({ session }) {
             <p className="text-sm font-medium text-[#30d158]">✅ Email confermata!</p>
             <p className="mt-0.5 text-xs text-white/60">
               Il tuo account è attivo. Inserisci la password per accedere.
+            </p>
+          </div>
+        )}
+
+        {pendingStudio && (
+          <div className="mt-4 rounded-lg border border-[#0a84ff]/40 bg-[#0a84ff]/10 p-3">
+            <p className="text-sm font-medium text-[#0a84ff]">Account già esistente</p>
+            <p className="mt-0.5 text-xs text-white/60">
+              Hai già un account. Accedi e creeremo lo studio automaticamente.
             </p>
           </div>
         )}
