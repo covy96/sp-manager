@@ -36,6 +36,8 @@ const CATEGORIE = [
     getNome: r => (r.content || '').slice(0, 60) || '—', getContext: () => null },
   { id: 'report_cantiere', label: 'Report di Cantiere', icon: '📐', rpc: 'cestino_report_cantiere',
     getNome: r => r.nome_interno || r.titolo || `Report #${r.numero}`, getContext: r => r.project_name || null },
+  { id: 'capex',         label: 'CAPEX',              icon: '🏗️', rpc: 'cestino_capex',
+    getNome: r => [r.categoria, r.fornitore].filter(Boolean).join(' · ') || '—', getContext: r => r.project_name || null },
 ];
 
 const TABELLA_REALE = {
@@ -54,6 +56,7 @@ const TABELLA_REALE = {
   contatti:      'global_contacts',
   note:          'notes',
   report_cantiere: 'report_cantiere',
+  capex:         'capex_voci',
 };
 
 export default function CestinoPage() {
