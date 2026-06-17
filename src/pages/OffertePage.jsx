@@ -457,7 +457,7 @@ export default function OffertePage() {
                       const val = e.target.value;
                       setForm(p=>({...p, cliente: val}));
                       const q = val.trim().toLowerCase();
-                      setClientSuggestions(q.length >= 3
+                      setClientSuggestions(q.length >= 2
                         ? globalContacts.filter(c=>(c.full_name||'').toLowerCase().includes(q)).slice(0,8)
                         : []);
                     }}

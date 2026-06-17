@@ -540,8 +540,15 @@ export default function ProjectsPage() {
   }, [studioId]);
 
   const clientiDisponibili = useMemo(() => {
-    const s = new Set(projects.map(p => p.client).filter(c => c && typeof c === "string"));
-    return Array.from(s).sort((a, b) => a.localeCompare(b));
+    // Dedup case-insensitive: "Mario" e "mario" sono lo stesso cliente
+    const map = new Map();
+    projects.forEach(p => {
+      const c = typeof p.client === "string" ? p.client.trim() : "";
+      if (!c) return;
+      const k = c.toLowerCase();
+      if (!map.has(k)) map.set(k, c);
+    });
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" }));
   }, [projects]);
 
   const filteredProjectsOrdered = useMemo(() => {
@@ -564,7 +571,8 @@ export default function ProjectsPage() {
     }
     // Filtro cliente
     if (clientFilter) {
-      result = result.filter(p => p.client === clientFilter);
+      const cf = clientFilter.trim().toLowerCase();
+      result = result.filter(p => (p.client || "").trim().toLowerCase() === cf);
     }
     // Ordinamento
     if (sortBy === "nome") {
@@ -613,7 +621,7 @@ export default function ProjectsPage() {
       setFormData(p => ({ ...p, [field]: value }));
       if (field === "client") {
         const q = value.trim().toLowerCase();
-        setClientSuggestions(q.length >= 3 ? globalContacts.filter(c => (c.full_name ?? "").toLowerCase().startsWith(q)).slice(0, 8) : []);
+        setClientSuggestions(q.length >= 2 ? globalContacts.filter(c => (c.full_name ?? "").toLowerCase().includes(q)).slice(0, 8) : []);
       }
     }
   };
