@@ -1,13 +1,14 @@
 // supabase/functions/purge-studios/index.ts
-// Cron giornaliero — elimina in modo permanente gli studi con delete_after < now().
-// Cancella in cascade tutti i dati collegati allo studio prima di rimuovere il record.
+// Cron giornaliero — due operazioni:
+// 1. Elimina definitivamente gli studi con delete_after < now() (+ tutti i dati collegati)
+// 2. Pulisce il cestino: elimina definitivamente gli elementi con deleted_at > 30 giorni fa
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL            = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_URL             = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CRON_SECRET             = Deno.env.get("CRON_SECRET") ?? "";
+const CRON_SECRET              = Deno.env.get("CRON_SECRET") ?? "";
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -17,7 +18,7 @@ const json = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 
-// Tabelle con FK diretta su studio (colonna "studio")
+// Tabelle con FK diretta su studio (colonna "studio") — ordine safe per FK
 const STUDIO_TABLES = [
   "notifications",
   "tasks",
@@ -45,8 +46,28 @@ const STUDIO_TABLES = [
   "team_members",
 ];
 
+// Tabelle del cestino con deleted_at (colonna "studio" presente)
+const CESTINO_TABLES = [
+  "tasks",
+  "lavorazioni_gantt",
+  "pratiche_edilizie",
+  "capex_voci",
+  "capex_pagamenti",
+  "timesheet",
+  "costi_extra",
+  "costi_interni",
+  "pagamenti",
+  "collaboratori_esterni",
+  "global_contacts",
+  "report_cantiere",
+  "commesse",
+  "offerte",
+  "proforma",
+  "fatture",
+  "projects",
+];
+
 serve(async (req) => {
-  // Autenticazione con CRON_SECRET
   if (CRON_SECRET) {
     const auth = req.headers.get("Authorization") ?? "";
     if (auth.replace("Bearer ", "") !== CRON_SECRET) {
@@ -56,8 +77,9 @@ serve(async (req) => {
 
   try {
     const now = new Date().toISOString();
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Trova tutti gli studi da eliminare definitivamente
+    // ── 1. PURGE STUDI SCADUTI ─────────────────────────────────────────────────
     const { data: studi, error: fetchErr } = await db
       .from("studios")
       .select("id, delete_after")
@@ -65,38 +87,56 @@ serve(async (req) => {
       .lte("delete_after", now);
 
     if (fetchErr) return json({ error: fetchErr.message }, 500);
-    if (!studi || studi.length === 0) {
-      return json({ success: true, purged: 0, message: "Nessuno studio da eliminare" });
-    }
 
-    const results: { id: string; ok: boolean; error?: string }[] = [];
+    const studioResults: { id: string; ok: boolean; error?: string }[] = [];
 
-    for (const studio of studi) {
+    for (const studio of studi ?? []) {
       try {
-        // Cancella ogni tabella collegata allo studio
         for (const table of STUDIO_TABLES) {
           const { error } = await db.from(table).delete().eq("studio", studio.id);
-          if (error) {
-            // Log ma prosegui — alcune tabelle potrebbero non avere righe
-            console.warn(`purge-studios: ${table} studio=${studio.id}: ${error.message}`);
-          }
+          if (error) console.warn(`purge-studios: ${table} studio=${studio.id}: ${error.message}`);
         }
-
-        // Cancella infine il record studio stesso
         const { error: delErr } = await db.from("studios").delete().eq("id", studio.id);
         if (delErr) throw new Error(delErr.message);
-
-        results.push({ id: studio.id, ok: true });
+        studioResults.push({ id: studio.id, ok: true });
         console.log(`purge-studios: studio ${studio.id} eliminato`);
       } catch (e) {
-        results.push({ id: studio.id, ok: false, error: (e as Error).message });
+        studioResults.push({ id: studio.id, ok: false, error: (e as Error).message });
         console.error(`purge-studios: errore su ${studio.id}:`, (e as Error).message);
       }
     }
 
-    const purged = results.filter(r => r.ok).length;
-    const failed = results.filter(r => !r.ok).length;
-    return json({ success: true, purged, failed, results });
+    // ── 2. PURGE CESTINO (elementi > 30 giorni) ────────────────────────────────
+    const cestinoPurged: Record<string, number> = {};
+
+    for (const table of CESTINO_TABLES) {
+      const { data, error } = await db
+        .from(table)
+        .delete()
+        .not("deleted_at", "is", null)
+        .lte("deleted_at", cutoff)
+        .select("id");
+
+      if (error) {
+        console.warn(`purge-cestino: ${table}: ${error.message}`);
+      } else {
+        const count = data?.length ?? 0;
+        if (count > 0) {
+          cestinoPurged[table] = count;
+          console.log(`purge-cestino: ${table} — ${count} righe eliminate`);
+        }
+      }
+    }
+
+    const cestinoPurgedTotal = Object.values(cestinoPurged).reduce((a, b) => a + b, 0);
+
+    return json({
+      success: true,
+      studi_eliminati: studioResults.filter(r => r.ok).length,
+      studi_falliti:   studioResults.filter(r => !r.ok).length,
+      cestino_eliminati: cestinoPurgedTotal,
+      cestino_dettaglio: cestinoPurged,
+    });
 
   } catch (err) {
     console.error("purge-studios error:", err);
