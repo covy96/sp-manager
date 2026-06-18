@@ -5,7 +5,6 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
-import { logActivity } from "../lib/activityLog";
 
 // ── TIPI E CATEGORIE ──────────────────────────────────────────────
 const CATEGORIE = [
@@ -546,7 +545,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       savedId = inserted?.id;
     }
     showToast(editingId ? "Pratica aggiornata" : "Pratica aggiunta", "success");
-    logActivity({ studioId, projectId, action: editingId ? "pratica.updated" : "pratica.created", entityType:"pratica", entityId: savedId, meta:{ title: form.tipo_pratica } });
     setSaving(false);
     setFormOpen(false);
     load();
@@ -565,7 +563,6 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
     const { error } = await supabase.from("pratiche_edilizie").delete().eq("id", id);
     if (error) { showToast("Errore: "+error.message); return; }
     showToast("Pratica eliminata", "success");
-    logActivity({ studioId, projectId, action:"pratica.deleted", entityType:"pratica", entityId: id, meta:{ title: pratica?.tipo_pratica } });
     load();
   };
 

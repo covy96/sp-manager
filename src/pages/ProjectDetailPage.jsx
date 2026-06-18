@@ -18,8 +18,6 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { notifyTaskAssigned } from '../lib/notifications';
 import { useToast } from "../contexts/ToastContext";
 import { usePresence } from "../hooks/usePresence";
-import ActivityLogPanel from "../components/ActivityLogPanel";
-import { logActivity } from "../lib/activityLog";
 
 const AVATAR_COLORS = ["#13315C","#1a6b3c","#7c3aed","#b45309","#be185d","#0e7490"];
 function avatarColor(name) {
@@ -494,7 +492,6 @@ export default function ProjectDetailPage() {
     const { error: uErr } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
     if (uErr) { setTasks(prev); setError(uErr.message); }
     else {
-      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action: nextStatus === "completed" ? "task.completed" : "task.reopened", entityType:"task", entityId: task.id, meta:{ title: task.title } });
       // Auto-crea prossima occorrenza se task ricorrente completata
       if (nextStatus === "completed" && task.is_recurring && task.recurrence_rule && task.data_pianificata) {
         const base = new Date(task.data_pianificata);
@@ -545,7 +542,6 @@ export default function ProjectDetailPage() {
     if (dErr) setError(dErr.message);
     else {
       setTasks(p => p.filter(t => t.id !== task.id)); setError("");
-      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action:"task.deleted", entityType:"task", entityId: task.id, meta:{ title: task.title } });
     }
   };
 
@@ -653,7 +649,6 @@ export default function ProjectDetailPage() {
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else {
       setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus();
-      logActivity({ studioId, projectId: id, memberId: teamMember?.id, action:"task.created", entityType:"task", entityId: data.id, meta:{ title } });
       if (memberId && memberId !== teamMember?.id) {
         const assignedMember = teamMembers.find(m => m.id === memberId);
         if (assignedMember?.user_email) notifyTaskAssigned({ studioId, assignedEmail: assignedMember.user_email, taskTitle: title, projectName: project?.name || "", taskId: data.id, projectId: projectId || null });
@@ -760,7 +755,6 @@ export default function ProjectDetailPage() {
             <AnagraficaPanel projectId={id} studioId={studioId} />
             {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
             <CommessePanel commesse={commesseProgetto} />
-            <ActivityLogPanel projectId={id} studioId={studioId} />
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{
                 border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink,
