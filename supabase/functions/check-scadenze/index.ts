@@ -40,8 +40,8 @@ async function notify({
   if (!member) return;
   if (member.notification_preferences?.[type] === false) return;
 
-  // Dedup: non inviare più di una volta lo stesso tipo per lo stesso item oggi
-  const dedupQ = db
+  // Dedup: non inviare più di una volta lo stesso tipo per lo stesso utente oggi
+  let dedupQ = db
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .eq("studio", studioId)
@@ -50,13 +50,13 @@ async function notify({
     .gte("created_at", todayISO);
 
   if (taskId) {
-    dedupQ.eq("task_id", taskId);
+    dedupQ = dedupQ.eq("task_id", taskId);
   } else if (link) {
-    dedupQ.eq("link", link);
+    dedupQ = dedupQ.eq("link", link);
   }
 
   const { count } = await dedupQ;
-  if (count && count > 0) return;
+  if ((count ?? 0) > 0) return;
 
   const { data: notif, error } = await db
     .from("notifications")
@@ -91,10 +91,11 @@ async function notify({
   }
 }
 
-// ── 1. Task in scadenza oggi ──────────────────────────────────────────────────
+// ── 1. Task in scadenza oggi / scadute ───────────────────────────────────────
+// Raggruppa per utente: una sola notifica di tipo "task_scadenza_oggi" e una
+// di tipo "task_scaduta" per utente, con elenco dei titoli nel messaggio.
 
 async function checkTaskScadenze() {
-  // Carica task con data_pianificata <= oggi, non completate, con membro assegnato
   const { data: tasks, error } = await db
     .from("tasks")
     .select("id, title, studio, project_id, assigned_member, data_pianificata, status")
@@ -107,7 +108,6 @@ async function checkTaskScadenze() {
   if (error) { console.error("[tasks]", error.message); return; }
   if (!tasks?.length) return;
 
-  // Raccoglie gli id dei team_members coinvolti → email in un colpo solo
   const memberIds = [...new Set(tasks.map((t) => t.assigned_member))];
   const { data: members } = await db
     .from("team_members")
@@ -115,21 +115,39 @@ async function checkTaskScadenze() {
     .in("id", memberIds);
 
   const emailByMemberId: Record<string, string> = {};
-  (members ?? []).forEach((m) => { emailByMemberId[m.id] = m.user_email; });
+  const studioByMemberId: Record<string, string> = {};
+  (members ?? []).forEach((m) => {
+    emailByMemberId[m.id] = m.user_email;
+    studioByMemberId[m.id] = m.studio;
+  });
+
+  // Raggruppa: { "studioId|userEmail|type" → task[] }
+  type TaskGroup = { studioId: string; userEmail: string; type: string; tasks: typeof tasks };
+  const groups: Record<string, TaskGroup> = {};
 
   for (const task of tasks) {
     const userEmail = emailByMemberId[task.assigned_member];
     if (!userEmail) continue;
+    const studioId = task.studio;
+    const type = task.data_pianificata === todayISO ? "task_scadenza_oggi" : "task_scaduta";
+    const key = `${studioId}|${userEmail}|${type}`;
+    if (!groups[key]) groups[key] = { studioId, userEmail, type, tasks: [] };
+    groups[key].tasks.push(task);
+  }
 
-    const isToday = task.data_pianificata === todayISO;
-    const type = isToday ? "task_scadenza_oggi" : "task_scaduta";
-    const title = isToday ? "Task in scadenza oggi" : "Task scaduta";
+  for (const g of Object.values(groups)) {
+    const isToday = g.type === "task_scadenza_oggi";
+    const n = g.tasks.length;
+    const titoli = g.tasks.map((t) => `"${t.title}"`).join(", ");
+    const title = isToday
+      ? `${n} task in scadenza oggi`
+      : `${n} task scadut${n === 1 ? "a" : "e"}`;
     const message = isToday
-      ? `La task "${task.title}" scade oggi`
-      : `La task "${task.title}" era pianificata per il ${task.data_pianificata} ed è ancora aperta`;
-    const link = task.project_id ? `/progetti/${task.project_id}` : "/scrivania";
+      ? `${n === 1 ? "La task" : "Le task"} ${titoli} ${n === 1 ? "scade" : "scadono"} oggi`
+      : `${n === 1 ? "La task" : "Le task"} ${titoli} ${n === 1 ? "è scaduta" : "sono scadute"} e non ancora completate`;
+    const link = g.tasks[0].project_id ? `/progetti/${g.tasks[0].project_id}` : "/scrivania";
 
-    await notify({ studioId: task.studio, userEmail, type, title, message, link, taskId: task.id });
+    await notify({ studioId: g.studioId, userEmail: g.userEmail, type: g.type, title, message, link });
   }
 }
 
