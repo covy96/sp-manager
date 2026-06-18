@@ -9,6 +9,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { handleListKeyDown } from "../lib/listKeyDown";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useToast } from "../contexts/ToastContext";
+import { notifyNotaCondivisa, notifyNotaAggiornata } from "../lib/notifications";
 
 const NOTE_COLORS = [
   '#FFF9C4','#F8BBD0','#C8E6C9','#BBDEFB','#E1BEE7','#FFE0B2','#FFFFFF',
@@ -84,7 +85,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
 }
 
 // ── NOTA CARD ─────────────────────────────────────────────────────
-function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh, single = false }) {
+function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUpdate, onRefresh, single = false }) {
   const { T, isDark } = useTheme();
   const [content, setContent]       = useState(note.content || '');
   const [color, setColor]           = useState(note.color || '#FFF9C4');
@@ -128,7 +129,21 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
         p_content:    val,
         p_updated_at: newUpdatedAt,
       });
-      if (!error) onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
+      if (!error) {
+        onUpdate(note.id, { content: val, updated_at: newUpdatedAt });
+        // Notifica autore e membri condivisi (escluso chi sta scrivendo)
+        if (studioId && sharedWith.length > 0) {
+          const currentMember = teamMembers.find(m => m.id === currentMemberId);
+          const editorName = currentMember?.user_name || 'Un collega';
+          const toNotify = [...sharedWith, note.author_id].filter((id, i, arr) => id !== currentMemberId && arr.indexOf(id) === i);
+          toNotify.forEach(mid => {
+            const recipient = teamMembers.find(m => m.id === mid);
+            if (recipient?.user_email) {
+              notifyNotaAggiornata({ studioId, recipientEmail: recipient.user_email, editorName });
+            }
+          });
+        }
+      }
       isTyping.current = false;
       setSaving(false);
     }, 700);
@@ -149,11 +164,20 @@ function NoteCard({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRe
     if (!next) setShowShare(true);
   };
   const handleSharedWith = (memberId) => {
-    const next = sharedWith.includes(memberId) ? sharedWith.filter(id => id !== memberId) : [...sharedWith, memberId];
+    const wasShared = sharedWith.includes(memberId);
+    const next = wasShared ? sharedWith.filter(id => id !== memberId) : [...sharedWith, memberId];
     setSharedWith(next);
     const updates = { shared_with: next };
     if (next.length > 0 && isPrivate) { setIsPrivate(false); updates.is_private = false; }
     saveField(updates);
+    // Notifica solo quando si aggiunge (non quando si rimuove)
+    if (!wasShared && studioId) {
+      const recipient = teamMembers.find(m => m.id === memberId);
+      const currentMember = teamMembers.find(m => m.id === currentMemberId);
+      if (recipient?.user_email) {
+        notifyNotaCondivisa({ studioId, recipientEmail: recipient.user_email, authorName: currentMember?.user_name || 'Un collega' });
+      }
+    }
   };
 
   // In dark mode: sfondo scuro con bordo sinistro colorato (i pastelli su nero sono illeggibili)
@@ -295,14 +319,14 @@ function NoteCardPreview({ note, onClick }) {
 }
 
 // ── NOTA MODAL (overlay per modifica) ────────────────────────────
-function NoteModal({ note, currentMemberId, teamMembers, onDelete, onUpdate, onRefresh, onClose }) {
+function NoteModal({ note, currentMemberId, teamMembers, studioId, onDelete, onUpdate, onRefresh, onClose }) {
   const { T } = useTheme();
   useBodyScrollLock(true);
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:540, maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
         <NoteCard
-          note={note} currentMemberId={currentMemberId} teamMembers={teamMembers}
+          note={note} currentMemberId={currentMemberId} teamMembers={teamMembers} studioId={studioId}
           onDelete={(id) => { onDelete(id); onClose(); }} onUpdate={onUpdate} onRefresh={onRefresh}
           single={true}
         />
@@ -599,7 +623,7 @@ export default function ScrivaniaPage() {
             /* Nota singola: visibile e modificabile direttamente */
             <NoteCard
               key={notes[0].id} note={notes[0]}
-              currentMemberId={currentMemberId} teamMembers={teamMembers}
+              currentMemberId={currentMemberId} teamMembers={teamMembers} studioId={studioId}
               onDelete={handleNoteDelete} onUpdate={handleNoteUpdate}
               onRefresh={() => reloadNotesRef.current(currentMemberIdRef.current, studioId)}
               single={true}
@@ -618,7 +642,7 @@ export default function ScrivaniaPage() {
           if (!n) return null;
           return (
             <NoteModal
-              note={n} currentMemberId={currentMemberId} teamMembers={teamMembers}
+              note={n} currentMemberId={currentMemberId} teamMembers={teamMembers} studioId={studioId}
               onDelete={handleNoteDelete} onUpdate={handleNoteUpdate}
               onRefresh={() => reloadNotesRef.current(currentMemberIdRef.current, studioId)}
               onClose={() => setExpandedNoteId(null)}

@@ -139,6 +139,32 @@ export async function markAllRead(studioId, userEmail) {
 }
 
 /**
+ * Notifica condivisione nota della scrivania
+ */
+export async function notifyNotaCondivisa({ studioId, recipientEmail, authorName }) {
+  await createNotification({
+    studioId, userEmail: recipientEmail,
+    type: "nota_condivisa",
+    title: "Nota condivisa",
+    message: `${authorName} ha condiviso una nota con te`,
+    link: "/scrivania",
+  });
+}
+
+/**
+ * Notifica aggiornamento nota condivisa
+ */
+export async function notifyNotaAggiornata({ studioId, recipientEmail, editorName }) {
+  await createNotification({
+    studioId, userEmail: recipientEmail,
+    type: "nota_aggiornata",
+    title: "Nota aggiornata",
+    message: `${editorName} ha modificato una nota condivisa con te`,
+    link: "/scrivania",
+  });
+}
+
+/**
  * Segna una singola notifica come letta
  */
 export async function markOneRead(notifId) {
