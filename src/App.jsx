@@ -149,6 +149,31 @@ export default function App({ session }) {
   const isMobile = window.innerWidth < 768;
   const skipLanding = (isPwa || isMobile) && !session;
 
+  // Prefetch on-idle dei chunk delle pagine d'uso quotidiano: il bundle iniziale
+  // resta piccolo, ma i chunk sono già in cache quando l'utente naviga → nessuno
+  // sfarfallio dello spinner. Le pagine pesanti (Gantt/Report/Analisi/Export)
+  // restano on-demand.
+  useEffect(() => {
+    if (!session) return;
+    const warm = () => {
+      import("./pages/DashboardPage");
+      import("./pages/ProjectsPage");
+      import("./pages/ProjectDetailPage");
+      import("./pages/CommessePage");
+      import("./pages/CommessaDetailPage");
+      import("./pages/ScrivaniaPage");
+      import("./pages/CalendarioPage");
+      import("./pages/TimesheetPage");
+      import("./pages/ClientiPage");
+      import("./pages/OffertePage");
+      import("./pages/TeamPage");
+      import("./pages/settings/ProfiloPage");
+    };
+    const ric = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+    const id = ric(warm);
+    return () => (window.cancelIdleCallback || clearTimeout)(id);
+  }, [session]);
+
   return (
     <ThemeProvider>
     <ToastProvider>
