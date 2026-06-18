@@ -527,8 +527,8 @@ export default function AppLayout({ session, children }) {
             {bellOpen && (
               <div style={{
                 position:'absolute', right:0, top:'calc(100% + 8px)', width:320,
-                background:T.surface, border:`0.5px solid ${T.borderMd}`, zIndex:50,
-                boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.08'})`,
+                background:isDark ? 'rgb(40,40,50)' : '#fff', border:`0.5px solid ${T.borderMd}`, zIndex:50,
+                boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.12'})`,
                 maxHeight:400, display:'flex', flexDirection:'column',
               }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
