@@ -8,6 +8,7 @@ import { useToast } from "../../contexts/ToastContext";
 const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true,
   nuovo_membro: true, proforma_in_scadenza: true, commessa_residuo_60gg: true,
+  nota_condivisa: true, nota_aggiornata: true,
 };
 
 const NOTIF_ITEMS = [
@@ -17,6 +18,8 @@ const NOTIF_ITEMS = [
   { key: "nuovo_membro",          emoji: "👤", label: "Nuovo membro aggiunto allo studio" },
   { key: "proforma_in_scadenza",  emoji: "📄", label: "Proforma in scadenza", hasDays: true },
   { key: "commessa_residuo_60gg", emoji: "💰", label: "Commessa con residuo da +60 giorni" },
+  { key: "nota_condivisa",        emoji: "📝", label: "Nota della scrivania condivisa con me" },
+  { key: "nota_aggiornata",       emoji: "✏️", label: "Nota condivisa modificata da un collega" },
 ];
 
 function Toggle({ checked, onChange, disabled = false }) {
