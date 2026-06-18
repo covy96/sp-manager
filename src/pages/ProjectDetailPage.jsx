@@ -202,7 +202,7 @@ function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onD
     }}>
       <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
         marginTop: 2, width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
-        border: `1px solid ${done ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
+        border: `1px solid ${done ? T.navy : T.borderMd}`,
         background: done ? T.navy : 'transparent',
         cursor: 'pointer', padding: 0,
       }} />
@@ -246,7 +246,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
       }}>
         <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
           marginTop: 2, width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
+          border: `1px solid ${done ? T.navy : T.borderMd}`,
           background: done ? T.navy : 'transparent',
           cursor: 'pointer', padding: 0,
         }} />

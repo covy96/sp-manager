@@ -290,13 +290,22 @@ async function checkCommesseResiduo() {
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 serve(async (req) => {
-  // Autorizzazione: solo chiamate con il CRON_SECRET (o GET dalla Dashboard Supabase)
+  // Health-check pubblico
   if (req.method === "GET") {
     return new Response("check-scadenze OK", { status: 200 });
   }
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
+  }
+
+  // Autorizzazione: se CRON_SECRET è impostato, richiedilo nell'header Authorization.
+  // (Se non impostato, l'endpoint resta aperto — imposta il secret per chiuderlo.)
+  if (CRON_SECRET) {
+    const auth = req.headers.get("Authorization") ?? "";
+    if (auth.replace("Bearer ", "") !== CRON_SECRET) {
+      return new Response(JSON.stringify({ error: "Non autorizzato" }), { status: 401 });
+    }
   }
 
   try {

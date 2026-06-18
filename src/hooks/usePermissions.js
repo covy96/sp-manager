@@ -118,7 +118,7 @@ const DEFAULT_PERMISSIONS = {
 };
 
 // ── SEZIONI PERMESSI GRANULARI ────────────────────────────────────
-// Usato nella UI di GestioneUtentiPage per la tab "Permessi"
+// Usato nella UI di TeamPage per la tab "Permessi"
 export const PERMISSION_SECTIONS = [
   {
     label: "Progetti",

@@ -131,7 +131,7 @@ function TaskRow({ task, onToggle, overdue }) {
         onMouseLeave={() => setHover(false)}
         style={{
           width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
+          border: `1px solid ${done ? T.navy : overdue ? T.red : hover ? T.navy : T.borderMd}`,
           background: done ? T.navy : 'transparent',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 0,

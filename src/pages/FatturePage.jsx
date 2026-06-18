@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import { usePermissions } from "../hooks/usePermissions";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(Number(v)||0);
@@ -38,6 +39,7 @@ export default function FatturePage() {
   usePageTitleOnMount("Fatture");
   const navigate = useNavigate();
   const { studioId, studio } = useStudio();
+  const permissions = usePermissions();
   const tipoFatturazione = studio?.tipo_fatturazione || 'proforma';
 
   const [fatture, setFatture]           = useState([]);
@@ -243,6 +245,10 @@ export default function FatturePage() {
   const tdSt = {padding:'10px 14px',borderBottom:`0.5px solid ${T.border}`,fontSize:12,color:T.ink};
   const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
   const lbSt = {fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6,display:'block'};
+
+  if (!permissions.canViewFinancials) return (
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+  );
 
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:240,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento fatture...</div>;
 

@@ -293,7 +293,7 @@ export default function CalendarioPage() {
               if(done.length>0) dots.push(T.muted);
               return (
                 <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
-                  minHeight:48, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                  minHeight:48,
                   padding:'4px 2px', textAlign:'center', cursor:'pointer',
                   background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
                   outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
@@ -336,7 +336,7 @@ export default function CalendarioPage() {
               const isSel=day.iso===selectedDay;
               return (
                 <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
-                  minHeight:90, borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
+                  minHeight:90,
                   padding:'5px 6px', textAlign:'left', cursor:'pointer',
                   background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
                   outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,

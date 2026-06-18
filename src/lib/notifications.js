@@ -11,9 +11,25 @@ import { supabase } from "./supabase";
  * @param {string} [opts.link] — path relativo es. /progetti/123
  * @param {string} [opts.projectId]
  * @param {string} [opts.taskId]
+ * @param {number} [opts.dedupMinutes] — se valorizzato, non invia se esiste già una notifica
+ *                                        dello stesso tipo per lo stesso destinatario entro questa finestra
+ *                                        (stile "note condivise" Apple: un solo avviso per sessione)
  */
-export async function createNotification({ studioId, userEmail, type, title, message, link, projectId, taskId }) {
+export async function createNotification({ studioId, userEmail, type, title, message, link, projectId, taskId, dedupMinutes }) {
   if (!studioId || !userEmail) return;
+
+  // Cooldown: evita lo spam di notifiche ravvicinate dello stesso tipo
+  if (dedupMinutes) {
+    const since = new Date(Date.now() - dedupMinutes * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("studio", studioId)
+      .eq("user_email", userEmail)
+      .eq("type", type)
+      .gte("created_at", since);
+    if (count && count > 0) return; // già notificato di recente
+  }
 
   // Controlla le preferenze del destinatario
   const { data: member } = await supabase
@@ -161,6 +177,7 @@ export async function notifyNotaAggiornata({ studioId, recipientEmail, editorNam
     title: "Nota aggiornata",
     message: `${editorName} ha modificato una nota condivisa con te`,
     link: "/scrivania",
+    dedupMinutes: 60, // un solo avviso per sessione di editing (stile note condivise Apple)
   });
 }
 

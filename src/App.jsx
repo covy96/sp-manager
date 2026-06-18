@@ -1,4 +1,4 @@
-import { useEffect, useState, Component } from "react";
+import { useEffect, useState, Component, lazy, Suspense } from "react";
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -22,58 +22,58 @@ class ErrorBoundary extends Component {
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { PageTitleProvider } from "./contexts/PageTitleContext";
 import AppLayout from "./components/AppLayout";
-import CalendarioPage from "./pages/CalendarioPage";
-import ClientiPage from "./pages/ClientiPage";
-import CommessaDetailPage from "./pages/CommessaDetailPage";
-import CommessePage from "./pages/CommessePage";
-import DashboardPage from "./pages/DashboardPage";
-import LoginPage from "./pages/LoginPage";
-import MonitoraggioCommessePage from "./pages/MonitoraggioCommessePage";
-import MyTasksPage from "./pages/MyTasksPage";
-import GanttPage from "./pages/GanttPage";
-import AnalisiPage from "./pages/AnalisiPage";
-import AnalisiOffertePage from "./pages/AnalisiOffertePage";
-import AnalisiHubPage from "./pages/AnalisiHubPage";
-import OffertePage from "./pages/OffertePage";
-import OfferteDetailPage from "./pages/OfferteDetailPage";
-import ScrivaniaPage from "./pages/ScrivaniaPage";
-import LandingPage from "./pages/LandingPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import ProjectDetailPage from "./pages/ProjectDetailPage";
-import RegisterPage from "./pages/RegisterPage";
-import ProjectsPage from "./pages/ProjectsPage";
-import ReportPage from "./pages/ReportPage";
-import ProformaPage from "./pages/ProformaPage";
-import FatturePage from "./pages/FatturePage";
-import SectionPage from "./pages/SectionPage";
-import TeamPage from "./pages/TeamPage";
-import TimesheetPage from "./pages/TimesheetPage";
+
+// Pagine caricate on-demand (code-splitting) per ridurre il bundle iniziale
+const CalendarioPage = lazy(() => import("./pages/CalendarioPage"));
+const ClientiPage = lazy(() => import("./pages/ClientiPage"));
+const CommessaDetailPage = lazy(() => import("./pages/CommessaDetailPage"));
+const CommessePage = lazy(() => import("./pages/CommessePage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const MonitoraggioCommessePage = lazy(() => import("./pages/MonitoraggioCommessePage"));
+const GanttPage = lazy(() => import("./pages/GanttPage"));
+const AnalisiPage = lazy(() => import("./pages/AnalisiPage"));
+const AnalisiOffertePage = lazy(() => import("./pages/AnalisiOffertePage"));
+const AnalisiHubPage = lazy(() => import("./pages/AnalisiHubPage"));
+const OffertePage = lazy(() => import("./pages/OffertePage"));
+const OfferteDetailPage = lazy(() => import("./pages/OfferteDetailPage"));
+const ScrivaniaPage = lazy(() => import("./pages/ScrivaniaPage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
+const ReportPage = lazy(() => import("./pages/ReportPage"));
+const ProformaPage = lazy(() => import("./pages/ProformaPage"));
+const FatturePage = lazy(() => import("./pages/FatturePage"));
+const TeamPage = lazy(() => import("./pages/TeamPage"));
+const TimesheetPage = lazy(() => import("./pages/TimesheetPage"));
 
 // Settings pages
-import ProfiloPage from "./pages/settings/ProfiloPage";
-import AspettoPage from "./pages/settings/AspettoPage";
-import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
-import VociOffertaPage from "./pages/settings/VociOffertaPage";
-import SettingsClientiPage from "./pages/settings/ClientiPage";
-import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
-import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
-import NotifichePage from "./pages/settings/NotifichePage";
-import ReportImpostazioniPage from "./pages/settings/ReportImpostazioniPage";
-import PianoPage from "./pages/settings/PianoPage";
-import ProfiloStudioPage from "./pages/settings/ProfiloStudioPage";
-import CestinoPage from "./pages/settings/CestinoPage";
-import EsportaDatiPage from "./pages/settings/EsportaDatiPage";
-import ProgettoArchiviotoRecapPage from "./pages/settings/ProgettoArchiviotoRecapPage";
-import CommessaArchiviataRecapPage from "./pages/settings/CommessaArchiviataRecapPage";
-import AuthCallbackPage from "./pages/AuthCallbackPage";
-import CreateStudioPage from "./pages/CreateStudioPage";
-import JoinStudioPage from "./pages/JoinStudioPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import TerminiPage from "./pages/TerminiPage";
-import CookiePolicyPage from "./pages/CookiePolicyPage";
-import DpaPage from "./pages/DpaPage";
-import InfoPage from "./pages/InfoPage";
-import StudioCancellatoPage from "./pages/StudioCancellatoPage";
+const ProfiloPage = lazy(() => import("./pages/settings/ProfiloPage"));
+const AspettoPage = lazy(() => import("./pages/settings/AspettoPage"));
+const GestioneServiziPage = lazy(() => import("./pages/settings/GestioneServiziPage"));
+const VociOffertaPage = lazy(() => import("./pages/settings/VociOffertaPage"));
+const SettingsClientiPage = lazy(() => import("./pages/settings/ClientiPage"));
+const SettingsProgettiArchiviatiPage = lazy(() => import("./pages/settings/ProgettiArchiviatiPage"));
+const SettingsCommesseArchiviatePage = lazy(() => import("./pages/settings/CommesseArchiviatePage"));
+const NotifichePage = lazy(() => import("./pages/settings/NotifichePage"));
+const ReportImpostazioniPage = lazy(() => import("./pages/settings/ReportImpostazioniPage"));
+const PianoPage = lazy(() => import("./pages/settings/PianoPage"));
+const ProfiloStudioPage = lazy(() => import("./pages/settings/ProfiloStudioPage"));
+const CestinoPage = lazy(() => import("./pages/settings/CestinoPage"));
+const EsportaDatiPage = lazy(() => import("./pages/settings/EsportaDatiPage"));
+const ProgettoArchiviotoRecapPage = lazy(() => import("./pages/settings/ProgettoArchiviotoRecapPage"));
+const CommessaArchiviataRecapPage = lazy(() => import("./pages/settings/CommessaArchiviataRecapPage"));
+const AuthCallbackPage = lazy(() => import("./pages/AuthCallbackPage"));
+const CreateStudioPage = lazy(() => import("./pages/CreateStudioPage"));
+const JoinStudioPage = lazy(() => import("./pages/JoinStudioPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const TerminiPage = lazy(() => import("./pages/TerminiPage"));
+const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
+const DpaPage = lazy(() => import("./pages/DpaPage"));
+const InfoPage = lazy(() => import("./pages/InfoPage"));
+const StudioCancellatoPage = lazy(() => import("./pages/StudioCancellatoPage"));
 import { useStudio } from "./hooks/useStudio";
 import CookieBanner from "./components/CookieBanner";
 
@@ -154,6 +154,11 @@ export default function App({ session }) {
     <ToastProvider>
     <ErrorBoundary>
     <CookieBanner />
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#48484a] border-t-[#0a84ff]" />
+      </div>
+    }>
     <Routes>
       <Route
         path="/"
@@ -486,6 +491,7 @@ export default function App({ session }) {
       <Route path="/info" element={<ProtectedLayout session={session}><InfoPage /></ProtectedLayout>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </Suspense>
     </ErrorBoundary>
     </ToastProvider>
     </ThemeProvider>

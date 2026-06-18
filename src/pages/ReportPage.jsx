@@ -473,7 +473,7 @@ export default function ReportPage() {
               top:  Math.max(barPopup.y - 20, 80),
               width: 260,
               background: T.surface,
-              border: `1px solid ${T.borderMd}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, 
+              border: `1px solid ${T.borderMd}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
               boxShadow: `0 8px 24px rgba(0,0,0,0.14)`,
               zIndex: 61,
             }}

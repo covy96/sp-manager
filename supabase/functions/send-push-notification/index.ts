@@ -1,8 +1,48 @@
 // supabase/functions/send-push-notification/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import webPush from "https://esm.sh/web-push@3.6.7";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const FCM_URL = "https://fcm.googleapis.com/v1/projects/asm-studio-35538/messages:send";
+
+// Client admin per ripulire i token morti (best-effort, non blocca l'invio)
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SERVICE_ROLE  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const admin = (SUPABASE_URL && SERVICE_ROLE) ? createClient(SUPABASE_URL, SERVICE_ROLE) : null;
+
+/** Rimuove un token FCM morto da tutte le righe team_members che lo contengono. */
+async function removeDeadFcmToken(token: string) {
+  if (!admin || !token) return;
+  try {
+    const { data } = await admin
+      .from("team_members")
+      .select("id, fcm_token, fcm_tokens")
+      .or(`fcm_token.eq.${token},fcm_tokens.cs.{"${token}"}`);
+    for (const m of data ?? []) {
+      const next = (m.fcm_tokens ?? []).filter((t: string) => t !== token);
+      const updates: Record<string, unknown> = { fcm_tokens: next };
+      if (m.fcm_token === token) updates.fcm_token = null;
+      await admin.from("team_members").update(updates).eq("id", m.id);
+    }
+    console.log("Rimosso token FCM morto:", token.slice(0, 12), "…");
+  } catch (e) {
+    console.warn("removeDeadFcmToken error:", (e as Error).message);
+  }
+}
+
+/** Rimuove una subscription WebPush morta in base all'endpoint. */
+async function removeDeadWebPush(endpoint: string) {
+  if (!admin || !endpoint) return;
+  try {
+    await admin
+      .from("team_members")
+      .update({ web_push_subscription: null })
+      .eq("web_push_subscription->>endpoint", endpoint);
+    console.log("Rimossa subscription WebPush morta");
+  } catch (e) {
+    console.warn("removeDeadWebPush error:", (e as Error).message);
+  }
+}
 
 async function getAccessToken(serviceAccount: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
@@ -89,7 +129,16 @@ serve(async (req) => {
         notification_id: notification_id || "",
       });
 
-      await webPush.sendNotification(body.web_push_subscription, payload);
+      try {
+        await webPush.sendNotification(body.web_push_subscription, payload);
+      } catch (e) {
+        const status = (e as { statusCode?: number })?.statusCode;
+        // 404/410 = subscription scaduta o rimossa → ripulisci
+        if (status === 404 || status === 410) {
+          await removeDeadWebPush(body.web_push_subscription?.endpoint);
+        }
+        throw e;
+      }
 
       return new Response(
         JSON.stringify({ success: true, via: "webpush" }),
@@ -139,6 +188,11 @@ serve(async (req) => {
     const fcmData = await fcmRes.json();
     if (!fcmRes.ok) {
       console.error("FCM error:", fcmData);
+      // Token non più valido (disinstallazione / scadenza) → ripulisci
+      const fcmErrStatus = fcmData?.error?.status;
+      if (fcmRes.status === 404 || fcmErrStatus === "NOT_FOUND" || fcmErrStatus === "UNREGISTERED") {
+        await removeDeadFcmToken(fcm_token);
+      }
       return new Response(JSON.stringify({ error: fcmData }), { status: 500 });
     }
 

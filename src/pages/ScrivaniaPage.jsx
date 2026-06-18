@@ -56,7 +56,7 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
           disabled={updating}
           style={{
             width:15, height:15, borderRadius:'50%', flexShrink:0, padding:0,
-            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
+            border:`1px solid ${done ? T.navy : overdue ? T.red : T.borderMd}`,
             background: done ? T.navy : 'transparent',
             display:'inline-flex', alignItems:'center', justifyContent:'center',
             cursor: updating ? 'not-allowed' : 'pointer',
@@ -193,7 +193,7 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
           {NOTE_COLORS.map(c => (
             <button key={c} onClick={() => isOwn && handleColorChange(c)} style={{
               width:13, height:13, borderRadius:'50%', background:c,
-              border:`1.5px solid ${color === c ? T.ink : T.border}`, borderRadius: T.radiusSm,
+              border:`1.5px solid ${color === c ? T.ink : T.border}`,
               cursor: isOwn ? 'pointer' : 'default', padding:0, flexShrink:0,
             }}/>
           ))}

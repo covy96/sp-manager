@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from "../hooks/useIsMobile";
+import { usePermissions } from "../hooks/usePermissions";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -56,6 +57,7 @@ export default function ProformaPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { studioId } = useStudio();
+  const permissions = usePermissions();
 
   const [proformaList, setProformaList] = useState([]);
   const [commesseMap, setCommesseMap]   = useState({});
@@ -140,6 +142,10 @@ export default function ProformaPage() {
   const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
   const tdSt = { padding: '9px 12px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
   const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
+
+  if (!permissions.canViewFinancials) return (
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
