@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// CRON_SECRET opzionale — se non impostato accetta qualsiasi chiamata POST
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -278,12 +279,6 @@ serve(async (req) => {
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
-  }
-
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const secret = authHeader.replace("Bearer ", "");
-  if (CRON_SECRET && secret !== CRON_SECRET) {
-    return new Response("Unauthorized", { status: 401 });
   }
 
   try {
