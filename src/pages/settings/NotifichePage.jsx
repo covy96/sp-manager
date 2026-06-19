@@ -105,7 +105,9 @@ export default function NotifichePage() {
         // Rimuove solo il vecchio token di QUESTO dispositivo, lascia intatti gli altri
         const existing = (tm?.fcm_tokens ?? []).filter(t => prevToken ? t !== prevToken : true);
         const updated = existing.includes(token) ? existing : [...existing, token];
-        const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
+        // Azzera la subscription WebPush: questo dispositivo usa FCM, altrimenti
+        // riceverebbe la push due volte (una via FCM, una via WebPush).
+        const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated, web_push_subscription: null }).eq("id", teamMember.id);
         if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
       }
     } catch (e) { showToast("Errore: " + e.message); }

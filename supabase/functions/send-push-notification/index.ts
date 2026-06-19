@@ -160,19 +160,24 @@ serve(async (req) => {
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
 
+    // IMPORTANTE: messaggio DATA-ONLY (nessun campo `notification`).
+    // Se includessimo `notification`, il browser mostrerebbe la notifica in
+    // automatico E `onBackgroundMessage` ne mostrerebbe una seconda → doppioni.
+    // Con solo `data`, è il service worker a costruire l'unica notifica.
     const fcmPayload = {
       message: {
         token: fcm_token,
-        notification: { title: notifTitle, body: notifBody },
         webpush: {
           fcm_options: { link: link || "/" },
-          notification: {
-            icon: "/icon-192.png",
-            badge: "/icon-192.png",
-            requireInteraction: false,
-          },
+          headers: { Urgency: "high" },
         },
-        data: { notification_id: notification_id || "", link: link || "/" },
+        data: {
+          title: notifTitle,
+          body: notifBody,
+          icon: "/icon-192.png",
+          link: link || "/",
+          notification_id: notification_id || "",
+        },
       },
     };
 

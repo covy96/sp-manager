@@ -13,13 +13,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log("Notifica in background:", payload);
-  const { title, body, icon } = payload.notification ?? {};
-  self.registration.showNotification(title ?? "SP Manager", {
-    body: body ?? "",
-    icon: icon || "/favicon.ico",
-    badge: "/badge.png",
-    data: payload.data,
+  // I messaggi sono data-only (vedi send-push-notification): leggi da payload.data.
+  // Così mostriamo UNA sola notifica, senza il doppione dell'auto-display di FCM.
+  const { title, body, icon, link } = payload.data ?? {};
+  self.registration.showNotification(title || "SP Manager", {
+    body: body || "",
+    icon: icon || "/icon-192.png",
+    badge: "/icon-192.png",
+    data: { url: link || "/" },
   });
 });
 

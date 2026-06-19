@@ -184,7 +184,8 @@ export default function AppLayout({ session, children }) {
   useEffect(() => {
     if (!messaging) return;
     return onMessage(messaging, (payload) => {
-      const { title, body } = payload.notification ?? {};
+      // Messaggi data-only: titolo e corpo arrivano in payload.data
+      const { title, body } = payload.data ?? {};
       const link = payload.data?.link || '/';
       if (Notification.permission !== 'granted') return;
       navigator.serviceWorker.ready.then(reg => {
