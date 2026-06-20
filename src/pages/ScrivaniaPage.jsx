@@ -458,6 +458,11 @@ export default function ScrivaniaPage() {
       setActiveTasks(p => p.filter(i => i.id !== task.id));
       if (nextStatus === "completed") setCompletedToday(p => [{ ...task, status: "completed" }, ...p]);
     }
+    // Completando un task padre, completa anche tutte le sue subtask
+    if (nextStatus === "completed") {
+      setActiveTasks(p => p.filter(i => i.parent_task_id !== task.id));
+      await supabase.from("tasks").update({ status: "completed" }).eq("parent_task_id", task.id);
+    }
     await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
     setUpdatingTaskId(null);
   };
