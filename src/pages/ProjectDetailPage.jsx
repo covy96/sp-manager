@@ -888,6 +888,27 @@ export default function ProjectDetailPage() {
                 onSelectClient={name => setEditForm(p => ({ ...p, client: name }))}
                 onGanttChange={e => setEditForm(p => ({ ...p, gantt_enabled: e.target.checked }))}
               />
+              {selectedServices.filter(s => completedCategories[s]).length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 }}>Servizi completati</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {selectedServices.filter(s => completedCategories[s]).map(cat => (
+                      <button key={cat} type="button" onClick={() => handleToggleCategory(cat)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 12px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: 'transparent', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.border}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: T.muted, textDecoration: 'line-through' }}>
+                          {cat === "__uncategorized__" ? "Generali" : cat}
+                        </span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Riattiva</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 6 }}>
+                    Nascosti dalla board. Clicca per riattivarli.
+                  </div>
+                </div>
+              )}
               <div style={{ marginTop: 14 }}>
                 <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commessa collegata</label>
                 <select value={editForm.selectedCommessaId ?? ""} onChange={e => setEditForm(p => ({ ...p, selectedCommessaId: e.target.value }))}
@@ -907,9 +928,11 @@ export default function ProjectDetailPage() {
       )}
 
       {/* KANBAN COLUMNS */}
-      {selectedServices.length === 0 ? (
+      {selectedServices.filter(s => !completedCategories[s]).length === 0 ? (
         <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
-          Nessun servizio selezionato per questo progetto.
+          {selectedServices.length === 0
+            ? "Nessun servizio selezionato per questo progetto."
+            : "Tutti i servizi sono completati. Riattivali da “Modifica progetto”."}
         </div>
       ) : (
         <div style={{
@@ -925,6 +948,8 @@ export default function ProjectDetailPage() {
         }}>
           {groupedTasks.map((group, gi) => {
             const catDone = Boolean(completedCategories[group.category]);
+            // Colonna completata → nascosta dalla board (riattivabile da Modifica progetto)
+            if (catDone) return null;
             const isDragging  = dragColIdx  === gi;
             const isDropTarget = dragOverIdx === gi && dragColIdx !== gi;
 
