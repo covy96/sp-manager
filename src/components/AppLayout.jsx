@@ -10,7 +10,7 @@ import { useGlobalSearch } from "../hooks/useGlobalSearch";
 import { getUserStudios, supabase } from "../lib/supabase";
 import GuidaApp from "./GuidaApp";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
-import { getUnreadNotifications, markAllRead, markOneRead } from "../lib/notifications";
+import { getUnreadNotifications, markAllRead, markOneRead, isMuted } from "../lib/notifications";
 import { messaging, onMessage } from "../lib/firebase";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
@@ -68,6 +68,28 @@ const TrashIcon     = mkIcon("M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 0
 const ExportIcon    = mkIcon("M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4");
 const DocumentIcon  = mkIcon("M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z");
 
+// Calcola l'istante di fine snooze per i preset rapidi (orario locale)
+function muteUntilPreset(kind) {
+  const d = new Date();
+  if (kind === "1h")       { d.setHours(d.getHours() + 1); return d.toISOString(); }
+  if (kind === "tomorrow") { d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0); return d.toISOString(); }
+  if (kind === "weekend")  { // fino al prossimo lunedì 09:00
+    const daysToMon = ((8 - d.getDay()) % 7) || 7;
+    d.setDate(d.getDate() + daysToMon); d.setHours(9, 0, 0, 0); return d.toISOString();
+  }
+  return "indefinite";
+}
+
+// Etichetta leggibile dello stato di silenzio
+function muteStatusLabel(prefs) {
+  if (!prefs) return "";
+  if (prefs.mute_until === "indefinite") return "finché non riattivi";
+  if (prefs.mute_until && Date.now() < Date.parse(prefs.mute_until))
+    return "fino al " + new Date(prefs.mute_until).toLocaleString("it-IT", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  if (prefs.quiet_hours?.enabled) return "fascia programmata";
+  return "";
+}
+
 // ── TIPO BADGE RICERCA ────────────────────────────────────────────
 const TYPE_COLORS = {
   progetto: { bg:'#EEF3FA', color:'#13315C', label:'Progetto' },
@@ -98,6 +120,8 @@ export default function AppLayout({ session, children }) {
   const [switchingAccount, setSwitchingAccount] = useState(false);
   const [unreadNotifs, setUnreadNotifs] = useState([]);
   const [bellOpen, setBellOpen]         = useState(false);
+  const [mutePrefs, setMutePrefs]       = useState(null);  // { mute_until, quiet_hours }
+  const [muteTick, setMuteTick]         = useState(0);     // forza il ricalcolo periodico
 
   const settingsRef    = useRef(null);
   const searchRef      = useRef(null);
@@ -216,6 +240,31 @@ export default function AppLayout({ session, children }) {
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [studioId, session?.user?.email]);
+
+  // "Non disturbare": stato locale derivato dalle preferenze del membro
+  useEffect(() => {
+    const p = teamMember?.notification_preferences;
+    setMutePrefs(p ? { mute_until: p.mute_until, quiet_hours: p.quiet_hours } : null);
+  }, [teamMember?.notification_preferences]);
+
+  // Ricalcola periodicamente (le fasce orarie e gli snooze scadono col tempo)
+  useEffect(() => {
+    const id = setInterval(() => setMuteTick(t => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const muted = useMemo(() => isMuted(mutePrefs), [mutePrefs, muteTick]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Imposta/azzera lo snooze manuale (value: ISO | "indefinite" | null)
+  const applyMute = async (value) => {
+    if (!teamMember?.id) return;
+    const base = teamMember.notification_preferences || {};
+    const next = { ...base };
+    if (value == null) delete next.mute_until; else next.mute_until = value;
+    setMutePrefs({ mute_until: next.mute_until, quiet_hours: next.quiet_hours });
+    if (teamMember.notification_preferences) teamMember.notification_preferences = next; // allinea il riferimento in context
+    await supabase.from("team_members").update({ notification_preferences: next }).eq("id", teamMember.id);
+  };
 
   // ⌘K shortcut
   useEffect(() => {
@@ -513,8 +562,9 @@ export default function AppLayout({ session, children }) {
               position:'relative', width:32, height:32, background:'none', border:'none',
               cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:T.muted,
             }}>
-              <BellIcon style={{ width:18, height:18 }}/>
-              {unreadNotifs.length > 0 && (
+              <BellIcon style={{ width:18, height:18, opacity: muted ? 0.55 : 1 }}/>
+              {/* Conteggio non lette: nascosto mentre è silenziato (silenzia tutto) */}
+              {!muted && unreadNotifs.length > 0 && (
                 <span style={{
                   position:'absolute', top:4, right:3, minWidth:14, height:14, borderRadius:7,
                   background:T.red, color:'#fff', fontSize:8, fontWeight:700,
@@ -523,6 +573,13 @@ export default function AppLayout({ session, children }) {
                 }}>
                   {unreadNotifs.length > 9 ? '9+' : unreadNotifs.length}
                 </span>
+              )}
+              {/* Indicatore "silenziato" */}
+              {muted && (
+                <span style={{
+                  position:'absolute', top:5, right:4, width:8, height:8, borderRadius:4,
+                  background:T.muted, border:`1.5px solid ${isDark ? 'rgb(30,30,40)' : '#fff'}`,
+                }}/>
               )}
             </button>
             {bellOpen && (
@@ -543,6 +600,42 @@ export default function AppLayout({ session, children }) {
                     </button>
                   )}
                 </div>
+
+                {/* Non disturbare — silenzia rapido / riattiva */}
+                <div style={{ padding:'10px 14px', borderBottom:`0.5px solid ${T.border}`, background: muted ? (isDark ? 'rgba(255,255,255,0.04)' : '#f7f7f9') : 'transparent' }}>
+                  {muted ? (
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ fontSize:11, fontWeight:600, color:T.ink }}>🔕 Notifiche silenziate</div>
+                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{muteStatusLabel(mutePrefs)}</div>
+                      </div>
+                      <button onClick={() => applyMute(null)}
+                        style={{ flexShrink:0, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px' }}>
+                        Riattiva
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>🔔 Silenzia notifiche</div>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                        {[
+                          { k:'1h',         label:'1 ora' },
+                          { k:'tomorrow',   label:'Fino a domani' },
+                          { k:'weekend',    label:'Weekend' },
+                          { k:'indefinite', label:'Finché riattivo' },
+                        ].map(p => (
+                          <button key={p.k} onClick={() => applyMute(muteUntilPreset(p.k))}
+                            style={{ background:'none', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.ink, padding:'5px 9px' }}
+                            onMouseEnter={e => e.currentTarget.style.background=T.border}
+                            onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div style={{ overflowY:'auto', flex:1 }}>
                   {unreadNotifs.length === 0 ? (
                     <div style={{ padding:'32px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>

@@ -1,5 +1,52 @@
 import { supabase } from "./supabase";
 
+// ── "Non disturbare" / silenzia notifiche ──────────────────────────────────────
+// Lo stato è salvato dentro notification_preferences:
+//   mute_until : istante ISO (UTC) | "indefinite" | assente  → snooze manuale
+//   quiet_hours: { enabled, startDay, startTime, endDay, endTime } → fascia
+//                ricorrente settimanale, valutata su Europe/Rome (startDay/endDay
+//                0=Dom..6=Sab, *Time = "HH:MM"). end <= start ⇒ finestra a cavallo
+//                della settimana (es. Ven 19:00 → Lun 09:00).
+
+const ROME_TZ = "Europe/Rome";
+const _romeFmt = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ROME_TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+});
+const _dayIdx = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+function _hmToMin(hm) {
+  const [h, m] = String(hm ?? "").split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+}
+
+/** Minuti-settimana correnti (0 = Dom 00:00) nel fuso Europe/Rome. */
+function _romeWeekMinutes(now) {
+  const parts = _romeFmt.formatToParts(now);
+  const wd = parts.find((p) => p.type === "weekday")?.value;
+  const hh = Number(parts.find((p) => p.type === "hour")?.value) % 24;
+  const mm = Number(parts.find((p) => p.type === "minute")?.value);
+  return (_dayIdx[wd] ?? 0) * 1440 + hh * 60 + mm;
+}
+
+function _inQuietWindow(q, now) {
+  const cur = _romeWeekMinutes(now);
+  const s = (q.startDay ?? 0) * 1440 + _hmToMin(q.startTime);
+  const e = (q.endDay ?? 0) * 1440 + _hmToMin(q.endTime);
+  if (s === e) return false;                 // finestra vuota
+  return s < e ? (cur >= s && cur < e)       // stessa settimana
+               : (cur >= s || cur < e);      // a cavallo della settimana
+}
+
+/** True se il destinatario ha le notifiche silenziate in questo momento. */
+export function isMuted(prefs, now = new Date()) {
+  if (!prefs) return false;
+  const m = prefs.mute_until;
+  if (m === "indefinite") return true;
+  if (m && !Number.isNaN(Date.parse(m)) && now < new Date(m)) return true;
+  if (prefs.quiet_hours?.enabled) return _inQuietWindow(prefs.quiet_hours, now);
+  return false;
+}
+
 /**
  * Crea una notifica nel DB — il trigger Supabase invierà automaticamente la push
  * @param {Object} opts
@@ -55,6 +102,9 @@ export async function createNotification({ studioId, userEmail, type, title, mes
   }).select("id").single();
 
   if (error) { console.error("Errore creazione notifica:", error.message); return; }
+
+  // "Non disturbare": la notifica resta nello storico, ma non parte alcuna push.
+  if (isMuted(member?.notification_preferences)) return;
 
   // Invia a tutti i dispositivi FCM registrati
   const tokens = (member?.fcm_tokens?.length ? member.fcm_tokens : member?.fcm_token ? [member.fcm_token] : []);

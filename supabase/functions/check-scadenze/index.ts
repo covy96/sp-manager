@@ -22,6 +22,42 @@ function addDays(dateStr: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// ── "Non disturbare" — stesso comportamento del client (src/lib/notifications.js) ──
+const ROME_TZ = "Europe/Rome";
+const _romeFmt = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ROME_TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+});
+const _dayIdx: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+function _hmToMin(hm: string): number {
+  const [h, m] = String(hm ?? "").split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+}
+
+function _romeWeekMinutes(now: Date): number {
+  const parts = _romeFmt.formatToParts(now);
+  const wd = parts.find((p) => p.type === "weekday")?.value ?? "Sun";
+  const hh = Number(parts.find((p) => p.type === "hour")?.value) % 24;
+  const mm = Number(parts.find((p) => p.type === "minute")?.value);
+  return (_dayIdx[wd] ?? 0) * 1440 + hh * 60 + mm;
+}
+
+function isMuted(prefs: any, now: Date = new Date()): boolean {
+  if (!prefs) return false;
+  const m = prefs.mute_until;
+  if (m === "indefinite") return true;
+  if (m && !Number.isNaN(Date.parse(m)) && now < new Date(m)) return true;
+  const q = prefs.quiet_hours;
+  if (q?.enabled) {
+    const cur = _romeWeekMinutes(now);
+    const s = (q.startDay ?? 0) * 1440 + _hmToMin(q.startTime);
+    const e = (q.endDay ?? 0) * 1440 + _hmToMin(q.endTime);
+    if (s === e) return false;
+    return s < e ? (cur >= s && cur < e) : (cur >= s || cur < e);
+  }
+  return false;
+}
+
 /** Crea notifica in DB + invia push. Gestisce preferenze e dedup (non duplica se già inviata oggi). */
 async function notify({
   studioId, userEmail, type, title, message, link, taskId,
@@ -69,6 +105,9 @@ async function notify({
     .single();
 
   if (error) { console.error(`[notify] ${type}:`, error.message); return; }
+
+  // "Non disturbare": la notifica resta nello storico, ma non parte alcuna push.
+  if (isMuted(member.notification_preferences)) return;
 
   // Push FCM
   const tokens: string[] = member.fcm_tokens?.length
