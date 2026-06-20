@@ -367,10 +367,8 @@ export default function DashboardPage() {
     const newStatus = task.status === "completed" ? "open" : "completed";
     const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", task.id);
     if (!error) {
-      // Completando un task padre, completa anche tutte le sue subtask
-      if (newStatus === "completed") {
-        await supabase.from("tasks").update({ status: "completed" }).eq("parent_task_id", task.id);
-      }
+      // Completando o riaprendo un task padre, propaga lo stato alle subtask
+      await supabase.from("tasks").update({ status: newStatus === "completed" ? "completed" : "todo" }).eq("parent_task_id", task.id);
       setTodayTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
       setOverdueTasks(prev =>
         prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t)

@@ -488,17 +488,17 @@ export default function ProjectDetailPage() {
       const allDone = siblings.length > 0 && siblings.every(i => i.status === "completed");
       optimistic = optimistic.map(i => i.id === task.parent_task_id ? { ...i, status: allDone ? "completed" : "todo" } : i);
     }
-    // Completando un task padre, completa anche tutte le sue subtask
-    const completaSubtask = !task.parent_task_id && nextStatus === "completed"
-      && optimistic.some(i => i.parent_task_id === task.id && i.status !== "completed");
-    if (completaSubtask) {
-      optimistic = optimistic.map(i => i.parent_task_id === task.id ? { ...i, status: "completed" } : i);
+    // Completando o riaprendo un task padre, propaga lo stato a tutte le subtask
+    const propagaSubtask = !task.parent_task_id
+      && optimistic.some(i => i.parent_task_id === task.id && i.status !== nextStatus);
+    if (propagaSubtask) {
+      optimistic = optimistic.map(i => i.parent_task_id === task.id ? { ...i, status: nextStatus } : i);
     }
     setUpdatingTaskId(task.id); setTasks(optimistic);
     const { error: uErr } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
     if (uErr) { setTasks(prev); setError(uErr.message); }
-    else if (completaSubtask && (await supabase.from("tasks").update({ status: "completed" }).eq("parent_task_id", task.id)).error) {
-      setTasks(prev); setError("Errore nel completamento delle subtask");
+    else if (propagaSubtask && (await supabase.from("tasks").update({ status: nextStatus }).eq("parent_task_id", task.id)).error) {
+      setTasks(prev); setError("Errore nell'aggiornamento delle subtask");
     }
     else {
       // Auto-crea prossima occorrenza se task ricorrente completata
