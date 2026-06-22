@@ -114,7 +114,9 @@ export default function AnalisiPage() {
       }).filter(m => m.ore > 0);
 
       const valoreBase   = Number(c.importo_offerta_base)||0;
-      const valoreTotale = Number(c.importo_totale)||valoreBase;
+      // Valore contratto = offerta accettata (importo_offerta_base). importo_totale
+      // può restare stale se la base viene modificata → solo fallback legacy.
+      const valoreTotale = valoreBase || Number(c.importo_totale) || 0;
 
       const costExtra  = costiExtra.filter(x => x.commessa_id === c.id).reduce((s,x) => s+Number(x.importo||0), 0);
       const costCollab = collab.filter(x => x.commessa_id === c.id).reduce((s,x) => s+Number(x.importo||0), 0);

@@ -90,7 +90,10 @@ export default function CommessaArchiviataRecapPage() {
 
   // Calcoli finanziari
   const valoreBase   = Number(commessa.importo_offerta_base || 0);
-  const valoreTotale = Number(commessa.importo_totale || valoreBase);
+  // Valore contratto = valore dell'offerta accettata (importo_offerta_base, fonte di
+  // verità anche nella pagina commessa attiva). `importo_totale` può restare stale se
+  // la base viene modificata dopo l'accettazione → usato solo come fallback legacy.
+  const valoreTotale = valoreBase || Number(commessa.importo_totale || 0);
 
   // Incassato: somma delle RATE PAGATE di questa commessa (non dell'intera proforma,
   // che potrebbe coprire più commesse e sovrastimare l'importo)
