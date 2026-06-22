@@ -74,7 +74,12 @@ const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
 const DpaPage = lazy(() => import("./pages/DpaPage"));
 const InfoPage = lazy(() => import("./pages/InfoPage"));
 const StudioCancellatoPage = lazy(() => import("./pages/StudioCancellatoPage"));
+const PreventiviPage = lazy(() => import("./pages/preventivi/PreventiviPage"));
+const PreventivoConfigPage = lazy(() => import("./pages/preventivi/PreventivoConfigPage"));
+const PreventivoNuovoPage = lazy(() => import("./pages/preventivi/PreventivoNuovoPage"));
+const PreventivoDetailPage = lazy(() => import("./pages/preventivi/PreventivoDetailPage"));
 import { useStudio } from "./hooks/useStudio";
+import { useFeatureFlag } from "./hooks/useFeatureFlag";
 import CookieBanner from "./components/CookieBanner";
 
 import { supabase } from "./lib/supabase";
@@ -105,6 +110,13 @@ function ProtectedLayout({ session, children }) {
       </StudioRecoveryGate>
     </PageTitleProvider>
   );
+}
+
+function FlagGatedRoute({ flag, children }) {
+  const { enabled, loading } = useFeatureFlag(flag);
+  if (loading) return null;
+  if (!enabled) return <Navigate to="/dashboard" replace />;
+  return children;
 }
 
 function OnboardingGuard({ session, children }) {
@@ -509,6 +521,12 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
+      {/* Preventivi (beta) */}
+      <Route path="/preventivi" element={<ProtectedLayout session={session}><OnboardingGuard session={session}><FlagGatedRoute flag="preventivo_beta"><PreventiviPage /></FlagGatedRoute></OnboardingGuard></ProtectedLayout>} />
+      <Route path="/preventivi/config" element={<ProtectedLayout session={session}><OnboardingGuard session={session}><FlagGatedRoute flag="preventivo_beta"><PreventivoConfigPage /></FlagGatedRoute></OnboardingGuard></ProtectedLayout>} />
+      <Route path="/preventivi/nuovo" element={<ProtectedLayout session={session}><OnboardingGuard session={session}><FlagGatedRoute flag="preventivo_beta"><PreventivoNuovoPage /></FlagGatedRoute></OnboardingGuard></ProtectedLayout>} />
+      <Route path="/preventivi/:id" element={<ProtectedLayout session={session}><OnboardingGuard session={session}><FlagGatedRoute flag="preventivo_beta"><PreventivoDetailPage /></FlagGatedRoute></OnboardingGuard></ProtectedLayout>} />
+
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/termini" element={<TerminiPage />} />
       <Route path="/cookie-policy" element={<CookiePolicyPage />} />

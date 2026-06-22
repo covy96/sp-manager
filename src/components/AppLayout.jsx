@@ -12,6 +12,7 @@ import GuidaApp from "./GuidaApp";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
 import { getUnreadNotifications, markAllRead, markOneRead, isMuted } from "../lib/notifications";
 import { messaging, onMessage } from "../lib/firebase";
+import { useFeatureFlag } from "../hooks/useFeatureFlag";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
@@ -24,6 +25,7 @@ const ALL_MENU_ITEMS = [
   { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
   { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },
   { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
+  { label:"Preventivi",   path:"/preventivi",            num:"07", roles:"owner", minPlan:"free",  featureFlag:"preventivo_beta" },
   { label:"Proforma",     path:"/proforma",              num:"08", roles:"pm",    minPlan:"studio" },
   { label:"Fatture",      path:"/fatture",               num:"09", roles:"pm",    minPlan:"studio" },
   { divider: true },
@@ -279,9 +281,11 @@ export default function AppLayout({ session, children }) {
   useEffect(() => { setShowMac(navigator.platform.toUpperCase().includes("MAC")); }, []);
 
   const isFattura = studio?.tipo_fatturazione === 'fattura';
+  const { enabled: prevBeta } = useFeatureFlag('preventivo_beta');
 
   const menuItems = useMemo(() => ALL_MENU_ITEMS.filter(item => {
     if (item.divider) return true; // i divider passano sempre, verranno gestiti nel render
+    if (item.featureFlag === 'preventivo_beta' && !prevBeta) return false;
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
@@ -289,7 +293,7 @@ export default function AppLayout({ session, children }) {
     // Nascondi Proforma per studi con fatturazione diretta (SRL/Spa)
     if (item.path === '/proforma' && isFattura) return false;
     return true;
-  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel, isFattura]);
+  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel, isFattura, prevBeta]);
 
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || "U");
   const memberColor    = teamMember?.color || T.navy;
