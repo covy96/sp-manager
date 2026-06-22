@@ -52,6 +52,8 @@ export default function ProfiloStudioPage() {
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
   const permissions = usePermissions();
+  // Solo Titolare e Partner possono modificare il profilo studio (PM e altri = sola lettura)
+  const canEdit = !!permissions?.canManageSettings;
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -99,7 +101,9 @@ export default function ProfiloStudioPage() {
   },[studioId]);
 
   const handleSave = async e => {
-    e.preventDefault(); setSaving(true); setMessage('');
+    e.preventDefault();
+    if (!canEdit) return;
+    setSaving(true); setMessage('');
     const { error } = await supabase.from("studios").update({
       name: form.name.trim(),
       descrizione: form.descrizione||null,
@@ -114,6 +118,7 @@ export default function ProfiloStudioPage() {
   };
 
   const handleCambiaTipo = async () => {
+    if (!canEdit) return;
     setSaving(true);
     const { error } = await supabase.from("studios").update({ tipo_fatturazione: nuovoTipo }).eq("id", studioId);
     if (!error) {
@@ -164,6 +169,12 @@ export default function ProfiloStudioPage() {
         <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Gestisci le informazioni e le impostazioni del tuo studio</div>
       </div>
 
+      {!canEdit && (
+        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,background:T.bg,border:`0.5px solid ${T.border}`,borderRadius:T.radiusSm,padding:'10px 14px',marginBottom:14,lineHeight:1.6}}>
+          🔒 Sola lettura — solo il Titolare e i Partner possono modificare il profilo studio.
+        </div>
+      )}
+
       {message && (
         <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:message.includes('Errore')?T.red:T.green,marginBottom:14}}>{message}</div>
       )}
@@ -179,6 +190,7 @@ export default function ProfiloStudioPage() {
       {/* Dati studio */}
       <Panel title="Dati dello studio" subtitle="Informazioni anagrafiche dello studio">
         <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:14}}>
+          <fieldset disabled={!canEdit} style={{border:'none',padding:0,margin:0,minWidth:0}}>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
             <div style={{gridColumn:'span 2'}}>
               <label style={labelSt}>Nome studio *</label>
@@ -205,11 +217,14 @@ export default function ProfiloStudioPage() {
               <input type="text" value={form.città} onChange={e=>setForm(p=>({...p,città:e.target.value}))} placeholder="Milano" style={inputSt}/>
             </div>
           </div>
-          <div style={{display:'flex',justifyContent:'flex-end'}}>
-            <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
-              {saving?'Salvataggio...':'Salva'}
-            </button>
-          </div>
+          </fieldset>
+          {canEdit && (
+            <div style={{display:'flex',justifyContent:'flex-end'}}>
+              <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+                {saving?'Salvataggio...':'Salva'}
+              </button>
+            </div>
+          )}
         </form>
       </Panel>
 
@@ -224,10 +239,12 @@ export default function ProfiloStudioPage() {
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,marginBottom:4}}>{tipoAttuale?.flusso}</div>
             <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{tipoAttuale?.desc}</div>
           </div>
-          <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
-            style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
-            Modifica
-          </button>
+          {canEdit && (
+            <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
+              style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
+              Modifica
+            </button>
+          )}
         </div>
 
         {/* Avviso cambio tipo */}
