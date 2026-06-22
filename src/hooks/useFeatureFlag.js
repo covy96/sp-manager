@@ -3,11 +3,13 @@ import { supabase } from "../lib/supabase";
 import { useStudio } from "./useStudio";
 
 export function useFeatureFlag(flag) {
-  const { user } = useStudio();
+  const { user, loading: studioLoading } = useStudio();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Aspetta che useStudio abbia risolto l'utente prima di decidere
+    if (studioLoading) return;
     if (!user?.id) { setLoading(false); return; }
     supabase
       .from("feature_flags")
@@ -19,7 +21,7 @@ export function useFeatureFlag(flag) {
         setEnabled(data?.enabled ?? false);
         setLoading(false);
       });
-  }, [user?.id, flag]);
+  }, [user?.id, flag, studioLoading]);
 
   return { enabled, loading };
 }
