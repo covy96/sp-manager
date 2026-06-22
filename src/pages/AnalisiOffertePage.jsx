@@ -107,7 +107,7 @@ export default function AnalisiOffertePage() {
     const load = async () => {
       const [{ data: off }, { data: comm }, { data: tmpl }] = await Promise.all([
         supabase.from("offerte").select("*").eq("studio", studioId).eq("archived", false).is("deleted_at", null),
-        supabase.from("commesse").select("id,numero_offerta,importo_totale").eq("studio", studioId).is("deleted_at", null),
+        supabase.from("commesse").select("id,numero_offerta,importo_offerta_base,importo_totale").eq("studio", studioId).is("deleted_at", null),
         supabase.from("voci_offerta_template").select("*").eq("studio", studioId).order("order", { ascending: true }),
       ]);
       setOfferte(off ?? []);
@@ -126,7 +126,7 @@ export default function AnalisiOffertePage() {
   const commessaByNumero = useMemo(() => {
     const m = {};
     for (const c of commesse) {
-      if (c.numero_offerta) m[c.numero_offerta] = (m[c.numero_offerta] || 0) + (Number(c.importo_totale) || 0);
+      if (c.numero_offerta) m[c.numero_offerta] = (m[c.numero_offerta] || 0) + (Number(c.importo_offerta_base) || Number(c.importo_totale) || 0);
     }
     return m;
   }, [commesse]);
