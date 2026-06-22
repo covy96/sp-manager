@@ -25,7 +25,7 @@ const ALL_MENU_ITEMS = [
   { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
   { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },
   { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
-  { label:"Preventivi",   path:"/preventivi",            num:"07", roles:"owner", minPlan:"free",  featureFlag:"preventivo_beta" },
+  { label:"Preventivi",   path:"/preventivi",            num:"07", roles:"pm",    minPlan:"free",  featureFlag:"preventivo_beta" },
   { label:"Proforma",     path:"/proforma",              num:"08", roles:"pm",    minPlan:"studio" },
   { label:"Fatture",      path:"/fatture",               num:"09", roles:"pm",    minPlan:"studio" },
   { divider: true },
