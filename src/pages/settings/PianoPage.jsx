@@ -163,6 +163,13 @@ export default function PianoPage() {
                     Piano attuale
                   </div>
                 )
+              ) : stripeCustomerId ? (
+                // Esiste già un abbonamento Stripe attivo: upgrade, downgrade tra piani
+                // pagati e cancellazione (downgrade a free) passano tutti dal Billing
+                // Portal, che mostra la differenza di prezzo/proration in autonomia.
+                <button onClick={handleManageSubscription} disabled={loading} style={{ width:'100%', padding:'9px 0', background:isUpgrade?T.navy:'transparent', border:isUpgrade?'none':`0.5px solid ${T.navy}`, color:isUpgrade?T.bg:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
+                  {loading ? "Caricamento..." : pid === "free" ? "Annulla abbonamento" : `Passa a ${p.name}`}
+                </button>
               ) : isUpgrade ? (
                 <button onClick={() => handleUpgrade(pid)} disabled={loading} style={{ width:'100%', padding:'9px 0', background:T.navy, border:'none', color:T.bg, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
                   {loading ? "Caricamento..." : `Passa a ${p.name}`}
