@@ -85,18 +85,28 @@ async function compressImage(file, maxPx = 1800, quality = 0.82) {
 
 // Carica un'immagine da URL come base64 (per jsPDF)
 // Usa canvas per evitare problemi CORS con Supabase Storage
-async function urlToBase64(url) {
+async function urlToBase64(url, { maxPx = 1200, quality = 0.78, format = "image/jpeg" } = {}) {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       try {
+        let w = img.naturalWidth  || img.width;
+        let h = img.naturalHeight || img.height;
+        if (w > maxPx || h > maxPx) {
+          if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+          else       { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
         const canvas = document.createElement("canvas");
-        canvas.width  = img.naturalWidth  || img.width;
-        canvas.height = img.naturalHeight || img.height;
+        canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL("image/png"));
+        if (format === "image/jpeg") {
+          // sfondo bianco: il JPEG non supporta trasparenza
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL(format, quality));
       } catch { resolve(null); }
     };
     img.onerror = () => resolve(null);
@@ -145,7 +155,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
   // ── Logo (destra) ─────────────────────────────────────────────────
   let logoBottomY = y;
   if (s?.report_logo_url) {
-    const b64 = await urlToBase64(s.report_logo_url);
+    const b64 = await urlToBase64(s.report_logo_url, { maxPx: 600, format: "image/png" });
     if (b64) {
       try {
         const imgEl = await new Promise(res => {
@@ -294,7 +304,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
     const hasContent = !!report.contenuto?.trim();
 
     const renderOne = (b64, x, w, h) => {
-      if (b64) { try { doc.addImage(b64, "AUTO", x, y, w, h, undefined, "FAST"); } catch {} }
+      if (b64) { try { doc.addImage(b64, "JPEG", x, y, w, h, undefined, "FAST"); } catch {} }
       else { doc.setDrawColor(220,220,220); doc.setLineWidth(0.3); doc.rect(x, y, w, h); }
     };
 
