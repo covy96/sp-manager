@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { priceId, studioId, userId, successUrl, cancelUrl } = await req.json();
+    const { priceId, studioId, userId, successUrl, cancelUrl, customerId, skipTrial } = await req.json();
 
     if (!priceId || !studioId || !userId) {
       return new Response(
@@ -37,7 +37,8 @@ serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { studioId, userId },
-      subscription_data: { trial_period_days: 30 },
+      ...(customerId ? { customer: customerId } : {}),
+      ...(skipTrial ? {} : { subscription_data: { trial_period_days: 30 } }),
     });
 
     return new Response(

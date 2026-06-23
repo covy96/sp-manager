@@ -29,12 +29,29 @@ export default function PianoPage() {
   const [loading, setLoading]           = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [stripeCustomerId, setStripeCustomerId] = useState(null);
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState(null);
+  const [usage, setUsage] = useState({ users:0, projects:0, commesse:0 });
 
-  // Carica stripe_customer_id per sapere se esiste un abbonamento Stripe attivo
+  // Carica i dati Stripe dello studio per sapere se esiste un abbonamento attivo
   useEffect(() => {
     if (!studioId) return;
-    supabase.from("studios").select("stripe_customer_id").eq("id", studioId).single()
-      .then(({ data }) => setStripeCustomerId(data?.stripe_customer_id ?? null));
+    supabase.from("studios").select("stripe_customer_id, stripe_subscription_id").eq("id", studioId).single()
+      .then(({ data }) => {
+        setStripeCustomerId(data?.stripe_customer_id ?? null);
+        setStripeSubscriptionId(data?.stripe_subscription_id ?? null);
+      });
+  }, [studioId]);
+
+  // Carica l'utilizzo attuale (utenti, progetti, commesse) per bloccare i downgrade incompatibili
+  useEffect(() => {
+    if (!studioId) return;
+    Promise.all([
+      supabase.from("team_members").select("id", { count:"exact", head:true }).eq("studio", studioId),
+      supabase.from("projects").select("id", { count:"exact", head:true }).eq("studio", studioId).eq("archived", false).is("deleted_at", null),
+      supabase.from("commesse").select("id", { count:"exact", head:true }).eq("studio", studioId).eq("archived", false).is("deleted_at", null),
+    ]).then(([u, p, c]) => {
+      setUsage({ users: u.count ?? 0, projects: p.count ?? 0, commesse: c.count ?? 0 });
+    });
   }, [studioId]);
 
   useEffect(() => {
@@ -45,7 +62,7 @@ export default function PianoPage() {
     }
   }, [searchParams]);
 
-  const handleUpgrade = async (planId) => {
+  const handleUpgrade = async (planId, { skipTrial=false, customerId=null } = {}) => {
     if (!teamMember?.id || !studioId) { showToast("Errore: utente o studio non trovato"); return; }
 
     const priceEnvMap = { studio:"VITE_STRIPE_STUDIO_PRICE_ID", pro:"VITE_STRIPE_PRO_PRICE_ID" };
@@ -60,12 +77,14 @@ export default function PianoPage() {
           userId: teamMember.id,
           successUrl: window.location.origin + "/impostazioni/piano?success=true",
           cancelUrl:  window.location.origin + "/impostazioni/piano",
+          ...(customerId ? { customerId } : {}),
+          ...(skipTrial ? { skipTrial:true } : {}),
         },
       });
       if (error) throw new Error(error.message);
       if (data?.url) window.location.href = data.url;
       else throw new Error("Nessun URL di checkout ricevuto");
-    } catch(e) { showToast("Errore durante l'upgrade: "+e.message); setLoading(false); }
+    } catch(e) { showToast("Errore durante il cambio piano: "+e.message); setLoading(false); }
   };
 
   const handleManageSubscription = async () => {
@@ -81,6 +100,48 @@ export default function PianoPage() {
   };
 
   const planOrder = ["free","studio","pro"];
+
+  // Cosa eccede rispetto ai limiti del piano target (blocca i downgrade)
+  const exceedsTarget = (targetPid) => {
+    const target = PLANS[targetPid];
+    const reasons = [];
+    if (usage.users    > target.maxUsers)    reasons.push(`${usage.users} utenti (max ${target.maxUsers})`);
+    if (usage.projects > target.maxProjects) reasons.push(`${usage.projects} progetti (max ${target.maxProjects})`);
+    if (usage.commesse > target.maxCommesse) reasons.push(`${usage.commesse} commesse (max ${target.maxCommesse})`);
+    return reasons;
+  };
+
+  // Cambia piano: se esiste un abbonamento attivo viene cancellato subito, poi
+  // (se il target non è free) si apre un nuovo checkout senza un secondo trial gratuito.
+  const handleSwitchPlan = async (targetPid) => {
+    const blockers = exceedsTarget(targetPid);
+    if (blockers.length) {
+      showToast(`Non puoi passare a ${PLANS[targetPid].name}: superi i limiti su ${blockers.join(", ")}. Riduci prima questi elementi.`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (stripeSubscriptionId) {
+        const { data, error } = await supabase.functions.invoke("cancel-subscription", { body: { studioId } });
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+        setStripeSubscriptionId(null);
+      }
+
+      if (targetPid === "free") {
+        showToast("Abbonamento annullato. Sei tornato al piano Free.");
+        setLoading(false);
+        window.location.reload();
+        return;
+      }
+
+      await handleUpgrade(targetPid, { skipTrial: !!stripeCustomerId, customerId: stripeCustomerId });
+    } catch(e) {
+      showToast("Errore durante il cambio piano: "+e.message);
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth:820 }}>
@@ -104,6 +165,7 @@ export default function PianoPage() {
           const isCurrent = pianoId === pid;
           const isUpgrade = planOrder.indexOf(pid) > planOrder.indexOf(pianoId);
           const isDowngrade = planOrder.indexOf(pid) < planOrder.indexOf(pianoId);
+          const blockers = isDowngrade ? exceedsTarget(pid) : [];
 
           return (
             <div key={pid} style={{ background:T.surface, border:`0.5px solid ${isCurrent?T.navy:T.border}`, borderRadius: T.radiusSm, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
@@ -163,21 +225,18 @@ export default function PianoPage() {
                     Piano attuale
                   </div>
                 )
-              ) : stripeCustomerId ? (
-                // Esiste già un abbonamento Stripe attivo: upgrade, downgrade tra piani
-                // pagati e cancellazione (downgrade a free) passano tutti dal Billing
-                // Portal, che mostra la differenza di prezzo/proration in autonomia.
-                <button onClick={handleManageSubscription} disabled={loading} style={{ width:'100%', padding:'9px 0', background:isUpgrade?T.navy:'transparent', border:isUpgrade?'none':`0.5px solid ${T.navy}`, color:isUpgrade?T.bg:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
+              ) : isDowngrade && blockers.length ? (
+                <div title={`Riduci: ${blockers.join(", ")}`} style={{ width:'100%', padding:'9px 0', background:T.bg, border:`1px dashed ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', textAlign:'center', lineHeight:1.4 }}>
+                  Limiti superati<br/>{blockers.join(", ")}
+                </div>
+              ) : (
+                // Upgrade, downgrade tra piani pagati e downgrade a free (= cancellazione)
+                // passano tutti da handleSwitchPlan: cancella l'abbonamento corrente (se
+                // esiste) e, se il target non è free, apre un nuovo checkout senza un
+                // secondo periodo di prova gratuito.
+                <button onClick={() => handleSwitchPlan(pid)} disabled={loading} style={{ width:'100%', padding:'9px 0', background:isUpgrade?T.navy:'transparent', border:isUpgrade?'none':`0.5px solid ${T.navy}`, color:isUpgrade?T.bg:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
                   {loading ? "Caricamento..." : pid === "free" ? "Annulla abbonamento" : `Passa a ${p.name}`}
                 </button>
-              ) : isUpgrade ? (
-                <button onClick={() => handleUpgrade(pid)} disabled={loading} style={{ width:'100%', padding:'9px 0', background:T.navy, border:'none', color:T.bg, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
-                  {loading ? "Caricamento..." : `Passa a ${p.name}`}
-                </button>
-              ) : (
-                <div style={{ width:'100%', padding:'9px 0', background:T.bg, border:`1px solid ${T.border}`, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
-                  Piano inferiore
-                </div>
               )}
             </div>
           );
