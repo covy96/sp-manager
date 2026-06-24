@@ -159,7 +159,7 @@ export default function AnalisiOffertePage() {
         map[key].count++;
       }
     }
-    return Object.values(map).sort((a, b) => a.order - b.order || a.nome.localeCompare(b.nome));
+    return Object.values(map).sort((a, b) => b.totale - a.totale || a.order - b.order || a.nome.localeCompare(b.nome));
   }, [offerteFiltrate, vociTemplate]);
 
   const righeTemplate = useMemo(() => righeVoci.filter(r => r.isTemplate), [righeVoci]);

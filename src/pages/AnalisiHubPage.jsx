@@ -146,7 +146,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
         map[k].count++;
       }
     }
-    return Object.values(map).filter(r => r.isTemplate).sort((a, b) => a.order - b.order);
+    return Object.values(map).filter(r => r.isTemplate).sort((a, b) => b.totale - a.totale || a.order - b.order);
   }, [offerteFiltrate, vociTemplate]);
 
   const totalTemplate = useMemo(() => righeVoci.reduce((s, r) => s + r.totale, 0), [righeVoci]);
