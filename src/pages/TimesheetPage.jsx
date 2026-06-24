@@ -357,7 +357,7 @@ export default function TimesheetPage() {
 
   useEffect(() => {
     if (!studioId) return;
-    supabase.from("projects").select("id,name,client,archived").eq("studio", studioId).order("name", { ascending: true }).then(({ data }) => setProjects(data ?? []));
+    supabase.from("projects").select("id,name,client,archived").eq("studio", studioId).eq("nascosto_offerta", false).order("name", { ascending: true }).then(({ data }) => setProjects(data ?? []));
     supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId).then(({ data }) => setTeamMembers(data ?? []));
   }, [studioId]);
 

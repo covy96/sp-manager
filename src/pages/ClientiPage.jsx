@@ -67,7 +67,7 @@ export default function ClientiPage() {
     try {
       const [{ data:cts, error:cErr }, { data:projs }, { data:comms }] = await Promise.all([
         supabase.from("global_contacts").select("*").eq("studio",studioId).is("deleted_at",null).order("full_name",{ascending:true}),
-        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId),
+        supabase.from("projects").select("id,name,client,status,archived").eq("studio",studioId).eq("nascosto_offerta", false),
         supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,numero_offerta").eq("studio",studioId).is("deleted_at",null),
       ]);
       if (cErr) throw cErr;

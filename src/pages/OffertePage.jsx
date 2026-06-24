@@ -89,6 +89,7 @@ export default function OffertePage() {
 
     let projectId = form.project_id||null;
     let projectName = progetti.find(p=>p.id===form.project_id)?.name||null;
+    let createdProjectId = null; // progetto creato contestualmente all'offerta
 
     if (form.creaProgetto && form.nuovoProgettoNome?.trim()) {
       const serviziScelti = form.nuovoProgettoServizi || [];
@@ -105,6 +106,7 @@ export default function OffertePage() {
       if (pErr) { setFormError('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
       projectName = newProj.name;
+      createdProjectId = newProj.id;
       // Crea task predefinite per i servizi selezionati
       if (serviziScelti.length > 0) {
         const taskRows = [];
@@ -124,7 +126,7 @@ export default function OffertePage() {
     const _match = globalContacts.find(c => (c.full_name||"").trim().toLowerCase() === _ct.toLowerCase());
     const clienteCanonico = _match ? _match.full_name : _ct;
 
-    const { error } = await supabase.from("offerte").insert({
+    const { data:nuovaOfferta, error } = await supabase.from("offerte").insert({
       studio: studioId,
       numero_offerta: form.numero_offerta||`OFF.${Date.now()}`,
       nome_offerta: form.nome_offerta.trim(),
@@ -142,8 +144,13 @@ export default function OffertePage() {
       importo_totale: importoCalcolato,
       note: form.note||null,
       stato: 'offerta',
-    });
+    }).select('id').single();
     if (error) { setFormError(error.message); setSaving(false); return; }
+    // Lega il progetto creato contestualmente all'offerta: così se l'offerta
+    // viene rifiutata il progetto si nasconde (trigger sync_progetto_offerta_rifiutata)
+    if (createdProjectId && nuovaOfferta?.id) {
+      await supabase.from('projects').update({ offerta_origine_id: nuovaOfferta.id }).eq('id', createdProjectId);
+    }
     setModalOpen(false);
     setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', sconto_fisso:'', note:'' });
     showToast("Offerta creata", "success");
@@ -191,6 +198,7 @@ export default function OffertePage() {
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
+        offerta_origine_id: accettaId,
       }).select().single();
       if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;

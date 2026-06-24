@@ -164,6 +164,7 @@ export default function OfferteDetailPage() {
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
+        offerta_origine_id: id,
       }).select().single();
       if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;

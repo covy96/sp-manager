@@ -30,7 +30,7 @@ export function useGlobalSearch(studioId) {
       // Progetti archiviati
       supabase.from("projects")
         .select("id,name,client")
-        .eq("studio", studioId).eq("archived", true).is("deleted_at", null)
+        .eq("studio", studioId).eq("archived", true).eq("nascosto_offerta", false).is("deleted_at", null)
         .ilike("name", like).limit(3),
 
       // Commesse attive

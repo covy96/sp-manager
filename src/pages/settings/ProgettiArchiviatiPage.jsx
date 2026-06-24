@@ -38,7 +38,7 @@ export default function ProgettiArchiviatiPage() {
     setLoading(true); setError("");
     try {
       const [{ data: p, error: pErr }, { data: m, error: mErr }] = await Promise.all([
-        supabase.from("projects").select("*").eq("studio", studioId).eq("archived", true).order("created_at", { ascending: false }),
+        supabase.from("projects").select("*").eq("studio", studioId).eq("archived", true).eq("nascosto_offerta", false).order("created_at", { ascending: false }),
         supabase.from("team_members").select("id,user_name,user_email,color").eq("studio", studioId),
       ]);
       if (pErr) throw pErr; if (mErr) throw mErr;
