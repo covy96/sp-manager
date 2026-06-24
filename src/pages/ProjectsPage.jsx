@@ -9,6 +9,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
 import { useEscKey } from "../hooks/useEscKey";
+import LinkedCommesseField from "../components/LinkedCommesseField";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function getInitials(name) {
@@ -705,10 +706,13 @@ export default function ProjectsPage() {
     setIsModalOpen(false); resetForm(); await loadData(); setSaveLoading(false);
   };
 
-  const openEditModal = project => {
+  const openEditModal = async project => {
     setEditProject(project);
-    setEditFormData({ name: project.name || "", client: project.client || "", address: project.address || "", start_date: project.start_date || "", selectedServices: project.servizi_selezionati || [], selectedMembers: project.assigned_users || [], selectedCommessaId: project.commessa_id || "", gantt_enabled: !!project.gantt_enabled });
-    loadCommesseList(); setEditModalOpen(true);
+    await loadCommesseList();
+    const { data: linked } = await supabase.from("commesse").select("id").eq("project_id", project.id);
+    const linkedIds = (linked ?? []).map(c => c.id);
+    setEditFormData({ name: project.name || "", client: project.client || "", address: project.address || "", start_date: project.start_date || "", selectedServices: project.servizi_selezionati || [], selectedMembers: project.assigned_users || [], selectedCommessaIds: linkedIds, originalCommessaIds: linkedIds, gantt_enabled: !!project.gantt_enabled });
+    setEditModalOpen(true);
   };
 
   const handleEditProject = async e => {
@@ -720,10 +724,13 @@ export default function ProjectsPage() {
     await upsertContact(editClientCanon);
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", editProject.id);
     if (!uErr) {
-      const newCid = editFormData.selectedCommessaId || null;
-      if (editProject.commessa_id && editProject.commessa_id !== newCid) await supabase.from("commesse").update({ project_id: null }).eq("id", editProject.commessa_id);
-      await supabase.from("projects").update({ commessa_id: newCid }).eq("id", editProject.id);
-      if (newCid) await supabase.from("commesse").update({ project_id: editProject.id }).eq("id", newCid);
+      const origIds = editFormData.originalCommessaIds || [];
+      const newIds = editFormData.selectedCommessaIds || [];
+      const removed = origIds.filter(id => !newIds.includes(id));
+      const added = newIds.filter(id => !origIds.includes(id));
+      if (removed.length) await supabase.from("commesse").update({ project_id: null }).in("id", removed);
+      if (added.length) await supabase.from("commesse").update({ project_id: editProject.id }).in("id", added);
+      await supabase.from("projects").update({ commessa_id: newIds[0] || null }).eq("id", editProject.id);
       setEditModalOpen(false); setEditProject(null); await loadData();
     }
     setEditLoading(false);
@@ -1027,12 +1034,12 @@ export default function ProjectsPage() {
             isEdit
           />
           <div style={{ marginTop: 14 }}>
-            <FieldLabel>Commessa collegata</FieldLabel>
-            <select value={editFormData.selectedCommessaId ?? ""} onChange={e => setEditFormData(p => ({ ...p, selectedCommessaId: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
-              <option value="">Nessuna</option>
-              {commesseList.map(c => <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>)}
-            </select>
+            <FieldLabel>Commesse collegate</FieldLabel>
+            <LinkedCommesseField
+              selectedIds={editFormData.selectedCommessaIds}
+              commesseList={commesseList}
+              onChange={ids => setEditFormData(p => ({ ...p, selectedCommessaIds: ids }))}
+            />
           </div>
           <Divider />
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

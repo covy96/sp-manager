@@ -11,6 +11,7 @@ import OrePanel from '../components/OrePanel';
 import CommessePanel from '../components/CommessePanel';
 import ReportCantierePanel from '../components/ReportCantierePanel';
 import CapexPanel from '../components/CapexPanel';
+import LinkedCommesseField from '../components/LinkedCommesseField';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -571,7 +572,8 @@ export default function ProjectDetailPage() {
       gantt_enabled: project?.gantt_enabled ?? false,
       selectedServices: Array.isArray(project?.servizi_selezionati) ? [...project.servizi_selezionati] : [],
       selectedMembers: Array.isArray(project?.assigned_users) ? [...project.assigned_users] : [],
-      selectedCommessaId: project?.commessa_id ?? "",
+      selectedCommessaIds: commesseProgetto.map(c => c.id),
+      originalCommessaIds: commesseProgetto.map(c => c.id),
     });
     setEditError(""); setEditOpen(true); setMenuOpen(false);
   };
@@ -580,7 +582,8 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     if (!editForm.name.trim() || !editForm.client.trim()) { setEditError("Nome e cliente sono obbligatori."); return; }
     setEditSaving(true); setEditError("");
-    const newCid = editForm.selectedCommessaId || null;
+    const origIds = editForm.originalCommessaIds || [];
+    const newIds = editForm.selectedCommessaIds || [];
     const payload = {
       name: editForm.name.trim(),
       client: editForm.client.trim(),
@@ -589,18 +592,20 @@ export default function ProjectDetailPage() {
       gantt_enabled: !!editForm.gantt_enabled,
       servizi_selezionati: editForm.selectedServices,
       assigned_users: editForm.selectedMembers ?? [],
-      commessa_id: newCid,
+      commessa_id: newIds[0] || null,
     };
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", id);
     if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
-    // Gestisci collegamento bidirezionale commessa ↔ project
-    if (project?.commessa_id && project.commessa_id !== newCid) {
-      await supabase.from("commesse").update({ project_id: null }).eq("id", project.commessa_id);
-    }
-    if (newCid) {
-      await supabase.from("commesse").update({ project_id: id }).eq("id", newCid);
-    }
+    // Gestisci collegamento bidirezionale commesse ↔ project
+    const removed = origIds.filter(cid => !newIds.includes(cid));
+    const added = newIds.filter(cid => !origIds.includes(cid));
+    if (removed.length) await supabase.from("commesse").update({ project_id: null }).in("id", removed);
+    if (added.length) await supabase.from("commesse").update({ project_id: id }).in("id", added);
     setProject(p => p ? { ...p, ...payload } : p);
+    if (removed.length || added.length) {
+      const { data: commProg } = await supabase.from("commesse").select("id,nome_commessa,cliente,importo_offerta_base,importo_totale,importo_incassato,stato_pagamento,archived").eq("project_id", id).order("created_at", { ascending: false });
+      setCommesseProgetto((commProg ?? []).map(c => ({ ...c, _incassato: commesseProgetto.find(o => o.id === c.id)?._incassato || 0 })));
+    }
     setEditSaving(false); setEditOpen(false);
   };
 
@@ -910,12 +915,12 @@ export default function ProjectDetailPage() {
                 </div>
               )}
               <div style={{ marginTop: 14 }}>
-                <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commessa collegata</label>
-                <select value={editForm.selectedCommessaId ?? ""} onChange={e => setEditForm(p => ({ ...p, selectedCommessaId: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
-                  <option value="">Nessuna</option>
-                  {commesseList.map(c => <option key={c.id} value={c.id}>{c.numero_offerta ? `${c.numero_offerta} — ` : ""}{c.nome_commessa}</option>)}
-                </select>
+                <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commesse collegate</label>
+                <LinkedCommesseField
+                  selectedIds={editForm.selectedCommessaIds}
+                  commesseList={commesseList}
+                  onChange={ids => setEditForm(p => ({ ...p, selectedCommessaIds: ids }))}
+                />
               </div>
               {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.border}` }}>
