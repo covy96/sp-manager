@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { useTheme } from "./ThemeContext";
+import { reportToastError } from "../lib/sentry";
 
 const ToastContext = createContext(null);
 
@@ -62,6 +63,8 @@ export function ToastProvider({ children }) {
     const id = Date.now() + Math.random();
     setToasts(p => [...p, { id, message, type }]);
     timerRefs.current[id] = setTimeout(() => remove(id), duration);
+    // Ogni messaggio rosso viene segnalato a Sentry → email di avviso
+    if (type === "error") reportToastError(message);
   }, [remove]);
 
   return (

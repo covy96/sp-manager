@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEffect, useRef, useState } from "react";
+import { Sentry } from "../lib/sentry";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
@@ -83,7 +84,7 @@ const PLAN_ORDER = { free:0, studio:1, pro:2 };
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
-  componentDidCatch(error) { this.setState({ error }); }
+  componentDidCatch(error, info) { this.setState({ error }); Sentry.captureException(error, { extra: info }); }
   render() {
     if (this.state.error) return (
       <div style={{ padding:20, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#f87171' }}>

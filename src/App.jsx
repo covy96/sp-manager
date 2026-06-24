@@ -1,9 +1,13 @@
 import { useEffect, useState, Component, lazy, Suspense } from "react";
+import { Sentry } from "./lib/sentry";
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(error) { return { error }; }
-  componentDidCatch(error, info) { console.error("ErrorBoundary caught:", error, info); }
+  componentDidCatch(error, info) {
+    console.error("ErrorBoundary caught:", error, info);
+    Sentry.captureException(error, { extra: info });
+  }
   render() {
     if (this.state.error) {
       return (

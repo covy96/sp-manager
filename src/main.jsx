@@ -6,7 +6,9 @@ import "./index.css";
 import { supabase } from "./lib/supabase";
 import { initTheme } from "./contexts/ThemeContext";
 import { upsertSavedAccount } from "./lib/accounts";
+import { initSentry } from "./lib/sentry";
 
+initSentry();
 initTheme();
 
 function Root() {
