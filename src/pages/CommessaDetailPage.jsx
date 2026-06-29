@@ -501,7 +501,9 @@ export default function CommessaDetailPage() {
   };
   const handleDeleteCosto = async id => {
     if (!window.confirm("Eliminare questo costo?")) return;
-    await supabase.from("costi_extra").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    const { data: dData, error: dErr } = await supabase.from("costi_extra").update({ deleted_at: new Date().toISOString() }).eq("id", id).is("deleted_at", null).select();
+    if (dErr) { showToast("Errore eliminazione: " + dErr.message); return; }
+    if (!dData || dData.length === 0) { showToast("Impossibile eliminare il costo (permessi insufficienti)."); return; }
     setOpenMenuId(null); await loadData();
   };
 
