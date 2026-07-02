@@ -527,7 +527,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         borderBottom: activeSection > 0 ? '0.5px solid rgba(14,14,13,0.1)' : 'none',
         transition: 'all 0.3s',
       }}>
-        <AsmSeal size="sm" showBorder={false} showBottom={false} theme={activeSection === 0 ? 'dark' : 'light'}/>
+        <AsmSeal size={isMobile ? 'xs' : 'sm'} showBorder={false} showBottom={false} showTop={!isMobile} theme={activeSection === 0 ? 'dark' : 'light'}/>
         {isMobile ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button onClick={onLogin} style={{ background: 'transparent', border: `1px solid ${activeSection===0?'rgba(238,241,246,0.45)':'rgba(14,14,13,0.25)'}`, color: activeSection===0?'#EEF1F6':C.ink, padding: '7px 14px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
@@ -660,6 +660,15 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
             {!isMobile && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, background: dark ? 'rgba(0,0,0,0.15)' : 'rgba(19,49,92,0.04)', order: flip ? 1 : 2 }}>
                 <AppShell activeLabel={mockLabel} w={500} h={330}>{mock}</AppShell>
+              </div>
+            )}
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 22px 32px', order: 3 }}>
+                <div style={{ width: 320, height: 211, position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, transform: 'scale(0.64)', transformOrigin: 'top left' }}>
+                    <AppShell activeLabel={mockLabel} w={500} h={330}>{mock}</AppShell>
+                  </div>
+                </div>
               </div>
             )}
             {flip && !isMobile && (

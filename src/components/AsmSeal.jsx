@@ -22,6 +22,7 @@ import React from 'react';
  */
 
 const SIZES = {
+  xs:   { word: 18,  top: 6,   bot: 5,   pad: '0px',       gap: 0,  bar: 12, sq: 3,  ul: 2, ulo: -2 },
   sm:   { word: 36,  top: 8,   bot: 7,   pad: '10px 16px', gap: 6,  bar: 22, sq: 5,  ul: 3, ulo: -4 },
   md:   { word: 64,  top: 9,   bot: 8,   pad: '18px 26px', gap: 10, bar: 28, sq: 6,  ul: 4, ulo: -5 },
   lg:   { word: 96,  top: 10,  bot: 9,   pad: '24px 36px', gap: 12, bar: 32, sq: 7,  ul: 5, ulo: -6 },
@@ -50,6 +51,7 @@ export default function AsmSeal({
   theme = 'light',
   showBorder = true,
   showBottom = true,
+  showTop = true,
   className = '',
   style = {},
 }) {
@@ -90,21 +92,24 @@ export default function AsmSeal({
       )}
 
       {/* Riga superiore: — ARCHITECT STUDIO MANAGEMENT ■ */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontWeight: 500,
-        fontSize: s.top,
-        letterSpacing: '0.3em',
-        textTransform: 'uppercase',
-        color: t.ink,
-      }}>
-        <span style={{ width: s.bar, height: 1, background: t.ink, display: 'inline-block' }} />
-        <span>Architect Studio Management</span>
-        <span style={{ width: s.sq, height: s.sq, background: t.navy, display: 'inline-block' }} />
-      </div>
+      {showTop && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontWeight: 500,
+          fontSize: s.top,
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: t.ink,
+          whiteSpace: 'nowrap',
+        }}>
+          <span style={{ width: s.bar, height: 1, background: t.ink, display: 'inline-block' }} />
+          <span>Architect Studio Management</span>
+          <span style={{ width: s.sq, height: s.sq, background: t.navy, display: 'inline-block' }} />
+        </div>
+      )}
 
       {/* Wordmark ASM con S sottolineata */}
       <div style={{
