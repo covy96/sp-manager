@@ -453,9 +453,9 @@ function MockFatture() {
 const PLANS = [
   { id: 'free',   name: 'Free',   price: '€0',     period: '/mese', desc: 'Per iniziare',           highlight: false, cta: 'Inizia gratis', trial: false,
     features: ['1 utente interno','1 collaboratore esterno','5 progetti','5 commesse','Task e timesheet','Calendario'] },
-  { id: 'studio', name: 'Studio', price: '€19,99', period: '/mese', desc: 'Per studi in crescita',  highlight: false, cta: '1 mese gratis →', trial: true,
+  { id: 'studio', name: 'Studio', price: '€19,99', period: '/mese', desc: 'Per studi in crescita',  highlight: false, cta: '1 mese gratis', trial: true,
     features: ['Fino a 5 utenti','15 progetti','15 commesse','Analisi Hub e report avanzati','Proforma, fatture e CAPEX'] },
-  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: true,  cta: '1 mese gratis →', trial: true,
+  { id: 'pro',    name: 'Pro',    price: '€29,99', period: '/mese', desc: 'Per studi professionali', highlight: true,  cta: '1 mese gratis', trial: true,
     features: ['Tutto di Studio','Utenti illimitati','Progetti illimitati','Commesse illimitate','Gantt','Report di cantiere'] },
 ];
 
@@ -499,14 +499,20 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const onScroll = () => setActive(Math.round(el.scrollTop / window.innerHeight));
+    const onScroll = () => {
+      const sections = el.querySelectorAll('section');
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.offsetTop <= el.scrollTop + 10) idx = i; });
+      setActive(idx);
+    };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
   const scrollTo = (idx) => {
     setMenuOpen(false);
-    containerRef.current?.scrollTo({ top: idx * window.innerHeight, behavior: 'smooth' });
+    const section = containerRef.current?.querySelectorAll('section')[idx];
+    section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const SECTIONS = ['hero','scrivania','gantt','commesse','timesheet','monitoraggio','report','fatture','analisi-hub','preventivo','pricing','faq','cta'];
@@ -575,7 +581,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
       )}
 
       {/* ── SCROLL CONTAINER ── */}
-      <div ref={containerRef} style={{ height: '100vh', overflowY: 'scroll', scrollSnapType: 'y mandatory' }}>
+      <div ref={containerRef} style={{ height: '100vh', overflowY: 'scroll', scrollSnapType: isMobile ? 'none' : 'y mandatory' }}>
 
         {/* 0 · HERO */}
         <section style={{ height: '100vh', scrollSnapAlign: 'start', background: C.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -647,7 +653,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
             desc:'Distingui automaticamente le voci di spesa corrente (OPEX) da quelle in conto capitale (CAPEX). Utile per clienti privati e società.',
             features:['Voci CAPEX e OPEX nello stesso preventivo','Totali separati per categoria','Esportazione PDF differenziata','Collegate alle commesse'] },
         ].map(({ idx, label, num, bg, dark, textColor, accent, mockLabel, mock, flip, title, desc, features }) => (
-          <section key={idx} style={{ height: '100vh', scrollSnapAlign: 'start', background: bg, display: 'grid', gridTemplateColumns: gridCols, overflowY: isMobile?'auto':'hidden' }}>
+          <section key={idx} style={{ height: isMobile ? 'auto' : '100vh', minHeight: isMobile ? undefined : '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: bg, display: 'grid', gridTemplateColumns: gridCols, overflowY: isMobile ? 'visible' : 'hidden' }}>
             {/* testo — se flip e non mobile va a destra */}
             {(!flip || isMobile) && (
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: pad, color: textColor, order: flip && !isMobile ? 2 : 1 }}>
@@ -683,7 +689,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         ))}
 
         {/* 8 · PRICING */}
-        <section style={{ height: '100vh', scrollSnapAlign: 'start', background: C.paper, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: isMobile ? undefined : '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: C.paper, overflowY: isMobile ? 'visible' : 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: isMobile?'72px 20px 24px':'56px 48px 0', flexShrink: 0 }}>
             <div style={{ ...eyebrow, color: C.navy, marginBottom: 12 }}>Pricing</div>
             <div style={{ fontSize: isMobile?28:40, fontWeight: 600, letterSpacing: '-0.03em', color: C.ink, marginBottom: isMobile?24:36 }}>Semplice e trasparente.</div>
@@ -719,7 +725,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         </section>
 
         {/* 9 · FAQ */}
-        <section style={{ height: '100vh', scrollSnapAlign: 'start', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: isMobile?'flex-start':'center', padding: isMobile?'72px 20px 40px':'0 10vw', overflowY: 'auto' }}>
+        <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: isMobile ? undefined : '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: isMobile?'flex-start':'center', padding: isMobile?'72px 20px 40px':'0 10vw', overflowY: isMobile ? 'visible' : 'auto' }}>
           <div style={{ ...eyebrow, color: C.navy, marginBottom: isMobile?24:40 }}>Domande frequenti</div>
           <div style={{ maxWidth: 720 }}>
             {FAQ_DATA.map((item, i) => (
@@ -736,7 +742,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         </section>
 
         {/* 10 · CTA */}
-        <section style={{ height: '100vh', scrollSnapAlign: 'start', background: C.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: isMobile?'60px 20px':'0 32px', position: 'relative', overflow: 'hidden' }}>
+        <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: C.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: isMobile?'60px 20px 90px':'0 32px', position: 'relative', overflow: isMobile ? 'visible' : 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 40% 60%, #13315C 0%, #0E0E0D 65%)', opacity: 0.85 }}/>
           <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
             <div style={{ ...eyebrow, color: 'rgba(217,201,138,0.45)', marginBottom: isMobile?16:24 }}>Pronto a iniziare?</div>
