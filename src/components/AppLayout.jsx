@@ -387,7 +387,7 @@ export default function AppLayout({ session, children }) {
           padding:'20px 18px 16px', background:'transparent', border:'none',
           borderBottom:`1px solid ${T.sidebarBorder}`, cursor:'pointer', textAlign:'left', width:'100%',
         }}>
-          <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark"/>
+          <AsmSeal size="sm" showBorder={false} showBottom={false} showTop={false} theme="dark"/>
         </button>
 
         <nav style={{ padding:'10px 10px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
