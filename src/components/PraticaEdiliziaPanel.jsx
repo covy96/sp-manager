@@ -176,7 +176,7 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
 }
 
 // ── MODAL VARIANTI ────────────────────────────────────────────────
-function VariantiModal({ pratica, onClose, onSaved }) {
+function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
   const { T } = useTheme();
   const showToast = useToast();
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
@@ -210,8 +210,10 @@ function VariantiModal({ pratica, onClose, onSaved }) {
     setSaving(false);
     if (error) { showToast("Errore: "+error.message); return; }
     showToast("Varianti aggiornate", "success");
+    const varianteAggiunta = localV.length > initial.length;
     onSaved();
     onClose();
+    if (varianteAggiunta) onVarianteAdded?.();
   };
 
   return (
@@ -436,9 +438,10 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
 }
 
 // ── COMPONENTE PRINCIPALE ─────────────────────────────────────────
-export default function PraticaEdiliziaPanel({ projectId, studioId }) {
+export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [], autoOpenForm = false }) {
   const { T } = useTheme();
   const showToast = useToast();
+  const navigate = useNavigate();
 
   const mono = { fontFamily:"'IBM Plex Mono', monospace" };
   const inputSt = {
@@ -467,6 +470,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
   const [scadenzaOpen, setScadenzaOpen]         = useState(false);
   const [scadenzaPraticaId, setScadenzaPraticaId] = useState(null);
   const [scadenzaTipo, setScadenzaTipo]           = useState("");
+
+  // avviso "vuoi inserire i diritti?" → porta al popup Costi Extra della commessa
+  const [dirittiPrompt, setDirittiPrompt]       = useState(false);
+  const [pendingDiritti, setPendingDiritti]     = useState(false); // in attesa che si chiuda la scadenza
+  const [chosenCommessaId, setChosenCommessaId] = useState("");
 
   const anySubModal = variantiOpen || fineLavoriOpen || scadenzaOpen;
   useBodyScrollLock(listOpen && !anySubModal);
@@ -497,6 +505,25 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setFormOpen(true);
+  };
+
+  // Arrivo da una commessa ("vuoi inserire una pratica?") → apri subito il form
+  useEffect(() => {
+    if (autoOpenForm) openNew();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── PROPONI DIRITTI (COSTI) SULLA COMMESSA ───────────────────────
+  const proposeDiritti = () => {
+    if (!commesse || commesse.length === 0) return; // nessuna commessa → niente da fare
+    setChosenCommessaId(commesse.length === 1 ? commesse[0].id : "");
+    setDirittiPrompt(true);
+  };
+  const goToDiritti = () => {
+    const targetId = commesse.length === 1 ? commesse[0].id : chosenCommessaId;
+    if (!targetId) return;
+    setDirittiPrompt(false);
+    navigate(`/commesse/${targetId}`, { state: { openCostoDiritti: true } });
   };
 
   const openEdit = (p) => {
@@ -553,6 +580,8 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
       setScadenzaPraticaId(savedId);
       setScadenzaTipo(form.tipo_pratica);
       setScadenzaOpen(true);
+      // Solo per una pratica NUOVA: dopo la scadenza, proponi i diritti sulla commessa
+      if (!editingId) setPendingDiritti(true);
     }
   };
 
@@ -942,6 +971,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
           pratica={variantePratica}
           onClose={() => setVariantiOpen(false)}
           onSaved={load}
+          onVarianteAdded={proposeDiritti}
         />
       )}
 
@@ -950,9 +980,45 @@ export default function PraticaEdiliziaPanel({ projectId, studioId }) {
         <ScadenzaModal
           praticaId={scadenzaPraticaId}
           tipoPratica={scadenzaTipo}
-          onClose={() => { setScadenzaOpen(false); setScadenzaPraticaId(null); }}
+          onClose={() => {
+            setScadenzaOpen(false); setScadenzaPraticaId(null);
+            if (pendingDiritti) { setPendingDiritti(false); proposeDiritti(); }
+          }}
           onSaved={load}
         />
+      )}
+
+      {/* ── AVVISO: VUOI INSERIRE I DIRITTI? ───────────────────── */}
+      {dirittiPrompt && (
+        <div style={{ position:"fixed", inset:0, zIndex:95, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.65)", padding:16 }}>
+          <div style={{ width:"100%", maxWidth:420, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28 }}>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:8 }}>Inserire i diritti?</div>
+            <div style={{ fontSize:13, color:T.ink, lineHeight:1.5, marginBottom:16 }}>
+              Vuoi inserire i diritti (costi) di questa pratica nella commessa?
+            </div>
+
+            {commesse.length > 1 && (
+              <div style={{ marginBottom:18 }}>
+                <FieldLabel T={T} required>Commessa</FieldLabel>
+                <select value={chosenCommessaId} onChange={e => setChosenCommessaId(e.target.value)}
+                  style={{ ...inputSt, cursor:"pointer" }}>
+                  <option value="">— Seleziona commessa —</option>
+                  {commesse.map(c => <option key={c.id} value={c.id}>{c.nome_commessa || "Commessa"}</option>)}
+                </select>
+              </div>
+            )}
+
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={() => setDirittiPrompt(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+                Non ora
+              </button>
+              <button onClick={goToDiritti} disabled={commesse.length > 1 && !chosenCommessaId}
+                style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:(commesse.length > 1 && !chosenCommessaId)?"not-allowed":"pointer", opacity:(commesse.length > 1 && !chosenCommessaId)?0.6:1 }}>
+                Sì, inserisci
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

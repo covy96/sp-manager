@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { supabase } from "../lib/supabase";
 import { useTheme } from '../contexts/ThemeContext';
@@ -172,8 +172,11 @@ export default function CommessaDetailPage() {
   usePageTitleOnMount("Commessa");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: commessaId } = useParams();
   const { studioId, studio } = useStudio();
+  // Evita di riproporre "inserisci una pratica" quando arriviamo QUI da una pratica
+  const skipPraticaPromptRef = useRef(false);
   const isFattura = studio?.tipo_fatturazione === 'fattura';
 
   const [commessa, setCommessa]           = useState(null);
@@ -256,6 +259,22 @@ export default function CommessaDetailPage() {
 
   const [deleteCommessaModal, setDeleteCommessaModal] = useState(false);
   const [deletingSaving, setDeletingSaving]           = useState(false);
+
+  // Avviso "vuoi inserire una pratica?" dopo aver salvato un costo di tipo Diritti
+  const [praticaPrompt, setPraticaPrompt] = useState(false);
+
+  // Apertura automatica del popup Costo Extra (pre-impostato su "Diritti")
+  // quando si arriva qui dal popup Pratiche di un progetto.
+  useEffect(() => {
+    if (location.state?.openCostoDiritti) {
+      skipPraticaPromptRef.current = true;
+      setCostoForm({ tipo_costo: "Diritti", data_costo: new Date().toISOString().slice(0, 10) });
+      setCostoError("");
+      setCostoModal(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Chiudi modal con ESC (dal più recente)
   useEscKey(() => {
@@ -427,9 +446,16 @@ export default function CommessaDetailPage() {
 
   const handleSaveCosto = async e => {
     e.preventDefault(); setCostoError(""); setCostoSaving(true);
-    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: costoForm.tipo_costo || "Altro", description: costoForm.description || null, importo: Number(costoForm.importo) || 0, data_costo: costoForm.data_costo || new Date().toISOString().slice(0,10), studio: studioId });
+    const tipo = costoForm.tipo_costo || "Altro";
+    const { error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: tipo, description: costoForm.description || null, importo: Number(costoForm.importo) || 0, data_costo: costoForm.data_costo || new Date().toISOString().slice(0,10), studio: studioId });
     if (iErr) { setCostoError(iErr.message); setCostoSaving(false); return; }
     setCostoModal(false); setCostoForm({}); await loadData(); setCostoSaving(false);
+    // Se ho appena inserito un "Diritto" e la commessa ha un progetto collegato,
+    // proponi di inserire la pratica corrispondente (a meno che non sia stato l'avvio a portarci qui).
+    if (tipo === "Diritti" && commessa?.project_id && !skipPraticaPromptRef.current) {
+      setPraticaPrompt(true);
+    }
+    skipPraticaPromptRef.current = false;
   };
 
   // Rate — usa campi originali: percentuale, importo_fisso, studio
@@ -1074,6 +1100,18 @@ export default function CommessaDetailPage() {
           {costoError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{costoError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setCostoModal(false)} disabled={costoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={costoSaving}>{costoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
+      </Modal>
+
+      {/* Avviso: dopo un Diritto, proponi di inserire la pratica nel progetto */}
+      <Modal open={praticaPrompt} onClose={() => setPraticaPrompt(false)} title="Inserire una pratica?" width={420}>
+        <div style={{ fontSize: 13, color: T.ink, lineHeight: 1.5, marginBottom: 4 }}>
+          Hai registrato un costo come <strong>Diritti</strong>. Vuoi inserire anche la pratica corrispondente nel progetto collegato?
+        </div>
+        <Divider />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <BtnGhost onClick={() => setPraticaPrompt(false)}>Non ora</BtnGhost>
+          <BtnPrimary onClick={() => { setPraticaPrompt(false); navigate(`/progetti/${commessa.project_id}`, { state: { openPraticaForm: true } }); }}>Sì, apri pratiche</BtnPrimary>
+        </div>
       </Modal>
 
       {/* ── ANTEPRIMA PROFORMA ── */}

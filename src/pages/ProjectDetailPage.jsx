@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
 import { usePermissions } from "../hooks/usePermissions";
 import { usePlan } from "../hooks/usePlan";
@@ -323,12 +323,23 @@ export default function ProjectDetailPage() {
   usePageTitleOnMount("Progetto");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: projectId } = useParams();
   const { studioId, teamMember } = useStudio();
   const permissions = usePermissions();
   const { isPro } = usePlan();
   const id = projectId;
   const inputRefs = useRef({});
+
+  // Se arriviamo qui da una commessa ("vuoi inserire una pratica?"), apri
+  // automaticamente il form Nuova pratica. Consumiamo lo state una sola volta.
+  const [autoOpenPratica] = useState(!!location.state?.openPraticaForm);
+  useEffect(() => {
+    if (location.state?.openPraticaForm) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── PRESENZA REALTIME ──────────────────────────────────────────
   const mePresence = teamMember ? {
@@ -757,7 +768,7 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
             )}
-            <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
+            <PraticaEdiliziaPanel projectId={id} studioId={studioId} commesse={commesseProgetto} autoOpenForm={autoOpenPratica} />
             <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
               <ReportCantierePanel
