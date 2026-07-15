@@ -609,10 +609,22 @@ export default function CommessaDetailPage() {
     await loadData(); setProformaSaving(false);
   };
 
-  const openEditProforma = p => { setEditProformaData(p); setEditProformaForm({ numero_proforma: p.numero_proforma || "", data_creazione: p.data_creazione || "", note: p.note || "" }); setEditProformaModal(true); setOpenMenuId(null); };
+  const openEditProforma = p => { setEditProformaData(p); setEditProformaForm({ numero_proforma: p.numero_proforma || "", numero_fattura: p.numero_fattura || "", data_creazione: p.data_creazione || "", data_scadenza: p.data_scadenza || "", data_pagamento: p.data_pagamento || "", note: p.note || "" }); setEditProformaModal(true); setOpenMenuId(null); };
   const handleSaveEditProforma = async e => {
     e.preventDefault(); setEditProformaSaving(true);
-    await supabase.from("proforma").update({ numero_proforma: editProformaForm.numero_proforma, data_creazione: editProformaForm.data_creazione || null, note: editProformaForm.note || null }).eq("id", editProformaData.id);
+    const isPagata = editProformaData.pagato;
+    await supabase.from("proforma").update({
+      numero_proforma: editProformaForm.numero_proforma,
+      numero_fattura: isPagata ? (editProformaForm.numero_fattura || null) : editProformaData.numero_fattura,
+      data_creazione: editProformaForm.data_creazione || null,
+      data_scadenza: editProformaForm.data_scadenza || null,
+      data_pagamento: isPagata ? (editProformaForm.data_pagamento || null) : editProformaData.data_pagamento,
+      note: editProformaForm.note || null,
+    }).eq("id", editProformaData.id);
+    // mantieni allineate le rate collegate quando cambia la data di pagamento
+    if (isPagata && editProformaData.suddivisione_pagamento_ids?.length) {
+      await supabase.from("suddivisione_pagamenti").update({ data_pagamento: editProformaForm.data_pagamento || null }).in("id", editProformaData.suddivisione_pagamento_ids);
+    }
     setEditProformaModal(false); await loadData(); setEditProformaSaving(false);
   };
   const handleDeleteProforma = async (proformaToDelete) => {
@@ -1410,7 +1422,16 @@ export default function CommessaDetailPage() {
       <Modal open={editProformaModal} onClose={() => setEditProformaModal(false)} title={isFattura ? "Modifica Fattura" : "Modifica Proforma"} width={420}>
         <form onSubmit={handleSaveEditProforma} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>{isFattura ? "N° Fattura" : "N° Proforma"}</FieldLabel><Input value={editProformaForm.numero_proforma ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, numero_proforma: e.target.value }))} /></div>
-          <div><FieldLabel>Data creazione</FieldLabel><Input type="date" value={editProformaForm.data_creazione ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, data_creazione: e.target.value }))} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div><FieldLabel>Data creazione</FieldLabel><Input type="date" value={editProformaForm.data_creazione ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, data_creazione: e.target.value }))} /></div>
+            <div><FieldLabel>Data scadenza</FieldLabel><Input type="date" value={editProformaForm.data_scadenza ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, data_scadenza: e.target.value }))} /></div>
+          </div>
+          {editProformaData?.pagato && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div><FieldLabel>N° Fattura</FieldLabel><Input value={editProformaForm.numero_fattura ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, numero_fattura: e.target.value }))} /></div>
+              <div><FieldLabel>Data pagamento</FieldLabel><Input type="date" value={editProformaForm.data_pagamento ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, data_pagamento: e.target.value }))} /></div>
+            </div>
+          )}
           <div><FieldLabel>Note</FieldLabel><Input value={editProformaForm.note ?? ""} onChange={e => setEditProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditProformaModal(false)} disabled={editProformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editProformaSaving}>{editProformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
