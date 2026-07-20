@@ -607,6 +607,23 @@ export default function ProjectDetailPage() {
     };
     const { error: uErr } = await supabase.from("projects").update(payload).eq("id", id);
     if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
+    // Crea le task predefinite per i servizi appena aggiunti in modifica
+    const prevServices = Array.isArray(project?.servizi_selezionati) ? project.servizi_selezionati : [];
+    const addedServices = (editForm.selectedServices ?? []).filter(s => !prevServices.includes(s));
+    if (addedServices.length > 0) {
+      const taskRows = [];
+      for (const serviceName of addedServices) {
+        const template = serviceTemplates.find(t => t.service_name === serviceName);
+        const taskList = Array.isArray(template?.task_templates) ? template.task_templates : [];
+        for (const taskName of taskList) {
+          taskRows.push({ project_id: id, title: taskName, categoria: serviceName, status: "todo", studio: studioId });
+        }
+      }
+      if (taskRows.length > 0) {
+        const { data: newTasks } = await supabase.from("tasks").insert(taskRows).select("*");
+        if (Array.isArray(newTasks) && newTasks.length) setTasks(prev => [...prev, ...newTasks]);
+      }
+    }
     // Gestisci collegamento bidirezionale commesse ↔ project
     const removed = origIds.filter(cid => !newIds.includes(cid));
     const added = newIds.filter(cid => !origIds.includes(cid));
@@ -768,7 +785,7 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
             )}
-            <PraticaEdiliziaPanel projectId={id} studioId={studioId} commesse={commesseProgetto} autoOpenForm={autoOpenPratica} />
+            <PraticaEdiliziaPanel projectId={id} studioId={studioId} commesse={commesseProgetto.filter(c => !c.archived)} autoOpenForm={autoOpenPratica} />
             <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
               <ReportCantierePanel
