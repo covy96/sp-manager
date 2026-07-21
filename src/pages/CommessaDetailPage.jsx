@@ -423,25 +423,37 @@ export default function CommessaDetailPage() {
   // Incassato = somma delle RATE PAGATE (stessa formula di tutte le viste e del
   // trigger DB). NB: a DB un trigger su suddivisione_pagamenti mantiene comunque
   // questo campo allineato; qui lo aggiorniamo subito per reattività dell'UI.
-  const ricalcolaIncassato = async () => {
+  const ricalcolaIncassato = async (baseOverride) => {
+    const base = baseOverride ?? importoBase;
     const totale = suddivisione
       .filter(r => r.pagato)
-      .reduce((s, r) => s + (Number(r.importo_fisso) || (importoBase * (Number(r.percentuale) || 0) / 100)), 0);
+      .reduce((s, r) => s + (Number(r.importo_fisso) || (base * (Number(r.percentuale) || 0) / 100)), 0);
     await supabase.from("commesse").update({ importo_incassato: totale }).eq("id", commessaId);
+    return totale;
   };
 
   // ── HANDLERS ─────────────────────────────────────────────────
 
   const openEdit = () => {
-    setEditForm({ numero_offerta: commessa?.numero_offerta || "", nome_commessa: commessa?.nome_commessa || "", cliente: commessa?.cliente || "", data_commessa: commessa?.data_commessa || "", importo_offerta_base: commessa?.importo_offerta_base || "", note_amministrative: commessa?.note_amministrative || "" });
+    setEditForm({ numero_offerta: commessa?.numero_offerta || "", nome_commessa: commessa?.nome_commessa || "", cliente: commessa?.cliente || "", data_commessa: commessa?.data_commessa || "", importo_offerta_base: commessa?.importo_offerta_base || "", note_amministrative: commessa?.note_amministrative || "", aggiornaIncassato: true });
     setEditError(""); setEditOpen(true); setMenuOpen(false);
   };
+  // Rate pagate il cui incasso dipende dall'importo base (a percentuale, senza importo fisso)
+  const hasPaidPercentRates = suddivisione.some(r => r.pagato && !(Number(r.importo_fisso) > 0));
   const handleSaveEdit = async e => {
     e.preventDefault(); setEditSaving(true); setEditError("");
-    const payload = { numero_offerta: editForm.numero_offerta?.trim(), nome_commessa: editForm.nome_commessa?.trim(), cliente: editForm.cliente?.trim(), data_commessa: editForm.data_commessa || null, importo_offerta_base: Number(editForm.importo_offerta_base) || 0, note_amministrative: editForm.note_amministrative?.trim() || null };
+    const newBase = Number(editForm.importo_offerta_base) || 0;
+    const baseChanged = newBase !== importoBase;
+    const payload = { numero_offerta: editForm.numero_offerta?.trim(), nome_commessa: editForm.nome_commessa?.trim(), cliente: editForm.cliente?.trim(), data_commessa: editForm.data_commessa || null, importo_offerta_base: newBase, note_amministrative: editForm.note_amministrative?.trim() || null };
     const { error: uErr } = await supabase.from("commesse").update(payload).eq("id", commessaId);
     if (uErr) { setEditError(uErr.message); setEditSaving(false); return; }
-    setCommessa(p => ({ ...p, ...payload })); setEditSaving(false); setEditOpen(false);
+    // Se l'importo base cambia, l'incasso delle rate a percentuale cambia: ricalcola solo se scelto
+    let nuovoIncassato;
+    if (baseChanged && hasPaidPercentRates && editForm.aggiornaIncassato) {
+      nuovoIncassato = await ricalcolaIncassato(newBase);
+    }
+    setCommessa(p => ({ ...p, ...payload, ...(nuovoIncassato != null ? { importo_incassato: nuovoIncassato } : {}) }));
+    setEditSaving(false); setEditOpen(false);
   };
 
   const handleSaveCosto = async e => {
@@ -1093,6 +1105,15 @@ export default function CommessaDetailPage() {
             <textarea value={editForm.note_amministrative ?? ""} onChange={e => setEditForm(p => ({ ...p, note_amministrative: e.target.value }))} rows={3}
               style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', resize: 'vertical' }} />
           </div>
+          {hasPaidPercentRates && (Number(editForm.importo_offerta_base) || 0) !== importoBase && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surfaceAlt ?? T.surface, cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!editForm.aggiornaIncassato} onChange={e => setEditForm(p => ({ ...p, aggiornaIncassato: e.target.checked }))} style={{ marginTop: 2 }} />
+              <span style={{ fontSize: 12, color: T.ink, lineHeight: 1.4 }}>
+                Aggiorna l'incassato delle rate a percentuale già pagate in base al nuovo importo
+                <span style={{ display: 'block', fontSize: 10, color: T.muted, marginTop: 2 }}>Deseleziona per mantenere gli importi incassati attuali.</span>
+              </span>
+            </label>
+          )}
           {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditOpen(false)} disabled={editSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editSaving}>{editSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>

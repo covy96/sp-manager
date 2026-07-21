@@ -464,6 +464,20 @@ export default function ScrivaniaPage() {
     if (nextStatus === "completed") setActiveTasks(p => p.filter(i => i.parent_task_id !== task.id));
     await supabase.from("tasks").update({ status: nextStatus }).eq("parent_task_id", task.id);
     await supabase.from("tasks").update({ status: nextStatus }).eq("id", task.id);
+    // Riaprendo un padre, riporta subito le sue subtask (proprie) nella lista attiva:
+    // al completamento erano state nascoste, ora sono di nuovo "todo".
+    if (nextStatus !== "completed") {
+      const mid = currentMemberIdRef.current;
+      const { data: subs } = await supabase.from("tasks").select("*")
+        .eq("parent_task_id", task.id).eq("assigned_member", mid).is("deleted_at", null);
+      if (subs?.length) {
+        setActiveTasks(p => {
+          const ids = new Set(p.map(i => i.id));
+          const toAdd = subs.filter(s => !ids.has(s.id)).map(s => ({ ...s, status: "todo" }));
+          return toAdd.length ? [...toAdd, ...p] : p;
+        });
+      }
+    }
     setUpdatingTaskId(null);
   };
 
