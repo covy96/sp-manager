@@ -8,6 +8,7 @@ import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { handleListKeyDown } from "../lib/listKeyDown";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
 import { notifyNotaCondivisa, notifyNotaAggiornata } from "../lib/notifications";
 
@@ -322,6 +323,7 @@ function NoteCardPreview({ note, onClick }) {
 function NoteModal({ note, currentMemberId, teamMembers, studioId, onDelete, onUpdate, onRefresh, onClose }) {
   const { T } = useTheme();
   useBodyScrollLock(true);
+  useEscKey(onClose);
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:540, maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
