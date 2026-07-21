@@ -27,57 +27,88 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { PageTitleProvider } from "./contexts/PageTitleContext";
 import AppLayout from "./components/AppLayout";
 
+// Dopo un nuovo deploy l'index.html in cache punta a chunk con hash vecchi
+// che non esistono più: il dynamic import fallisce ("Failed to fetch dynamically
+// imported module"). In quel caso forziamo UN solo reload per prendere il nuovo
+// index.html. La guardia in sessionStorage evita loop di ricaricamenti.
+function lazyWithRetry(importFn) {
+  return lazy(async () => {
+    try {
+      const mod = await importFn();
+      sessionStorage.removeItem("chunk-reload");
+      return mod;
+    } catch (err) {
+      if (!sessionStorage.getItem("chunk-reload")) {
+        sessionStorage.setItem("chunk-reload", "1");
+        window.location.reload();
+        return new Promise(() => {}); // sospende il render finché la pagina ricarica
+      }
+      throw err;
+    }
+  });
+}
+if (typeof window !== "undefined") {
+  // Evento ufficiale Vite: fallimento nel precaricare un modulo (chunk mancante)
+  window.addEventListener("vite:preloadError", (e) => {
+    e.preventDefault();
+    if (!sessionStorage.getItem("chunk-reload")) {
+      sessionStorage.setItem("chunk-reload", "1");
+      window.location.reload();
+    }
+  });
+}
+
 // Pagine caricate on-demand (code-splitting) per ridurre il bundle iniziale
-const CalendarioPage = lazy(() => import("./pages/CalendarioPage"));
-const ClientiPage = lazy(() => import("./pages/ClientiPage"));
-const CommessaDetailPage = lazy(() => import("./pages/CommessaDetailPage"));
-const CommessePage = lazy(() => import("./pages/CommessePage"));
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const MonitoraggioCommessePage = lazy(() => import("./pages/MonitoraggioCommessePage"));
-const GanttPage = lazy(() => import("./pages/GanttPage"));
-const AnalisiPage = lazy(() => import("./pages/AnalisiPage"));
-const AnalisiOffertePage = lazy(() => import("./pages/AnalisiOffertePage"));
-const AnalisiHubPage = lazy(() => import("./pages/AnalisiHubPage"));
-const OffertePage = lazy(() => import("./pages/OffertePage"));
-const OfferteDetailPage = lazy(() => import("./pages/OfferteDetailPage"));
-const ScrivaniaPage = lazy(() => import("./pages/ScrivaniaPage"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
-const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
-const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
-const ReportPage = lazy(() => import("./pages/ReportPage"));
-const ProformaPage = lazy(() => import("./pages/ProformaPage"));
-const FatturePage = lazy(() => import("./pages/FatturePage"));
-const TeamPage = lazy(() => import("./pages/TeamPage"));
-const TimesheetPage = lazy(() => import("./pages/TimesheetPage"));
+const CalendarioPage = lazyWithRetry(() => import("./pages/CalendarioPage"));
+const ClientiPage = lazyWithRetry(() => import("./pages/ClientiPage"));
+const CommessaDetailPage = lazyWithRetry(() => import("./pages/CommessaDetailPage"));
+const CommessePage = lazyWithRetry(() => import("./pages/CommessePage"));
+const DashboardPage = lazyWithRetry(() => import("./pages/DashboardPage"));
+const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"));
+const MonitoraggioCommessePage = lazyWithRetry(() => import("./pages/MonitoraggioCommessePage"));
+const GanttPage = lazyWithRetry(() => import("./pages/GanttPage"));
+const AnalisiPage = lazyWithRetry(() => import("./pages/AnalisiPage"));
+const AnalisiOffertePage = lazyWithRetry(() => import("./pages/AnalisiOffertePage"));
+const AnalisiHubPage = lazyWithRetry(() => import("./pages/AnalisiHubPage"));
+const OffertePage = lazyWithRetry(() => import("./pages/OffertePage"));
+const OfferteDetailPage = lazyWithRetry(() => import("./pages/OfferteDetailPage"));
+const ScrivaniaPage = lazyWithRetry(() => import("./pages/ScrivaniaPage"));
+const LandingPage = lazyWithRetry(() => import("./pages/LandingPage"));
+const OnboardingPage = lazyWithRetry(() => import("./pages/OnboardingPage"));
+const ProjectDetailPage = lazyWithRetry(() => import("./pages/ProjectDetailPage"));
+const RegisterPage = lazyWithRetry(() => import("./pages/RegisterPage"));
+const ProjectsPage = lazyWithRetry(() => import("./pages/ProjectsPage"));
+const ReportPage = lazyWithRetry(() => import("./pages/ReportPage"));
+const ProformaPage = lazyWithRetry(() => import("./pages/ProformaPage"));
+const FatturePage = lazyWithRetry(() => import("./pages/FatturePage"));
+const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
+const TimesheetPage = lazyWithRetry(() => import("./pages/TimesheetPage"));
 
 // Settings pages
-const ProfiloPage = lazy(() => import("./pages/settings/ProfiloPage"));
-const AspettoPage = lazy(() => import("./pages/settings/AspettoPage"));
-const GestioneServiziPage = lazy(() => import("./pages/settings/GestioneServiziPage"));
-const VociOffertaPage = lazy(() => import("./pages/settings/VociOffertaPage"));
-const SettingsClientiPage = lazy(() => import("./pages/settings/ClientiPage"));
-const SettingsProgettiArchiviatiPage = lazy(() => import("./pages/settings/ProgettiArchiviatiPage"));
-const SettingsCommesseArchiviatePage = lazy(() => import("./pages/settings/CommesseArchiviatePage"));
-const NotifichePage = lazy(() => import("./pages/settings/NotifichePage"));
-const ReportImpostazioniPage = lazy(() => import("./pages/settings/ReportImpostazioniPage"));
-const PianoPage = lazy(() => import("./pages/settings/PianoPage"));
-const ProfiloStudioPage = lazy(() => import("./pages/settings/ProfiloStudioPage"));
-const CestinoPage = lazy(() => import("./pages/settings/CestinoPage"));
-const EsportaDatiPage = lazy(() => import("./pages/settings/EsportaDatiPage"));
-const ProgettoArchiviotoRecapPage = lazy(() => import("./pages/settings/ProgettoArchiviotoRecapPage"));
-const CommessaArchiviataRecapPage = lazy(() => import("./pages/settings/CommessaArchiviataRecapPage"));
-const AuthCallbackPage = lazy(() => import("./pages/AuthCallbackPage"));
-const CreateStudioPage = lazy(() => import("./pages/CreateStudioPage"));
-const JoinStudioPage = lazy(() => import("./pages/JoinStudioPage"));
-const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
-const TerminiPage = lazy(() => import("./pages/TerminiPage"));
-const CookiePolicyPage = lazy(() => import("./pages/CookiePolicyPage"));
-const DpaPage = lazy(() => import("./pages/DpaPage"));
-const InfoPage = lazy(() => import("./pages/InfoPage"));
-const StudioCancellatoPage = lazy(() => import("./pages/StudioCancellatoPage"));
+const ProfiloPage = lazyWithRetry(() => import("./pages/settings/ProfiloPage"));
+const AspettoPage = lazyWithRetry(() => import("./pages/settings/AspettoPage"));
+const GestioneServiziPage = lazyWithRetry(() => import("./pages/settings/GestioneServiziPage"));
+const VociOffertaPage = lazyWithRetry(() => import("./pages/settings/VociOffertaPage"));
+const SettingsClientiPage = lazyWithRetry(() => import("./pages/settings/ClientiPage"));
+const SettingsProgettiArchiviatiPage = lazyWithRetry(() => import("./pages/settings/ProgettiArchiviatiPage"));
+const SettingsCommesseArchiviatePage = lazyWithRetry(() => import("./pages/settings/CommesseArchiviatePage"));
+const NotifichePage = lazyWithRetry(() => import("./pages/settings/NotifichePage"));
+const ReportImpostazioniPage = lazyWithRetry(() => import("./pages/settings/ReportImpostazioniPage"));
+const PianoPage = lazyWithRetry(() => import("./pages/settings/PianoPage"));
+const ProfiloStudioPage = lazyWithRetry(() => import("./pages/settings/ProfiloStudioPage"));
+const CestinoPage = lazyWithRetry(() => import("./pages/settings/CestinoPage"));
+const EsportaDatiPage = lazyWithRetry(() => import("./pages/settings/EsportaDatiPage"));
+const ProgettoArchiviotoRecapPage = lazyWithRetry(() => import("./pages/settings/ProgettoArchiviotoRecapPage"));
+const CommessaArchiviataRecapPage = lazyWithRetry(() => import("./pages/settings/CommessaArchiviataRecapPage"));
+const AuthCallbackPage = lazyWithRetry(() => import("./pages/AuthCallbackPage"));
+const CreateStudioPage = lazyWithRetry(() => import("./pages/CreateStudioPage"));
+const JoinStudioPage = lazyWithRetry(() => import("./pages/JoinStudioPage"));
+const PrivacyPage = lazyWithRetry(() => import("./pages/PrivacyPage"));
+const TerminiPage = lazyWithRetry(() => import("./pages/TerminiPage"));
+const CookiePolicyPage = lazyWithRetry(() => import("./pages/CookiePolicyPage"));
+const DpaPage = lazyWithRetry(() => import("./pages/DpaPage"));
+const InfoPage = lazyWithRetry(() => import("./pages/InfoPage"));
+const StudioCancellatoPage = lazyWithRetry(() => import("./pages/StudioCancellatoPage"));
 import { useStudio } from "./hooks/useStudio";
 import CookieBanner from "./components/CookieBanner";
 
