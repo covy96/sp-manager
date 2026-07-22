@@ -536,7 +536,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
 
           {/* Riepilogo totali */}
           <div style={{ border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
               <div>
                 <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale accettato</div>
                 <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 3 }}>{currency(totaleAccettato)}</div>

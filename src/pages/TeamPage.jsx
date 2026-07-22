@@ -380,7 +380,7 @@ export default function TeamPage() {
                 </div>
               </div>
               {/* Stats */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8, marginBottom:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(90px, 1fr))', gap:8, marginBottom:14 }}>
                 <div style={statSt}><div style={statLbl}>Ore sett.</div><div style={statVal}>{formatOre(s.weeklyHours)}</div></div>
                 <div style={statSt}><div style={statLbl}>Task attivi</div><div style={statVal}>{s.activeTasks}</div></div>
                 <div style={statSt}><div style={statLbl}>Progetti</div><div style={statVal}>{s.projects}</div></div>
@@ -460,7 +460,7 @@ export default function TeamPage() {
                 </div>
 
                 {/* Stats mini */}
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:8, marginBottom:8 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(90px, 1fr))', gap:8, marginBottom:8 }}>
                   <div style={statSt}><div style={statLbl}>Ore sett.</div><div style={statVal}>{formatOre(s.weeklyHours)}</div></div>
                   <div style={statSt}><div style={statLbl}>Task attivi</div><div style={statVal}>{s.activeTasks}</div></div>
                   <div style={statSt}><div style={statLbl}>Progetti</div><div style={statVal}>{s.projects}</div></div>

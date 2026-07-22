@@ -226,7 +226,7 @@ export default function AnalisiPage() {
         </div>
 
         {/* Costo ore interne */}
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflowX:'auto' }}>
           <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costo ore interne</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{fmtOre(stat.oreTotali)} ore totali{!c.project_id && <span style={{ marginLeft:8, color:T.muted }}>(nessun progetto collegato)</span>}</div>
@@ -287,7 +287,7 @@ export default function AnalisiPage() {
           const ceRows = costiExtra.filter(x => x.commessa_id === c.id);
           const coRows = collab.filter(x => x.commessa_id === c.id);
           return (
-            <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+            <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflowX:'auto' }}>
               <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
                 <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi esterni</div>
               </div>
@@ -323,7 +323,7 @@ export default function AnalisiPage() {
 
         {/* Costi interni */}
         {costiInterni.filter(x => x.commessa_id === c.id).length > 0 && (
-          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflowX:'auto' }}>
             <div style={{ padding:'14px 20px', borderBottom:`0.5px solid ${T.border}` }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Costi interni</div>
             </div>
@@ -441,7 +441,7 @@ export default function AnalisiPage() {
       })()}
 
       {/* Tabella commesse */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflow:'hidden' }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, overflow:'hidden', overflowX:'auto' }}>
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr>

@@ -1227,7 +1227,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {previewFotos.length > 0 && (
                 <div>
                   <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(100px, 1fr))', gap:8 }}>
                     {previewFotos.map(f=>(
                       <img key={f.id} src={f.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', border:`0.5px solid ${T.border}` }}/>
                     ))}
@@ -1391,7 +1391,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     {editingId ? "Nessuna foto ancora — clicca \"+ Aggiungi foto\"" : ""}
                   </div>
                 ) : (
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(100px, 1fr))', gap:10 }}>
                     {fotos.map(foto => (
                       <div key={foto.id} style={{ position:'relative', aspect:'square' }}>
                         <img src={foto.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', display:'block', border:`0.5px solid ${T.border}` }}/>

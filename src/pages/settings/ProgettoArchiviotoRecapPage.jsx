@@ -133,7 +133,7 @@ export default function ProgettoArchiviotoRecapPage() {
       </div>
 
       {/* KPI principali */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:10 }}>
         {[
           { label:'Task completate', value:`${taskCompletate}/${taskTotali}`, sub:`${taskPercent}%`, color:T.green },
           { label:'Ore lavorate',    value:fmtOre(oreTotali),                sub:'totali',           color:T.navy },

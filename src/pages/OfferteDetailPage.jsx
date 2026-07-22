@@ -237,16 +237,16 @@ export default function OfferteDetailPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Offerte</button>
-          <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, minWidth:0, flex:'1 1 auto' }}>
+          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', flexShrink:0 }}>← Offerte</button>
+          <div style={{ minWidth:0 }}>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:2 }}>{offerta.numero_offerta}</div>
-            <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{offerta.nome_offerta}</div>
+            <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', overflow:'hidden', textOverflow:'ellipsis' }}>{offerta.nome_offerta}</div>
           </div>
-          <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2 }}>{st.label}</span>
+          <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           {offerta.stato==='offerta' && <>
             {!editing && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
             <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
@@ -374,7 +374,7 @@ export default function OfferteDetailPage() {
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:20 }}>
               {[
                 ['N° Offerta', offerta.numero_offerta],
                 ['Data offerta', offerta.data_offerta ? new Date(offerta.data_offerta).toLocaleDateString('it-IT') : '—'],

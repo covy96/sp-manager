@@ -128,7 +128,7 @@ export default function CommessaArchiviataRecapPage() {
       </div>
 
       {/* KPI principali */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(130px, 1fr))', gap:10 }}>
         {[
           { label:'Valore contratto', value:currency(valoreTotale),  color:T.ink   },
           { label:'Costi esterni',    value:currency(totEsterni),    color:T.muted },
@@ -145,9 +145,9 @@ export default function CommessaArchiviataRecapPage() {
       </div>
 
       {/* Info commessa */}
-      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
+      <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', overflowX:'auto' }}>
         <div style={{ ...labelSt, marginBottom:16 }}>Informazioni commessa</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:16 }}>
           {[
             ['Progetto', commessa.project_name || '—'],
             ['Data commessa', fmtDate(commessa.data_commessa)],
@@ -163,7 +163,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Rate */}
       {suddivisione.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', overflowX:'auto' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
             <div style={labelSt}>Rate di pagamento</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{ratePagate}/{suddivisione.length} pagate</div>
@@ -188,7 +188,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Proforma */}
       {proforma.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', overflowX:'auto' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
             <div style={labelSt}>Proforma emesse</div>
             <div style={{ ...mono, fontSize:10, color:T.muted }}>{proformaPagate.length}/{proforma.length} pagate · {currency(totProfPagate)}</div>
@@ -238,7 +238,7 @@ export default function CommessaArchiviataRecapPage() {
 
       {/* Fatture */}
       {fatture.length > 0 && (
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px' }}>
+        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', overflowX:'auto' }}>
           <div style={{ ...labelSt, marginBottom:16 }}>Fatture emesse</div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
