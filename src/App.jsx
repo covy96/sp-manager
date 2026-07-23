@@ -1,11 +1,26 @@
 import { useEffect, useState, Component, lazy, Suspense } from "react";
 import { Sentry } from "./lib/sentry";
 
+// Riconosce gli errori dovuti a chunk incoerenti dopo un nuovo deploy:
+// il chunk si scarica ma la pagina lazy si risolve senza `default` valido
+// (React legge `_result.default` → undefined) oppure il modulo non si carica.
+function isChunkError(error) {
+  const msg = `${error?.message || ""} ${error?.stack || ""}`;
+  return /_result|dynamically imported module|Importing a module script failed|module script failed|Loading( CSS)? chunk|ChunkLoadError/i.test(msg);
+}
+
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(error) { return { error }; }
   componentDidCatch(error, info) {
     console.error("ErrorBoundary caught:", error, info);
+    // Rete di sicurezza per i chunk incoerenti post-deploy: un solo reload
+    // (stessa guardia di lazyWithRetry/vite:preloadError per evitare loop).
+    if (isChunkError(error) && !sessionStorage.getItem("chunk-reload")) {
+      sessionStorage.setItem("chunk-reload", "1");
+      window.location.reload();
+      return;
+    }
     Sentry.captureException(error, { extra: info });
   }
   render() {
