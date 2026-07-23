@@ -31,6 +31,7 @@ export default function OffertePage() {
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts]     = useState([]);
   const [vociTemplates, setVociTemplates]       = useState([]);
+  const [teamMembers, setTeamMembers]           = useState([]);
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
@@ -58,18 +59,20 @@ export default function OffertePage() {
 
   const loadData = async () => {
     if (!studioId) return;
-    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }, { data:voci }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }, { data:voci }, { data:members }] = await Promise.all([
       supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).is("deleted_at",null).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
       supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
       supabase.from("global_contacts").select("id,full_name").eq("studio",studioId).order("full_name",{ascending:true}),
       supabase.from("voci_offerta_template").select("*").eq("studio",studioId).order("order",{ascending:true}),
+      supabase.from("team_members").select("id,user_name,user_email").eq("studio",studioId).order("user_name",{ascending:true}),
     ]);
     setOfferte(off??[]);
     setProgetti(proj??[]);
     setServiceTemplates(svc??[]);
     setGlobalContacts(contacts??[]);
     setVociTemplates(voci??[]);
+    setTeamMembers(members??[]);
     setLoading(false);
   };
 
@@ -102,6 +105,7 @@ export default function OffertePage() {
         gantt_enabled: false,
         archived: false,
         servizi_selezionati: serviziScelti,
+        assigned_users: form.nuovoProgettoMembri || [],
       }).select().single();
       if (pErr) { setFormError('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
@@ -199,6 +203,7 @@ export default function OffertePage() {
         gantt_enabled: false,
         archived: false,
         offerta_origine_id: accettaId,
+        assigned_users: accettaForm.nuovoProgettoMembri || [],
       }).select().single();
       if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
@@ -535,6 +540,27 @@ export default function OffertePage() {
                         </div>
                       </div>
                     )}
+                    {teamMembers.length > 0 && (
+                      <div>
+                        <label style={labelSt}>Assegna a</label>
+                        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                          {teamMembers.map(m => {
+                            const selected = (form.nuovoProgettoMembri||[]).includes(m.id);
+                            return (
+                              <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                <input type="checkbox" checked={selected}
+                                  onChange={() => setForm(p => {
+                                    const list = p.nuovoProgettoMembri || [];
+                                    return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
+                                  })}
+                                  style={{ accentColor:T.navy, width:13, height:13 }}/>
+                                <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ gridColumn:'span 2' }}>
@@ -719,9 +745,32 @@ export default function OffertePage() {
                     </label>
                   </div>
                   {accettaForm.creaProgetto && (
-                    <div style={{ padding:'12px', background:T.surface2, border:`1px solid ${T.border}` }}>
-                      <label style={labelSt}>Nome progetto *</label>
-                      <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                    <div style={{ padding:'12px', background:T.surface2, border:`1px solid ${T.border}`, display:'flex', flexDirection:'column', gap:10 }}>
+                      <div>
+                        <label style={labelSt}>Nome progetto *</label>
+                        <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                      </div>
+                      {teamMembers.length > 0 && (
+                        <div>
+                          <label style={labelSt}>Assegna a</label>
+                          <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                            {teamMembers.map(m => {
+                              const selected = (accettaForm.nuovoProgettoMembri||[]).includes(m.id);
+                              return (
+                                <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                  <input type="checkbox" checked={selected}
+                                    onChange={() => setAccettaForm(p => {
+                                      const list = p.nuovoProgettoMembri || [];
+                                      return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
+                                    })}
+                                    style={{ accentColor:T.navy, width:13, height:13 }}/>
+                                  <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
