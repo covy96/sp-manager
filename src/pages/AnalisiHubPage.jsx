@@ -865,7 +865,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {[["nome","Commessa"],["oreTotali","Ore totali"],["costoOre","Costo ore"],["costoEsterni","Costi esterni"],["costoInterno","Costi interni"],["costoTotale","Costo totale"],["valoreBase","Valore offerta"],["incassato","Incassato"],["margine","Margine"]].map(([col, label]) => (
+              {[["nome","Commessa"],["oreTotali","Ore totali"],["costoOre","Costo ore"],["costoEsterni","Costi esterni"],["costoInterno","Costi interni"],["costoTotale","Costo totale"],["valoreBase","Valore offerta"],["incassato","Incassato"],["margine","Margine"],["marginePerc","Margine %"]].map(([col, label]) => (
                 <th key={col} style={{ ...thSt, cursor: "pointer", userSelect: "none" }} onClick={() => handleSortCol(col)}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: sortCol === col ? T.navy : T.muted }}>
                     {label} <span style={{ fontSize: 9, opacity: sortCol === col ? 1 : 0.3 }}>{sortCol === col ? (sortAsc ? "↑" : "↓") : "↕"}</span>
@@ -877,7 +877,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
           </thead>
           <tbody>
             {sorted.length === 0
-              ? <tr><td colSpan={10} style={{ ...tdSt, textAlign: "center", color: T.muted, padding: "32px 0" }}>{q ? `Nessun risultato per "${search}"` : "Nessuna commessa"}</td></tr>
+              ? <tr><td colSpan={11} style={{ ...tdSt, textAlign: "center", color: T.muted, padding: "32px 0" }}>{q ? `Nessun risultato per "${search}"` : "Nessuna commessa"}</td></tr>
               : sorted.map(({ commessa: c, oreTotali, costoOre, costoEsterni, costoInterno, costoTotale, valoreBase, incassato, margine, marginePerc }) => (
                   <tr key={c.id} onClick={() => setSelectedCommessa(c)} style={{ cursor: "pointer" }}
                     onMouseEnter={e => e.currentTarget.style.background = T.surface2}
@@ -897,10 +897,8 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
                     <td style={{ ...tdSt, ...mono, fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(costoTotale, 2)}</td>
                     <td style={{ ...tdSt, ...mono, fontSize: 12, color: T.green }}>{currency(valoreBase, 2)}</td>
                     <td style={{ ...tdSt, ...mono, fontSize: 12, color: T.green }}>{currency(incassato, 2)}</td>
-                    <td style={tdSt}>
-                      <div style={{ ...mono, fontSize: 13, fontWeight: 600, color: margine >= 0 ? T.green : T.red }}>{currency(margine, 2)}</div>
-                      {marginePerc != null && <div style={{ ...mono, fontSize: 9, color: T.muted }}>{marginePerc.toFixed(1)}%</div>}
-                    </td>
+                    <td style={{ ...tdSt, ...mono, fontSize: 13, fontWeight: 600, color: margine >= 0 ? T.green : T.red }}>{currency(margine, 2)}</td>
+                    <td style={{ ...tdSt, ...mono, fontSize: 12, fontWeight: 600, color: marginePerc == null ? T.muted : marginePerc >= 0 ? T.green : T.red }}>{marginePerc != null ? `${marginePerc.toFixed(1)}%` : "—"}</td>
                     <td style={{ ...tdSt, ...mono, fontSize: 10, color: T.navy }}>→</td>
                   </tr>
                 ))
