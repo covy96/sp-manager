@@ -44,17 +44,29 @@ function getNextWorkday() {
 
 // ── SUB-COMPONENTS ────────────────────────────────────────────────
 
-function KpiCard({ label, value, note, valueColor, isMobile }) {
+function KpiCard({ label, value, note, valueColor, isMobile, onClick }) {
   const { T } = useTheme();
+  const [hover, setHover] = useState(false);
+  const clickable = typeof onClick === "function";
   return (
-    <div style={{
+    <div
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      onMouseEnter={() => clickable && setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
       background: T.surface,
       backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
-      border: `1px solid ${T.border}`,
+      border: `1px solid ${hover ? T.borderMd : T.border}`,
       borderRadius: T.radius,
       padding: isMobile ? '12px 14px' : '18px 20px',
-      boxShadow: T.shadow,
+      boxShadow: hover ? (T.shadowMd ?? T.shadow) : T.shadow,
       minWidth: 0,
+      cursor: clickable ? 'pointer' : 'default',
+      transition: 'transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease',
+      transform: hover ? 'translateY(-2px)' : 'none',
     }}>
       <div style={{
         fontFamily: "'IBM Plex Mono', monospace",
@@ -429,17 +441,17 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 8 }}>
-        <KpiCard isMobile={isMobile}
+        <KpiCard isMobile={isMobile} onClick={() => navigate("/progetti")}
           label={scope === "all" ? "Progetti attivi studio" : "Miei progetti attivi"}
           value={activeProjects} note="in corso" valueColor={T.ink} />
-        <KpiCard isMobile={isMobile}
+        <KpiCard isMobile={isMobile} onClick={() => navigate("/timesheet")}
           label="Ore questa settimana"
           value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
-        <KpiCard isMobile={isMobile}
+        <KpiCard isMobile={isMobile} onClick={() => navigate("/scrivania")}
           label={scope === "all" ? "Task da completare studio" : "Miei task aperti"}
           value={openTasks} note="aperti" valueColor={T.red} />
         {permissions.canViewFinancials && (
-          <KpiCard isMobile={isMobile}
+          <KpiCard isMobile={isMobile} onClick={() => navigate("/proforma")}
             label="Credito da incassare"
             value={currency(creditToCollect)} note="da commesse - proforma" valueColor={T.green} />
         )}
