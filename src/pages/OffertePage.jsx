@@ -36,6 +36,7 @@ export default function OffertePage() {
   const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
   const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
+  const [searchQuery, setSearchQuery] = useState('');
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
@@ -294,6 +295,15 @@ export default function OffertePage() {
   }, [offerte]);
 
   const visibili = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      return offerte.filter(o =>
+        (o.nome_offerta || "").toLowerCase().includes(q) ||
+        (o.cliente || "").toLowerCase().includes(q) ||
+        (o.numero_offerta || "").toLowerCase().includes(q) ||
+        (o.project_name || "").toLowerCase().includes(q)
+      );
+    }
     let list = filtroStato === 'tutti' ? offerte : offerte.filter(o=>o.stato===filtroStato);
     if (annoFiltro !== 0) {
       list = list.filter(o => {
@@ -302,7 +312,7 @@ export default function OffertePage() {
       });
     }
     return list;
-  }, [offerte, filtroStato, annoFiltro]);
+  }, [offerte, filtroStato, annoFiltro, searchQuery]);
 
   // KPI — filtrati per anno selezionato
   const offerteAnno = annoFiltro === 0 ? offerte : offerte.filter(o => {
@@ -333,9 +343,16 @@ export default function OffertePage() {
           <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink, marginBottom:4 }}>Offerte</div>
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          <input
+            type="text"
+            placeholder="Cerca offerta, cliente..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:200 }}
+          />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto', opacity:searchQuery?0.4:1 }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -381,8 +398,8 @@ export default function OffertePage() {
         {visibili.length === 0 ? (
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
-            <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta trovata</div>
-            <button onClick={()=>setModalOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>
+            <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
+            {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
