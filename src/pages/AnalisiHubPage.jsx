@@ -615,13 +615,6 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
           if (!page || page.length < PAGE) break;
         }
       }
-      // 🔎 DIAGNOSTICA TEMPORANEA — rimuovere dopo la verifica
-      try {
-        const perProj = {};
-        ts.forEach(t => { perProj[t.project_id] = (perProj[t.project_id] || 0) + Number(t.hours || 0); });
-        console.log("[ANALISI DIAG] righe timesheet caricate:", ts.length, "| progetti distinti:", projectIds.length);
-        console.table((comm ?? []).map(c => ({ commessa: c.nome_commessa, project_id: c.project_id, ore_analisi: perProj[c.project_id] || 0 })));
-      } catch (e) { /* noop */ }
       setMembers(mem ?? []); setTimesheet(ts ?? []); setCommesse(comm ?? []);
       setCostiExtra(ce ?? []); setCollab(co ?? []); setRatePagate(rp ?? []); setCostiInterni(ci ?? []);
       const map = {};
