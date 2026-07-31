@@ -587,15 +587,41 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
   useEffect(() => {
     if (!studioId) return;
     const load = async () => {
-      const [{ data: mem }, { data: ts }, { data: comm }, { data: ce }, { data: co }, { data: rp }, { data: ci }] = await Promise.all([
+      const [{ data: mem }, { data: comm }, { data: ce }, { data: co }, { data: rp }, { data: ci }] = await Promise.all([
         supabase.from("team_members").select("id,user_name,user_email,color,costo_orario").eq("studio", studioId).eq("active", true),
-        supabase.from("timesheet").select("project_id,hours,team_member").eq("studio", studioId).is("deleted_at", null),
         supabase.from("commesse").select("id,project_id,nome_commessa,cliente,numero_offerta,importo_offerta_base,importo_totale,data_commessa,created_at,archived").eq("studio", studioId).is("deleted_at", null),
         supabase.from("costi_extra").select("commessa_id,importo").eq("studio", studioId).is("deleted_at", null),
         supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio", studioId),
         supabase.from("suddivisione_pagamenti").select("commessa_id,percentuale,importo_fisso").eq("pagato", true).is("deleted_at", null),
         supabase.from("costi_interni").select("*").eq("studio", studioId).is("deleted_at", null),
       ]);
+      // Ore conteggiate per progetto (come nel dettaglio progetto/OrePanel), non per
+      // studio: righe timesheet legacy con studio NULL verrebbero escluse. Paginazione
+      // per non incappare nel limite max righe di PostgREST su studi con molte voci.
+      const projectIds = [...new Set((comm ?? []).map(c => c.project_id).filter(Boolean))];
+      const ts = [];
+      if (projectIds.length) {
+        const PAGE = 1000;
+        for (let from = 0; ; from += PAGE) {
+          const { data: page, error } = await supabase
+            .from("timesheet")
+            .select("project_id,hours,team_member")
+            .in("project_id", projectIds)
+            .is("deleted_at", null)
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+          if (error) break;
+          ts.push(...(page ?? []));
+          if (!page || page.length < PAGE) break;
+        }
+      }
+      // 🔎 DIAGNOSTICA TEMPORANEA — rimuovere dopo la verifica
+      try {
+        const perProj = {};
+        ts.forEach(t => { perProj[t.project_id] = (perProj[t.project_id] || 0) + Number(t.hours || 0); });
+        console.log("[ANALISI DIAG] righe timesheet caricate:", ts.length, "| progetti distinti:", projectIds.length);
+        console.table((comm ?? []).map(c => ({ commessa: c.nome_commessa, project_id: c.project_id, ore_analisi: perProj[c.project_id] || 0 })));
+      } catch (e) { /* noop */ }
       setMembers(mem ?? []); setTimesheet(ts ?? []); setCommesse(comm ?? []);
       setCostiExtra(ce ?? []); setCollab(co ?? []); setRatePagate(rp ?? []); setCostiInterni(ci ?? []);
       const map = {};
