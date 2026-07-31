@@ -65,10 +65,37 @@ export default function AnalisiPage() {
       ]);
       // Ore conteggiate per progetto (come nel dettaglio progetto), non per studio:
       // alcune righe timesheet legacy hanno studio NULL e verrebbero escluse.
+      // Paginazione: PostgREST tronca a max righe per richiesta (es. 1000), quindi
+      // carichiamo il timesheet a pagine per non perdere ore su studi con molte voci.
       const projectIds = [...new Set((comm??[]).map(c => c.project_id).filter(Boolean))];
-      const { data:ts } = projectIds.length
-        ? await supabase.from("timesheet").select("project_id,hours,team_member").in("project_id",projectIds).is("deleted_at",null)
-        : { data: [] };
+      const ts = [];
+      if (projectIds.length) {
+        const PAGE = 1000;
+        for (let from = 0; ; from += PAGE) {
+          const { data:page, error } = await supabase
+            .from("timesheet")
+            .select("project_id,hours,team_member")
+            .in("project_id", projectIds)
+            .is("deleted_at", null)
+            .order("id", { ascending: true })
+            .range(from, from + PAGE - 1);
+          if (error) break;
+          ts.push(...(page ?? []));
+          if (!page || page.length < PAGE) break;
+        }
+      }
+      // 🔎 DIAGNOSTICA TEMPORANEA — rimuovere dopo aver capito il conteggio ore
+      try {
+        const perProj = {};
+        ts.forEach(t => { perProj[t.project_id] = (perProj[t.project_id]||0) + Number(t.hours||0); });
+        const diag = (comm??[]).map(c => ({
+          commessa: c.nome_commessa,
+          project_id: c.project_id,
+          ore_analisi: perProj[c.project_id] || 0,
+        }));
+        console.log("[ANALISI DIAG] righe timesheet caricate:", ts.length, "| progetti distinti:", projectIds.length);
+        console.table(diag);
+      } catch (e) { /* noop */ }
       setMembers(mem??[]);
       setTimesheet(ts??[]);
       setCommesse(comm??[]);
