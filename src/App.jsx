@@ -82,8 +82,6 @@ const DashboardPage = lazyWithRetry(() => import("./pages/DashboardPage"));
 const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"));
 const MonitoraggioCommessePage = lazyWithRetry(() => import("./pages/MonitoraggioCommessePage"));
 const GanttPage = lazyWithRetry(() => import("./pages/GanttPage"));
-const AnalisiPage = lazyWithRetry(() => import("./pages/AnalisiPage"));
-const AnalisiOffertePage = lazyWithRetry(() => import("./pages/AnalisiOffertePage"));
 const AnalisiHubPage = lazyWithRetry(() => import("./pages/AnalisiHubPage"));
 const OffertePage = lazyWithRetry(() => import("./pages/OffertePage"));
 const OfferteDetailPage = lazyWithRetry(() => import("./pages/OfferteDetailPage"));
@@ -360,22 +358,9 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
-      <Route
-        path="/analisi"
-        element={
-          <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><AnalisiPage /></OnboardingGuard>
-          </ProtectedLayout>
-        }
-      />
-      <Route
-        path="/analisi-offerte"
-        element={
-          <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><AnalisiOffertePage /></OnboardingGuard>
-          </ProtectedLayout>
-        }
-      />
+      {/* Route legacy: reindirizzano all'hub analisi unificato */}
+      <Route path="/analisi" element={<Navigate to="/analisi-hub" replace />} />
+      <Route path="/analisi-offerte" element={<Navigate to="/analisi-hub" replace />} />
       <Route
         path="/analisi-hub"
         element={

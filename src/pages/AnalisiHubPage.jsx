@@ -562,7 +562,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
   );
 }
 
-// ── TAB 3: Analisi Economica (identica ad AnalisiPage) ───────────
+// ── TAB 3: Analisi Economica ─────────────────────────────────────
 function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel, isMobile }) {
   const mono  = { fontFamily: "'IBM Plex Mono', monospace" };
   const lbl   = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
