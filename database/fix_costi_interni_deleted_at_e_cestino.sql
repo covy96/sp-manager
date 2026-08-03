@@ -87,7 +87,7 @@ END; $$;
 CREATE OR REPLACE FUNCTION cestino_collaboratori(p_studio_id uuid)
 RETURNS TABLE (id uuid, nome text, deleted_at timestamptz, commessa_nome text)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
-  SELECT ce.id, ce.nome, ce.deleted_at, c.nome_commessa
+  SELECT ce.id, ce.nome_cognome AS nome, ce.deleted_at, c.nome_commessa
   FROM collaboratori_esterni ce
   JOIN commesse c ON c.id = ce.commessa_id
   WHERE c.studio = p_studio_id AND ce.deleted_at IS NOT NULL
