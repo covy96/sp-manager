@@ -80,7 +80,6 @@ const CommessaDetailPage = lazyWithRetry(() => import("./pages/CommessaDetailPag
 const CommessePage = lazyWithRetry(() => import("./pages/CommessePage"));
 const DashboardPage = lazyWithRetry(() => import("./pages/DashboardPage"));
 const LoginPage = lazyWithRetry(() => import("./pages/LoginPage"));
-const MonitoraggioCommessePage = lazyWithRetry(() => import("./pages/MonitoraggioCommessePage"));
 const GanttPage = lazyWithRetry(() => import("./pages/GanttPage"));
 const AnalisiHubPage = lazyWithRetry(() => import("./pages/AnalisiHubPage"));
 const OffertePage = lazyWithRetry(() => import("./pages/OffertePage"));
@@ -385,14 +384,8 @@ export default function App({ session }) {
           </ProtectedLayout>
         }
       />
-      <Route
-        path="/monitoraggio-commesse"
-        element={
-          <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><MonitoraggioCommessePage /></OnboardingGuard>
-          </ProtectedLayout>
-        }
-      />
+      {/* Route legacy: "Monitoraggio Commesse" è confluita nell'hub analisi */}
+      <Route path="/monitoraggio-commesse" element={<Navigate to="/analisi-hub" replace />} />
       <Route
         path="/proforma"
         element={
