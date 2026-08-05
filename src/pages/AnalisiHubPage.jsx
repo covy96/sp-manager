@@ -450,7 +450,20 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
   const totals = useMemo(() => filtered.reduce((a, r) => ({ val: a.val + r.valoreContratto, inc: a.inc + r.incassato }), { val: 0, inc: 0 }), [filtered]);
 
   const chartData = useMemo(() => {
-    const monthly = Array.from({ length: 12 }, (_, i) => ({ month: MONTHS[i], valore: 0 }));
+    // "Tutti gli anni": andamento aggregato per anno
+    if (!selectedYear) {
+      const perYear = new Map();
+      rows.forEach(r => {
+        const d = getReferenceDate(r); if (!d) return;
+        const y = new Date(d).getFullYear();
+        perYear.set(y, (perYear.get(y) || 0) + r.valoreContratto);
+      });
+      return [...perYear.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([y, valore]) => ({ label: String(y), valore }));
+    }
+    // Anno selezionato: andamento mensile
+    const monthly = Array.from({ length: 12 }, (_, i) => ({ label: MONTHS[i], valore: 0 }));
     rows.forEach(r => {
       const d = getReferenceDate(r); if (!d) return;
       const dt = new Date(d); if (dt.getFullYear() !== selectedYear) return;
@@ -499,7 +512,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear}</div>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear || "tutti gli anni"}</div>
             <select value={selectedYear ?? "all"} onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
               style={{ padding: "5px 10px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: "none", cursor: "pointer" }}>
               <option value="all">Tutti gli anni</option>
@@ -510,7 +523,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
                 <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${Math.round(v / 1000)}k`} />
                 <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={v => currency(v, 2)} />
                 <Line type="monotone" dataKey="valore" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
