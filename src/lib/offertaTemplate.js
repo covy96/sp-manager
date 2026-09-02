@@ -304,10 +304,27 @@ export const BLOCCHI_FISSI = [
 ];
 
 // ── Modalità di pagamento ────────────────────────────────────────────────────
+// Rate di default dell'Opzione C (pagamento a stato avanzamento). Percentuali e
+// descrizioni sono modificabili dal pannello e, all'accettazione dell'offerta,
+// generano la suddivisione pagamenti (rate) della commessa.
+export const RATE_C_DEFAULT = [
+  { percentuale: 30, descrizione: "accettazione offerta" },
+  { percentuale: 40, descrizione: "inizio lavori" },
+  { percentuale: 30, descrizione: "presentazione SCIA commerciale e comunicazione fine lavori" },
+];
+
+// Costruisce il testo dell'Opzione C dalle rate: "30% accettazione offerta; …".
+export function testoRateC(rate) {
+  const list = Array.isArray(rate) && rate.length ? rate : RATE_C_DEFAULT;
+  return list
+    .map(r => `${Number(r.percentuale) || 0}% ${(r.descrizione || "").trim()}`.trim())
+    .join("; ") + ".";
+}
+
 export const MODALITA_PAGAMENTO = [
   { id: "A", testo: "SALDO alla presentazione." },
   { id: "B", testo: "Saldo all'accettazione dell'offerta." },
-  { id: "C", testo: "30% accettazione offerta; 40% inizio lavori; 30% presentazione SCIA commerciale e comunicazione fine lavori." },
+  { id: "C", testo: testoRateC(RATE_C_DEFAULT), rate: true },
 ];
 
 export const PAGAMENTO_CHIUSURA = "Pagamenti per rimessa diretta a mezzo di bonifico bancario o assegno bancario.";

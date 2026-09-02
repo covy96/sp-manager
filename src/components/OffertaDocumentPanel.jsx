@@ -9,7 +9,7 @@ import {
   estraiCampi, compilaTesto,
 } from "../lib/offertaTemplate";
 import {
-  normalizzaDocumento, calcolaTotali, importoSezione, euro,
+  normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
 } from "../lib/offertaModel";
 import { generaOffertaPdf } from "../lib/offertaPdf";
 import { generaOffertaDocx } from "../lib/offertaDocx";
@@ -18,6 +18,28 @@ const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
 // Testo senza i marcatori **…**, per l'anteprima nel pannello
 const pulisci = (t) => String(t).replace(/\*\*/g, "");
+
+// Campi «…» di un testo → input compilabili. Definito FUORI dal componente:
+// se stesse dentro verrebbe ricreato ad ogni render e gli input perderebbero
+// il focus dopo un solo carattere.
+function CampiTesto({ testo, valori, onChange, inputSt }) {
+  const campi = estraiCampi(testo);
+  if (campi.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+      {campi.map(c => (
+        <div key={c.key} style={{ flex: "0 1 auto" }}>
+          <input
+            value={valori?.[c.key] || ""}
+            onChange={e => onChange(c.key, e.target.value)}
+            placeholder={c.label}
+            style={{ ...inputSt, width: Math.max(90, Math.min(240, c.label.length * 7 + 30)), padding: "4px 8px", fontSize: 11 }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function OffertaDocumentPanel({
   offerta, studio, onClose, onSaved,
@@ -106,6 +128,9 @@ export default function OffertaDocumentPanel({
     const cur = d.pagamento.opzioni || [];
     return { ...d, pagamento: { ...d.pagamento, opzioni: cur.includes(oid) ? cur.filter(x => x !== oid) : [...cur, oid] } };
   });
+  const setRateC = (idx, patch) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: (d.pagamento.rateC || []).map((r, i) => i === idx ? { ...r, ...patch } : r) } }));
+  const addRateC = () => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: [...(d.pagamento.rateC || []), { percentuale: 0, descrizione: "" }] } }));
+  const removeRateC = (idx) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: (d.pagamento.rateC || []).filter((_, i) => i !== idx) } }));
 
   // ── azioni ─────────────────────────────────────────────────────────────────
   const salva = async () => {
@@ -164,26 +189,6 @@ export default function OffertaDocumentPanel({
     });
     setSaving(false);
     // onCreate gestisce la chiusura in caso di successo.
-  };
-
-  // ── render helper: campi «…» di un testo ───────────────────────────────────
-  const CampiTesto = ({ testo, valori, onChange }) => {
-    const campi = estraiCampi(testo);
-    if (campi.length === 0) return null;
-    return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-        {campi.map(c => (
-          <div key={c.key} style={{ flex: "0 1 auto" }}>
-            <input
-              value={valori?.[c.key] || ""}
-              onChange={e => onChange(c.key, e.target.value)}
-              placeholder={c.label}
-              style={{ ...inputSt, width: Math.max(90, Math.min(240, c.label.length * 7 + 30)), padding: "4px 8px", fontSize: 11 }}
-            />
-          </div>
-        ))}
-      </div>
-    );
   };
 
   const Check = ({ checked, onChange }) => (
@@ -387,7 +392,7 @@ export default function OffertaDocumentPanel({
                 <div style={{ fontSize: 11.5, color: T.muted, lineHeight: 1.55, marginBottom: 4 }}>
                   {compilaTesto(INQUADRAMENTO.testo, doc.inquadramento.campi)}
                 </div>
-                <CampiTesto testo={INQUADRAMENTO.testo} valori={doc.inquadramento.campi} onChange={setCampoInq} />
+                <CampiTesto testo={INQUADRAMENTO.testo} valori={doc.inquadramento.campi} onChange={setCampoInq} inputSt={inputSt} />
               </>
             )}
           </div>
@@ -437,13 +442,23 @@ export default function OffertaDocumentPanel({
                                 <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
                                   {pulisci(compilaTesto(v.testo, vc.campi))}
                                 </div>
-                                {vc.attiva && <CampiTesto testo={v.testo} valori={vc.campi} onChange={(k, val) => setCampoVoce(sez.id, v.id, k, val)} />}
+                                {vc.attiva && <CampiTesto testo={v.testo} valori={vc.campi} onChange={(k, val) => setCampoVoce(sez.id, v.id, k, val)} inputSt={inputSt} />}
                               </div>
-                              {sez.modoPrezzo === "voci" && v.prezzo && (
-                                <input type="number" value={vc.prezzo} onChange={e => setVoce(sez.id, v.id, { prezzo: e.target.value })}
-                                  disabled={!vc.attiva} placeholder={v.prezzoLabel || "€"}
-                                  style={{ ...inputSt, width: 100, height: 30, padding: "4px 8px", fontSize: 11.5, textAlign: "right", flexShrink: 0 }} />
-                              )}
+                              {sez.modoPrezzo === "voci" && v.prezzo && (() => {
+                                const isCad = /cad/i.test(v.prezzoLabel || "");
+                                const q = isCad ? quantitaVoce(v, vc) : 1;
+                                const unit = Number(vc.prezzo) || 0;
+                                return (
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                                    <input type="number" value={vc.prezzo} onChange={e => setVoce(sez.id, v.id, { prezzo: e.target.value })}
+                                      disabled={!vc.attiva} placeholder={v.prezzoLabel || "€"}
+                                      style={{ ...inputSt, width: 100, height: 30, padding: "4px 8px", fontSize: 11.5, textAlign: "right" }} />
+                                    {isCad && vc.attiva && q > 1 && unit > 0 && (
+                                      <span style={{ ...mono, fontSize: 9.5, color: T.navy }}>× {q} = {euro(unit * q)}</span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
                         })}
@@ -470,12 +485,49 @@ export default function OffertaDocumentPanel({
           {/* Pagamento */}
           <div style={{ ...labelSt, marginTop: 18, marginBottom: 8 }}>Modalità di pagamento</div>
           <div style={cardSt}>
-            {MODALITA_PAGAMENTO.map(o => (
-              <label key={o.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer", padding: "6px 0" }}>
-                <div style={{ paddingTop: 2 }}><Check checked={(doc.pagamento.opzioni || []).includes(o.id)} onChange={() => togglePagamento(o.id)} /></div>
-                <span style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}><b>Opzione {o.id} —</b> {o.testo}</span>
-              </label>
-            ))}
+            {MODALITA_PAGAMENTO.map(o => {
+              const selected = (doc.pagamento.opzioni || []).includes(o.id);
+              return (
+                <div key={o.id} style={{ padding: "6px 0" }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+                    <div style={{ paddingTop: 2 }}><Check checked={selected} onChange={() => togglePagamento(o.id)} /></div>
+                    <span style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
+                      <b>Opzione {o.id} —</b> {o.rate ? "pagamento a stato avanzamento (percentuali personalizzabili)." : o.testo}
+                    </span>
+                  </label>
+                  {o.rate && selected && (
+                    <div style={{ marginTop: 8, marginLeft: 26, display: "flex", flexDirection: "column", gap: 6 }}>
+                      {(doc.pagamento.rateC || []).map((r, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input type="number" min={0} max={100} value={r.percentuale}
+                            onChange={e => setRateC(i, { percentuale: e.target.value })}
+                            style={{ ...inputSt, width: 68, padding: "4px 8px", fontSize: 11.5, textAlign: "right" }} />
+                          <span style={{ ...mono, fontSize: 11, color: T.muted }}>%</span>
+                          <input value={r.descrizione} onChange={e => setRateC(i, { descrizione: e.target.value })}
+                            placeholder="descrizione rata (es. inizio lavori)"
+                            style={{ ...inputSt, flex: 1, padding: "4px 8px", fontSize: 11.5 }} />
+                          <button type="button" onClick={() => removeRateC(i)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: T.red, fontSize: 15, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
+                        </div>
+                      ))}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <button type="button" onClick={addRateC}
+                          style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "5px 12px", cursor: "pointer" }}>
+                          + Aggiungi rata
+                        </button>
+                        {(() => {
+                          const totPerc = (doc.pagamento.rateC || []).reduce((s, r) => s + (Number(r.percentuale) || 0), 0);
+                          return <span style={{ ...mono, fontSize: 10, color: totPerc === 100 ? T.green : T.red }}>Totale {totPerc}%{totPerc !== 100 ? " — dev'essere 100%" : ""}</span>;
+                        })()}
+                      </div>
+                      <div style={{ ...mono, fontSize: 9.5, color: T.muted, lineHeight: 1.5 }}>
+                        All'accettazione dell'offerta questa suddivisione genera automaticamente le rate della commessa.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             <div style={{ marginTop: 10 }}>
               <div style={labelSt}>Testo libero aggiuntivo</div>
               <textarea value={doc.pagamento.testoLibero} onChange={e => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, testoLibero: e.target.value } }))}

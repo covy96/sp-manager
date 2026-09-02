@@ -3,7 +3,7 @@
 // default, calcolo dei totali e helper di formattazione.
 // Condiviso da OffertaDocumentPanel, offertaPdf e offertaDocx.
 // ─────────────────────────────────────────────────────────────────────────────
-import { SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, estraiCampi, lettera } from "./offertaTemplate";
+import { SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, estraiCampi, lettera, RATE_C_DEFAULT } from "./offertaTemplate";
 
 // ── Formattazione ────────────────────────────────────────────────────────────
 export const euro = (v) =>
@@ -98,7 +98,7 @@ export function documentoDefault(offerta = {}) {
     inquadramento: { attivo: false, campi: campiVuoti(INQUADRAMENTO.testo) },
     sezioni,
     blocchi,
-    pagamento: { opzioni: [], testoLibero: "" },
+    pagamento: { opzioni: [], testoLibero: "", rateC: RATE_C_DEFAULT.map(r => ({ ...r })) },
     sconto: Number(offerta.sconto) || 0,
     scontoFisso: Number(offerta.sconto_fisso) || 0,
   };
@@ -142,6 +142,23 @@ export function sezioniAttive(doc) {
   return SEZIONI.filter(s => doc.sezioni?.[s.id]?.attiva).map((s, i) => ({ ...s, lettera: lettera(i) }));
 }
 
+// Quantità di una voce a prezzo unitario ("cad."): intero estratto dal primo
+// campo «…» compilato con un valore numerico. Le voci non "cad." valgono 1.
+export function quantitaVoce(v, vc) {
+  if (!/cad/i.test(v?.prezzoLabel || "")) return 1;
+  const campi = vc?.campi || {};
+  for (const k of Object.keys(campi)) {
+    const n = parseInt(String(campi[k] ?? "").replace(/[^\d]/g, ""), 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 1;
+}
+
+// Importo di una singola voce: per le voci "cad." è prezzo unitario × quantità.
+export function importoVoce(v, vc) {
+  return (Number(vc?.prezzo) || 0) * quantitaVoce(v, vc);
+}
+
 export function importoSezione(s, doc) {
   const cfg = doc.sezioni?.[s.id];
   if (!cfg) return 0;
@@ -149,7 +166,7 @@ export function importoSezione(s, doc) {
     let tot = 0;
     s.gruppi.forEach(g => g.voci.forEach(v => {
       const vc = cfg.voci?.[v.id];
-      if (v.prezzo && vc?.attiva) tot += Number(vc.prezzo) || 0;
+      if (v.prezzo && vc?.attiva) tot += importoVoce(v, vc);
     }));
     return tot;
   }

@@ -260,6 +260,36 @@ export default function OffertePage() {
     }).select().single();
     if (cErr) { showToast('Errore: '+cErr.message); setSaving(false); return; }
 
+    // Genera automaticamente la suddivisione pagamenti della commessa in base
+    // alla modalità di pagamento scelta nel documento dell'offerta:
+    //  - Opzione C: una rata per ogni percentuale personalizzata;
+    //  - Opzione A/B (saldo in un'unica tranche): un'unica rata al 100%.
+    // Le rate sono a percentuale, quindi si scalano sul totale della commessa.
+    const pagDoc = offertaOriginale?.documento?.pagamento;
+    const opz = pagDoc?.opzioni || [];
+    let rateRows = null;
+    if (pagDoc && opz.includes('C') && Array.isArray(pagDoc.rateC) && pagDoc.rateC.length > 0) {
+      rateRows = pagDoc.rateC.map((r, i) => ({
+        commessa_id: commessa.id,
+        studio: studioId,
+        numero_rata: i + 1,
+        label: (r.descrizione||'').trim() || `Rata ${i+1}`,
+        percentuale: Number(r.percentuale) || 0,
+        importo_fisso: null,
+        pagato: false,
+      }));
+    } else if (pagDoc && (opz.includes('A') || opz.includes('B'))) {
+      const label = opz.includes('A') ? 'Saldo alla presentazione' : "Saldo all'accettazione";
+      rateRows = [{
+        commessa_id: commessa.id, studio: studioId, numero_rata: 1,
+        label, percentuale: 100, importo_fisso: null, pagato: false,
+      }];
+    }
+    if (rateRows && rateRows.length > 0) {
+      const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);
+      if (rErr) showToast('Rate non generate: '+rErr.message, 'error');
+    }
+
     const offerUpdate = {
       stato: 'accettata', commessa_id: commessa.id,
       voci: accettaForm.voci,
