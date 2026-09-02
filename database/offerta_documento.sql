@@ -1,0 +1,12 @@
+-- Configurazione del documento d'offerta (sezioni attive, prezzi, campi compilati)
+-- Struttura: {
+--   copertina: bool, firma: bool,
+--   destinatario: { nome, indirizzo, sede, cf, piva },
+--   oggetto: string, data: 'YYYY-MM-DD', luogo: string,
+--   necessita: string,
+--   inquadramento: { attivo: bool, campi: { f0.. } },
+--   sezioni: { <sezioneId>: { attiva, prezzo, voci: { <voceId>: { attiva, prezzo, campi } } } },
+--   blocchi: { <bloccoId>: bool },
+--   pagamento: { opzioni: ['A'], testoLibero: '' }
+-- }
+ALTER TABLE offerte ADD COLUMN IF NOT EXISTS documento JSONB DEFAULT '{}'::jsonb;

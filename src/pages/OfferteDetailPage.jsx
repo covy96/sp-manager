@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -21,7 +22,7 @@ export default function OfferteDetailPage() {
   const { id } = useParams();
   const showToast = useToast();
   const navigate = useNavigate();
-  const { studioId } = useStudio();
+  const { studioId, studio } = useStudio();
   const { T } = useTheme();
 
   const [offerta, setOfferta]       = useState(null);
@@ -34,6 +35,7 @@ export default function OfferteDetailPage() {
   const [accettaModal, setAccettaModal] = useState(false);
   const [accettaForm, setAccettaForm]   = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
+  const [docPanel, setDocPanel]         = useState(false);
   useEscKey(() => {
     if (allineaModal)  { setAllineaModal(false); return; }
     if (accettaModal)  { setAccettaModal(false); }
@@ -236,6 +238,15 @@ export default function OfferteDetailPage() {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
+      {docPanel && (
+        <OffertaDocumentPanel
+          offerta={offerta}
+          studio={studio}
+          onClose={()=>setDocPanel(false)}
+          onSaved={(agg)=>setOfferta(agg)}
+        />
+      )}
+
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, minWidth:0, flex:'1 1 auto' }}>
@@ -247,6 +258,7 @@ export default function OfferteDetailPage() {
           <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Documento offerta</button>
           {offerta.stato==='offerta' && <>
             {!editing && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
             <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
