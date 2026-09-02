@@ -281,6 +281,23 @@ export default function OffertaDocumentPanel({
     setSyncModal({ commessaId: comm.id, oldBase, newTotal, pagate, nonPagate, sommaPagate, residuo, editRate, nuovaRata, maxN });
   };
 
+  // Riallinea gli importi dei proforma della commessa alla somma delle rate/costi
+  // collegati sul nuovo importo base (i proforma memorizzano importo_totale).
+  const ricalcolaProforme = async (commessaId, base) => {
+    const [{ data: rateNow }, { data: costiNow }, { data: prof }] = await Promise.all([
+      supabase.from("suddivisione_pagamenti").select("id, percentuale, importo_fisso").eq("commessa_id", commessaId).is("deleted_at", null),
+      supabase.from("costi_extra").select("id, importo").eq("commessa_id", commessaId).is("deleted_at", null),
+      supabase.from("proforma").select("id, suddivisione_pagamento_ids, costo_extra_ids").eq("commessa_id", commessaId),
+    ]);
+    const rateMap = Object.fromEntries((rateNow || []).map(r => [r.id, r]));
+    const costiMap = Object.fromEntries((costiNow || []).map(c => [c.id, Number(c.importo) || 0]));
+    for (const p of (prof || [])) {
+      const fromRate = (p.suddivisione_pagamento_ids || []).reduce((s, id) => s + (rateMap[id] ? importoRata(rateMap[id], base) : 0), 0);
+      const fromCosti = (p.costo_extra_ids || []).reduce((s, id) => s + (costiMap[id] || 0), 0);
+      await supabase.from("proforma").update({ importo_totale: round2(fromRate + fromCosti) }).eq("id", p.id);
+    }
+  };
+
   const applicaSync = async (scelta) => {
     const sm = syncModal;
     if (!sm) return;
@@ -313,6 +330,8 @@ export default function OffertaDocumentPanel({
         }
         await supabase.from("commesse").update({ importo_offerta_base: sm.newTotal, importo_totale: sm.newTotal }).eq("id", sm.commessaId);
       }
+      // Ricalcola gli importi dei proforma collegati alle rate/costi aggiornati.
+      await ricalcolaProforme(sm.commessaId, sm.newTotal);
       showToast("Commessa aggiornata", "success");
     } catch (e) {
       showToast("Errore aggiornamento commessa: " + (e?.message || e), "error");

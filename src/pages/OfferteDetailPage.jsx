@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
@@ -22,6 +22,7 @@ export default function OfferteDetailPage() {
   const { id } = useParams();
   const showToast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { studioId, studio } = useStudio();
   const { T } = useTheme();
 
@@ -79,6 +80,15 @@ export default function OfferteDetailPage() {
   };
 
   useEffect(()=>{ if(studioId) loadData(); },[id,studioId]);
+
+  // Apre automaticamente il documento se si arriva dalla commessa con "Modifica".
+  const openedDocRef = useRef(false);
+  useEffect(() => {
+    if (!openedDocRef.current && location.state?.openDoc && offerta) {
+      openedDocRef.current = true;
+      setDocPanel(true);
+    }
+  }, [location.state, offerta]);
 
   const handleSave = async () => {
     setSaving(true);
