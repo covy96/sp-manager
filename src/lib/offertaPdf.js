@@ -328,7 +328,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   const opzioni = MODALITA_PAGAMENTO.filter(o => (cfg.pagamento?.opzioni || []).includes(o.id));
   if (opzioni.length > 0 || cfg.pagamento?.testoLibero) {
     titoloCentrato(TESTI.pagamentiTitolo, { spaceBefore: 8, spaceAfter: 7 });
-    if (opzioni.length > 0) elenco(opzioni.map(o => `**Opzione ${o.id} —** ${o.rate ? testoRateC(cfg.pagamento?.rateC) : o.testo}`));
+    if (opzioni.length > 0) elenco(opzioni.map(o => o.rate ? testoRateC(cfg.pagamento?.rateC) : o.testo));
     if (cfg.pagamento?.testoLibero) { y += 2; paragrafo(cfg.pagamento.testoLibero, { spaceAfter: 2 }); }
     y += 4;
     paragrafo(PAGAMENTO_CHIUSURA, { spaceAfter: 8 });

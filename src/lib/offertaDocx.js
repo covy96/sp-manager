@@ -343,7 +343,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   const opzioni = MODALITA_PAGAMENTO.filter(o => (cfg.pagamento?.opzioni || []).includes(o.id));
   if (opzioni.length > 0 || cfg.pagamento?.testoLibero) {
     TitoloBlocco(TESTI.pagamentiTitolo).forEach(p => body.push(p));
-    opzioni.forEach(o => body.push(Bullet(`**Opzione ${o.id} —** ${o.rate ? testoRateC(cfg.pagamento?.rateC) : o.testo}`)));
+    opzioni.forEach(o => body.push(Bullet(o.rate ? testoRateC(cfg.pagamento?.rateC) : o.testo)));
     if (cfg.pagamento?.testoLibero) body.push(P(cfg.pagamento.testoLibero, { spacing: 140 }));
     body.push(P(PAGAMENTO_CHIUSURA, { spacing: 300, spacingBefore: 200 }));
   }
