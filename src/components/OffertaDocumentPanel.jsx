@@ -266,7 +266,14 @@ export default function OffertaDocumentPanel({
                 : `${offerta?.numero_offerta} — ${offerta?.nome_offerta}`}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+            {!isCreate && versioneAttiva != null && (
+              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 999, padding: "5px 12px", whiteSpace: "nowrap" }}>
+                Versione {versioneAttiva}
+              </span>
+            )}
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
+          </div>
         </div>
 
         {/* Corpo scrollabile */}
