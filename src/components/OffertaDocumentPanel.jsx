@@ -76,9 +76,7 @@ export default function OffertaDocumentPanel({
   // ── Anagrafica offerta (solo in modalità create) ────────────────────────────
   const [ana, setAna] = useState({
     numero_offerta: "", data_offerta: new Date().toISOString().slice(0, 10),
-    nome_offerta: "", cliente: "", project_id: "", note: "",
-    creaProgetto: false, nuovoProgettoNome: "", nuovoProgettoIndirizzo: "",
-    nuovoProgettoServizi: [], nuovoProgettoMembri: [],
+    nome_offerta: "", cliente: "", note: "",
   });
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [createError, setCreateError] = useState("");
@@ -221,18 +219,12 @@ export default function OffertaDocumentPanel({
       numero_offerta: ana.numero_offerta,
       nome_offerta: ana.nome_offerta,
       cliente: ana.cliente,
-      project_id: ana.project_id,
       data_offerta: ana.data_offerta,
       note: ana.note,
       voci,
       sconto: doc.sconto,
       sconto_fisso: doc.scontoFisso,
       documento: doc,
-      creaProgetto: ana.creaProgetto,
-      nuovoProgettoNome: ana.nuovoProgettoNome,
-      nuovoProgettoIndirizzo: ana.nuovoProgettoIndirizzo,
-      nuovoProgettoServizi: ana.nuovoProgettoServizi,
-      nuovoProgettoMembri: ana.nuovoProgettoMembri,
     });
     setSaving(false);
     // onCreate gestisce la chiusura in caso di successo.
@@ -300,74 +292,12 @@ export default function OffertaDocumentPanel({
                   )}
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
-                  <div style={labelSt}>Progetto</div>
-                  <select value={ana.project_id} onChange={e => setAna(p => ({ ...p, project_id: e.target.value }))} style={{ ...inputSt, cursor: "pointer" }}>
-                    <option value="">— Nessun progetto —</option>
-                    {progetti.map(p => <option key={p.id} value={p.id}>{p.name} — {p.client}</option>)}
-                  </select>
-                </div>
-                <div style={{ gridColumn: "span 2", display: "flex", alignItems: "center", gap: 10 }}>
-                  <Check checked={ana.creaProgetto} onChange={() => setAna(p => ({ ...p, creaProgetto: !p.creaProgetto, project_id: "" }))} />
-                  <label style={{ ...mono, fontSize: 11, color: T.ink, cursor: "pointer" }} onClick={() => setAna(p => ({ ...p, creaProgetto: !p.creaProgetto, project_id: "" }))}>
-                    Crea nuovo progetto per questa offerta
-                  </label>
-                </div>
-                {ana.creaProgetto && (
-                  <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 10, padding: 14, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
-                    <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Nuovo progetto</div>
-                    <div>
-                      <div style={labelSt}>Nome progetto *</div>
-                      <input value={ana.nuovoProgettoNome} onChange={e => setAna(p => ({ ...p, nuovoProgettoNome: e.target.value }))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt} />
-                    </div>
-                    <div>
-                      <div style={labelSt}>Indirizzo</div>
-                      <input value={ana.nuovoProgettoIndirizzo} onChange={e => setAna(p => ({ ...p, nuovoProgettoIndirizzo: e.target.value }))} placeholder="Via Roma 1, Milano" style={inputSt} />
-                    </div>
-                    {serviceTemplates.length > 0 && (
-                      <div>
-                        <div style={labelSt}>Servizi</div>
-                        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: "8px 12px", maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                          {serviceTemplates.map(s => {
-                            const selected = ana.nuovoProgettoServizi.includes(s.service_name);
-                            return (
-                              <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0" }}>
-                                <input type="checkbox" checked={selected}
-                                  onChange={() => setAna(p => ({ ...p, nuovoProgettoServizi: selected ? p.nuovoProgettoServizi.filter(x => x !== s.service_name) : [...p.nuovoProgettoServizi, s.service_name] }))}
-                                  style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                                <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{s.service_name}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    {teamMembers.length > 0 && (
-                      <div>
-                        <div style={labelSt}>Assegna a</div>
-                        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: "8px 12px", maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
-                          {teamMembers.map(m => {
-                            const selected = ana.nuovoProgettoMembri.includes(m.id);
-                            return (
-                              <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0" }}>
-                                <input type="checkbox" checked={selected}
-                                  onChange={() => setAna(p => ({ ...p, nuovoProgettoMembri: selected ? p.nuovoProgettoMembri.filter(x => x !== m.id) : [...p.nuovoProgettoMembri, m.id] }))}
-                                  style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                                <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div style={{ gridColumn: "span 2" }}>
                   <div style={labelSt}>Note</div>
                   <input value={ana.note} onChange={e => setAna(p => ({ ...p, note: e.target.value }))} placeholder="Note aggiuntive…" style={inputSt} />
                 </div>
               </div>
               <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 12, lineHeight: 1.5 }}>
-                Le sezioni attive qui sotto diventano le voci dell'offerta. Compila prezzi e testi, poi premi <b>Crea offerta</b>.
+                Le sezioni attive qui sotto diventano le voci dell'offerta. Compila prezzi e testi, poi premi <b>Crea offerta</b>. Dopo potrai collegare un progetto.
               </div>
             </div>
           )}

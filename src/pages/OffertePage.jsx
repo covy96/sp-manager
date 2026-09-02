@@ -41,6 +41,11 @@ export default function OffertePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [choiceOpen, setChoiceOpen]     = useState(false);  // popup scelta tipo creazione
   const [docCreateOpen, setDocCreateOpen] = useState(false); // pannello documento in create
+  // Popup "collega progetto" post-creazione offerta
+  const [linkProg, setLinkProg]   = useState(null);   // { offerta, cliente, indirizzo, nomeDefault }
+  const [linkMode, setLinkMode]   = useState(null);   // 'esistente' | 'nuovo' | null
+  const [linkForm, setLinkForm]   = useState({ project_id: "", nome: "", indirizzo: "", servizi: [], membri: [] });
+  const [linkSaving, setLinkSaving] = useState(false);
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
@@ -49,11 +54,12 @@ export default function OffertePage() {
   const [accettaId, setAccettaId]       = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
   useEscKey(() => {
+    if (linkProg)      { setLinkProg(null); return; }
     if (choiceOpen)    { setChoiceOpen(false); return; }
     if (allineaModal)  { setAllineaModal(false); return; }
     if (accettaModal)  { setAccettaModal(false); return; }
     if (modalOpen)     { setModalOpen(false); }
-  }, choiceOpen || allineaModal || accettaModal || modalOpen);
+  }, linkProg || choiceOpen || allineaModal || accettaModal || modalOpen);
   const [offertaOriginale, setOffertaOriginale] = useState(null);
 
   const [form, setForm] = useState({
@@ -186,12 +192,53 @@ export default function OffertePage() {
   // Creazione via documento: le sezioni attive sono già state trasformate in
   // voci dal pannello. Qui si esegue l'inserimento e si chiude.
   const handleCreateFromDoc = async (payload) => {
-    const { error } = await createOfferta(payload);
+    const { data, error } = await createOfferta(payload);
     if (error) { showToast('Errore: '+error, 'error'); return false; }
     setDocCreateOpen(false);
     showToast("Offerta creata", "success");
     await loadData();
+    // Popup successivo: collega/crea un progetto, precompilato dai dati offerta.
+    const indirizzo = payload.documento?.destinatario?.indirizzo || "";
+    setLinkMode(null);
+    setLinkForm({ project_id: "", nome: payload.nome_offerta || "", indirizzo, servizi: [], membri: [] });
+    setLinkProg({ offerta: data, cliente: payload.cliente || "", indirizzo, nomeDefault: payload.nome_offerta || "" });
     return true;
+  };
+
+  const collegaProgetto = async () => {
+    if (!linkProg || !linkMode) { setLinkProg(null); return; }
+    const offId = linkProg.offerta?.id;
+    if (!offId) { setLinkProg(null); return; }
+    setLinkSaving(true);
+    if (linkMode === 'esistente') {
+      if (!linkForm.project_id) { showToast('Seleziona un progetto', 'error'); setLinkSaving(false); return; }
+      const proj = progetti.find(p => p.id === linkForm.project_id);
+      await supabase.from('offerte').update({ project_id: proj.id, project_name: proj.name }).eq('id', offId);
+    } else if (linkMode === 'nuovo') {
+      if (!linkForm.nome.trim()) { showToast('Nome progetto obbligatorio', 'error'); setLinkSaving(false); return; }
+      const { data: newProj, error: pErr } = await supabase.from('projects').insert({
+        studio: studioId, name: linkForm.nome.trim(), client: (linkProg.cliente || '').trim() || null,
+        address: linkForm.indirizzo || null, status: 'in_corso', gantt_enabled: false, archived: false,
+        servizi_selezionati: linkForm.servizi || [], assigned_users: linkForm.membri || [],
+        offerta_origine_id: offId,
+      }).select().single();
+      if (pErr) { showToast('Errore progetto: ' + pErr.message, 'error'); setLinkSaving(false); return; }
+      const serviziScelti = linkForm.servizi || [];
+      if (serviziScelti.length > 0) {
+        const taskRows = [];
+        for (const serviceName of serviziScelti) {
+          const template = serviceTemplates.find(t => t.service_name === serviceName);
+          const taskList = Array.isArray(template?.task_templates) ? template.task_templates : [];
+          for (const taskName of taskList) taskRows.push({ project_id: newProj.id, title: taskName, categoria: serviceName, status: 'todo', studio: studioId });
+        }
+        if (taskRows.length > 0) await supabase.from('tasks').insert(taskRows);
+      }
+      await supabase.from('offerte').update({ project_id: newProj.id, project_name: newProj.name }).eq('id', offId);
+    }
+    setLinkSaving(false);
+    setLinkProg(null);
+    showToast('Progetto collegato', 'success');
+    await loadData();
   };
 
   const openAccetta = (o) => {
@@ -577,6 +624,103 @@ export default function OffertePage() {
                 <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
                   Inserimento rapido: nome, cliente, voci e prezzi a mano. Come oggi.
                 </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup collega progetto (dopo creazione offerta da documento) */}
+      {linkProg && (
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:66, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:520, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
+              <div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Collega un progetto</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>Offerta creata. Vuoi collegarla a un progetto?</div>
+              </div>
+              <button onClick={()=>setLinkProg(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, margin:'16px 0' }}>
+              <button onClick={()=>setLinkMode('esistente')} className="asm-card"
+                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='esistente'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:20 }}>🔗</div>
+                <div style={{ fontSize:13, fontWeight:600, color:linkMode==='esistente'?T.navy:T.ink, marginTop:6 }}>Progetto esistente</div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Collega a un progetto già presente.</div>
+              </button>
+              <button onClick={()=>setLinkMode('nuovo')} className="asm-card"
+                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='nuovo'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:20 }}>✨</div>
+                <div style={{ fontSize:13, fontWeight:600, color:linkMode==='nuovo'?T.navy:T.ink, marginTop:6 }}>Nuovo progetto</div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Crea un progetto precompilato dai dati offerta.</div>
+              </button>
+            </div>
+
+            {linkMode==='esistente' && (
+              <div style={{ marginBottom:8 }}>
+                <label style={labelSt}>Progetto</label>
+                <select value={linkForm.project_id} onChange={e=>setLinkForm(p=>({...p,project_id:e.target.value}))} style={{...inputSt,cursor:'pointer'}}>
+                  <option value="">— Seleziona —</option>
+                  {progetti.map(p=><option key={p.id} value={p.id}>{p.name} — {p.client}</option>)}
+                </select>
+              </div>
+            )}
+
+            {linkMode==='nuovo' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:12, padding:'14px', background:T.surface2, border:`1px solid ${T.border}`, borderRadius:T.radiusSm }}>
+                <div>
+                  <label style={labelSt}>Nome progetto *</label>
+                  <input type="text" value={linkForm.nome} onChange={e=>setLinkForm(p=>({...p,nome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                </div>
+                <div>
+                  <label style={labelSt}>Indirizzo</label>
+                  <input type="text" value={linkForm.indirizzo} onChange={e=>setLinkForm(p=>({...p,indirizzo:e.target.value}))} placeholder="Via Roma 1, Milano" style={inputSt}/>
+                </div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted }}>Cliente: <b>{linkProg.cliente || '—'}</b></div>
+                {serviceTemplates.length > 0 && (
+                  <div>
+                    <label style={labelSt}>Servizi</label>
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:130, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                      {serviceTemplates.map(s => {
+                        const selected = (linkForm.servizi||[]).includes(s.service_name);
+                        return (
+                          <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                            <input type="checkbox" checked={selected}
+                              onChange={() => setLinkForm(p => ({ ...p, servizi: selected ? p.servizi.filter(x=>x!==s.service_name) : [...(p.servizi||[]), s.service_name] }))}
+                              style={{ accentColor:T.navy, width:13, height:13 }}/>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {teamMembers.length > 0 && (
+                  <div>
+                    <label style={labelSt}>Assegna a</label>
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:130, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                      {teamMembers.map(m => {
+                        const selected = (linkForm.membri||[]).includes(m.id);
+                        return (
+                          <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                            <input type="checkbox" checked={selected}
+                              onChange={() => setLinkForm(p => ({ ...p, membri: selected ? p.membri.filter(x=>x!==m.id) : [...(p.membri||[]), m.id] }))}
+                              style={{ accentColor:T.navy, width:13, height:13 }}/>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Salta</button>
+              <button onClick={collegaProgetto} disabled={!linkMode || linkSaving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:(!linkMode||linkSaving)?'not-allowed':'pointer', opacity:(!linkMode||linkSaving)?0.5:1 }}>
+                {linkSaving ? 'Collego…' : 'Collega progetto'}
               </button>
             </div>
           </div>
