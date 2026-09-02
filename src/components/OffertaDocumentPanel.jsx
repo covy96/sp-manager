@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useToast } from "../contexts/ToastContext";
@@ -81,8 +81,14 @@ export default function OffertaDocumentPanel({
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [createError, setCreateError] = useState("");
 
+  // Snapshot del documento all'ultimo caricamento/salvataggio: serve a non
+  // creare una nuova versione se si salva senza aver modificato nulla.
+  const baselineRef = useRef(JSON.stringify(normalizzaDocumento(offerta?.documento, offerta, tpl)));
+
   useEffect(() => {
-    setDoc(normalizzaDocumento(offerta?.documento, offerta, tpl));
+    const nd = normalizzaDocumento(offerta?.documento, offerta, tpl);
+    setDoc(nd);
+    baselineRef.current = JSON.stringify(nd);
     const vs = Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : [];
     setVersioni(vs);
     setVersioneAttiva(vs[0]?.n || null);
@@ -152,6 +158,12 @@ export default function OffertaDocumentPanel({
 
   // ── azioni ─────────────────────────────────────────────────────────────────
   const salva = async () => {
+    // Se non è cambiato nulla dall'ultimo caricamento/salvataggio, non creare
+    // una nuova versione.
+    if (JSON.stringify(doc) === baselineRef.current) {
+      showToast("Nessuna modifica da salvare", "success");
+      return true;
+    }
     setSaving(true);
     const stamp = Date.now();
     // Ogni salvataggio registra una nuova versione in cima allo storico.
@@ -176,16 +188,19 @@ export default function OffertaDocumentPanel({
     if (error) { showToast(`Errore salvataggio: ${error.message}`, "error"); return false; }
     setVersioni(nuoveVersioni);
     setVersioneAttiva(nuova.n);
+    baselineRef.current = JSON.stringify(doc);
     showToast(`Versione ${nuova.n} salvata`, "success");
     onSaved?.({ ...offerta, ...patch });
     return true;
   };
 
   const caricaVersione = (v) => {
-    setDoc(normalizzaDocumento(v.doc, offerta, tpl));
+    const nd = normalizzaDocumento(v.doc, offerta, tpl);
+    setDoc(nd);
+    baselineRef.current = JSON.stringify(nd);
     setVersioneAttiva(v.n);
     setVersioniAperte(false);
-    showToast(`Versione ${v.n} caricata — salvando ne creerai una nuova`, "success");
+    showToast(`Versione ${v.n} caricata — modifica e salva per crearne una nuova`, "success");
   };
 
   const generaPdf = async () => {

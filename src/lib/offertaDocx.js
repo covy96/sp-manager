@@ -96,10 +96,12 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { before: 360, after: 60 },
+      keepNext: true,
       children: [new TextRun({ text: testo, size, color: "1E1E1E", font: FONT_BODY })],
     }),
     new Paragraph({
       spacing: { after: 180 },
+      keepNext: true,
       border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "3C3C3C", space: 1 } },
       children: [],
     }),

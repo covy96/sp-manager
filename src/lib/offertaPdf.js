@@ -266,6 +266,12 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   if (blocchiAttivi.length > 0) {
     nuovaPagina();
     blocchiAttivi.forEach((b) => {
+      // Tieni il titolo attaccato al primo paragrafo: se non entrano insieme
+      // (titolo + almeno le sue righe), vai a pagina nuova prima del titolo.
+      const primo = b.paragrafi?.[0] || "";
+      setF("book", "body"); pdf.setFontSize(9.5);
+      const primoRighe = primo ? pdf.splitTextToSize(String(primo), CW).length : 1;
+      ensure(10 + 16 + primoRighe * 5);
       titoloCentrato(b.titolo, { spaceBefore: 10, spaceAfter: 7 });
       b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3, keepTogether: true }));
       if (b.elenco?.length) { y += 1; elenco(b.elenco); }
