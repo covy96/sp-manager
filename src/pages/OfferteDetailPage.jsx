@@ -88,7 +88,7 @@ export default function OfferteDetailPage() {
     const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
     const totale = Math.max(0, Math.round((dopoPerc - scF)*100)/100);
-    await supabase.from("offerte").update({
+    const { error: saveErr } = await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
       cliente: form.cliente,
       project_id: form.project_id||null,
@@ -103,18 +103,21 @@ export default function OfferteDetailPage() {
       numero_offerta: form.numero_offerta,
     }).eq("id",id);
     setSaving(false);
+    if (saveErr) { showToast("Errore salvataggio: " + saveErr.message); return; }
     setEditing(false);
     await loadData();
   };
 
   const handleRifiuta = async () => {
     if (!confirm("Rifiutare questa offerta?")) return;
-    await supabase.from("offerte").update({ stato:'rifiutata' }).eq("id",id);
+    const { error } = await supabase.from("offerte").update({ stato:'rifiutata' }).eq("id",id);
+    if (error) { showToast("Errore: " + error.message); return; }
     await loadData();
   };
 
   const handleRipristina = async () => {
-    await supabase.from("offerte").update({ stato:'offerta' }).eq("id",id);
+    const { error } = await supabase.from("offerte").update({ stato:'offerta' }).eq("id",id);
+    if (error) { showToast("Errore: " + error.message); return; }
     await loadData();
   };
 
@@ -163,6 +166,7 @@ export default function OfferteDetailPage() {
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
+        offerta_origine_id: id,
       }).select().single();
       if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
@@ -189,6 +193,26 @@ export default function OfferteDetailPage() {
       stato_pagamento: 'non_iniziato',
     }).select().single();
     if (error) { showToast('Errore: '+error.message); setSaving(false); return; }
+
+    // Genera la suddivisione pagamenti della commessa dalla modalità scelta nel
+    // documento: Opzione C → una rata per percentuale; Opzione A/B → rata unica 100%.
+    const pagDoc = offerta?.documento?.pagamento;
+    const opz = pagDoc?.opzioni || [];
+    let rateRows = null;
+    if (pagDoc && opz.includes('C') && Array.isArray(pagDoc.rateC) && pagDoc.rateC.length > 0) {
+      rateRows = pagDoc.rateC.map((r, i) => ({
+        commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
+        label: (r.descrizione||'').trim() || `Rata ${i+1}`,
+        percentuale: Number(r.percentuale) || 0, importo_fisso: null, pagato: false,
+      }));
+    } else if (pagDoc && (opz.includes('A') || opz.includes('B'))) {
+      const label = opz.includes('A') ? 'Saldo alla presentazione' : "Saldo all'accettazione";
+      rateRows = [{ commessa_id: commessa.id, studio: studioId, numero_rata: 1, label, percentuale: 100, importo_fisso: null, pagato: false }];
+    }
+    if (rateRows && rateRows.length > 0) {
+      const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);
+      if (rErr) showToast('Rate non generate: '+rErr.message, 'error');
+    }
 
     // Aggiorna stato offerta (e valore se richiesto)
     // Salva sempre voci e sconti aggiornati nell'offerta; importo_offerta_base solo se richiesto
@@ -230,6 +254,9 @@ export default function OfferteDetailPage() {
   if (!offerta) return <div style={{ ...mono, fontSize:11, color:T.red }}>Offerta non trovata</div>;
 
   const st = STATI[offerta.stato]||STATI.offerta;
+  // Offerta "guidata dal documento": creata/gestita col configuratore. In tal
+  // caso il documento è l'unica fonte delle voci → niente Modifica classica.
+  const isDocDriven = !!(offerta?.documento && offerta.documento.sezioni);
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -244,19 +271,19 @@ export default function OfferteDetailPage() {
       )}
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Offerte</button>
-          <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, minWidth:0, flex:'1 1 auto' }}>
+          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', flexShrink:0 }}>← Offerte</button>
+          <div style={{ minWidth:0 }}>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:2 }}>{offerta.numero_offerta}</div>
-            <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{offerta.nome_offerta}</div>
+            <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', overflow:'hidden', textOverflow:'ellipsis' }}>{offerta.nome_offerta}</div>
           </div>
-          <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2 }}>{st.label}</span>
+          <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Documento offerta</button>
+          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>{isDocDriven ? 'Documento / versioni' : 'Documento offerta'}</button>
           {offerta.stato==='offerta' && <>
-            {!editing && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
+            {!editing && !isDocDriven && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
             <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
             <button onClick={handleRifiuta} style={{ border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, background:'transparent', color:T.red, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Rifiuta</button>
           </>}
@@ -382,7 +409,7 @@ export default function OfferteDetailPage() {
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:20 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:20 }}>
               {[
                 ['N° Offerta', offerta.numero_offerta],
                 ['Data offerta', offerta.data_offerta ? new Date(offerta.data_offerta).toLocaleDateString('it-IT') : '—'],

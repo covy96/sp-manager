@@ -152,19 +152,31 @@ export default function OffertaDocumentPanel({
   // ── azioni ─────────────────────────────────────────────────────────────────
   const salva = async () => {
     setSaving(true);
+    const stamp = Date.now();
     // Ogni salvataggio registra una nuova versione in cima allo storico.
     const nPrec = versioni.reduce((mx, v) => Math.max(mx, Number(v.n) || 0), 0);
     const nuova = { n: nPrec + 1, ts: new Date().toISOString(), doc };
     const nuoveVersioni = [nuova, ...versioni].slice(0, 30);
-    const { error } = await supabase.from("offerte")
-      .update({ documento: doc, documento_versioni: nuoveVersioni })
-      .eq("id", offerta.id);
+
+    // Il recap dell'offerta segue sempre l'ultima versione del documento: le
+    // sezioni attive diventano le voci, con sconti e totale allineati. Se il
+    // documento non ha prestazioni attive le voci esistenti non vengono toccate.
+    const patch = { documento: doc, documento_versioni: nuoveVersioni };
+    if (tot.righe.length > 0) {
+      patch.voci = tot.righe.map((r, i) => ({ id: `sez${i}_${stamp}`, nome: r.titolo, prezzo: r.importo, attiva: true }));
+      patch.sconto = Number(doc.sconto) || 0;
+      patch.sconto_fisso = Number(doc.scontoFisso) || null;
+      patch.importo_offerta_base = tot.totale;
+      patch.importo_totale = tot.totale;
+    }
+
+    const { error } = await supabase.from("offerte").update(patch).eq("id", offerta.id);
     setSaving(false);
     if (error) { showToast(`Errore salvataggio: ${error.message}`, "error"); return false; }
     setVersioni(nuoveVersioni);
     setVersioneAttiva(nuova.n);
     showToast(`Versione ${nuova.n} salvata`, "success");
-    onSaved?.({ ...offerta, documento: doc, documento_versioni: nuoveVersioni });
+    onSaved?.({ ...offerta, ...patch });
     return true;
   };
 
