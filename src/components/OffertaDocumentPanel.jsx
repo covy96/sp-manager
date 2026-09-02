@@ -25,6 +25,14 @@ const formattaData = (ts) => {
   } catch { return ""; }
 };
 
+// Importo di una rata: importo_fisso (se ≠0) oppure percentuale × base. Stessa
+// formula del trigger DB (database/incassato_trigger.sql).
+const importoRata = (r, base) => {
+  const f = Number(r?.importo_fisso);
+  return (f && f !== 0) ? f : (Number(base) || 0) * (Number(r?.percentuale) || 0) / 100;
+};
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
 // Campi «…» di un testo → input compilabili. Definito FUORI dal componente:
 // se stesse dentro verrebbe ricreato ad ogni render e gli input perderebbero
 // il focus dopo un solo carattere.
@@ -73,6 +81,11 @@ export default function OffertaDocumentPanel({
   const [versioneAttiva, setVersioneAttiva] = useState(() => (Array.isArray(offerta?.documento_versioni) && offerta.documento_versioni[0]?.n) || null);
   const [versioniAperte, setVersioniAperte] = useState(false);
   const [menuVer, setMenuVer] = useState(null); // n della versione col menu ⋮ aperto
+
+  // Sincronizzazione commessa quando si modifica un'offerta accettata.
+  const [syncModal, setSyncModal] = useState(null); // dati per il modal "Aggiorna commessa"
+  const [syncStep, setSyncStep]   = useState("scelta"); // 'scelta' | 'tieni'
+  const [syncSaving, setSyncSaving] = useState(false);
 
   // ── Anagrafica offerta (solo in modalità create) ────────────────────────────
   const [ana, setAna] = useState({
@@ -193,6 +206,10 @@ export default function OffertaDocumentPanel({
     setVersioneAttiva(attivaN);
     showToast(esistente ? `Versione ${attivaN} resa principale` : `Versione ${attivaN} salvata`, "success");
     onSaved?.({ ...offerta, ...patch });
+    // Offerta già accettata: propone di aggiornare la commessa collegata.
+    if (offerta.stato === "accettata" && offerta.commessa_id) {
+      await checkCommessaSync(tot.totale);
+    }
     return true;
   };
 
@@ -216,6 +233,92 @@ export default function OffertaDocumentPanel({
     setVersioneAttiva(v.n);
     setVersioniAperte(false);
     showToast(`Versione ${v.n} caricata — premi Salva per renderla principale`, "success");
+  };
+
+  // Righe rata dal documento (Opzione C → una per %, A/B → unica 100%).
+  const buildRateRows = (commessaId, pagamento) => {
+    const opz = pagamento?.opzioni || [];
+    if (opz.includes("C") && Array.isArray(pagamento?.rateC) && pagamento.rateC.length > 0) {
+      return pagamento.rateC.map((r, i) => ({
+        commessa_id: commessaId, studio: offerta.studio, numero_rata: i + 1,
+        label: (r.descrizione || "").trim() || `Rata ${i + 1}`,
+        percentuale: Number(r.percentuale) || 0, importo_fisso: null, pagato: false,
+      }));
+    }
+    if (opz.includes("A") || opz.includes("B")) {
+      const label = opz.includes("A") ? "Saldo alla presentazione" : "Saldo all'accettazione";
+      return [{ commessa_id: commessaId, studio: offerta.studio, numero_rata: 1, label, percentuale: 100, importo_fisso: null, pagato: false }];
+    }
+    return [];
+  };
+
+  // Dopo aver salvato un'offerta accettata: se il totale cambia, propone di
+  // aggiornare la commessa e ricalibrare le rate.
+  const checkCommessaSync = async (newTotal) => {
+    const { data: comm } = await supabase.from("commesse").select("id, importo_offerta_base").eq("id", offerta.commessa_id).single();
+    if (!comm) return;
+    const oldBase = Number(comm.importo_offerta_base) || 0;
+    if (Math.abs(round2(newTotal) - round2(oldBase)) < 0.005) return; // nessuna differenza
+    const { data: rate } = await supabase.from("suddivisione_pagamenti").select("*").eq("commessa_id", comm.id).is("deleted_at", null).order("numero_rata", { ascending: true });
+    const rateAll = rate || [];
+    const pagate = rateAll.filter(r => r.pagato);
+    const nonPagate = rateAll.filter(r => !r.pagato);
+    const sommaPagate = round2(pagate.reduce((s, r) => s + importoRata(r, oldBase), 0));
+    const residuo = round2(Math.max(0, newTotal - sommaPagate));
+    // Precompila le non pagate proporzionalmente alle quote attuali.
+    const pesoTot = nonPagate.reduce((s, r) => s + importoRata(r, oldBase), 0);
+    const editRate = nonPagate.map(r => {
+      const peso = pesoTot > 0 ? importoRata(r, oldBase) / pesoTot : 1 / (nonPagate.length || 1);
+      return { id: r.id, label: r.label, numero_rata: r.numero_rata, importo: round2(residuo * peso) };
+    });
+    if (editRate.length > 0) {
+      const somma = editRate.reduce((s, e) => s + e.importo, 0);
+      editRate[editRate.length - 1].importo = round2(editRate[editRate.length - 1].importo + (residuo - somma));
+    }
+    const nuovaRata = (nonPagate.length === 0 && residuo > 0) ? { importo: residuo } : null;
+    const maxN = rateAll.reduce((mx, r) => Math.max(mx, Number(r.numero_rata) || 0), 0);
+    setSyncStep("scelta");
+    setSyncModal({ commessaId: comm.id, oldBase, newTotal, pagate, nonPagate, sommaPagate, residuo, editRate, nuovaRata, maxN });
+  };
+
+  const applicaSync = async (scelta) => {
+    const sm = syncModal;
+    if (!sm) return;
+    setSyncSaving(true);
+    try {
+      if (scelta === "ricalibra") {
+        // Nessun pagamento: se il nuovo documento definisce una modalità di
+        // pagamento, rigenera le rate; altrimenti mantiene le rate (%) esistenti.
+        const nuove = buildRateRows(sm.commessaId, doc.pagamento);
+        if (nuove.length > 0) {
+          const ids = [...sm.pagate, ...sm.nonPagate].map(r => r.id);
+          if (ids.length) await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+          await supabase.from("suddivisione_pagamenti").insert(nuove);
+        }
+        await supabase.from("commesse").update({ importo_offerta_base: sm.newTotal, importo_totale: sm.newTotal }).eq("id", sm.commessaId);
+      } else if (scelta === "aggiornaTutto") {
+        await supabase.from("commesse").update({ importo_offerta_base: sm.newTotal, importo_totale: sm.newTotal }).eq("id", sm.commessaId);
+      } else if (scelta === "tieni") {
+        // Congela le pagate al loro importo attuale.
+        for (const r of sm.pagate) {
+          await supabase.from("suddivisione_pagamenti").update({ importo_fisso: importoRata(r, sm.oldBase), percentuale: null }).eq("id", r.id);
+        }
+        // Applica gli importi (editati) alle rate non pagate.
+        for (const e of sm.editRate) {
+          await supabase.from("suddivisione_pagamenti").update({ importo_fisso: round2(e.importo), percentuale: null }).eq("id", e.id);
+        }
+        // Eventuale nuova rata col saldo rimanente.
+        if (sm.nuovaRata && round2(sm.nuovaRata.importo) > 0) {
+          await supabase.from("suddivisione_pagamenti").insert({ commessa_id: sm.commessaId, studio: offerta.studio, numero_rata: sm.maxN + 1, label: "Saldo rimanente", percentuale: null, importo_fisso: round2(sm.nuovaRata.importo), pagato: false });
+        }
+        await supabase.from("commesse").update({ importo_offerta_base: sm.newTotal, importo_totale: sm.newTotal }).eq("id", sm.commessaId);
+      }
+      showToast("Commessa aggiornata", "success");
+    } catch (e) {
+      showToast("Errore aggiornamento commessa: " + (e?.message || e), "error");
+    }
+    setSyncSaving(false);
+    setSyncModal(null);
   };
 
   const generaPdf = async () => {
@@ -266,6 +369,7 @@ export default function OffertaDocumentPanel({
   );
 
   return (
+    <>
     <div className="asm-modal-bg" style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div className="asm-modal-content" style={{
         width: "100%", maxWidth: 860, maxHeight: "92vh", display: "flex", flexDirection: "column",
@@ -647,5 +751,90 @@ export default function OffertaDocumentPanel({
         </div>
       </div>
     </div>
+
+    {/* Modal: aggiorna la commessa collegata dopo modifica offerta accettata */}
+    {syncModal && (
+      <div className="asm-modal-bg" style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div className="asm-modal-content" style={{ width: "100%", maxWidth: 520, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, boxShadow: T.shadowLg, borderRadius: T.radiusLg, padding: 26, maxHeight: "90vh", overflowY: "auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Aggiorna commessa</div>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>Il totale dell'offerta è cambiato.</div>
+            </div>
+            <button onClick={() => setSyncModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20 }}>×</button>
+          </div>
+
+          <div style={{ display: "flex", gap: 16, margin: "14px 0", padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
+            <div>
+              <div style={{ ...labelSt, marginBottom: 3 }}>Totale attuale</div>
+              <div style={{ ...mono, fontSize: 14, color: T.muted }}>{euro(syncModal.oldBase)}</div>
+            </div>
+            <div style={{ borderLeft: `0.5px solid ${T.border}`, paddingLeft: 16 }}>
+              <div style={{ ...labelSt, marginBottom: 3 }}>Nuovo totale</div>
+              <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: T.navy }}>{euro(syncModal.newTotal)}</div>
+            </div>
+          </div>
+
+          {syncModal.pagate.length === 0 ? (
+            <>
+              <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.6, marginBottom: 16 }}>
+                Nessuna rata risulta pagata: le rate della commessa verranno ricalibrate in base alla nuova versione del documento.
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                <button onClick={() => setSyncModal(null)} style={btn(false)}>Annulla</button>
+                <button onClick={() => applicaSync("ricalibra")} disabled={syncSaving} style={btn(true, { opacity: syncSaving ? 0.6 : 1 })}>{syncSaving ? "Aggiorno…" : "Aggiorna commessa"}</button>
+              </div>
+            </>
+          ) : syncStep === "scelta" ? (
+            <>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, marginBottom: 10 }}>Ci sono {syncModal.pagate.length} rate già pagate ({euro(syncModal.sommaPagate)}). Come procedo?</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button onClick={() => applicaSync("aggiornaTutto")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "14px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, cursor: "pointer" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>Aggiorna tutto alla nuova versione</div>
+                  <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 4, lineHeight: 1.5 }}>Tutte le rate (comprese le pagate) vengono ricalcolate sul nuovo totale.</div>
+                </button>
+                <button onClick={() => setSyncStep("tieni")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "14px", background: T.surface, border: `1px solid ${T.navy}`, borderRadius: T.radius, cursor: "pointer" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>Tieni i pagamenti e ridistribuisci il resto</div>
+                  <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 4, lineHeight: 1.5 }}>Le rate pagate restano invariate; il residuo di {euro(syncModal.residuo)} viene ripartito sulle rate successive (modificabili).</div>
+                </button>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+                <button onClick={() => setSyncModal(null)} style={btn(false)}>Annulla</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, marginBottom: 8 }}>Pagate (invariate): {euro(syncModal.sommaPagate)} · Residuo da coprire: {euro(syncModal.residuo)}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                {syncModal.editRate.map((e, i) => (
+                  <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: T.ink }}>{e.label || `Rata ${e.numero_rata}`}</span>
+                    <input type="number" value={e.importo} onChange={ev => setSyncModal(s => ({ ...s, editRate: s.editRate.map((x, j) => j === i ? { ...x, importo: ev.target.value } : x) }))} style={{ ...inputSt, width: 120, textAlign: "right" }} />
+                    <span style={{ ...mono, fontSize: 11, color: T.muted }}>€</span>
+                  </div>
+                ))}
+                {syncModal.nuovaRata && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: T.navy }}>Saldo rimanente (nuova rata)</span>
+                    <input type="number" value={syncModal.nuovaRata.importo} onChange={ev => setSyncModal(s => ({ ...s, nuovaRata: { importo: ev.target.value } }))} style={{ ...inputSt, width: 120, textAlign: "right" }} />
+                    <span style={{ ...mono, fontSize: 11, color: T.muted }}>€</span>
+                  </div>
+                )}
+              </div>
+              {(() => {
+                const somma = round2(syncModal.editRate.reduce((s, e) => s + (Number(e.importo) || 0), 0) + (syncModal.nuovaRata ? Number(syncModal.nuovaRata.importo) || 0 : 0));
+                const ok = Math.abs(somma - syncModal.residuo) < 0.005;
+                return <div style={{ ...mono, fontSize: 10, color: ok ? T.green : T.red, marginBottom: 12 }}>Somma rate successive: {euro(somma)} {ok ? "= residuo ✓" : `(residuo ${euro(syncModal.residuo)})`}</div>;
+              })()}
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                <button onClick={() => setSyncStep("scelta")} style={btn(false)}>← Indietro</button>
+                <button onClick={() => applicaSync("tieni")} disabled={syncSaving} style={btn(true, { opacity: syncSaving ? 0.6 : 1 })}>{syncSaving ? "Aggiorno…" : "Conferma"}</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
