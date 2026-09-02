@@ -3,7 +3,7 @@
 // default, calcolo dei totali e helper di formattazione.
 // Condiviso da OffertaDocumentPanel, offertaPdf e offertaDocx.
 // ─────────────────────────────────────────────────────────────────────────────
-import { SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, estraiCampi, lettera, RATE_C_DEFAULT } from "./offertaTemplate";
+import { estraiCampi, lettera, DEFAULT_TEMPLATE } from "./offertaTemplate";
 
 // ── Formattazione ────────────────────────────────────────────────────────────
 export const euro = (v) =>
@@ -74,31 +74,32 @@ function campiVuoti(testo) {
   return out;
 }
 
-export function documentoDefault(offerta = {}) {
+export function documentoDefault(offerta = {}, tpl = DEFAULT_TEMPLATE) {
+  const { SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, RATE_C_DEFAULT, DEFAULTS } = tpl;
   const sezioni = {};
   SEZIONI.forEach(s => {
     const voci = {};
     s.gruppi.forEach(g => g.voci.forEach(v => {
-      voci[v.id] = { attiva: true, prezzo: "", campi: campiVuoti(v.testo) };
+      voci[v.id] = { attiva: true, prezzo: v.prezzoDefault != null ? v.prezzoDefault : "", campi: campiVuoti(v.testo) };
     }));
-    sezioni[s.id] = { attiva: false, prezzo: "", voci };
+    sezioni[s.id] = { attiva: DEFAULTS.sezioniAttive.includes(s.id), prezzo: s.prezzoDefault != null ? s.prezzoDefault : "", voci };
   });
 
   const blocchi = {};
-  BLOCCHI_FISSI.forEach(b => { blocchi[b.id] = true; });
+  BLOCCHI_FISSI.forEach(b => { blocchi[b.id] = DEFAULTS.blocchiAttivi.includes(b.id); });
 
   return {
-    copertina: true,
-    firma: true,
-    luogo: "Milano",
+    copertina: DEFAULTS.copertina,
+    firma: DEFAULTS.firma,
+    luogo: DEFAULTS.luogo,
     data: new Date().toISOString().slice(0, 10),
     destinatario: { nome: offerta.cliente || "", indirizzo: "", sede: "", cf: "", piva: "" },
     oggettoIncarico: "",
     necessita: "della sua attività",
-    inquadramento: { attivo: false, campi: campiVuoti(INQUADRAMENTO.testo) },
+    inquadramento: { attivo: !!DEFAULTS.inquadramentoAttivo, campi: campiVuoti(INQUADRAMENTO.testo) },
     sezioni,
     blocchi,
-    pagamento: { opzioni: [], testoLibero: "", rateC: RATE_C_DEFAULT.map(r => ({ ...r })) },
+    pagamento: { opzioni: [...(DEFAULTS.opzioniPagamento || [])], testoLibero: "", rateC: RATE_C_DEFAULT.map(r => ({ ...r })) },
     sconto: Number(offerta.sconto) || 0,
     scontoFisso: Number(offerta.sconto_fisso) || 0,
   };
@@ -106,8 +107,8 @@ export function documentoDefault(offerta = {}) {
 
 // Fonde la configurazione salvata con quella di default, così l'aggiunta di
 // nuove voci al template non rompe le offerte già create.
-export function normalizzaDocumento(salvato, offerta = {}) {
-  const base = documentoDefault(offerta);
+export function normalizzaDocumento(salvato, offerta = {}, tpl = DEFAULT_TEMPLATE) {
+  const base = documentoDefault(offerta, tpl);
   if (!salvato || typeof salvato !== "object") return base;
 
   const out = { ...base, ...salvato };
@@ -138,8 +139,8 @@ export function normalizzaDocumento(salvato, offerta = {}) {
 }
 
 // ── Calcoli ──────────────────────────────────────────────────────────────────
-export function sezioniAttive(doc) {
-  return SEZIONI.filter(s => doc.sezioni?.[s.id]?.attiva).map((s, i) => ({ ...s, lettera: lettera(i) }));
+export function sezioniAttive(doc, tpl = DEFAULT_TEMPLATE) {
+  return tpl.SEZIONI.filter(s => doc.sezioni?.[s.id]?.attiva).map((s, i) => ({ ...s, lettera: lettera(i) }));
 }
 
 // Quantità di una voce a prezzo unitario ("cad."): intero estratto dal primo
@@ -173,8 +174,8 @@ export function importoSezione(s, doc) {
   return Number(cfg.prezzo) || 0;
 }
 
-export function calcolaTotali(doc) {
-  const attive = sezioniAttive(doc);
+export function calcolaTotali(doc, tpl = DEFAULT_TEMPLATE) {
+  const attive = sezioniAttive(doc, tpl);
   const righe = attive.map(s => ({
     lettera: s.lettera,
     titolo: s.titoloTabella,

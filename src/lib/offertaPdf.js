@@ -9,7 +9,7 @@ import { registerGroteskaFonts } from "../assets/fonts/groteskaFonts";
 import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pdfCommon";
 import {
-  SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO, PAGAMENTO_CHIUSURA,
+  resolveTemplate, PAGAMENTO_CHIUSURA,
   TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, testoRateC,
 } from "./offertaTemplate";
 import {
@@ -26,6 +26,8 @@ const MAX_Y = H - FOOTER_H - 8;
 export async function generaOffertaPdf({ offerta, studio, documento, modo = "salva" }) {
   const s = studio || {};
   const cfg = documento;
+  const tpl = resolveTemplate(studio);
+  const { BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO } = tpl;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const { setF, footerFont, footerFontStyle } = buildFontSetter(pdf, s);
 
@@ -213,7 +215,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     paragrafo(compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spaceAfter: 6 });
   }
 
-  const attive = sezioniAttive(cfg);
+  const attive = sezioniAttive(cfg, tpl);
 
   attive.forEach((sez) => {
     ensure(30);   // il titolo non resta orfano in fondo alla pagina
@@ -266,7 +268,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   }
 
   // ── COMPENSI E ONERI (su nuovo foglio) ─────────────────────────────────────
-  const tot = calcolaTotali(cfg);
+  const tot = calcolaTotali(cfg, tpl);
   nuovaPagina();
   titoloCentrato(TESTI.compensiTitolo, { spaceBefore: 10, spaceAfter: 8 });
 

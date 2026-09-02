@@ -346,3 +346,90 @@ export const TESTI = {
 
 // Lettera dell'indice: 0 → A, 1 → B, …
 export const lettera = (i) => String.fromCharCode(65 + i);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Template risolto per studio: applica gli override salvati in
+// studio.offerta_template al default hardcoded qui sopra e ritorna la struttura
+// completa usata da modello, pannello e generatori. Gli override contengono solo
+// diff/aggiunte, così i default nuovi continuano a propagarsi.
+// ─────────────────────────────────────────────────────────────────────────────
+const _clone = (x) => JSON.parse(JSON.stringify(x));
+const BLOCCHI_IDS_DEFAULT = BLOCCHI_FISSI.map(b => b.id);
+
+export const DEFAULTS_BASE = {
+  copertina: true,
+  firma: true,
+  luogo: "Milano",
+  inquadramentoAttivo: false,
+  opzioniPagamento: [],
+  sezioniAttive: [],
+  blocchiAttivi: BLOCCHI_IDS_DEFAULT,
+};
+
+export function resolveTemplate(studio) {
+  const ov = (studio && typeof studio.offerta_template === "object" && studio.offerta_template) || {};
+  const ovSez = ov.sezioni || {};
+  const ovBloc = ov.blocchi || {};
+
+  // Sezioni: override testo/label + prezzoDefault, filtro voci nascoste, vociExtra in coda
+  const SEZ = SEZIONI.map(s => {
+    const o = ovSez[s.id] || {};
+    const oVoci = o.voci || {};
+    const gruppi = s.gruppi.map(g => ({
+      label: g.label,
+      voci: g.voci
+        .filter(v => !oVoci[v.id]?.nascosta)
+        .map(v => {
+          const vo = oVoci[v.id] || {};
+          return {
+            ...v,
+            testo: (vo.testo != null && vo.testo !== "") ? vo.testo : v.testo,
+            prezzoDefault: vo.prezzoDefault != null ? vo.prezzoDefault : v.prezzoDefault,
+          };
+        }),
+    }));
+    const extra = Array.isArray(o.vociExtra) ? o.vociExtra.filter(v => v && v.id && v.testo) : [];
+    if (extra.length > 0) {
+      gruppi.push({
+        label: null,
+        voci: extra.map(v => ({
+          id: v.id,
+          testo: v.testo,
+          prezzo: v.prezzo !== false,
+          prezzoLabel: v.prezzoLabel || undefined,
+          prezzoDefault: v.prezzoDefault != null ? v.prezzoDefault : undefined,
+        })),
+      });
+    }
+    return { ...s, prezzoDefault: o.prezzoDefault != null ? o.prezzoDefault : undefined, gruppi };
+  });
+
+  // Blocchi fissi: override titolo/paragrafi/elenco
+  const BLOC = BLOCCHI_FISSI.map(b => {
+    const o = ovBloc[b.id] || {};
+    return {
+      ...b,
+      titolo: (o.titolo != null && o.titolo !== "") ? o.titolo : b.titolo,
+      paragrafi: Array.isArray(o.paragrafi) ? o.paragrafi : b.paragrafi,
+      elenco: Array.isArray(o.elenco) ? o.elenco : b.elenco,
+    };
+  });
+
+  const INQ = { ...INQUADRAMENTO, testo: (ov.inquadramento?.testo != null && ov.inquadramento.testo !== "") ? ov.inquadramento.testo : INQUADRAMENTO.testo };
+
+  const rateC = Array.isArray(ov.pagamento?.rateCDefault) && ov.pagamento.rateCDefault.length
+    ? _clone(ov.pagamento.rateCDefault)
+    : _clone(RATE_C_DEFAULT);
+
+  const MOD = MODALITA_PAGAMENTO.map(o => o.rate ? { ...o, testo: testoRateC(rateC) } : { ...o });
+
+  const DEFAULTS = { ...DEFAULTS_BASE, ...(ov.defaults || {}) };
+  if (!Array.isArray(DEFAULTS.blocchiAttivi)) DEFAULTS.blocchiAttivi = BLOCCHI_IDS_DEFAULT;
+  if (!Array.isArray(DEFAULTS.sezioniAttive)) DEFAULTS.sezioniAttive = [];
+  if (!Array.isArray(DEFAULTS.opzioniPagamento)) DEFAULTS.opzioniPagamento = [];
+
+  return { SEZIONI: SEZ, BLOCCHI_FISSI: BLOC, INQUADRAMENTO: INQ, MODALITA_PAGAMENTO: MOD, RATE_C_DEFAULT: rateC, DEFAULTS };
+}
+
+// Template di default (nessuno studio) — fallback per le funzioni del modello.
+export const DEFAULT_TEMPLATE = resolveTemplate(null);

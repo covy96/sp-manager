@@ -5,8 +5,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useEscKey } from "../hooks/useEscKey";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import {
-  SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO,
-  estraiCampi, compilaTesto,
+  resolveTemplate, estraiCampi, compilaTesto,
 } from "../lib/offertaTemplate";
 import {
   normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
@@ -60,7 +59,11 @@ export default function OffertaDocumentPanel({
   useEscKey(onClose, true);
   useBodyScrollLock(true);
 
-  const [doc, setDoc]         = useState(() => normalizzaDocumento(offerta?.documento, offerta));
+  // Template del documento risolto per lo studio (default + override salvati).
+  const tpl = useMemo(() => resolveTemplate(studio), [studio]);
+  const { SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO } = tpl;
+
+  const [doc, setDoc]         = useState(() => normalizzaDocumento(offerta?.documento, offerta, tpl));
   const [saving, setSaving]   = useState(false);
   const [busy, setBusy]       = useState("");
   const [aperte, setAperte]   = useState({});
@@ -81,13 +84,13 @@ export default function OffertaDocumentPanel({
   const [createError, setCreateError] = useState("");
 
   useEffect(() => {
-    setDoc(normalizzaDocumento(offerta?.documento, offerta));
+    setDoc(normalizzaDocumento(offerta?.documento, offerta, tpl));
     const vs = Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : [];
     setVersioni(vs);
     setVersioneAttiva(vs[0]?.n || null);
   }, [offerta?.id]);
 
-  const tot = useMemo(() => calcolaTotali(doc), [doc]);
+  const tot = useMemo(() => calcolaTotali(doc, tpl), [doc, tpl]);
 
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
   const offGen = isCreate ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta } : offerta;
@@ -181,7 +184,7 @@ export default function OffertaDocumentPanel({
   };
 
   const caricaVersione = (v) => {
-    setDoc(normalizzaDocumento(v.doc, offerta));
+    setDoc(normalizzaDocumento(v.doc, offerta, tpl));
     setVersioneAttiva(v.n);
     setVersioniAperte(false);
     showToast(`Versione ${v.n} caricata — salvando ne creerai una nuova`, "success");

@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import {
-  SEZIONI, BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO, PAGAMENTO_CHIUSURA,
+  resolveTemplate, PAGAMENTO_CHIUSURA,
   TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, testoRateC,
 } from "./offertaTemplate";
 import {
@@ -53,7 +53,9 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   const s = studio || {};
   const cfg = documento;
-  const tot = calcolaTotali(cfg);
+  const tpl = resolveTemplate(studio);
+  const { BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO } = tpl;
+  const tot = calcolaTotali(cfg, tpl);
 
   const groteska = GROTESKA_VARIANTS.find(g => g.key === (s.report_footer_font || ""));
   const fontFooter = groteska ? "Groteska Book" : FONT_BODY;
@@ -252,7 +254,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     body.push(P(compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spacing: 240 }));
   }
 
-  sezioniAttive(cfg).forEach((sez) => {
+  sezioniAttive(cfg, tpl).forEach((sez) => {
     body.push(P(`(${sez.lettera}) ${sez.titolo}`, { size: 21, bold: true, underline: true, spacing: 120, spacingBefore: 200 }));
 
     vociAttive(sez, cfg).forEach((gruppo) => {
