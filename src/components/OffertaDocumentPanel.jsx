@@ -72,6 +72,7 @@ export default function OffertaDocumentPanel({
   const [versioni, setVersioni] = useState(() => Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : []);
   const [versioneAttiva, setVersioneAttiva] = useState(() => (Array.isArray(offerta?.documento_versioni) && offerta.documento_versioni[0]?.n) || null);
   const [versioniAperte, setVersioniAperte] = useState(false);
+  const [menuVer, setMenuVer] = useState(null); // n della versione col menu ⋮ aperto
 
   // ── Anagrafica offerta (solo in modalità create) ────────────────────────────
   const [ana, setAna] = useState({
@@ -193,6 +194,21 @@ export default function OffertaDocumentPanel({
     showToast(esistente ? `Versione ${attivaN} resa principale` : `Versione ${attivaN} salvata`, "success");
     onSaved?.({ ...offerta, ...patch });
     return true;
+  };
+
+  const eliminaVersione = async (v) => {
+    setMenuVer(null);
+    if (!window.confirm(`Eliminare la Versione ${v.n}? L'operazione non è reversibile.`)) return;
+    const nuove = versioni.filter(x => x.n !== v.n);
+    const { error } = await supabase.from("offerte").update({ documento_versioni: nuove }).eq("id", offerta.id);
+    if (error) { showToast("Errore eliminazione: " + error.message, "error"); return; }
+    setVersioni(nuove);
+    // Ricalcola la versione attiva rispetto al documento corrente.
+    const docStr = JSON.stringify(doc);
+    const match = nuove.find(x => JSON.stringify(normalizzaDocumento(x.doc, offerta, tpl)) === docStr);
+    setVersioneAttiva(match?.n ?? null);
+    showToast(`Versione ${v.n} eliminata`, "success");
+    onSaved?.({ ...offerta, documento_versioni: nuove });
   };
 
   const caricaVersione = (v) => {
@@ -335,7 +351,7 @@ export default function OffertaDocumentPanel({
                   {versioni.map(v => {
                     const totV = calcolaTotali(normalizzaDocumento(v.doc, offerta, tpl), tpl).totale;
                     return (
-                    <div key={v.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
+                    <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>Versione {v.n}</span>
                       <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)}</span>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>{euro(totV)}</span>
@@ -343,6 +359,16 @@ export default function OffertaDocumentPanel({
                         style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>
                         Carica
                       </button>
+                      <button type="button" onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni"
+                        style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 16, lineHeight: 1, padding: "2px 4px", flexShrink: 0 }}>⋮</button>
+                      {menuVer === v.n && (
+                        <div style={{ position: "absolute", right: 6, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, boxShadow: T.shadowMd, overflow: "hidden", minWidth: 150 }}>
+                          <button type="button" onClick={() => eliminaVersione(v)}
+                            style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, ...mono, fontSize: 11, padding: "9px 12px" }}>
+                            Elimina versione
+                          </button>
+                        </div>
+                      )}
                     </div>
                     );
                   })}
