@@ -10,3 +10,8 @@
 --   pagamento: { opzioni: ['A'], testoLibero: '' }
 -- }
 ALTER TABLE offerte ADD COLUMN IF NOT EXISTS documento JSONB DEFAULT '{}'::jsonb;
+
+-- Storico versioni del documento: ogni salvataggio aggiunge uno snapshot.
+-- Struttura: [ { n: 1, ts: '2026-01-01T10:00:00.000Z', doc: { ...documento } }, … ]
+-- (ordine dal più recente al più vecchio)
+ALTER TABLE offerte ADD COLUMN IF NOT EXISTS documento_versioni JSONB DEFAULT '[]'::jsonb;

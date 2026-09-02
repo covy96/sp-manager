@@ -19,6 +19,13 @@ const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 // Testo senza i marcatori **…**, per l'anteprima nel pannello
 const pulisci = (t) => String(t).replace(/\*\*/g, "");
 
+// Data/ora leggibile per l'etichetta delle versioni.
+const formattaData = (ts) => {
+  try {
+    return new Date(ts).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch { return ""; }
+};
+
 // Campi «…» di un testo → input compilabili. Definito FUORI dal componente:
 // se stesse dentro verrebbe ricreato ad ogni render e gli input perderebbero
 // il focus dopo un solo carattere.
@@ -58,6 +65,11 @@ export default function OffertaDocumentPanel({
   const [busy, setBusy]       = useState("");
   const [aperte, setAperte]   = useState({});
 
+  // Storico versioni: ogni salvataggio aggiunge uno snapshot in cima.
+  const [versioni, setVersioni] = useState(() => Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : []);
+  const [versioneAttiva, setVersioneAttiva] = useState(() => (Array.isArray(offerta?.documento_versioni) && offerta.documento_versioni[0]?.n) || null);
+  const [versioniAperte, setVersioniAperte] = useState(false);
+
   // ── Anagrafica offerta (solo in modalità create) ────────────────────────────
   const [ana, setAna] = useState({
     numero_offerta: "", data_offerta: new Date().toISOString().slice(0, 10),
@@ -68,7 +80,12 @@ export default function OffertaDocumentPanel({
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [createError, setCreateError] = useState("");
 
-  useEffect(() => { setDoc(normalizzaDocumento(offerta?.documento, offerta)); }, [offerta?.id]);
+  useEffect(() => {
+    setDoc(normalizzaDocumento(offerta?.documento, offerta));
+    const vs = Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : [];
+    setVersioni(vs);
+    setVersioneAttiva(vs[0]?.n || null);
+  }, [offerta?.id]);
 
   const tot = useMemo(() => calcolaTotali(doc), [doc]);
 
@@ -135,12 +152,27 @@ export default function OffertaDocumentPanel({
   // ── azioni ─────────────────────────────────────────────────────────────────
   const salva = async () => {
     setSaving(true);
-    const { error } = await supabase.from("offerte").update({ documento: doc }).eq("id", offerta.id);
+    // Ogni salvataggio registra una nuova versione in cima allo storico.
+    const nPrec = versioni.reduce((mx, v) => Math.max(mx, Number(v.n) || 0), 0);
+    const nuova = { n: nPrec + 1, ts: new Date().toISOString(), doc };
+    const nuoveVersioni = [nuova, ...versioni].slice(0, 30);
+    const { error } = await supabase.from("offerte")
+      .update({ documento: doc, documento_versioni: nuoveVersioni })
+      .eq("id", offerta.id);
     setSaving(false);
     if (error) { showToast(`Errore salvataggio: ${error.message}`, "error"); return false; }
-    showToast("Configurazione documento salvata", "success");
-    onSaved?.({ ...offerta, documento: doc });
+    setVersioni(nuoveVersioni);
+    setVersioneAttiva(nuova.n);
+    showToast(`Versione ${nuova.n} salvata`, "success");
+    onSaved?.({ ...offerta, documento: doc, documento_versioni: nuoveVersioni });
     return true;
+  };
+
+  const caricaVersione = (v) => {
+    setDoc(normalizzaDocumento(v.doc, offerta));
+    setVersioneAttiva(v.n);
+    setVersioniAperte(false);
+    showToast(`Versione ${v.n} caricata — salvando ne creerai una nuova`, "success");
   };
 
   const generaPdf = async () => {
@@ -322,6 +354,30 @@ export default function OffertaDocumentPanel({
               <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 12, lineHeight: 1.5 }}>
                 Le sezioni attive qui sotto diventano le voci dell'offerta. Compila prezzi e testi, poi premi <b>Crea offerta</b>.
               </div>
+            </div>
+          )}
+
+          {/* Storico versioni — solo in modifica */}
+          {!isCreate && versioni.length > 0 && (
+            <div style={cardSt}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setVersioniAperte(x => !x)}>
+                <div style={{ ...labelSt, marginBottom: 0 }}>Versioni salvate ({versioni.length}){versioneAttiva ? ` · in modifica: v${versioneAttiva}` : ""}</div>
+                <span style={{ color: T.muted, fontSize: 11 }}>{versioniAperte ? "▲" : "▼"}</span>
+              </div>
+              {versioniAperte && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {versioni.map(v => (
+                    <div key={v.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
+                      <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>Versione {v.n}</span>
+                      <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)}</span>
+                      <button type="button" onClick={() => caricaVersione(v)}
+                        style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>
+                        Carica
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

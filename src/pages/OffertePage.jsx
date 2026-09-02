@@ -153,7 +153,10 @@ export default function OffertePage() {
       note: payload.note||null,
       stato: 'offerta',
     };
-    if (payload.documento) insertObj.documento = payload.documento;
+    if (payload.documento) {
+      insertObj.documento = payload.documento;
+      insertObj.documento_versioni = [{ n: 1, ts: new Date().toISOString(), doc: payload.documento }];
+    }
 
     const { data:nuovaOfferta, error } = await supabase.from("offerte").insert(insertObj).select().single();
     if (error) return { error: error.message };
