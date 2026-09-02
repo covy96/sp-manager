@@ -7,6 +7,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -22,11 +23,12 @@ export default function OffertePage() {
   usePageTitleOnMount("Offerte");
   const navigate  = useNavigate();
   const showToast = useToast();
-  const { studioId } = useStudio();
+  const { studioId, studio } = useStudio();
   const { T } = useTheme();
   const isMobile = useIsMobile();
 
   const [offerte, setOfferte]           = useState([]);
+  const [docOfferta, setDocOfferta]     = useState(null);   // offerta di cui generare il documento
   const [progetti, setProgetti]         = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts]     = useState([]);
@@ -405,6 +407,9 @@ export default function OffertePage() {
 
               {/* Azioni */}
               <div onClick={e => e.stopPropagation()} style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
+                  Doc
+                </button>
                 {o.stato==='offerta' && <>
                   <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
@@ -431,6 +436,16 @@ export default function OffertePage() {
           );
         })}
       </div>
+
+      {/* Pannello documento offerta */}
+      {docOfferta && (
+        <OffertaDocumentPanel
+          offerta={docOfferta}
+          studio={studio}
+          onClose={()=>setDocOfferta(null)}
+          onSaved={(agg)=>{ setOfferte(prev=>prev.map(x=>x.id===agg.id?agg:x)); setDocOfferta(agg); }}
+        />
+      )}
 
       {/* Modal nuova offerta */}
       {modalOpen && (
