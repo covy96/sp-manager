@@ -254,16 +254,20 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     });
   });
 
-  // ── BLOCCHI DI TESTO FISSO ─────────────────────────────────────────────────
-  BLOCCHI_FISSI.filter(b => cfg.blocchi?.[b.id]).forEach((b) => {
-    titoloCentrato(b.titolo, { spaceBefore: 10, spaceAfter: 7 });
-    b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3 }));
-    if (b.elenco?.length) { y += 1; elenco(b.elenco); }
-  });
+  // ── BLOCCHI DI TESTO FISSO (su nuovo foglio) ───────────────────────────────
+  const blocchiAttivi = BLOCCHI_FISSI.filter(b => cfg.blocchi?.[b.id]);
+  if (blocchiAttivi.length > 0) {
+    nuovaPagina();
+    blocchiAttivi.forEach((b) => {
+      titoloCentrato(b.titolo, { spaceBefore: 10, spaceAfter: 7 });
+      b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3 }));
+      if (b.elenco?.length) { y += 1; elenco(b.elenco); }
+    });
+  }
 
-  // ── COMPENSI E ONERI ───────────────────────────────────────────────────────
+  // ── COMPENSI E ONERI (su nuovo foglio) ─────────────────────────────────────
   const tot = calcolaTotali(cfg);
-  ensure(60);
+  nuovaPagina();
   titoloCentrato(TESTI.compensiTitolo, { spaceBefore: 10, spaceAfter: 8 });
 
   // Font della tabella: coerente con la zona body del report

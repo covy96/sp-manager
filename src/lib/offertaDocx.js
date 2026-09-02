@@ -271,14 +271,19 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     });
   });
 
-  // Blocchi di testo fisso
-  BLOCCHI_FISSI.filter(b => cfg.blocchi?.[b.id]).forEach((b) => {
-    TitoloBlocco(b.titolo).forEach(p => body.push(p));
-    b.paragrafi.forEach(p => body.push(P(p, { spacing: 140 })));
-    (b.elenco || []).forEach(v => body.push(Bullet(v)));
-  });
+  // Blocchi di testo fisso (su nuovo foglio)
+  const blocchiAttivi = BLOCCHI_FISSI.filter(b => cfg.blocchi?.[b.id]);
+  if (blocchiAttivi.length > 0) {
+    body.push(new Paragraph({ pageBreakBefore: true, children: [] }));
+    blocchiAttivi.forEach((b) => {
+      TitoloBlocco(b.titolo).forEach(p => body.push(p));
+      b.paragrafi.forEach(p => body.push(P(p, { spacing: 140 })));
+      (b.elenco || []).forEach(v => body.push(Bullet(v)));
+    });
+  }
 
-  // Compensi e oneri
+  // Compensi e oneri (su nuovo foglio)
+  body.push(new Paragraph({ pageBreakBefore: true, children: [] }));
   TitoloBlocco(TESTI.compensiTitolo).forEach(p => body.push(p));
 
   const bordoRiga = {
