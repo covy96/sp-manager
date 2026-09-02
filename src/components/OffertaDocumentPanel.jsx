@@ -19,9 +19,15 @@ const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 // Testo senza i marcatori **…**, per l'anteprima nel pannello
 const pulisci = (t) => String(t).replace(/\*\*/g, "");
 
-export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved }) {
+export default function OffertaDocumentPanel({
+  offerta, studio, onClose, onSaved,
+  mode = "edit",
+  progetti = [], globalContacts = [], serviceTemplates = [], teamMembers = [],
+  onCreate,
+}) {
   const { T } = useTheme();
   const showToast = useToast();
+  const isCreate = mode === "create";
   useEscKey(onClose, true);
   useBodyScrollLock(true);
 
@@ -30,9 +36,39 @@ export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved
   const [busy, setBusy]       = useState("");
   const [aperte, setAperte]   = useState({});
 
+  // ── Anagrafica offerta (solo in modalità create) ────────────────────────────
+  const [ana, setAna] = useState({
+    numero_offerta: "", data_offerta: new Date().toISOString().slice(0, 10),
+    nome_offerta: "", cliente: "", project_id: "", note: "",
+    creaProgetto: false, nuovoProgettoNome: "", nuovoProgettoIndirizzo: "",
+    nuovoProgettoServizi: [], nuovoProgettoMembri: [],
+  });
+  const [clientSuggestions, setClientSuggestions] = useState([]);
+  const [createError, setCreateError] = useState("");
+
   useEffect(() => { setDoc(normalizzaDocumento(offerta?.documento, offerta)); }, [offerta?.id]);
 
   const tot = useMemo(() => calcolaTotali(doc), [doc]);
+
+  // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
+  const offGen = isCreate ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta } : offerta;
+
+  // Cliente → committente: rispecchia il valore, ma non sovrascrive un
+  // committente già modificato a mano.
+  const onClienteChange = (val) => {
+    setDoc(d => ({
+      ...d,
+      destinatario: {
+        ...d.destinatario,
+        nome: (!d.destinatario.nome || d.destinatario.nome === ana.cliente) ? val : d.destinatario.nome,
+      },
+    }));
+    setAna(p => ({ ...p, cliente: val }));
+    const q = val.trim().toLowerCase();
+    setClientSuggestions(q.length >= 2
+      ? globalContacts.filter(c => (c.full_name || "").toLowerCase().includes(q)).slice(0, 8)
+      : []);
+  };
 
   // ── stili ──────────────────────────────────────────────────────────────────
   const inputSt = {
@@ -84,16 +120,50 @@ export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved
 
   const generaPdf = async () => {
     setBusy("pdf");
-    try { await generaOffertaPdf({ offerta, studio, documento: doc }); }
+    try { await generaOffertaPdf({ offerta: offGen, studio, documento: doc }); }
     catch (e) { showToast(`Errore PDF: ${e.message}`, "error"); }
     setBusy("");
   };
 
   const generaWord = async () => {
     setBusy("docx");
-    try { await generaOffertaDocx({ offerta, studio, documento: doc }); }
+    try { await generaOffertaDocx({ offerta: offGen, studio, documento: doc }); }
     catch (e) { showToast(`Errore Word: ${e.message}`, "error"); }
     setBusy("");
+  };
+
+  // Crea una nuova offerta a partire dal documento: le sezioni attive diventano
+  // le voci dell'offerta (una voce per sezione) e la config documento è salvata.
+  const crea = async () => {
+    if (!ana.nome_offerta.trim() || !ana.cliente.trim()) {
+      setCreateError("Compila nome offerta e cliente");
+      return;
+    }
+    setCreateError("");
+    setSaving(true);
+    const stamp = Date.now();
+    const voci = tot.righe.map((r, i) => ({
+      id: `sez${i}_${stamp}`, nome: r.titolo, prezzo: r.importo, attiva: true,
+    }));
+    await onCreate?.({
+      numero_offerta: ana.numero_offerta,
+      nome_offerta: ana.nome_offerta,
+      cliente: ana.cliente,
+      project_id: ana.project_id,
+      data_offerta: ana.data_offerta,
+      note: ana.note,
+      voci,
+      sconto: doc.sconto,
+      sconto_fisso: doc.scontoFisso,
+      documento: doc,
+      creaProgetto: ana.creaProgetto,
+      nuovoProgettoNome: ana.nuovoProgettoNome,
+      nuovoProgettoIndirizzo: ana.nuovoProgettoIndirizzo,
+      nuovoProgettoServizi: ana.nuovoProgettoServizi,
+      nuovoProgettoMembri: ana.nuovoProgettoMembri,
+    });
+    setSaving(false);
+    // onCreate gestisce la chiusura in caso di successo.
   };
 
   // ── render helper: campi «…» di un testo ───────────────────────────────────
@@ -131,9 +201,11 @@ export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved
         {/* Testata */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 26px 14px", borderBottom: `0.5px solid ${T.border}` }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 3 }}>Documento offerta</div>
+            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 3 }}>{isCreate ? "Nuova offerta" : "Documento offerta"}</div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {offerta?.numero_offerta} — {offerta?.nome_offerta}
+              {isCreate
+                ? (ana.nome_offerta || "Crea offerta dal documento")
+                : `${offerta?.numero_offerta} — ${offerta?.nome_offerta}`}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
@@ -141,6 +213,112 @@ export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved
 
         {/* Corpo scrollabile */}
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 26px" }}>
+
+          {/* Anagrafica offerta — solo in creazione */}
+          {isCreate && (
+            <div style={{ ...cardSt, border: `1px solid ${T.navy}` }}>
+              <div style={{ ...labelSt, marginBottom: 12, color: T.navy }}>Dati offerta</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={labelSt}>N° Offerta</div>
+                  <input value={ana.numero_offerta} onChange={e => setAna(p => ({ ...p, numero_offerta: e.target.value }))} placeholder="OFF.001" style={inputSt} />
+                </div>
+                <div>
+                  <div style={labelSt}>Data offerta</div>
+                  <input type="date" value={ana.data_offerta} onChange={e => setAna(p => ({ ...p, data_offerta: e.target.value }))} style={inputSt} />
+                </div>
+                <div style={{ gridColumn: "span 2" }}>
+                  <div style={labelSt}>Nome offerta *</div>
+                  <input value={ana.nome_offerta} onChange={e => setAna(p => ({ ...p, nome_offerta: e.target.value }))} autoFocus placeholder="Es. Ristrutturazione appartamento" style={inputSt} />
+                </div>
+                <div style={{ gridColumn: "span 2", position: "relative" }}>
+                  <div style={labelSt}>Cliente *</div>
+                  <input value={ana.cliente} autoComplete="off" style={inputSt}
+                    onChange={e => onClienteChange(e.target.value)}
+                    onBlur={() => setTimeout(() => setClientSuggestions([]), 150)} />
+                  {clientSuggestions.length > 0 && (
+                    <div style={{ position: "absolute", left: 0, right: 0, top: "100%", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, zIndex: 50, maxHeight: 200, overflowY: "auto" }}>
+                      {clientSuggestions.map(c => (
+                        <button key={c.id} type="button" onMouseDown={() => { onClienteChange(c.full_name); setClientSuggestions([]); }}
+                          style={{ display: "block", width: "100%", padding: "9px 12px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>
+                          {c.full_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{ gridColumn: "span 2" }}>
+                  <div style={labelSt}>Progetto</div>
+                  <select value={ana.project_id} onChange={e => setAna(p => ({ ...p, project_id: e.target.value }))} style={{ ...inputSt, cursor: "pointer" }}>
+                    <option value="">— Nessun progetto —</option>
+                    {progetti.map(p => <option key={p.id} value={p.id}>{p.name} — {p.client}</option>)}
+                  </select>
+                </div>
+                <div style={{ gridColumn: "span 2", display: "flex", alignItems: "center", gap: 10 }}>
+                  <Check checked={ana.creaProgetto} onChange={() => setAna(p => ({ ...p, creaProgetto: !p.creaProgetto, project_id: "" }))} />
+                  <label style={{ ...mono, fontSize: 11, color: T.ink, cursor: "pointer" }} onClick={() => setAna(p => ({ ...p, creaProgetto: !p.creaProgetto, project_id: "" }))}>
+                    Crea nuovo progetto per questa offerta
+                  </label>
+                </div>
+                {ana.creaProgetto && (
+                  <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 10, padding: 14, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
+                    <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Nuovo progetto</div>
+                    <div>
+                      <div style={labelSt}>Nome progetto *</div>
+                      <input value={ana.nuovoProgettoNome} onChange={e => setAna(p => ({ ...p, nuovoProgettoNome: e.target.value }))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt} />
+                    </div>
+                    <div>
+                      <div style={labelSt}>Indirizzo</div>
+                      <input value={ana.nuovoProgettoIndirizzo} onChange={e => setAna(p => ({ ...p, nuovoProgettoIndirizzo: e.target.value }))} placeholder="Via Roma 1, Milano" style={inputSt} />
+                    </div>
+                    {serviceTemplates.length > 0 && (
+                      <div>
+                        <div style={labelSt}>Servizi</div>
+                        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: "8px 12px", maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                          {serviceTemplates.map(s => {
+                            const selected = ana.nuovoProgettoServizi.includes(s.service_name);
+                            return (
+                              <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0" }}>
+                                <input type="checkbox" checked={selected}
+                                  onChange={() => setAna(p => ({ ...p, nuovoProgettoServizi: selected ? p.nuovoProgettoServizi.filter(x => x !== s.service_name) : [...p.nuovoProgettoServizi, s.service_name] }))}
+                                  style={{ accentColor: T.navy, width: 13, height: 13 }} />
+                                <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {teamMembers.length > 0 && (
+                      <div>
+                        <div style={labelSt}>Assegna a</div>
+                        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: "8px 12px", maxHeight: 140, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+                          {teamMembers.map(m => {
+                            const selected = ana.nuovoProgettoMembri.includes(m.id);
+                            return (
+                              <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0" }}>
+                                <input type="checkbox" checked={selected}
+                                  onChange={() => setAna(p => ({ ...p, nuovoProgettoMembri: selected ? p.nuovoProgettoMembri.filter(x => x !== m.id) : [...p.nuovoProgettoMembri, m.id] }))}
+                                  style={{ accentColor: T.navy, width: 13, height: 13 }} />
+                                <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div style={{ gridColumn: "span 2" }}>
+                  <div style={labelSt}>Note</div>
+                  <input value={ana.note} onChange={e => setAna(p => ({ ...p, note: e.target.value }))} placeholder="Note aggiuntive…" style={inputSt} />
+                </div>
+              </div>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 12, lineHeight: 1.5 }}>
+                Le sezioni attive qui sotto diventano le voci dell'offerta. Compila prezzi e testi, poi premi <b>Crea offerta</b>.
+              </div>
+            </div>
+          )}
 
           {/* Intestazione documento */}
           <div style={cardSt}>
@@ -341,17 +519,26 @@ export default function OffertaDocumentPanel({ offerta, studio, onClose, onSaved
 
         {/* Barra azioni */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "14px 26px", borderTop: `0.5px solid ${T.border}`, flexWrap: "wrap" }}>
-          <button onClick={onClose} style={btn(false)}>Chiudi</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={onClose} style={btn(false)}>Annulla</button>
+            {createError && <span style={{ ...mono, fontSize: 11, color: T.red }}>{createError}</span>}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={salva} disabled={saving} style={btn(false, { opacity: saving ? 0.6 : 1 })}>
-              {saving ? "Salvo…" : "Salva configurazione"}
-            </button>
             <button onClick={generaWord} disabled={!!busy} style={btn(false, { borderColor: T.navy, color: T.navy, opacity: busy ? 0.6 : 1 })}>
               {busy === "docx" ? "Genero…" : "Genera Word"}
             </button>
-            <button onClick={generaPdf} disabled={!!busy} style={btn(true, { opacity: busy ? 0.6 : 1 })}>
+            <button onClick={generaPdf} disabled={!!busy} style={btn(false, { borderColor: T.navy, color: T.navy, opacity: busy ? 0.6 : 1 })}>
               {busy === "pdf" ? "Genero…" : "Genera PDF"}
             </button>
+            {isCreate ? (
+              <button onClick={crea} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
+                {saving ? "Creo…" : "Crea offerta"}
+              </button>
+            ) : (
+              <button onClick={salva} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
+                {saving ? "Salvo…" : "Salva configurazione"}
+              </button>
+            )}
           </div>
         </div>
       </div>

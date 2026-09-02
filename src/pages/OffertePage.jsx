@@ -33,10 +33,14 @@ export default function OffertePage() {
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts]     = useState([]);
   const [vociTemplates, setVociTemplates]       = useState([]);
+  const [teamMembers, setTeamMembers]           = useState([]);
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
   const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [choiceOpen, setChoiceOpen]     = useState(false);  // popup scelta tipo creazione
+  const [docCreateOpen, setDocCreateOpen] = useState(false); // pannello documento in create
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
@@ -45,10 +49,11 @@ export default function OffertePage() {
   const [accettaId, setAccettaId]       = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
   useEscKey(() => {
+    if (choiceOpen)    { setChoiceOpen(false); return; }
     if (allineaModal)  { setAllineaModal(false); return; }
     if (accettaModal)  { setAccettaModal(false); return; }
     if (modalOpen)     { setModalOpen(false); }
-  }, allineaModal || accettaModal || modalOpen);
+  }, choiceOpen || allineaModal || accettaModal || modalOpen);
   const [offertaOriginale, setOffertaOriginale] = useState(null);
 
   const [form, setForm] = useState({
@@ -60,53 +65,56 @@ export default function OffertePage() {
 
   const loadData = async () => {
     if (!studioId) return;
-    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }, { data:voci }] = await Promise.all([
+    const [{ data:off }, { data:proj }, { data:svc }, { data:contacts }, { data:voci }, { data:members }] = await Promise.all([
       supabase.from("offerte").select("*").eq("studio",studioId).eq("archived",false).is("deleted_at",null).order("created_at",{ascending:false}),
       supabase.from("projects").select("id,name,client").eq("studio",studioId).eq("archived",false).order("name"),
       supabase.from("service_task_templates").select("*").eq("studio",studioId).order("order",{ascending:true}),
       supabase.from("global_contacts").select("id,full_name").eq("studio",studioId).order("full_name",{ascending:true}),
       supabase.from("voci_offerta_template").select("*").eq("studio",studioId).order("order",{ascending:true}),
+      supabase.from("team_members").select("id,user_name,user_email").eq("studio",studioId).order("user_name",{ascending:true}),
     ]);
     setOfferte(off??[]);
     setProgetti(proj??[]);
     setServiceTemplates(svc??[]);
     setGlobalContacts(contacts??[]);
     setVociTemplates(voci??[]);
+    setTeamMembers(members??[]);
     setLoading(false);
   };
 
   useEffect(()=>{ loadData(); },[studioId]);
 
-  const handleSave = async e => {
-    e.preventDefault();
-    const sconto = Number(form.sconto)||0;
-    const scontoFisso = Number(form.sconto_fisso)||0;
-    const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+  // Inserimento offerta condiviso: usato sia dal form rapido sia dalla
+  // creazione via documento (OffertaDocumentPanel in modalità create).
+  // Ritorna { data } in caso di successo o { error } (stringa) in caso di errore.
+  const createOfferta = async (payload) => {
+    const sconto = Number(payload.sconto)||0;
+    const scontoFisso = Number(payload.sconto_fisso)||0;
+    const lordo = (payload.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sconto > 0 ? lordo * (1 - sconto/100) : lordo;
     const importoCalcolato = Math.max(0, Math.round((dopoPerc - scontoFisso) * 100) / 100);
-    if (!form.nome_offerta.trim()||!form.cliente.trim()) {
-      setFormError('Compila tutti i campi obbligatori'); return;
-    }
-    setSaving(true); setFormError('');
 
-    let projectId = form.project_id||null;
-    let projectName = progetti.find(p=>p.id===form.project_id)?.name||null;
+    let projectId = payload.project_id||null;
+    let projectName = progetti.find(p=>p.id===payload.project_id)?.name||null;
+    let createdProjectId = null; // progetto creato contestualmente all'offerta
 
-    if (form.creaProgetto && form.nuovoProgettoNome?.trim()) {
-      const serviziScelti = form.nuovoProgettoServizi || [];
+    if (payload.creaProgetto && payload.nuovoProgettoNome?.trim()) {
+      const serviziScelti = payload.nuovoProgettoServizi || [];
       const { data:newProj, error:pErr } = await supabase.from('projects').insert({
         studio: studioId,
-        name: form.nuovoProgettoNome.trim(),
-        client: form.cliente.trim(),
-        address: form.nuovoProgettoIndirizzo||null,
+        name: payload.nuovoProgettoNome.trim(),
+        client: (payload.cliente||'').trim(),
+        address: payload.nuovoProgettoIndirizzo||null,
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
         servizi_selezionati: serviziScelti,
+        assigned_users: payload.nuovoProgettoMembri || [],
       }).select().single();
-      if (pErr) { setFormError('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
+      if (pErr) return { error: 'Errore creazione progetto: '+pErr.message };
       projectId = newProj.id;
       projectName = newProj.name;
+      createdProjectId = newProj.id;
       // Crea task predefinite per i servizi selezionati
       if (serviziScelti.length > 0) {
         const taskRows = [];
@@ -122,35 +130,65 @@ export default function OffertePage() {
     }
 
     // Aggancia alla grafia di un contatto esistente (no nuove varianti di case)
-    const _ct = form.cliente.trim();
+    const _ct = (payload.cliente||'').trim();
     const _match = globalContacts.find(c => (c.full_name||"").trim().toLowerCase() === _ct.toLowerCase());
     const clienteCanonico = _match ? _match.full_name : _ct;
 
-    const { error } = await supabase.from("offerte").insert({
+    const insertObj = {
       studio: studioId,
-      numero_offerta: form.numero_offerta||`OFF.${Date.now()}`,
-      nome_offerta: form.nome_offerta.trim(),
+      numero_offerta: payload.numero_offerta||`OFF.${Date.now()}`,
+      nome_offerta: (payload.nome_offerta||'').trim(),
       cliente: clienteCanonico,
       project_id: projectId,
       project_name: projectName,
-      data_offerta: form.data_offerta||null,
+      data_offerta: payload.data_offerta||null,
       importo_offerta_base: importoCalcolato,
-      voci: form.voci||[],
+      voci: payload.voci||[],
       sconto: sconto,
       sconto_fisso: scontoFisso||null,
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
       importo_totale: importoCalcolato,
-      note: form.note||null,
+      note: payload.note||null,
       stato: 'offerta',
-    });
-    if (error) { setFormError(error.message); setSaving(false); return; }
+    };
+    if (payload.documento) insertObj.documento = payload.documento;
+
+    const { data:nuovaOfferta, error } = await supabase.from("offerte").insert(insertObj).select().single();
+    if (error) return { error: error.message };
+    // Lega il progetto creato contestualmente all'offerta: così se l'offerta
+    // viene rifiutata il progetto si nasconde (trigger sync_progetto_offerta_rifiutata)
+    if (createdProjectId && nuovaOfferta?.id) {
+      await supabase.from('projects').update({ offerta_origine_id: nuovaOfferta.id }).eq('id', createdProjectId);
+    }
+    return { data: nuovaOfferta };
+  };
+
+  const handleSave = async e => {
+    e.preventDefault();
+    if (!form.nome_offerta.trim()||!form.cliente.trim()) {
+      setFormError('Compila tutti i campi obbligatori'); return;
+    }
+    setSaving(true); setFormError('');
+    const { error } = await createOfferta(form);
+    if (error) { setFormError(error); setSaving(false); return; }
     setModalOpen(false);
     setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', sconto_fisso:'', note:'' });
     showToast("Offerta creata", "success");
     await loadData();
     setSaving(false);
+  };
+
+  // Creazione via documento: le sezioni attive sono già state trasformate in
+  // voci dal pannello. Qui si esegue l'inserimento e si chiude.
+  const handleCreateFromDoc = async (payload) => {
+    const { error } = await createOfferta(payload);
+    if (error) { showToast('Errore: '+error, 'error'); return false; }
+    setDocCreateOpen(false);
+    showToast("Offerta creata", "success");
+    await loadData();
+    return true;
   };
 
   const openAccetta = (o) => {
@@ -193,6 +231,8 @@ export default function OffertePage() {
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
+        offerta_origine_id: accettaId,
+        assigned_users: accettaForm.nuovoProgettoMembri || [],
       }).select().single();
       if (pErr) { showToast('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
       projectId = newProj.id;
@@ -283,6 +323,15 @@ export default function OffertePage() {
   }, [offerte]);
 
   const visibili = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      return offerte.filter(o =>
+        (o.nome_offerta || "").toLowerCase().includes(q) ||
+        (o.cliente || "").toLowerCase().includes(q) ||
+        (o.numero_offerta || "").toLowerCase().includes(q) ||
+        (o.project_name || "").toLowerCase().includes(q)
+      );
+    }
     let list = filtroStato === 'tutti' ? offerte : offerte.filter(o=>o.stato===filtroStato);
     if (annoFiltro !== 0) {
       list = list.filter(o => {
@@ -291,7 +340,7 @@ export default function OffertePage() {
       });
     }
     return list;
-  }, [offerte, filtroStato, annoFiltro]);
+  }, [offerte, filtroStato, annoFiltro, searchQuery]);
 
   // KPI — filtrati per anno selezionato
   const offerteAnno = annoFiltro === 0 ? offerte : offerte.filter(o => {
@@ -322,13 +371,20 @@ export default function OffertePage() {
           <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink, marginBottom:4 }}>Offerte</div>
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          <input
+            type="text"
+            placeholder="Cerca offerta, cliente..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:200 }}
+          />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto', opacity:searchQuery?0.4:1 }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+          <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
             + Nuova offerta
           </button>
         </div>
@@ -370,8 +426,8 @@ export default function OffertePage() {
         {visibili.length === 0 ? (
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
-            <div style={{ ...mono, fontSize:11, color:T.muted }}>Nessuna offerta trovata</div>
-            <button onClick={()=>setModalOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>
+            <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
+            {!searchQuery && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
@@ -445,6 +501,53 @@ export default function OffertePage() {
           onClose={()=>setDocOfferta(null)}
           onSaved={(agg)=>{ setOfferte(prev=>prev.map(x=>x.id===agg.id?agg:x)); setDocOfferta(agg); }}
         />
+      )}
+
+      {/* Pannello documento — modalità creazione nuova offerta */}
+      {docCreateOpen && (
+        <OffertaDocumentPanel
+          mode="create"
+          studio={studio}
+          progetti={progetti}
+          globalContacts={globalContacts}
+          serviceTemplates={serviceTemplates}
+          teamMembers={teamMembers}
+          onCreate={handleCreateFromDoc}
+          onClose={()=>setDocCreateOpen(false)}
+        />
+      )}
+
+      {/* Popup scelta tipo creazione */}
+      {choiceOpen && (
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:65, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:540, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Nuova offerta</div>
+              <button onClick={()=>setChoiceOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
+            </div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:20 }}>Come vuoi procedere?</div>
+            <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12 }}>
+              {/* Opzione 1: crea dal documento */}
+              <button onClick={()=>{ setChoiceOpen(false); setDocCreateOpen(true); }} className="asm-card"
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.navy}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:22 }}>📄</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.navy }}>Crea offerta</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
+                  Compila il documento completo (sezioni, prezzi, testi). Le sezioni diventano le voci dell'offerta e puoi generare PDF/Word.
+                </div>
+              </button>
+              {/* Opzione 2: inserimento rapido */}
+              <button onClick={()=>{ setChoiceOpen(false); setModalOpen(true); }} className="asm-card"
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:22 }}>⚡</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Inserisci offerta</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
+                  Inserimento rapido: nome, cliente, voci e prezzi a mano. Come oggi.
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal nuova offerta */}
@@ -536,6 +639,27 @@ export default function OffertePage() {
                                   })}
                                   style={{ accentColor:T.navy, width:13, height:13 }}/>
                                 <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {teamMembers.length > 0 && (
+                      <div>
+                        <label style={labelSt}>Assegna a</label>
+                        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                          {teamMembers.map(m => {
+                            const selected = (form.nuovoProgettoMembri||[]).includes(m.id);
+                            return (
+                              <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                <input type="checkbox" checked={selected}
+                                  onChange={() => setForm(p => {
+                                    const list = p.nuovoProgettoMembri || [];
+                                    return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
+                                  })}
+                                  style={{ accentColor:T.navy, width:13, height:13 }}/>
+                                <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
                               </label>
                             );
                           })}
@@ -726,9 +850,32 @@ export default function OffertePage() {
                     </label>
                   </div>
                   {accettaForm.creaProgetto && (
-                    <div style={{ padding:'12px', background:T.surface2, border:`1px solid ${T.border}` }}>
-                      <label style={labelSt}>Nome progetto *</label>
-                      <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                    <div style={{ padding:'12px', background:T.surface2, border:`1px solid ${T.border}`, display:'flex', flexDirection:'column', gap:10 }}>
+                      <div>
+                        <label style={labelSt}>Nome progetto *</label>
+                        <input type="text" value={accettaForm.nuovoProgettoNome||''} onChange={e=>setAccettaForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                      </div>
+                      {teamMembers.length > 0 && (
+                        <div>
+                          <label style={labelSt}>Assegna a</label>
+                          <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:140, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                            {teamMembers.map(m => {
+                              const selected = (accettaForm.nuovoProgettoMembri||[]).includes(m.id);
+                              return (
+                                <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                  <input type="checkbox" checked={selected}
+                                    onChange={() => setAccettaForm(p => {
+                                      const list = p.nuovoProgettoMembri || [];
+                                      return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
+                                    })}
+                                    style={{ accentColor:T.navy, width:13, height:13 }}/>
+                                  <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
