@@ -72,11 +72,12 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     segmentaGrassetto(testo).map(seg => new TextRun({ text: seg.text, bold: seg.bold, ...extra }));
 
   const P = (testo, opts = {}) => {
-    const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY } = opts;
+    const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY, keepLines } = opts;
     return new Paragraph({
       alignment: align,
       spacing: { after: spacing ?? 120, ...(opts.spacingBefore ? { before: opts.spacingBefore } : {}) },
       indent,
+      ...(keepLines ? { keepLines: true } : {}),
       children: typeof testo === "string"
         ? runs(testo, { size, bold, underline: underline ? {} : undefined, color, font })
         : testo,
@@ -226,10 +227,12 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   body.push(P(TESTI.oggetto, { spacing: 240 }));
   body.push(P(`Egregio/Spettabile ${dest.nome || ""},`, { spacing: 240 }));
 
+  const _cf = (dest.cf || "").trim(), _piva = (dest.piva || "").trim();
+  const _cfPivaUguali = _cf && _piva && _cf === _piva;
   const dettagli = [
     dest.sede ? `con sede in ${dest.sede}` : null,
-    dest.cf   ? `C.F. ${dest.cf}` : null,
-    dest.piva ? `P.IVA ${dest.piva}` : null,
+    _cfPivaUguali ? `C.F. e P.IVA ${_cf}` : (_cf ? `C.F. ${_cf}` : null),
+    _cfPivaUguali ? null : (_piva ? `P.IVA ${_piva}` : null),
   ].filter(Boolean).join(", ");
   body.push(P(`circa la manifestata necessità ${cfg.necessita || ""}${dettagli ? ", " + dettagli : ""}, si inoltra nostra miglior offerta per le competenze richieste.`, { spacing: 240 }));
   body.push(P(TESTI.saluti, { spacing: 240 }));
@@ -279,7 +282,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     body.push(new Paragraph({ pageBreakBefore: true, children: [] }));
     blocchiAttivi.forEach((b) => {
       TitoloBlocco(b.titolo).forEach(p => body.push(p));
-      b.paragrafi.forEach(p => body.push(P(p, { spacing: 140 })));
+      b.paragrafi.forEach(p => body.push(P(p, { spacing: 140, keepLines: true })));
       (b.elenco || []).forEach(v => body.push(Bullet(v)));
     });
   }

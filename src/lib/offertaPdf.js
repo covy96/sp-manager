@@ -67,11 +67,14 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   // ── Primitive di testo ─────────────────────────────────────────────────────
   const paragrafo = (testo, {
     size = 9.5, weight = "book", zone = "body", color = [30, 30, 30],
-    align = "left", lineH = 5, spaceAfter = 0, maxW = CW, x = ML,
+    align = "left", lineH = 5, spaceAfter = 0, maxW = CW, x = ML, keepTogether = false,
   } = {}) => {
     if (!testo) return;
     setF(weight, zone); pdf.setFontSize(size); pdf.setTextColor(...color);
-    pdf.splitTextToSize(String(testo), maxW).forEach((line) => {
+    const lines = pdf.splitTextToSize(String(testo), maxW);
+    // Tiene il paragrafo unito: se non entra nello spazio residuo, va a pagina nuova.
+    if (keepTogether) ensure(lines.length * lineH);
+    lines.forEach((line) => {
       ensure(lineH);
       const px = align === "center" ? x + maxW / 2 : align === "right" ? x + maxW : x;
       pdf.text(line, px, y, { align });
@@ -181,10 +184,12 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   const dest = cfg.destinatario || {};
   paragrafo(`Egregio/Spettabile ${dest.nome || ""},`, { spaceAfter: 6 });
 
+  const _cf = (dest.cf || "").trim(), _piva = (dest.piva || "").trim();
+  const _cfPivaUguali = _cf && _piva && _cf === _piva;
   const dettagli = [
     dest.sede  ? `con sede in ${dest.sede}` : null,
-    dest.cf    ? `C.F. ${dest.cf}` : null,
-    dest.piva  ? `P.IVA ${dest.piva}` : null,
+    _cfPivaUguali ? `C.F. e P.IVA ${_cf}` : (_cf ? `C.F. ${_cf}` : null),
+    _cfPivaUguali ? null : (_piva ? `P.IVA ${_piva}` : null),
   ].filter(Boolean).join(", ");
   paragrafo(
     `circa la manifestata necessità ${cfg.necessita || ""}${dettagli ? ", " + dettagli : ""}, si inoltra nostra miglior offerta per le competenze richieste.`,
@@ -262,7 +267,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     nuovaPagina();
     blocchiAttivi.forEach((b) => {
       titoloCentrato(b.titolo, { spaceBefore: 10, spaceAfter: 7 });
-      b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3 }));
+      b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3, keepTogether: true }));
       if (b.elenco?.length) { y += 1; elenco(b.elenco); }
     });
   }
