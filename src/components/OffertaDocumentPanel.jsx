@@ -325,16 +325,20 @@ export default function OffertaDocumentPanel({
               </div>
               {versioniAperte && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {versioni.map(v => (
+                  {versioni.map(v => {
+                    const totV = calcolaTotali(normalizzaDocumento(v.doc, offerta, tpl), tpl).totale;
+                    return (
                     <div key={v.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>Versione {v.n}</span>
                       <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)}</span>
+                      <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>{euro(totV)}</span>
                       <button type="button" onClick={() => caricaVersione(v)}
                         style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>
                         Carica
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
