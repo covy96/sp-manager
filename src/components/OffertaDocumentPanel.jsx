@@ -159,6 +159,7 @@ export default function OffertaDocumentPanel({
     return { ...d, sezioni: { ...d.sezioni, [sid]: { ...d.sezioni[sid], voci: { ...d.sezioni[sid].voci, [vid]: { ...v, campi: { ...v.campi, [key]: val } } } } } };
   });
   const setCampoInq = (key, val) => setDoc(d => ({ ...d, inquadramento: { ...d.inquadramento, campi: { ...d.inquadramento.campi, [key]: val } } }));
+  const setInq = (patch) => setDoc(d => ({ ...d, inquadramento: { ...d.inquadramento, ...patch } }));
   const toggleBlocco = (bid) => setDoc(d => ({ ...d, blocchi: { ...d.blocchi, [bid]: !d.blocchi[bid] } }));
   const togglePagamento = (oid) => setDoc(d => {
     const cur = d.pagamento.opzioni || [];
@@ -561,10 +562,39 @@ export default function OffertaDocumentPanel({
             </label>
             {doc.inquadramento.attivo && (
               <>
-                <div style={{ fontSize: 11.5, color: T.muted, lineHeight: 1.55, marginBottom: 4 }}>
-                  {compilaTesto(INQUADRAMENTO.testo, doc.inquadramento.campi)}
+                {(doc.inquadramento.testoLibero || "").trim() ? (
+                  <textarea value={doc.inquadramento.testoLibero} onChange={e => setInq({ testoLibero: e.target.value })} rows={5}
+                    style={{ ...inputSt, resize: "vertical", fontSize: 12.5, lineHeight: 1.6 }} />
+                ) : (
+                  <div style={{ fontSize: 12.5, lineHeight: 2, color: T.ink }}>
+                    {(() => {
+                      let fi = 0;
+                      return INQUADRAMENTO.testo.split(/«([^»]*)»/).map((part, i) => {
+                        if (i % 2 === 0) return <span key={i}>{part}</span>;
+                        const key = `f${fi++}`;
+                        const val = doc.inquadramento.campi?.[key] || "";
+                        const len = String(val || part || "").length;
+                        return (
+                          <input key={i} value={val} onChange={e => setCampoInq(key, e.target.value)} placeholder={part}
+                            style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 3px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%" }} />
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+                <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 10, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                  {(doc.inquadramento.testoLibero || "").trim() ? (
+                    <>
+                      <span>Stai modificando tutto il testo liberamente.</span>
+                      <button type="button" onClick={() => setInq({ testoLibero: "" })} style={{ ...mono, fontSize: 9.5, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>← Torna ai campi guidati</button>
+                    </>
+                  ) : (
+                    <>
+                      <span>Le parti in <span style={{ color: T.red, fontWeight: 600 }}>rosso</span> sono da adattare al progetto.</span>
+                      <button type="button" onClick={() => setInq({ testoLibero: compilaTesto(INQUADRAMENTO.testo, doc.inquadramento.campi) })} style={{ ...mono, fontSize: 9.5, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>✎ Modifica tutto il testo</button>
+                    </>
+                  )}
                 </div>
-                <CampiTesto testo={INQUADRAMENTO.testo} valori={doc.inquadramento.campi} onChange={setCampoInq} inputSt={inputSt} />
               </>
             )}
           </div>

@@ -261,7 +261,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   if (cfg.inquadramento?.attivo) {
     body.push(P(INQUADRAMENTO.titolo, { size: 22, bold: true, underline: true, spacing: 120 }));
-    body.push(P(compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spacing: 240 }));
+    body.push(P((cfg.inquadramento.testoLibero || "").trim() || compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spacing: 240 }));
   }
 
   sezioniAttive(cfg, tpl).forEach((sez) => {

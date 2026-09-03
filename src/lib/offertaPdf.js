@@ -228,7 +228,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   if (cfg.inquadramento?.attivo) {
     sottolinea(INQUADRAMENTO.titolo, ML, 11);
     y += 7;
-    paragrafo(compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spaceAfter: 6 });
+    paragrafo((cfg.inquadramento.testoLibero || "").trim() || compilaTesto(INQUADRAMENTO.testo, cfg.inquadramento.campi), { spaceAfter: 6 });
   }
 
   const attive = sezioniAttive(cfg, tpl);
