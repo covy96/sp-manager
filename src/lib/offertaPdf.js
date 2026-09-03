@@ -57,7 +57,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
 
   const testataPagina = () => {
     const bottom = putLogo(W - MR, 12, LOGO_MAX_W, LOGO_MAX_H);
-    y = Math.max(bottom + 8, 28);
+    y = Math.max(bottom + 4, 20);
   };
 
   const nuovaPagina = () => { pdf.addPage(); testataPagina(); };
@@ -267,14 +267,15 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   const blocchiAttivi = BLOCCHI_FISSI.filter(b => cfg.blocchi?.[b.id]);
   if (blocchiAttivi.length > 0) {
     nuovaPagina();
-    blocchiAttivi.forEach((b) => {
+    blocchiAttivi.forEach((b, bi) => {
       // Tieni il titolo attaccato al primo paragrafo: se non entrano insieme
       // (titolo + almeno le sue righe), vai a pagina nuova prima del titolo.
       const primo = b.paragrafi?.[0] || "";
       setF("book", "body"); pdf.setFontSize(9.5);
       const primoRighe = primo ? pdf.splitTextToSize(String(primo), CW).length : 1;
-      ensure(10 + 16 + primoRighe * 5);
-      titoloCentrato(b.titolo, { spaceBefore: 10, spaceAfter: 7 });
+      const spBefore = bi === 0 ? 2 : 10; // il primo blocco resta vicino alla testata
+      ensure(spBefore + 16 + primoRighe * 5);
+      titoloCentrato(b.titolo, { spaceBefore: spBefore, spaceAfter: 7 });
       b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3, keepTogether: true }));
       if (b.elenco?.length) { y += 1; elenco(b.elenco); }
     });
@@ -283,7 +284,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   // ── COMPENSI E ONERI (su nuovo foglio) ─────────────────────────────────────
   const tot = calcolaTotali(cfg, tpl);
   nuovaPagina();
-  titoloCentrato(TESTI.compensiTitolo, { spaceBefore: 10, spaceAfter: 8 });
+  titoloCentrato(TESTI.compensiTitolo, { spaceBefore: 2, spaceAfter: 8 });
 
   // Font della tabella: coerente con la zona body del report
   setF("book"); const tblBook = pdf.getFont().fontName;
