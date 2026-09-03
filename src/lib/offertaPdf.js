@@ -154,7 +154,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
 
   // ── PAGINA DI COPERTINA ────────────────────────────────────────────────────
   if (cfg.copertina) {
-    let cy = 48;
+    let cy = 62;
     if (coverLogo) {
       const maxW = 70, maxH = 34;
       let w = maxW, h = maxW / coverLogo.ratio;
