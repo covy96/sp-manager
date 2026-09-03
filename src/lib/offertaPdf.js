@@ -65,8 +65,8 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   let y = 0;
 
   const testataPagina = () => {
-    const bottom = putLogo(W - MR, 12, LOGO_MAX_W, LOGO_MAX_H);
-    y = Math.max(bottom + 4, 20);
+    const bottom = putLogo(W - MR, 10, LOGO_MAX_W, LOGO_MAX_H);
+    y = Math.max(bottom + 3, 18);
   };
 
   const nuovaPagina = () => { pdf.addPage(); testataPagina(); };
@@ -154,7 +154,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
 
   // ── PAGINA DI COPERTINA ────────────────────────────────────────────────────
   if (cfg.copertina) {
-    let cy = 62;
+    let cy = 48;
     if (coverLogo) {
       const maxW = 70, maxH = 34;
       let w = maxW, h = maxW / coverLogo.ratio;
@@ -180,7 +180,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   }
 
   // ── LETTERA DI ACCOMPAGNAMENTO ─────────────────────────────────────────────
-  y = Math.max(y, 40);
+  y = Math.max(y, 26);
   paragrafo(`${cfg.luogo || "Milano"} lì, ${dataEstesa(cfg.data)}`, { align: "right", size: 10, weight: "book" });
   y += 6;
 
