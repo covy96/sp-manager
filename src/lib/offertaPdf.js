@@ -154,8 +154,10 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
       cy += h + 12;
     }
     const dest = cfg.destinatario || {};
+    // In copertina il nome è sempre la società del cliente (campo Cliente).
+    const coverNome = offerta?.cliente || dest.nome;
     setF("book", "header"); pdf.setFontSize(13); pdf.setTextColor(30, 30, 30);
-    if (dest.nome)      { pdf.text(dest.nome, W / 2, cy, { align: "center" }); cy += 7; }
+    if (coverNome)      { pdf.text(coverNome, W / 2, cy, { align: "center" }); cy += 7; }
     if (dest.indirizzo) { pdf.text(dest.indirizzo, W / 2, cy, { align: "center" }); cy += 7; }
     cy += 2;
     pdf.setDrawColor(30, 30, 30); pdf.setLineWidth(0.4);

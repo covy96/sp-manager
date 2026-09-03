@@ -201,7 +201,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
         children: [logoRun(60, 32)],
       }));
     }
-    if (dest.nome)      body.push(P(dest.nome,      { align: AlignmentType.CENTER, size: 26, spacing: 60 }));
+    const coverNome = offerta?.cliente || dest.nome; // in copertina sempre il Cliente
+    if (coverNome)      body.push(P(coverNome,      { align: AlignmentType.CENTER, size: 26, spacing: 60 }));
     if (dest.indirizzo) body.push(P(dest.indirizzo, { align: AlignmentType.CENTER, size: 26, spacing: 60 }));
     body.push(new Paragraph({
       spacing: { before: 120, after: 240 },

@@ -109,7 +109,7 @@ export default function OffertaDocumentPanel({
   const tot = useMemo(() => calcolaTotali(doc, tpl), [doc, tpl]);
 
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
-  const offGen = isCreate ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta } : offerta;
+  const offGen = isCreate ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta, cliente: ana.cliente } : offerta;
 
   // Cliente → committente: rispecchia il valore, ma non sovrascrive un
   // committente già modificato a mano.
