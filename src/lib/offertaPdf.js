@@ -40,6 +40,15 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
       if (dim) logo = { b64, ratio: dim.w / dim.h };
     }
   }
+  // Logo dedicato alla copertina (se impostato per lo studio); altrimenti il logo report.
+  let coverLogo = logo;
+  if (s.offerta_logo_url && s.offerta_logo_url !== s.report_logo_url) {
+    const b64c = await urlToBase64(s.offerta_logo_url, { maxPx: 900, format: "image/png" });
+    if (b64c) {
+      const dimc = await imageSize(b64c);
+      if (dimc) coverLogo = { b64: b64c, ratio: dimc.w / dimc.h };
+    }
+  }
   const logoSize = s.report_logo_size || "medium";
   const LOGO_MAX_W = logoSize === "small" ? 16 : logoSize === "large" ? 35 : 25;
   const LOGO_MAX_H = logoSize === "small" ? 10 : logoSize === "large" ? 20 : 14;
@@ -146,11 +155,11 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   // ── PAGINA DI COPERTINA ────────────────────────────────────────────────────
   if (cfg.copertina) {
     let cy = 62;
-    if (logo) {
-      const maxW = 60, maxH = 32;
-      let w = maxW, h = maxW / logo.ratio;
-      if (h > maxH) { h = maxH; w = maxH * logo.ratio; }
-      try { pdf.addImage(logo.b64, "PNG", (W - w) / 2, cy, w, h, undefined, "FAST"); } catch {}
+    if (coverLogo) {
+      const maxW = 70, maxH = 34;
+      let w = maxW, h = maxW / coverLogo.ratio;
+      if (h > maxH) { h = maxH; w = maxH * coverLogo.ratio; }
+      try { pdf.addImage(coverLogo.b64, "PNG", (W - w) / 2, cy, w, h, undefined, "FAST"); } catch {}
       cy += h + 12;
     }
     const dest = cfg.destinatario || {};

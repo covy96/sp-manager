@@ -27,11 +27,35 @@ export default function RegolazioneOffertaPage() {
   const [preset, setPreset]       = useState([]);
   const [newNome, setNewNome]     = useState("");
   const [newPrezzo, setNewPrezzo] = useState("");
+  // Logo copertina
+  const [coverLogoUrl, setCoverLogoUrl] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     setOv(studio?.offerta_template && typeof studio.offerta_template === "object"
       ? JSON.parse(JSON.stringify(studio.offerta_template)) : {});
+    setCoverLogoUrl(studio?.offerta_logo_url || "");
   }, [studio?.id]);
+
+  const handleCoverLogoUpload = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploadingLogo(true);
+    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    const path = `${studioId}/offerta-cover-logo.${ext}`;
+    const { error: upErr } = await supabase.storage.from("report-logos").upload(path, file, { upsert: true });
+    if (upErr) { showToast("Errore upload: " + upErr.message, "error"); setUploadingLogo(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from("report-logos").getPublicUrl(path);
+    const newUrl = publicUrl + "?t=" + Date.now();
+    await supabase.from("studios").update({ offerta_logo_url: newUrl }).eq("id", studioId);
+    setCoverLogoUrl(newUrl);
+    showToast("Logo copertina caricato", "success");
+    setUploadingLogo(false);
+  };
+  const removeCoverLogo = async () => {
+    await supabase.from("studios").update({ offerta_logo_url: null }).eq("id", studioId);
+    setCoverLogoUrl("");
+    showToast("Logo copertina rimosso", "success");
+  };
 
   useEffect(() => { if (studioId) loadPreset(); }, [studioId]);
   const loadPreset = async () => {
@@ -136,6 +160,26 @@ export default function RegolazioneOffertaPage() {
           Personalizza il documento d'offerta per il tuo studio: testi fissi, flag di default, prezzi
           precompilati e voci. Le modifiche valgono per le nuove offerte. Nei testi: <b>«…»</b> = campo
           da compilare, <b>**…**</b> = grassetto.
+        </div>
+      </div>
+
+      {/* ── Logo copertina ─────────────────────────────────────────────────── */}
+      <div style={cardSt}>
+        <div style={{ padding: "14px 18px" }}>
+          <div style={{ ...labelSt, marginBottom: 8 }}>Logo copertina</div>
+          <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
+            Immagine mostrata in copertina del documento d'offerta (PDF/Word). Se vuoto, si usa il logo dei report. PNG con sfondo trasparente consigliato.
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            {coverLogoUrl
+              ? <img src={coverLogoUrl} alt="logo copertina" style={{ height: 48, maxWidth: 240, objectFit: "contain", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 6, background: "#fff" }} />
+              : <div style={{ ...mono, fontSize: 10, color: T.muted, height: 48, display: "flex", alignItems: "center" }}>Nessun logo copertina</div>}
+            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, color: T.navy, padding: "8px 14px", cursor: uploadingLogo ? "default" : "pointer", background: "transparent" }}>
+              {uploadingLogo ? "Carico…" : (coverLogoUrl ? "Cambia" : "Carica logo")}
+              <input type="file" accept="image/*" onChange={handleCoverLogoUpload} disabled={uploadingLogo} style={{ display: "none" }} />
+            </label>
+            {coverLogoUrl && <button onClick={removeCoverLogo} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: T.red, cursor: "pointer" }}>Rimuovi</button>}
+          </div>
         </div>
       </div>
 

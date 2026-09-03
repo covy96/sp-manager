@@ -109,6 +109,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   // ── Immagini ──────────────────────────────────────────────────────────────
   const logo = s.report_logo_url ? await fetchImage(s.report_logo_url) : null;
+  const coverLogo = (s.offerta_logo_url && s.offerta_logo_url !== s.report_logo_url)
+    ? (await fetchImage(s.offerta_logo_url)) : logo;
   const logoSize = s.report_logo_size || "medium";
   const logoMaxW = logoSize === "small" ? 16 : logoSize === "large" ? 35 : 25;
   const logoMaxH = logoSize === "small" ? 10 : logoSize === "large" ? 20 : 14;
@@ -194,11 +196,13 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   // Copertina
   if (cfg.copertina) {
     for (let i = 0; i < 6; i++) body.push(new Paragraph({ children: [] }));
-    if (logo) {
+    if (coverLogo) {
+      let cw = 70, ch = 70 / coverLogo.ratio;
+      if (ch > 34) { ch = 34; cw = 34 * coverLogo.ratio; }
       body.push(new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 360 },
-        children: [logoRun(60, 32)],
+        children: [new ImageRun({ type: coverLogo.tipo, data: coverLogo.bytes, transformation: { width: PX(cw), height: PX(ch) } })],
       }));
     }
     const coverNome = offerta?.cliente || dest.nome; // in copertina sempre il Cliente
