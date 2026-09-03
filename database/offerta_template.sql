@@ -1,0 +1,15 @@
+-- Template del documento d'offerta, personalizzabile per studio dalla pagina
+-- "Regolazione offerta". Contiene SOLO override e aggiunte rispetto al default
+-- hardcoded (src/lib/offertaTemplate.js), così i default nuovi continuano a
+-- propagarsi. Struttura:
+-- {
+--   defaults: { copertina, firma, luogo, inquadramentoAttivo,
+--               opzioniPagamento: ['A'], sezioniAttive: [ids], blocchiAttivi: [ids] },
+--   sezioni: { <sezId>: { prezzoDefault,
+--                         voci: { <voceId>: { testo?, prezzoDefault?, nascosta? } },
+--                         vociExtra: [ { id, testo, prezzo, prezzoLabel, prezzoDefault } ] } },
+--   blocchi: { <bloccoId>: { titolo?, paragrafi?: [], elenco?: [] } },
+--   inquadramento: { testo? },
+--   pagamento: { rateCDefault: [ { percentuale, descrizione } ] }
+-- }
+ALTER TABLE studios ADD COLUMN IF NOT EXISTS offerta_template JSONB DEFAULT '{}'::jsonb;

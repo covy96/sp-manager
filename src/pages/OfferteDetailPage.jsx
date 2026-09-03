@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from "../contexts/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -21,7 +22,8 @@ export default function OfferteDetailPage() {
   const { id } = useParams();
   const showToast = useToast();
   const navigate = useNavigate();
-  const { studioId } = useStudio();
+  const location = useLocation();
+  const { studioId, studio } = useStudio();
   const { T } = useTheme();
 
   const [offerta, setOfferta]       = useState(null);
@@ -34,6 +36,7 @@ export default function OfferteDetailPage() {
   const [accettaModal, setAccettaModal] = useState(false);
   const [accettaForm, setAccettaForm]   = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
+  const [docPanel, setDocPanel]         = useState(false);
   useEscKey(() => {
     if (allineaModal)  { setAllineaModal(false); return; }
     if (accettaModal)  { setAccettaModal(false); }
@@ -77,6 +80,15 @@ export default function OfferteDetailPage() {
   };
 
   useEffect(()=>{ if(studioId) loadData(); },[id,studioId]);
+
+  // Apre automaticamente il documento se si arriva dalla commessa con "Modifica".
+  const openedDocRef = useRef(false);
+  useEffect(() => {
+    if (!openedDocRef.current && location.state?.openDoc && offerta) {
+      openedDocRef.current = true;
+      setDocPanel(true);
+    }
+  }, [location.state, offerta]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -192,6 +204,26 @@ export default function OfferteDetailPage() {
     }).select().single();
     if (error) { showToast('Errore: '+error.message); setSaving(false); return; }
 
+    // Genera la suddivisione pagamenti della commessa dalla modalità scelta nel
+    // documento: Opzione C → una rata per percentuale; Opzione A/B → rata unica 100%.
+    const pagDoc = offerta?.documento?.pagamento;
+    const opz = pagDoc?.opzioni || [];
+    let rateRows = null;
+    if (pagDoc && opz.includes('C') && Array.isArray(pagDoc.rateC) && pagDoc.rateC.length > 0) {
+      rateRows = pagDoc.rateC.map((r, i) => ({
+        commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
+        label: (r.descrizione||'').trim() || `Rata ${i+1}`,
+        percentuale: Number(r.percentuale) || 0, importo_fisso: null, pagato: false,
+      }));
+    } else if (pagDoc && (opz.includes('A') || opz.includes('B'))) {
+      const label = opz.includes('A') ? 'Saldo alla presentazione' : "Saldo all'accettazione";
+      rateRows = [{ commessa_id: commessa.id, studio: studioId, numero_rata: 1, label, percentuale: 100, importo_fisso: null, pagato: false }];
+    }
+    if (rateRows && rateRows.length > 0) {
+      const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);
+      if (rErr) showToast('Rate non generate: '+rErr.message, 'error');
+    }
+
     // Aggiorna stato offerta (e valore se richiesto)
     // Salva sempre voci e sconti aggiornati nell'offerta; importo_offerta_base solo se richiesto
     const offerUpdate = {
@@ -232,9 +264,21 @@ export default function OfferteDetailPage() {
   if (!offerta) return <div style={{ ...mono, fontSize:11, color:T.red }}>Offerta non trovata</div>;
 
   const st = STATI[offerta.stato]||STATI.offerta;
+  // Offerta "guidata dal documento": creata/gestita col configuratore. In tal
+  // caso il documento è l'unica fonte delle voci → niente Modifica classica.
+  const isDocDriven = !!(offerta?.documento && offerta.documento.sezioni);
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+      {docPanel && (
+        <OffertaDocumentPanel
+          offerta={offerta}
+          studio={studio}
+          onClose={()=>setDocPanel(false)}
+          onSaved={(agg)=>setOfferta(agg)}
+        />
+      )}
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
@@ -247,8 +291,9 @@ export default function OfferteDetailPage() {
           <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>{isDocDriven ? 'Documento / versioni' : 'Documento offerta'}</button>
           {offerta.stato==='offerta' && <>
-            {!editing && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
+            {!editing && !isDocDriven && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
             <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
             <button onClick={handleRifiuta} style={{ border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, background:'transparent', color:T.red, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Rifiuta</button>
           </>}

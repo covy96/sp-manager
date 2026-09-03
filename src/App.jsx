@@ -101,6 +101,7 @@ const ProfiloPage = lazyWithRetry(() => import("./pages/settings/ProfiloPage"));
 const AspettoPage = lazyWithRetry(() => import("./pages/settings/AspettoPage"));
 const GestioneServiziPage = lazyWithRetry(() => import("./pages/settings/GestioneServiziPage"));
 const VociOffertaPage = lazyWithRetry(() => import("./pages/settings/VociOffertaPage"));
+const RegolazioneOffertaPage = lazyWithRetry(() => import("./pages/settings/RegolazioneOffertaPage"));
 const SettingsClientiPage = lazyWithRetry(() => import("./pages/settings/ClientiPage"));
 const SettingsProgettiArchiviatiPage = lazyWithRetry(() => import("./pages/settings/ProgettiArchiviatiPage"));
 const SettingsCommesseArchiviatePage = lazyWithRetry(() => import("./pages/settings/CommesseArchiviatePage"));
@@ -450,13 +451,15 @@ export default function App({ session }) {
         }
       />
       <Route
-        path="/impostazioni/voci-offerta"
+        path="/impostazioni/regolazione-offerta"
         element={
           <ProtectedLayout session={session}>
-            <OnboardingGuard session={session}><VociOffertaPage /></OnboardingGuard>
+            <OnboardingGuard session={session}><RegolazioneOffertaPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
+      {/* La vecchia pagina "Voci Offerta" è confluita in "Regolazione offerta" */}
+      <Route path="/impostazioni/voci-offerta" element={<Navigate to="/impostazioni/regolazione-offerta" replace />} />
       <Route
         path="/impostazioni/clienti"
         element={

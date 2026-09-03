@@ -242,6 +242,7 @@ export default function CommessaDetailPage() {
 
   const [altreCommesse, setAltreCommesse] = useState([]);
   const [vociOfferta, setVociOfferta]     = useState(null); // { voci, sconto, sconto_fisso } dall'offerta collegata
+  const [offertaCollegataId, setOffertaCollegataId] = useState(null); // id offerta collegata (per "Modifica")
   const [showVociPopup, setShowVociPopup] = useState(false);
   const [altreCommesseData, setAltreCommesseData] = useState({});
 
@@ -320,9 +321,10 @@ export default function CommessaDetailPage() {
 
     // Carica voci dall'offerta collegata (per breakdown importo base)
     const { data: offCollegata } = await supabase
-      .from('offerte').select('voci, sconto, sconto_fisso')
+      .from('offerte').select('id, voci, sconto, sconto_fisso')
       .eq('commessa_id', commessaId).maybeSingle();
     setVociOfferta(offCollegata ?? null);
+    setOffertaCollegataId(offCollegata?.id ?? null);
     const { data: tm } = await supabase.from('team_members').select('id, user_name, user_email').eq('studio', studioId).eq('active', true);
     setTeamMembers(tm ?? []);
 
@@ -717,7 +719,7 @@ export default function CommessaDetailPage() {
               <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `1px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 190, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
-                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
+                  <button onClick={() => { setMenuOpen(false); if (offertaCollegataId) navigate(`/offerte/${offertaCollegataId}`, { state: { openDoc: true } }); else openEdit(); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
                   <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; setMenuOpen(false); await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Archivia commessa</button>
                   <button onClick={()=>{ setMenuOpen(false); setDeleteCommessaModal(true); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>Elimina commessa</button>
                 </div>
@@ -1477,7 +1479,17 @@ export default function CommessaDetailPage() {
                     setDeletingSaving(true);
                     const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
                     if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
-                    await supabase.from('offerte').update({ deleted_at: new Date().toISOString() }).eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null);
+                    // Elimina l'offerta collegata via RPC (soft-delete → cestino), che
+                    // bypassa RLS. Uso il link diretto commessa_id; fallback su numero_offerta.
+                    let offId = offertaCollegataId;
+                    if (!offId) {
+                      const { data: off } = await supabase.from('offerte').select('id').eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null).maybeSingle();
+                      offId = off?.id || null;
+                    }
+                    if (offId) {
+                      const { error: oErr } = await supabase.rpc('elimina_offerta', { p_offerta_id: offId });
+                      if (oErr) { showToast('Commessa eliminata, ma offerta non eliminata: ' + oErr.message, 'error'); }
+                    }
                     navigate('/commesse');
                   }}
                   style={{ flex: 1, padding: '9px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}

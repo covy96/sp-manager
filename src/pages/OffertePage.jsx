@@ -7,6 +7,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -22,11 +23,12 @@ export default function OffertePage() {
   usePageTitleOnMount("Offerte");
   const navigate  = useNavigate();
   const showToast = useToast();
-  const { studioId } = useStudio();
+  const { studioId, studio } = useStudio();
   const { T } = useTheme();
   const isMobile = useIsMobile();
 
   const [offerte, setOfferte]           = useState([]);
+  const [docOfferta, setDocOfferta]     = useState(null);   // offerta di cui generare il documento
   const [progetti, setProgetti]         = useState([]);
   const [serviceTemplates, setServiceTemplates] = useState([]);
   const [globalContacts, setGlobalContacts]     = useState([]);
@@ -37,6 +39,13 @@ export default function OffertePage() {
   const [filtroStato, setFiltroStato] = useState('tutti');
   const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
+  const [choiceOpen, setChoiceOpen]     = useState(false);  // popup scelta tipo creazione
+  const [docCreateOpen, setDocCreateOpen] = useState(false); // pannello documento in create
+  // Popup "collega progetto" post-creazione offerta
+  const [linkProg, setLinkProg]   = useState(null);   // { offerta, cliente, indirizzo, nomeDefault }
+  const [linkMode, setLinkMode]   = useState(null);   // 'esistente' | 'nuovo' | null
+  const [linkForm, setLinkForm]   = useState({ project_id: "", nome: "", indirizzo: "", servizi: [], membri: [] });
+  const [linkSaving, setLinkSaving] = useState(false);
   const [modalOpen, setModalOpen]     = useState(false);
   const [saving, setSaving]           = useState(false);
   const [formError, setFormError]     = useState('');
@@ -45,10 +54,12 @@ export default function OffertePage() {
   const [accettaId, setAccettaId]       = useState(null);
   const [allineaModal, setAllineaModal] = useState(false);
   useEscKey(() => {
+    if (linkProg)      { setLinkProg(null); return; }
+    if (choiceOpen)    { setChoiceOpen(false); return; }
     if (allineaModal)  { setAllineaModal(false); return; }
     if (accettaModal)  { setAccettaModal(false); return; }
     if (modalOpen)     { setModalOpen(false); }
-  }, allineaModal || accettaModal || modalOpen);
+  }, linkProg || choiceOpen || allineaModal || accettaModal || modalOpen);
   const [offertaOriginale, setOffertaOriginale] = useState(null);
 
   const [form, setForm] = useState({
@@ -79,36 +90,34 @@ export default function OffertePage() {
 
   useEffect(()=>{ loadData(); },[studioId]);
 
-  const handleSave = async e => {
-    e.preventDefault();
-    const sconto = Number(form.sconto)||0;
-    const scontoFisso = Number(form.sconto_fisso)||0;
-    const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
+  // Inserimento offerta condiviso: usato sia dal form rapido sia dalla
+  // creazione via documento (OffertaDocumentPanel in modalità create).
+  // Ritorna { data } in caso di successo o { error } (stringa) in caso di errore.
+  const createOfferta = async (payload) => {
+    const sconto = Number(payload.sconto)||0;
+    const scontoFisso = Number(payload.sconto_fisso)||0;
+    const lordo = (payload.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sconto > 0 ? lordo * (1 - sconto/100) : lordo;
     const importoCalcolato = Math.max(0, Math.round((dopoPerc - scontoFisso) * 100) / 100);
-    if (!form.nome_offerta.trim()||!form.cliente.trim()) {
-      setFormError('Compila tutti i campi obbligatori'); return;
-    }
-    setSaving(true); setFormError('');
 
-    let projectId = form.project_id||null;
-    let projectName = progetti.find(p=>p.id===form.project_id)?.name||null;
+    let projectId = payload.project_id||null;
+    let projectName = progetti.find(p=>p.id===payload.project_id)?.name||null;
     let createdProjectId = null; // progetto creato contestualmente all'offerta
 
-    if (form.creaProgetto && form.nuovoProgettoNome?.trim()) {
-      const serviziScelti = form.nuovoProgettoServizi || [];
+    if (payload.creaProgetto && payload.nuovoProgettoNome?.trim()) {
+      const serviziScelti = payload.nuovoProgettoServizi || [];
       const { data:newProj, error:pErr } = await supabase.from('projects').insert({
         studio: studioId,
-        name: form.nuovoProgettoNome.trim(),
-        client: form.cliente.trim(),
-        address: form.nuovoProgettoIndirizzo||null,
+        name: payload.nuovoProgettoNome.trim(),
+        client: (payload.cliente||'').trim(),
+        address: payload.nuovoProgettoIndirizzo||null,
         status: 'in_corso',
         gantt_enabled: false,
         archived: false,
         servizi_selezionati: serviziScelti,
-        assigned_users: form.nuovoProgettoMembri || [],
+        assigned_users: payload.nuovoProgettoMembri || [],
       }).select().single();
-      if (pErr) { setFormError('Errore creazione progetto: '+pErr.message); setSaving(false); return; }
+      if (pErr) return { error: 'Errore creazione progetto: '+pErr.message };
       projectId = newProj.id;
       projectName = newProj.name;
       createdProjectId = newProj.id;
@@ -127,40 +136,109 @@ export default function OffertePage() {
     }
 
     // Aggancia alla grafia di un contatto esistente (no nuove varianti di case)
-    const _ct = form.cliente.trim();
+    const _ct = (payload.cliente||'').trim();
     const _match = globalContacts.find(c => (c.full_name||"").trim().toLowerCase() === _ct.toLowerCase());
     const clienteCanonico = _match ? _match.full_name : _ct;
 
-    const { data:nuovaOfferta, error } = await supabase.from("offerte").insert({
+    const insertObj = {
       studio: studioId,
-      numero_offerta: form.numero_offerta||`OFF.${Date.now()}`,
-      nome_offerta: form.nome_offerta.trim(),
+      numero_offerta: payload.numero_offerta||`OFF.${Date.now()}`,
+      nome_offerta: (payload.nome_offerta||'').trim(),
       cliente: clienteCanonico,
       project_id: projectId,
       project_name: projectName,
-      data_offerta: form.data_offerta||null,
+      data_offerta: payload.data_offerta||null,
       importo_offerta_base: importoCalcolato,
-      voci: form.voci||[],
+      voci: payload.voci||[],
       sconto: sconto,
       sconto_fisso: scontoFisso||null,
       perc_iva1: 60, perc_contributo1: 5,
       perc_iva2: 40, perc_contributo2: 4,
       perc_iva_finale: 22,
       importo_totale: importoCalcolato,
-      note: form.note||null,
+      note: payload.note||null,
       stato: 'offerta',
-    }).select('id').single();
-    if (error) { setFormError(error.message); setSaving(false); return; }
+    };
+    if (payload.documento) {
+      insertObj.documento = payload.documento;
+      insertObj.documento_versioni = [{ n: 1, ts: new Date().toISOString(), doc: payload.documento }];
+    }
+
+    const { data:nuovaOfferta, error } = await supabase.from("offerte").insert(insertObj).select().single();
+    if (error) return { error: error.message };
     // Lega il progetto creato contestualmente all'offerta: così se l'offerta
     // viene rifiutata il progetto si nasconde (trigger sync_progetto_offerta_rifiutata)
     if (createdProjectId && nuovaOfferta?.id) {
       await supabase.from('projects').update({ offerta_origine_id: nuovaOfferta.id }).eq('id', createdProjectId);
     }
+    return { data: nuovaOfferta };
+  };
+
+  const handleSave = async e => {
+    e.preventDefault();
+    if (!form.nome_offerta.trim()||!form.cliente.trim()) {
+      setFormError('Compila tutti i campi obbligatori'); return;
+    }
+    setSaving(true); setFormError('');
+    const { error } = await createOfferta(form);
+    if (error) { setFormError(error); setSaving(false); return; }
     setModalOpen(false);
     setForm({ numero_offerta:'', nome_offerta:'', cliente:'', project_id:'', data_offerta:'', voci:[], sconto:'', sconto_fisso:'', note:'' });
     showToast("Offerta creata", "success");
     await loadData();
     setSaving(false);
+  };
+
+  // Creazione via documento: le sezioni attive sono già state trasformate in
+  // voci dal pannello. Qui si esegue l'inserimento e si chiude.
+  const handleCreateFromDoc = async (payload) => {
+    const { data, error } = await createOfferta(payload);
+    if (error) { showToast('Errore: '+error, 'error'); return false; }
+    setDocCreateOpen(false);
+    showToast("Offerta creata", "success");
+    await loadData();
+    // Popup successivo: collega/crea un progetto, precompilato dai dati offerta.
+    const indirizzo = payload.documento?.destinatario?.indirizzo || "";
+    setLinkMode(null);
+    setLinkForm({ project_id: "", nome: payload.nome_offerta || "", indirizzo, servizi: [], membri: [] });
+    setLinkProg({ offerta: data, cliente: payload.cliente || "", indirizzo, nomeDefault: payload.nome_offerta || "" });
+    return true;
+  };
+
+  const collegaProgetto = async () => {
+    if (!linkProg || !linkMode) { setLinkProg(null); return; }
+    const offId = linkProg.offerta?.id;
+    if (!offId) { setLinkProg(null); return; }
+    setLinkSaving(true);
+    if (linkMode === 'esistente') {
+      if (!linkForm.project_id) { showToast('Seleziona un progetto', 'error'); setLinkSaving(false); return; }
+      const proj = progetti.find(p => p.id === linkForm.project_id);
+      await supabase.from('offerte').update({ project_id: proj.id, project_name: proj.name }).eq('id', offId);
+    } else if (linkMode === 'nuovo') {
+      if (!linkForm.nome.trim()) { showToast('Nome progetto obbligatorio', 'error'); setLinkSaving(false); return; }
+      const { data: newProj, error: pErr } = await supabase.from('projects').insert({
+        studio: studioId, name: linkForm.nome.trim(), client: (linkProg.cliente || '').trim() || null,
+        address: linkForm.indirizzo || null, status: 'in_corso', gantt_enabled: false, archived: false,
+        servizi_selezionati: linkForm.servizi || [], assigned_users: linkForm.membri || [],
+        offerta_origine_id: offId,
+      }).select().single();
+      if (pErr) { showToast('Errore progetto: ' + pErr.message, 'error'); setLinkSaving(false); return; }
+      const serviziScelti = linkForm.servizi || [];
+      if (serviziScelti.length > 0) {
+        const taskRows = [];
+        for (const serviceName of serviziScelti) {
+          const template = serviceTemplates.find(t => t.service_name === serviceName);
+          const taskList = Array.isArray(template?.task_templates) ? template.task_templates : [];
+          for (const taskName of taskList) taskRows.push({ project_id: newProj.id, title: taskName, categoria: serviceName, status: 'todo', studio: studioId });
+        }
+        if (taskRows.length > 0) await supabase.from('tasks').insert(taskRows);
+      }
+      await supabase.from('offerte').update({ project_id: newProj.id, project_name: newProj.name }).eq('id', offId);
+    }
+    setLinkSaving(false);
+    setLinkProg(null);
+    showToast('Progetto collegato', 'success');
+    await loadData();
   };
 
   const openAccetta = (o) => {
@@ -231,6 +309,36 @@ export default function OffertePage() {
       stato_pagamento: 'non_iniziato',
     }).select().single();
     if (cErr) { showToast('Errore: '+cErr.message); setSaving(false); return; }
+
+    // Genera automaticamente la suddivisione pagamenti della commessa in base
+    // alla modalità di pagamento scelta nel documento dell'offerta:
+    //  - Opzione C: una rata per ogni percentuale personalizzata;
+    //  - Opzione A/B (saldo in un'unica tranche): un'unica rata al 100%.
+    // Le rate sono a percentuale, quindi si scalano sul totale della commessa.
+    const pagDoc = offertaOriginale?.documento?.pagamento;
+    const opz = pagDoc?.opzioni || [];
+    let rateRows = null;
+    if (pagDoc && opz.includes('C') && Array.isArray(pagDoc.rateC) && pagDoc.rateC.length > 0) {
+      rateRows = pagDoc.rateC.map((r, i) => ({
+        commessa_id: commessa.id,
+        studio: studioId,
+        numero_rata: i + 1,
+        label: (r.descrizione||'').trim() || `Rata ${i+1}`,
+        percentuale: Number(r.percentuale) || 0,
+        importo_fisso: null,
+        pagato: false,
+      }));
+    } else if (pagDoc && (opz.includes('A') || opz.includes('B'))) {
+      const label = opz.includes('A') ? 'Saldo alla presentazione' : "Saldo all'accettazione";
+      rateRows = [{
+        commessa_id: commessa.id, studio: studioId, numero_rata: 1,
+        label, percentuale: 100, importo_fisso: null, pagato: false,
+      }];
+    }
+    if (rateRows && rateRows.length > 0) {
+      const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);
+      if (rErr) showToast('Rate non generate: '+rErr.message, 'error');
+    }
 
     const offerUpdate = {
       stato: 'accettata', commessa_id: commessa.id,
@@ -356,7 +464,7 @@ export default function OffertePage() {
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          <button onClick={()=>setModalOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+          <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
             + Nuova offerta
           </button>
         </div>
@@ -399,7 +507,7 @@ export default function OffertePage() {
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
-            {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
+            {!searchQuery && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
@@ -435,6 +543,9 @@ export default function OffertePage() {
 
               {/* Azioni */}
               <div onClick={e => e.stopPropagation()} style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
+                  Doc
+                </button>
                 {o.stato==='offerta' && <>
                   <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
@@ -461,6 +572,160 @@ export default function OffertePage() {
           );
         })}
       </div>
+
+      {/* Pannello documento offerta */}
+      {docOfferta && (
+        <OffertaDocumentPanel
+          offerta={docOfferta}
+          studio={studio}
+          onClose={()=>setDocOfferta(null)}
+          onSaved={(agg)=>{ setOfferte(prev=>prev.map(x=>x.id===agg.id?agg:x)); setDocOfferta(agg); }}
+        />
+      )}
+
+      {/* Pannello documento — modalità creazione nuova offerta */}
+      {docCreateOpen && (
+        <OffertaDocumentPanel
+          mode="create"
+          studio={studio}
+          progetti={progetti}
+          globalContacts={globalContacts}
+          serviceTemplates={serviceTemplates}
+          teamMembers={teamMembers}
+          onCreate={handleCreateFromDoc}
+          onClose={()=>setDocCreateOpen(false)}
+        />
+      )}
+
+      {/* Popup scelta tipo creazione */}
+      {choiceOpen && (
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:65, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:540, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Nuova offerta</div>
+              <button onClick={()=>setChoiceOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
+            </div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:20 }}>Come vuoi procedere?</div>
+            <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12 }}>
+              {/* Opzione 1: crea dal documento */}
+              <button onClick={()=>{ setChoiceOpen(false); setDocCreateOpen(true); }} className="asm-card"
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.navy}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:22 }}>📄</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.navy }}>Crea offerta</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
+                  Compila il documento completo (sezioni, prezzi, testi). Le sezioni diventano le voci dell'offerta e puoi generare PDF/Word.
+                </div>
+              </button>
+              {/* Opzione 2: inserimento rapido */}
+              <button onClick={()=>{ setChoiceOpen(false); setModalOpen(true); }} className="asm-card"
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:22 }}>⚡</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Inserisci offerta</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
+                  Inserimento rapido: nome, cliente, voci e prezzi a mano. Come oggi.
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup collega progetto (dopo creazione offerta da documento) */}
+      {linkProg && (
+        <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:66, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div className="asm-modal-content" style={{ width:'100%', maxWidth:520, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
+              <div>
+                <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Collega un progetto</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>Offerta creata. Vuoi collegarla a un progetto?</div>
+              </div>
+              <button onClick={()=>setLinkProg(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, margin:'16px 0' }}>
+              <button onClick={()=>setLinkMode('esistente')} className="asm-card"
+                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='esistente'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:20 }}>🔗</div>
+                <div style={{ fontSize:13, fontWeight:600, color:linkMode==='esistente'?T.navy:T.ink, marginTop:6 }}>Progetto esistente</div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Collega a un progetto già presente.</div>
+              </button>
+              <button onClick={()=>setLinkMode('nuovo')} className="asm-card"
+                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='nuovo'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                <div style={{ fontSize:20 }}>✨</div>
+                <div style={{ fontSize:13, fontWeight:600, color:linkMode==='nuovo'?T.navy:T.ink, marginTop:6 }}>Nuovo progetto</div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Crea un progetto precompilato dai dati offerta.</div>
+              </button>
+            </div>
+
+            {linkMode==='esistente' && (
+              <div style={{ marginBottom:8 }}>
+                <label style={labelSt}>Progetto</label>
+                <select value={linkForm.project_id} onChange={e=>setLinkForm(p=>({...p,project_id:e.target.value}))} style={{...inputSt,cursor:'pointer'}}>
+                  <option value="">— Seleziona —</option>
+                  {progetti.map(p=><option key={p.id} value={p.id}>{p.name} — {p.client}</option>)}
+                </select>
+              </div>
+            )}
+
+            {linkMode==='nuovo' && (
+              <div style={{ display:'flex', flexDirection:'column', gap:12, padding:'14px', background:T.surface2, border:`1px solid ${T.border}`, borderRadius:T.radiusSm }}>
+                <div>
+                  <label style={labelSt}>Nome progetto *</label>
+                  <input type="text" value={linkForm.nome} onChange={e=>setLinkForm(p=>({...p,nome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
+                </div>
+                <div>
+                  <label style={labelSt}>Indirizzo</label>
+                  <input type="text" value={linkForm.indirizzo} onChange={e=>setLinkForm(p=>({...p,indirizzo:e.target.value}))} placeholder="Via Roma 1, Milano" style={inputSt}/>
+                </div>
+                <div style={{ ...mono, fontSize:9.5, color:T.muted }}>Cliente: <b>{linkProg.cliente || '—'}</b></div>
+                {serviceTemplates.length > 0 && (
+                  <div>
+                    <label style={labelSt}>Servizi</label>
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:130, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                      {serviceTemplates.map(s => {
+                        const selected = (linkForm.servizi||[]).includes(s.service_name);
+                        return (
+                          <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                            <input type="checkbox" checked={selected}
+                              onChange={() => setLinkForm(p => ({ ...p, servizi: selected ? p.servizi.filter(x=>x!==s.service_name) : [...(p.servizi||[]), s.service_name] }))}
+                              style={{ accentColor:T.navy, width:13, height:13 }}/>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {teamMembers.length > 0 && (
+                  <div>
+                    <label style={labelSt}>Assegna a</label>
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, padding:'8px 12px', maxHeight:130, overflowY:'auto', display:'flex', flexDirection:'column', gap:4 }}>
+                      {teamMembers.map(m => {
+                        const selected = (linkForm.membri||[]).includes(m.id);
+                        return (
+                          <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                            <input type="checkbox" checked={selected}
+                              onChange={() => setLinkForm(p => ({ ...p, membri: selected ? p.membri.filter(x=>x!==m.id) : [...(p.membri||[]), m.id] }))}
+                              style={{ accentColor:T.navy, width:13, height:13 }}/>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Salta</button>
+              <button onClick={collegaProgetto} disabled={!linkMode || linkSaving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:(!linkMode||linkSaving)?'not-allowed':'pointer', opacity:(!linkMode||linkSaving)?0.5:1 }}>
+                {linkSaving ? 'Collego…' : 'Collega progetto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal nuova offerta */}
       {modalOpen && (
