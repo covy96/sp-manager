@@ -375,7 +375,7 @@ export function resolveTemplate(studio) {
   const SEZ = SEZIONI.map(s => {
     const o = ovSez[s.id] || {};
     const oVoci = o.voci || {};
-    const gruppi = s.gruppi.map(g => ({
+    let gruppi = s.gruppi.map(g => ({
       label: g.label,
       voci: g.voci
         .filter(v => !oVoci[v.id]?.nascosta)
@@ -384,6 +384,7 @@ export function resolveTemplate(studio) {
           return {
             ...v,
             testo: (vo.testo != null && vo.testo !== "") ? vo.testo : v.testo,
+            prezzoLabel: vo.prezzoLabel !== undefined ? (vo.prezzoLabel || undefined) : v.prezzoLabel,
             prezzoDefault: vo.prezzoDefault != null ? vo.prezzoDefault : v.prezzoDefault,
           };
         }),
@@ -400,6 +401,17 @@ export function resolveTemplate(studio) {
           prezzoDefault: v.prezzoDefault != null ? v.prezzoDefault : undefined,
         })),
       });
+    }
+    // Riordino personalizzato delle voci della sezione (flat).
+    const ordine = Array.isArray(o.ordine) ? o.ordine : null;
+    if (ordine) {
+      const flat = gruppi.flatMap(g => g.voci);
+      const byId = Object.fromEntries(flat.map(v => [v.id, v]));
+      const ordered = [];
+      const added = new Set();
+      ordine.forEach(id => { if (byId[id]) { ordered.push(byId[id]); added.add(id); } });
+      flat.forEach(v => { if (!added.has(v.id)) ordered.push(v); });
+      gruppi = [{ label: null, voci: ordered }];
     }
     return { ...s, prezzoDefault: o.prezzoDefault != null ? o.prezzoDefault : undefined, gruppi };
   });

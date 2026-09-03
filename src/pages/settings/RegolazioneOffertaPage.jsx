@@ -75,6 +75,14 @@ export default function RegolazioneOffertaPage() {
     const sez = o.sezioni?.[sid] || {};
     return { ...o, sezioni: { ...(o.sezioni || {}), [sid]: { ...sez, vociExtra: (sez.vociExtra || []).filter((_, i) => i !== idx) } } };
   });
+  // Riordina le voci di una sezione salvando l'ordine completo degli id.
+  const moveVoce = (sid, ord, pos, dir) => {
+    const j = pos + dir;
+    if (j < 0 || j >= ord.length) return;
+    const arr = [...ord];
+    [arr[pos], arr[j]] = [arr[j], arr[pos]];
+    setSez(sid, { ordine: arr });
+  };
 
   const getBloc = (id, field, def) => { const b = ov.blocchi?.[id] || {}; return b[field] !== undefined ? b[field] : def; };
   const setBloc = (id, patch) => setOv(o => ({ ...o, blocchi: { ...(o.blocchi || {}), [id]: { ...(o.blocchi?.[id] || {}), ...patch } } }));
@@ -204,7 +212,7 @@ export default function RegolazioneOffertaPage() {
 
       {/* ── 2. Sezioni e voci (prezzi + testi + aggiungi) ──────────────────── */}
       <div style={cardSt}>
-        <Header id="voci" titolo="Sezioni e voci" sub="Prezzi precompilati, testi delle voci, aggiungi/nascondi voci" />
+        <Header id="voci" titolo="Sezioni e voci" sub="Riordina (▲▼), testi, prezzo fisso o a cadauno, aggiungi/nascondi voci" />
         {open.voci && (
           <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
             {SEZIONI.map(sez => {
@@ -228,51 +236,90 @@ export default function RegolazioneOffertaPage() {
                           <input type="number" value={so.prezzoDefault ?? ""} onChange={e => setSez(sez.id, { prezzoDefault: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder="€" style={{ ...inputSt, width: 120, textAlign: "right" }} />
                         </div>
                       )}
-                      {/* voci del template */}
-                      {sez.gruppi.flatMap(g => g.voci).map(v => {
-                        const vo = so.voci?.[v.id] || {};
-                        const nascosta = !!vo.nascosta;
-                        const testo = vo.testo != null && vo.testo !== "" ? vo.testo : v.testo;
-                        return (
-                          <div key={v.id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, opacity: nascosta ? 0.5 : 1 }}>
-                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-                              <textarea value={testo} onChange={e => setVoceOv(sez.id, v.id, { testo: e.target.value })} rows={2} style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
-                              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
-                                  <Check checked={nascosta} onChange={() => setVoceOv(sez.id, v.id, { nascosta: !nascosta })} /> Nascondi
-                                </label>
-                                {vo.testo != null && vo.testo !== v.testo && (
-                                  <button onClick={() => setVoceOv(sez.id, v.id, { testo: undefined })} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>ripristina testo</button>
+                      {/* voci in ordine, riordinabili */}
+                      {(() => {
+                        const defVoci = sez.gruppi.flatMap(g => g.voci);
+                        const extraVoci = so.vociExtra || [];
+                        const defMap = Object.fromEntries(defVoci.map(v => [v.id, v]));
+                        const extraIdxMap = Object.fromEntries(extraVoci.map((v, i) => [v.id, i]));
+                        const allIds = [...defVoci.map(v => v.id), ...extraVoci.map(v => v.id)];
+                        const ord = Array.isArray(so.ordine) && so.ordine.length
+                          ? [...so.ordine.filter(id => allIds.includes(id)), ...allIds.filter(id => !so.ordine.includes(id))]
+                          : allIds;
+                        const conPrezzoSez = sez.modoPrezzo === "voci";
+                        return ord.map((id, pos) => {
+                          const isExtra = id in extraIdxMap;
+                          const arrows = (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0, paddingTop: 2 }}>
+                              <button onClick={() => moveVoce(sez.id, ord, pos, -1)} disabled={pos === 0} style={{ background: "none", border: "none", cursor: pos === 0 ? "default" : "pointer", color: pos === 0 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 3px" }}>▲</button>
+                              <button onClick={() => moveVoce(sez.id, ord, pos, 1)} disabled={pos === ord.length - 1} style={{ background: "none", border: "none", cursor: pos === ord.length - 1 ? "default" : "pointer", color: pos === ord.length - 1 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 3px" }}>▼</button>
+                            </div>
+                          );
+                          if (isExtra) {
+                            const idx = extraIdxMap[id];
+                            const v = extraVoci[idx];
+                            const isCad = /cad/i.test(v.prezzoLabel || "");
+                            return (
+                              <div key={id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, background: T.surface2 }}>
+                                {arrows}
+                                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+                                  <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy }}>VOCE AGGIUNTA</div>
+                                  <textarea value={v.testo} onChange={e => setVoceExtra(sez.id, idx, { testo: e.target.value })} rows={2} placeholder="Testo della voce…" style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
+                                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
+                                      <Check checked={v.prezzo !== false} onChange={() => setVoceExtra(sez.id, idx, { prezzo: v.prezzo === false })} /> Con prezzo
+                                    </label>
+                                    {v.prezzo !== false && (
+                                      <select value={isCad ? "cad" : "fisso"} onChange={e => setVoceExtra(sez.id, idx, { prezzoLabel: e.target.value === "cad" ? "Cad. €" : "" })} style={{ ...inputSt, width: 160, fontSize: 10.5, cursor: "pointer" }}>
+                                        <option value="fisso">Prezzo fisso</option>
+                                        <option value="cad">A numero (Cad. €)</option>
+                                      </select>
+                                    )}
+                                    {v.prezzo !== false && isCad && <span style={{ ...mono, fontSize: 9, color: T.muted }}>usa «_» nel testo per il numero</span>}
+                                    <button onClick={() => removeVoceExtra(sez.id, idx)} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.red, cursor: "pointer", padding: 0 }}>rimuovi</button>
+                                  </div>
+                                </div>
+                                {v.prezzo !== false && (
+                                  <input type="number" value={v.prezzoDefault ?? ""} onChange={e => setVoceExtra(sez.id, idx, { prezzoDefault: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder="€ default" style={{ ...inputSt, width: 100, height: 30, textAlign: "right", flexShrink: 0 }} />
                                 )}
                               </div>
-                            </div>
-                            {sez.modoPrezzo === "voci" && v.prezzo && (
-                              <input type="number" value={vo.prezzoDefault ?? ""} onChange={e => setVoceOv(sez.id, v.id, { prezzoDefault: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder={v.prezzoLabel || "€ default"} style={{ ...inputSt, width: 100, height: 30, textAlign: "right", flexShrink: 0 }} />
-                            )}
-                          </div>
-                        );
-                      })}
-                      {/* voci extra */}
-                      {(so.vociExtra || []).map((v, idx) => (
-                        <div key={v.id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, background: T.surface2 }}>
-                          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-                            <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy }}>VOCE AGGIUNTA</div>
-                            <textarea value={v.testo} onChange={e => setVoceExtra(sez.id, idx, { testo: e.target.value })} rows={2} placeholder="Testo della voce…" style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                              <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
-                                <Check checked={v.prezzo !== false} onChange={() => setVoceExtra(sez.id, idx, { prezzo: v.prezzo === false })} /> Con prezzo
-                              </label>
-                              {v.prezzo !== false && (
-                                <input value={v.prezzoLabel || ""} onChange={e => setVoceExtra(sez.id, idx, { prezzoLabel: e.target.value })} placeholder="Label (es. Cad. €)" style={{ ...inputSt, width: 130, fontSize: 11 }} />
+                            );
+                          }
+                          const v = defMap[id];
+                          const vo = so.voci?.[v.id] || {};
+                          const nascosta = !!vo.nascosta;
+                          const testo = vo.testo != null && vo.testo !== "" ? vo.testo : v.testo;
+                          const labelEff = vo.prezzoLabel !== undefined ? vo.prezzoLabel : v.prezzoLabel;
+                          const isCad = /cad/i.test(labelEff || "");
+                          const hasPrezzo = conPrezzoSez && v.prezzo;
+                          return (
+                            <div key={id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, opacity: nascosta ? 0.5 : 1 }}>
+                              {arrows}
+                              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+                                <textarea value={testo} onChange={e => setVoceOv(sez.id, v.id, { testo: e.target.value })} rows={2} style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
+                                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                  <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
+                                    <Check checked={nascosta} onChange={() => setVoceOv(sez.id, v.id, { nascosta: !nascosta })} /> Nascondi
+                                  </label>
+                                  {hasPrezzo && (
+                                    <select value={isCad ? "cad" : "fisso"} onChange={e => setVoceOv(sez.id, v.id, { prezzoLabel: e.target.value === "cad" ? "Cad. €" : "" })} style={{ ...inputSt, width: 160, fontSize: 10.5, cursor: "pointer" }}>
+                                      <option value="fisso">Prezzo fisso</option>
+                                      <option value="cad">A numero (Cad. €)</option>
+                                    </select>
+                                  )}
+                                  {hasPrezzo && isCad && <span style={{ ...mono, fontSize: 9, color: T.muted }}>usa «_» nel testo per il numero</span>}
+                                  {vo.testo != null && vo.testo !== v.testo && (
+                                    <button onClick={() => setVoceOv(sez.id, v.id, { testo: undefined })} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>ripristina testo</button>
+                                  )}
+                                </div>
+                              </div>
+                              {hasPrezzo && (
+                                <input type="number" value={vo.prezzoDefault ?? ""} onChange={e => setVoceOv(sez.id, v.id, { prezzoDefault: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder={labelEff || "€ default"} style={{ ...inputSt, width: 100, height: 30, textAlign: "right", flexShrink: 0 }} />
                               )}
-                              <button onClick={() => removeVoceExtra(sez.id, idx)} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.red, cursor: "pointer", padding: 0 }}>rimuovi</button>
                             </div>
-                          </div>
-                          {v.prezzo !== false && (
-                            <input type="number" value={v.prezzoDefault ?? ""} onChange={e => setVoceExtra(sez.id, idx, { prezzoDefault: e.target.value === "" ? undefined : Number(e.target.value) })} placeholder="€ default" style={{ ...inputSt, width: 100, height: 30, textAlign: "right", flexShrink: 0 }} />
-                          )}
-                        </div>
-                      ))}
+                          );
+                        });
+                      })()}
                       <button onClick={() => addVoceExtra(sez.id)} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer", alignSelf: "flex-start" }}>+ Aggiungi voce a questa sezione</button>
                     </div>
                   )}
