@@ -1397,7 +1397,17 @@ export default function CommessaDetailPage() {
                     setDeletingSaving(true);
                     const { error } = await supabase.rpc('elimina_commessa', { p_commessa_id: commessaId });
                     if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
-                    await supabase.from('offerte').update({ deleted_at: new Date().toISOString() }).eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null);
+                    // Elimina l'offerta collegata via RPC (soft-delete → cestino), che
+                    // bypassa RLS. Uso il link diretto commessa_id; fallback su numero_offerta.
+                    let offId = offertaCollegataId;
+                    if (!offId) {
+                      const { data: off } = await supabase.from('offerte').select('id').eq('studio', commessa.studio).eq('numero_offerta', commessa.numero_offerta).is('deleted_at', null).maybeSingle();
+                      offId = off?.id || null;
+                    }
+                    if (offId) {
+                      const { error: oErr } = await supabase.rpc('elimina_offerta', { p_offerta_id: offId });
+                      if (oErr) { showToast('Commessa eliminata, ma offerta non eliminata: ' + oErr.message, 'error'); }
+                    }
                     navigate('/commesse');
                   }}
                   style={{ flex: 1, padding: '9px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
