@@ -156,7 +156,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   if (cfg.copertina) {
     let cy = 62;
     if (coverLogo) {
-      const maxW = 70, maxH = 34;
+      const maxW = 110, maxH = 50;
       let w = maxW, h = maxW / coverLogo.ratio;
       if (h > maxH) { h = maxH; w = maxH * coverLogo.ratio; }
       try { pdf.addImage(coverLogo.b64, "PNG", (W - w) / 2, cy, w, h, undefined, "FAST"); } catch {}
@@ -180,12 +180,12 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   }
 
   // ── LETTERA DI ACCOMPAGNAMENTO ─────────────────────────────────────────────
-  y = Math.max(y, 26);
+  y = Math.max(y, 40);
   paragrafo(`${cfg.luogo || "Milano"} lì, ${dataEstesa(cfg.data)}`, { align: "right", size: 10, weight: "book" });
   y += 6;
 
   const oggettoRiga = `${offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER ${(cfg.oggettoIncarico || "").toUpperCase()}`;
-  paragrafo(oggettoRiga, { size: 10.5, weight: "bold", zone: "header", spaceAfter: 3 });
+  paragrafo(oggettoRiga, { size: 10.5, weight: "book", zone: "header", spaceAfter: 3 });
   pdf.setDrawColor(60, 60, 60); pdf.setLineWidth(0.4);
   pdf.line(ML, y, W - MR, y);
   y += 7;

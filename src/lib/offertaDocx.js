@@ -197,8 +197,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   if (cfg.copertina) {
     for (let i = 0; i < 6; i++) body.push(new Paragraph({ children: [] }));
     if (coverLogo) {
-      let cw = 70, ch = 70 / coverLogo.ratio;
-      if (ch > 34) { ch = 34; cw = 34 * coverLogo.ratio; }
+      let cw = 110, ch = 110 / coverLogo.ratio;
+      if (ch > 50) { ch = 50; cw = 50 * coverLogo.ratio; }
       body.push(new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 360 },
@@ -223,7 +223,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   body.push(new Paragraph({
     spacing: { after: 60 },
-    children: runs(`${offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER ${(cfg.oggettoIncarico || "").toUpperCase()}`, { size: 21, bold: true, font: FONT_BODY }),
+    children: runs(`${offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER ${(cfg.oggettoIncarico || "").toUpperCase()}`, { size: 21, font: FONT_BODY }),
   }));
   body.push(new Paragraph({
     spacing: { after: 200 },
