@@ -387,6 +387,17 @@ export default function OffertaDocumentPanel({
       style={{ accentColor: T.navy, width: 14, height: 14, flexShrink: 0, cursor: "pointer" }} />
   );
 
+  // Campo modificabile "in linea" nel fac-simile della lettera: testo rosso,
+  // larghezza automatica. È una funzione che ritorna un <input> (non un
+  // componente): reconciliato per posizione, non perde il focus.
+  const campoInline = (value, onChange, placeholder = "", extra = {}) => {
+    const len = String(value || placeholder || "").length;
+    return (
+      <input value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 3px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%", ...extra }} />
+    );
+  };
+
   return (
     <>
     <div className="asm-modal-bg" style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -500,58 +511,44 @@ export default function OffertaDocumentPanel({
             </div>
           )}
 
-          {/* Intestazione documento */}
+          {/* Intestazione — fac-simile della lettera, parti in rosso editabili */}
           <div style={cardSt}>
-            <div style={{ ...labelSt, marginBottom: 12 }}>Intestazione</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <div style={labelSt}>Committente</div>
-                <input value={doc.destinatario.nome} onChange={e => setDest("nome", e.target.value)} placeholder="FUTURA S.R.L." style={inputSt} />
+            <div style={{ ...labelSt, marginBottom: 4 }}>Intestazione — lettera</div>
+            <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginBottom: 14 }}>
+              Le parti in <span style={{ color: T.red, fontWeight: 600 }}>rosso</span> sono modificabili: clicca e scrivi. È l'anteprima della pagina dopo la copertina.
+            </div>
+
+            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "18px 22px", fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, lineHeight: 2, color: T.ink }}>
+              <div style={{ textAlign: "right", marginBottom: 12 }}>
+                {campoInline(doc.luogo, v => set({ luogo: v }), "Milano")} lì,{" "}
+                <input type="date" value={doc.data} onChange={e => set({ data: e.target.value })}
+                  style={{ display: "inline-block", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 3px", outline: "none" }} />
               </div>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>
+                {offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER {campoInline(doc.oggettoIncarico, v => set({ oggettoIncarico: v }), "oggetto dell'incarico", { textTransform: "uppercase" })}.
+              </div>
+              <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 14px" }} />
+              <div style={{ marginBottom: 12 }}>OGGETTO: Offerta di prestazioni professionali.</div>
+              <div style={{ marginBottom: 12 }}>Egregio/Spettabile {campoInline(doc.destinatario.nome, v => setDest("nome", v), "Committente")},</div>
+              <div style={{ marginBottom: 12 }}>
+                circa la manifestata necessità {campoInline(doc.necessita, v => set({ necessita: v }), "della sua attività")}, con sede in {campoInline(doc.destinatario.sede, v => setDest("sede", v), "sede legale")}, C.F. {campoInline(doc.destinatario.cf, v => setDest("cf", v), "—")} P.IVA {campoInline(doc.destinatario.piva, v => setDest("piva", v), "—")}, si inoltra nostra miglior offerta per le competenze richieste.
+              </div>
+              <div>In attesa di un vostro cordiale riscontro porgiamo i nostri migliori saluti.</div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16, marginTop: 14, alignItems: "end" }}>
               <div>
-                <div style={labelSt}>Indirizzo (copertina)</div>
+                <div style={labelSt}>Indirizzo in copertina</div>
                 <input value={doc.destinatario.indirizzo} onChange={e => setDest("indirizzo", e.target.value)} placeholder="Via Gaudenzio Ferrari, Milano" style={inputSt} />
               </div>
-              <div>
-                <div style={labelSt}>Sede legale</div>
-                <input value={doc.destinatario.sede} onChange={e => setDest("sede", e.target.value)} placeholder="Milano" style={inputSt} />
+              <div style={{ display: "flex", gap: 18, flexWrap: "wrap", paddingBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                  <Check checked={doc.copertina} onChange={() => set({ copertina: !doc.copertina })} /> Copertina
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                  <Check checked={doc.firma} onChange={() => set({ firma: !doc.firma })} /> Firma
+                </label>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div>
-                  <div style={labelSt}>C.F.</div>
-                  <input value={doc.destinatario.cf} onChange={e => setDest("cf", e.target.value)} style={inputSt} />
-                </div>
-                <div>
-                  <div style={labelSt}>P.IVA</div>
-                  <input value={doc.destinatario.piva} onChange={e => setDest("piva", e.target.value)} style={inputSt} />
-                </div>
-              </div>
-              <div style={{ gridColumn: "span 2" }}>
-                <div style={labelSt}>Oggetto dell'incarico</div>
-                <input value={doc.oggettoIncarico} onChange={e => set({ oggettoIncarico: e.target.value })}
-                  placeholder="la progettazione, presentazione di pratiche edilizie, catastali e commerciali…" style={inputSt} />
-              </div>
-              <div style={{ gridColumn: "span 2" }}>
-                <div style={labelSt}>Manifestata necessità</div>
-                <input value={doc.necessita} onChange={e => set({ necessita: e.target.value })}
-                  placeholder="della sua attività / inerente all'unità in oggetto" style={inputSt} />
-              </div>
-              <div>
-                <div style={labelSt}>Luogo</div>
-                <input value={doc.luogo} onChange={e => set({ luogo: e.target.value })} style={inputSt} />
-              </div>
-              <div>
-                <div style={labelSt}>Data</div>
-                <input type="date" value={doc.data} onChange={e => set({ data: e.target.value })} style={inputSt} />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 18, marginTop: 14, flexWrap: "wrap" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
-                <Check checked={doc.copertina} onChange={() => set({ copertina: !doc.copertina })} /> Pagina di copertina
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
-                <Check checked={doc.firma} onChange={() => set({ firma: !doc.firma })} /> Includi firma
-              </label>
             </div>
           </div>
 
