@@ -284,7 +284,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
       setF("book", "body"); pdf.setFontSize(9.5);
       let corpoH = 0;
       (b.paragrafi || []).forEach(p => {
-        corpoH += pdf.splitTextToSize(String(p), CW).length * 5 + 3;
+        corpoH += pdf.splitTextToSize(String(p), CW).length * 5 + 1;
       });
       if (b.elenco?.length) {
         corpoH += 1;
@@ -296,7 +296,8 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
       let spBefore = bi === 0 ? 2 : 10;
       if (titoloH + corpoH + spBefore > MAX_Y - y && y > 40) { nuovaPagina(); spBefore = 2; }
       titoloCentrato(b.titolo, { spaceBefore: spBefore, spaceAfter: 7 });
-      b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3, keepTogether: true }));
+      // Paragrafi interni senza spazio tra loro: leggono come un testo unico.
+      b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 0, keepTogether: true }));
       if (b.elenco?.length) { y += 1; elenco(b.elenco); }
     });
   }
@@ -354,7 +355,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
 
   ensure(12);
   paragrafoRicco(
-    `${etichettaTotale}: **${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)})** esclusi oneri fiscali e contributi integrativi.`,
+    `**${etichettaTotale}: ${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)}) esclusi oneri fiscali e contributi integrativi.**`,
     { size: 10.5, spaceAfter: 4 }
   );
 

@@ -293,7 +293,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
       const els = b.elenco || [];
       paras.forEach((p, i) => {
         const ultimo = i === paras.length - 1 && els.length === 0;
-        body.push(P(p, { spacing: 140, keepLines: true, keepNext: !ultimo }));
+        // spacing 0 tra i paragrafi interni: leggono come un testo unico.
+        body.push(P(p, { spacing: 0, keepLines: true, keepNext: !ultimo }));
       });
       els.forEach((v, i) => {
         body.push(Bullet(v, { keepLines: true, keepNext: i !== els.length - 1 }));
@@ -360,14 +361,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   else if (tot.sconto > 0)      etichettaTotale += ` a seguito di sconto ${tot.sconto}%`;
   else if (tot.scontoFisso > 0) etichettaTotale += ` con sconto dedicato di ${euroSimbolo(tot.scontoFisso)}`;
 
-  body.push(new Paragraph({
-    spacing: { after: 300 },
-    children: [
-      new TextRun({ text: `${etichettaTotale}: `, size: 21, font: FONT_BODY, color: "1E1E1E" }),
-      new TextRun({ text: `${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)})`, size: 21, bold: true, font: FONT_BODY, color: "1E1E1E" }),
-      new TextRun({ text: " esclusi oneri fiscali e contributi integrativi.", size: 21, font: FONT_BODY, color: "1E1E1E" }),
-    ],
-  }));
+  body.push(P(`${etichettaTotale}: ${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)}) esclusi oneri fiscali e contributi integrativi.`,
+    { size: 21, bold: true, spacing: 300 }));
 
   // Modalità di pagamento
   const opzioni = MODALITA_PAGAMENTO.filter(o => (cfg.pagamento?.opzioni || []).includes(o.id));
