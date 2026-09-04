@@ -7,6 +7,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
@@ -26,6 +27,8 @@ export default function OffertePage() {
   const { studioId, studio } = useStudio();
   const { T } = useTheme();
   const isMobile = useIsMobile();
+  const perms = usePermissions();
+  const canManage = !!perms.canManageOfferte;
 
   const [offerte, setOfferte]           = useState([]);
   const [docOfferta, setDocOfferta]     = useState(null);   // offerta di cui generare il documento
@@ -464,9 +467,9 @@ export default function OffertePage() {
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+          {canManage && <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
             + Nuova offerta
-          </button>
+          </button>}
         </div>
       </div>
 
@@ -507,7 +510,7 @@ export default function OffertePage() {
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
-            {!searchQuery && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
+            {!searchQuery && canManage && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
@@ -546,7 +549,7 @@ export default function OffertePage() {
                 <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
                   Doc
                 </button>
-                {o.stato==='offerta' && <>
+                {o.stato==='offerta' && canManage && <>
                   <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
                   </button>
@@ -559,14 +562,14 @@ export default function OffertePage() {
                     Vai a commessa
                   </button>
                 )}
-                {o.stato==='rifiutata' && (
+                {o.stato==='rifiutata' && canManage && (
                   <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Ripristina
                   </button>
                 )}
-                <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
+                {canManage && <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
                   🗑
-                </button>
+                </button>}
               </div>
             </div>
           );
@@ -578,6 +581,7 @@ export default function OffertePage() {
         <OffertaDocumentPanel
           offerta={docOfferta}
           studio={studio}
+          canManage={canManage}
           onClose={()=>setDocOfferta(null)}
           onSaved={(agg)=>{ setOfferte(prev=>prev.map(x=>x.id===agg.id?agg:x)); setDocOfferta(agg); }}
         />

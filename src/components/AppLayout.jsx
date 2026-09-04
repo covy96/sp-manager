@@ -22,7 +22,7 @@ const ALL_MENU_ITEMS = [
   { label:"Timesheet",    path:"/timesheet",             num:"03", roles:"all",   minPlan:"free"   },
   { divider: true },
   { label:"Progetti",     path:"/progetti",              num:"04", roles:"all",   minPlan:"free"   },
-  { label:"Offerte",      path:"/offerte",               num:"05", roles:"pm",    minPlan:"free"   },
+  { label:"Offerte",      path:"/offerte",               num:"05", roles:"all",   minPlan:"free", perm:"canViewOfferte" },
   { label:"Commesse",     path:"/commesse",              num:"06", roles:"all",   minPlan:"free"   },
 { label:"Proforma",     path:"/proforma",              num:"08", roles:"pm",    minPlan:"studio" },
   { label:"Fatture",      path:"/fatture",               num:"09", roles:"pm",    minPlan:"studio" },
@@ -284,12 +284,13 @@ export default function AppLayout({ session, children }) {
     if (item.divider) return true; // i divider passano sempre, verranno gestiti nel render
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
+    if (item.perm && !permissions[item.perm]) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
     if (currentPlanLevel < required) return false;
     // Nascondi Proforma per studi con fatturazione diretta (SRL/Spa)
     if (item.path === '/proforma' && isFattura) return false;
     return true;
-  }), [permissions.isOwner, permissions.isProjectManager, currentPlanLevel, isFattura]);
+  }), [permissions.isOwner, permissions.isProjectManager, permissions.canViewOfferte, currentPlanLevel, isFattura]);
 
   const avatarInitials = getInitials(teamMember?.user_name || session?.user?.email || "U");
   const memberColor    = teamMember?.color || T.navy;

@@ -59,7 +59,7 @@ export default function OffertaDocumentPanel({
   offerta, studio, onClose, onSaved,
   mode = "edit",
   progetti = [], globalContacts = [], serviceTemplates = [], teamMembers = [],
-  onCreate,
+  onCreate, canManage = true,
 }) {
   const { T } = useTheme();
   const showToast = useToast();
@@ -785,11 +785,11 @@ export default function OffertaDocumentPanel({
               {busy === "pdf" ? "Genero…" : "Genera PDF"}
             </button>
             {isCreate ? (
-              <button onClick={crea} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
+              canManage && <button onClick={crea} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
                 {saving ? "Creo…" : "Crea offerta"}
               </button>
             ) : (
-              <button onClick={salva} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
+              canManage && <button onClick={salva} disabled={saving} style={btn(true, { opacity: saving ? 0.6 : 1 })}>
                 {saving ? "Salvo…" : "Salva configurazione"}
               </button>
             )}

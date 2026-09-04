@@ -43,6 +43,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
     canViewReportCantiere: true, canManageReportCantiere: true,
+    canViewOfferte: true, canManageOfferte: true,
   },
   "Partner": {
     isOwner: false, isProjectManager: true, isMember: true,
@@ -53,6 +54,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
     canViewReportCantiere: true, canManageReportCantiere: true,
+    canViewOfferte: true, canManageOfferte: true,
   },
   "Project Manager": {
     isOwner: false, isProjectManager: true, isMember: true,
@@ -63,6 +65,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: true, canViewCommesse: true, canViewMonitoraggio: true,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: true,
     canViewReportCantiere: true, canManageReportCantiere: true,
+    canViewOfferte: true, canManageOfferte: true,
   },
   "Architetto": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -73,6 +76,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
     canViewReportCantiere: true, canManageReportCantiere: false,
+    canViewOfferte: true, canManageOfferte: false,
   },
   "Ingegnere": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -83,6 +87,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
     canViewReportCantiere: true, canManageReportCantiere: false,
+    canViewOfferte: true, canManageOfferte: false,
   },
   "Collaboratore Interno": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -93,6 +98,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
     canViewReportCantiere: true, canManageReportCantiere: false,
+    canViewOfferte: true, canManageOfferte: false,
   },
   "Collaboratore Esterno": {
     isOwner: false, isProjectManager: false, isMember: true,
@@ -103,6 +109,7 @@ const ROLE_PERMISSIONS = {
     canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
     canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
     canViewReportCantiere: true, canManageReportCantiere: false,
+    canViewOfferte: true, canManageOfferte: false,
   },
 };
 
@@ -115,6 +122,7 @@ const DEFAULT_PERMISSIONS = {
   canViewReport: false, canViewCommesse: false, canViewMonitoraggio: false,
   canEditTask: true, canCompleteOwnTask: true, canManageCommesse: false,
   canViewReportCantiere: true, canManageReportCantiere: false,
+  canViewOfferte: true, canManageOfferte: false,
 };
 
 // ── SEZIONI PERMESSI GRANULARI ────────────────────────────────────
@@ -134,6 +142,13 @@ export const PERMISSION_SECTIONS = [
     perms: [
       { key: "canViewCommesse",   label: "Vedere" },
       { key: "canManageCommesse", label: "Creare / Modificare" },
+    ],
+  },
+  {
+    label: "Offerte",
+    perms: [
+      { key: "canViewOfferte",   label: "Vedere" },
+      { key: "canManageOfferte", label: "Creare / Modificare" },
     ],
   },
   {

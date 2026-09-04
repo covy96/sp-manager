@@ -62,7 +62,7 @@ const MENU_SECTIONS = [
     title: 'Lavoro',
     items: [
       { label:'Progetti',     path:'/progetti',               icon:'progetti',     roles:'all', minPlan:'free'   },
-      { label:'Offerte',      path:'/offerte',                icon:'offerte',      roles:'pm',  minPlan:'studio' },
+      { label:'Offerte',      path:'/offerte',                icon:'offerte',      roles:'all', minPlan:'studio', perm:'canViewOfferte' },
       { label:'Commesse',     path:'/commesse',               icon:'commesse',     roles:'all', minPlan:'free'   },
       { label:'Proforma',     path:'/proforma',               icon:'proforma',     roles:'pm',  minPlan:'studio' },
       { label:'Fatture',      path:'/fatture',                icon:'fatture',      roles:'pm',  minPlan:'studio' },
@@ -109,6 +109,7 @@ export default function MobileLayout({ session, children }) {
   const isAllowed = (item) => {
     if (item.roles === 'owner' && !permissions.isOwner) return false;
     if (item.roles === 'pm' && !permissions.isProjectManager) return false;
+    if (item.perm && !permissions[item.perm]) return false;
     const required = PLAN_ORDER[item.minPlan] ?? 0;
     if (currentPlanLevel < required) return false;
     if (item.path === '/proforma' && isFattura) return false;

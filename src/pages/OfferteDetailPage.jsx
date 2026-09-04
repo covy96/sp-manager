@@ -6,6 +6,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { supabase } from "../lib/supabase";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
+import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 
 function currency(v) {
@@ -25,6 +26,8 @@ export default function OfferteDetailPage() {
   const location = useLocation();
   const { studioId, studio } = useStudio();
   const { T } = useTheme();
+  const perms = usePermissions();
+  const canManage = !!perms.canManageOfferte;
 
   const [offerta, setOfferta]       = useState(null);
   const [progetti, setProgetti]     = useState([]);
@@ -275,6 +278,7 @@ export default function OfferteDetailPage() {
         <OffertaDocumentPanel
           offerta={offerta}
           studio={studio}
+          canManage={canManage}
           onClose={()=>setDocPanel(false)}
           onSaved={(agg)=>setOfferta(agg)}
         />
@@ -292,7 +296,7 @@ export default function OfferteDetailPage() {
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>{isDocDriven ? 'Documento / versioni' : 'Documento offerta'}</button>
-          {offerta.stato==='offerta' && <>
+          {offerta.stato==='offerta' && canManage && <>
             {!editing && !isDocDriven && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
             <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
             <button onClick={handleRifiuta} style={{ border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, background:'transparent', color:T.red, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Rifiuta</button>
@@ -300,10 +304,10 @@ export default function OfferteDetailPage() {
           {offerta.stato==='accettata' && offerta.commessa_id && (
             <button onClick={()=>navigate(`/commesse/${offerta.commessa_id}`)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Vai a commessa →</button>
           )}
-          {offerta.stato==='rifiutata' && (
+          {offerta.stato==='rifiutata' && canManage && (
             <button onClick={handleRipristina} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Ripristina</button>
           )}
-          <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>🗑 Elimina</button>
+          {canManage && <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>🗑 Elimina</button>}
         </div>
       </div>
 
