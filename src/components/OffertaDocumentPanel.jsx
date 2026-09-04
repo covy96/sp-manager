@@ -530,7 +530,14 @@ export default function OffertaDocumentPanel({
               </div>
               <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 14px" }} />
               <div style={{ marginBottom: 12 }}>OGGETTO: Offerta di prestazioni professionali.</div>
-              <div style={{ marginBottom: 12 }}>Egregio/Spettabile {campoInline(doc.destinatario.nome, v => setDest("nome", v), "Committente")},</div>
+              <div style={{ marginBottom: 12 }}>
+                <select value={doc.destinatario.appellativo || "Spettabile"} onChange={e => setDest("appellativo", e.target.value)}
+                  style={{ border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 3px", outline: "none", cursor: "pointer" }}>
+                  <option value="Spettabile">Spettabile</option>
+                  <option value="Egregio">Egregio</option>
+                  <option value="Gentile">Gentile</option>
+                </select>{" "}{campoInline(doc.destinatario.nome, v => setDest("nome", v), "Committente")},
+              </div>
               <div style={{ marginBottom: 12 }}>
                 circa la manifestata necessità {campoInline(doc.necessita, v => set({ necessita: v }), "della sua attività")}, con sede in {campoInline(doc.destinatario.sede, v => setDest("sede", v), "sede legale")}, C.F. {campoInline(doc.destinatario.cf, v => setDest("cf", v), "—")} P.IVA {campoInline(doc.destinatario.piva, v => setDest("piva", v), "—")}, si inoltra nostra miglior offerta per le competenze richieste.
               </div>

@@ -6,14 +6,22 @@
 import { estraiCampi, lettera, DEFAULT_TEMPLATE } from "./offertaTemplate";
 
 // ── Formattazione ────────────────────────────────────────────────────────────
-export const euro = (v) =>
-  (Number(v) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+// Formatta un importo con separatore delle migliaia "." e decimali "," (it-IT),
+// in modo deterministico: non dipende dal supporto Intl/locale del runtime, così
+// le cifre sopra 1.000 hanno sempre il punto di separazione (es. 18.400,00).
+export function formattaImporto(v) {
+  const n = Number(v) || 0;
+  const segno = n < 0 ? "-" : "";
+  const [intero, dec] = Math.abs(n).toFixed(2).split(".");
+  const conMigliaia = intero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${segno}${conMigliaia},${dec}`;
+}
 
-export const numero2 = (v) =>
-  (Number(v) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const euro = (v) => formattaImporto(v) + " €";
 
-export const euroSimbolo = (v) =>
-  "€ " + (Number(v) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const numero2 = (v) => formattaImporto(v);
+
+export const euroSimbolo = (v) => "€ " + formattaImporto(v);
 
 export const dataEstesa = (iso) => {
   if (!iso) return "";
@@ -93,7 +101,7 @@ export function documentoDefault(offerta = {}, tpl = DEFAULT_TEMPLATE) {
     firma: DEFAULTS.firma,
     luogo: DEFAULTS.luogo,
     data: new Date().toISOString().slice(0, 10),
-    destinatario: { nome: offerta.cliente || "", indirizzo: "", sede: "", cf: "", piva: "" },
+    destinatario: { appellativo: "Spettabile", nome: offerta.cliente || "", indirizzo: "", sede: "", cf: "", piva: "" },
     oggettoIncarico: "",
     necessita: "della sua attività",
     inquadramento: { attivo: !!DEFAULTS.inquadramentoAttivo, campi: campiVuoti(INQUADRAMENTO.testo), testoLibero: "" },

@@ -13,7 +13,7 @@ import {
   TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, testoRateC,
 } from "./offertaTemplate";
 import {
-  sezioniAttive, vociAttive, importoSezione, calcolaTotali,
+  sezioniAttive, vociAttive, importoSezione, importoVoce, calcolaTotali,
   euroSimbolo, numero2, importoInLettere, dataEstesa,
 } from "./offertaModel";
 
@@ -193,7 +193,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   paragrafo(TESTI.oggetto, { spaceAfter: 6 });
 
   const dest = cfg.destinatario || {};
-  paragrafo(`Egregio/Spettabile ${dest.nome || ""},`, { spaceAfter: 6 });
+  paragrafo(`${dest.appellativo || "Spettabile"} ${dest.nome || ""},`, { spaceAfter: 6 });
 
   const _cf = (dest.cf || "").trim(), _piva = (dest.piva || "").trim();
   const _cfPivaUguali = _cf && _piva && _cf === _piva;
@@ -261,9 +261,10 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
         paragrafoRicco(testo, { x: ML + 10, maxW: CW - 10 });
 
         if (conPrezzo) {
+          // Per le voci "cad." si moltiplica unitario × quantità e si mostra solo
+          // il costo finale (senza "Cad."). Le altre voci valgono il loro importo.
           setF("bold"); pdf.setFontSize(9.5); pdf.setTextColor(30, 30, 30);
-          const label = v.prezzoLabel || "€";
-          pdf.text(`${label} ${numero2(vc.prezzo)}`, W - MR, y, { align: "right" });
+          pdf.text(`€ ${numero2(importoVoce(v, vc))}`, W - MR, y, { align: "right" });
           y += 5;
         }
         y += 2;
@@ -277,13 +278,23 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   if (blocchiAttivi.length > 0) {
     nuovaPagina();
     blocchiAttivi.forEach((b, bi) => {
-      // Tieni il titolo attaccato al primo paragrafo: se non entrano insieme
-      // (titolo + almeno le sue righe), vai a pagina nuova prima del titolo.
-      const primo = b.paragrafi?.[0] || "";
+      // Misura l'altezza dell'intero blocco (titolo + paragrafi + elenco) per
+      // non spezzarlo su due pagine: se non entra nello spazio residuo e la
+      // pagina ha già del contenuto, si va a pagina nuova con tutto il blocco.
       setF("book", "body"); pdf.setFontSize(9.5);
-      const primoRighe = primo ? pdf.splitTextToSize(String(primo), CW).length : 1;
-      const spBefore = bi === 0 ? 2 : 10; // il primo blocco resta vicino alla testata
-      ensure(spBefore + 16 + primoRighe * 5);
+      let corpoH = 0;
+      (b.paragrafi || []).forEach(p => {
+        corpoH += pdf.splitTextToSize(String(p), CW).length * 5 + 3;
+      });
+      if (b.elenco?.length) {
+        corpoH += 1;
+        b.elenco.forEach(v => {
+          corpoH += pdf.splitTextToSize(String(v).replace(/\*\*/g, ""), CW - 6).length * 5 + 1.5;
+        });
+      }
+      const titoloH = 15;              // titolo centrato + riga + spazi
+      let spBefore = bi === 0 ? 2 : 10;
+      if (titoloH + corpoH + spBefore > MAX_Y - y && y > 40) { nuovaPagina(); spBefore = 2; }
       titoloCentrato(b.titolo, { spaceBefore: spBefore, spaceAfter: 7 });
       b.paragrafi.forEach(p => paragrafo(p, { spaceAfter: 3, keepTogether: true }));
       if (b.elenco?.length) { y += 1; elenco(b.elenco); }
@@ -295,9 +306,8 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   nuovaPagina();
   titoloCentrato(TESTI.compensiTitolo, { spaceBefore: 2, spaceAfter: 8 });
 
-  // Font della tabella: coerente con la zona body del report
+  // Font della tabella: coerente con la zona body del report (tutta non in grassetto)
   setF("book"); const tblBook = pdf.getFont().fontName;
-  setF("bold"); const tblBold = pdf.getFont().fontName;
 
   autoTable(pdf, {
     startY: y,
@@ -323,11 +333,6 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     },
     didParseCell: (data) => {
       const ultima = data.row.index === tot.righe.length;
-      if (data.column.index === 1 || ultima) {
-        // Groteska è registrata solo con stile "normal": il grassetto è una famiglia
-        if (tblBold === "helvetica") data.cell.styles.fontStyle = "bold";
-        else data.cell.styles.font = tblBold;
-      }
       if (data.column.index === 0) data.cell.styles.fontSize = 8;
       if (ultima) data.cell.styles.lineWidth = { top: 0.5, bottom: 0 };
     },
@@ -349,7 +354,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
 
   ensure(12);
   paragrafoRicco(
-    `**${etichettaTotale}: ${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)}) esclusi oneri fiscali e contributi integrativi.**`,
+    `${etichettaTotale}: **${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)})** esclusi oneri fiscali e contributi integrativi.`,
     { size: 10.5, spaceAfter: 4 }
   );
 
@@ -381,6 +386,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     ml: ML, mr: MR, W, pageH: H, footerH: FOOTER_H,
     footerFont, footerFontStyle,
     fallbackTitle: "Offerta di prestazioni professionali",
+    line: false,
   });
 
   const nomeFile = `${(offerta?.numero_offerta || "offerta").replace(/[^a-zA-Z0-9_\-. ]/g, "")} - ${(offerta?.nome_offerta || "").replace(/[^a-zA-Z0-9_\-. ]/g, "")}`.trim() || "offerta";

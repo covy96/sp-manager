@@ -10,7 +10,7 @@ import {
   TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, testoRateC,
 } from "./offertaTemplate";
 import {
-  sezioniAttive, vociAttive, calcolaTotali, euroSimbolo, numero2, importoInLettere, dataEstesa,
+  sezioniAttive, vociAttive, importoVoce, calcolaTotali, euroSimbolo, numero2, importoInLettere, dataEstesa,
 } from "./offertaModel";
 import { GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
 
@@ -72,12 +72,13 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     segmentaGrassetto(testo).map(seg => new TextRun({ text: seg.text, bold: seg.bold, ...extra }));
 
   const P = (testo, opts = {}) => {
-    const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY, keepLines } = opts;
+    const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY, keepLines, keepNext } = opts;
     return new Paragraph({
       alignment: align,
       spacing: { after: spacing ?? 120, ...(opts.spacingBefore ? { before: opts.spacingBefore } : {}) },
       indent,
       ...(keepLines ? { keepLines: true } : {}),
+      ...(keepNext ? { keepNext: true } : {}),
       children: typeof testo === "string"
         ? runs(testo, { size, bold, underline: underline ? {} : undefined, color, font })
         : testo,
@@ -88,6 +89,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     new Paragraph({
       bullet: { level: opts.level ?? 0 },
       spacing: { after: opts.after ?? 80 },
+      ...(opts.keepNext ? { keepNext: true } : {}),
+      ...(opts.keepLines ? { keepLines: true } : {}),
       children: runs(testo, { size: opts.size ?? 20, color: "1E1E1E", font: FONT_BODY }),
     });
 
@@ -180,11 +183,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   const footerDefault = new Footer({
     children: [
-      new Paragraph({
-        spacing: { after: 40 },
-        border: { top: { style: BorderStyle.SINGLE, size: 4, color: "C8C8C8", space: 1 } },
-        children: [],
-      }),
+      // Piè di pagina senza linea di separazione: solo il testo.
       ...righeFooter(),
     ],
   });
@@ -232,7 +231,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   }));
 
   body.push(P(TESTI.oggetto, { spacing: 240 }));
-  body.push(P(`Egregio/Spettabile ${dest.nome || ""},`, { spacing: 240 }));
+  body.push(P(`${dest.appellativo || "Spettabile"} ${dest.nome || ""},`, { spacing: 240 }));
 
   const _cf = (dest.cf || "").trim(), _piva = (dest.piva || "").trim();
   const _cfPivaUguali = _cf && _piva && _cf === _piva;
@@ -275,9 +274,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
         const vc = cfg.sezioni[sez.id].voci[v.id] || {};
         body.push(Bullet(compilaTesto(v.testo, vc.campi)));
         if (sez.modoPrezzo === "voci" && v.prezzo) {
-          const label = v.prezzoLabel || "€";
-          const imp = (Number(vc.prezzo) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          body.push(P(`${label} ${imp}`, { align: AlignmentType.RIGHT, bold: true, spacing: 140 }));
+          // Voci "cad.": unitario × quantità, mostrato come costo finale con "€".
+          body.push(P(`€ ${numero2(importoVoce(v, vc))}`, { align: AlignmentType.RIGHT, bold: true, spacing: 140 }));
         }
       });
     });
@@ -288,9 +286,18 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   if (blocchiAttivi.length > 0) {
     body.push(new Paragraph({ pageBreakBefore: true, children: [] }));
     blocchiAttivi.forEach((b) => {
+      // Titolo e contenuto restano uniti (keepNext a catena): l'intero blocco
+      // va a pagina nuova insieme se non entra, mai spezzato su due pagine.
       TitoloBlocco(b.titolo).forEach(p => body.push(p));
-      b.paragrafi.forEach(p => body.push(P(p, { spacing: 140, keepLines: true })));
-      (b.elenco || []).forEach(v => body.push(Bullet(v)));
+      const paras = b.paragrafi || [];
+      const els = b.elenco || [];
+      paras.forEach((p, i) => {
+        const ultimo = i === paras.length - 1 && els.length === 0;
+        body.push(P(p, { spacing: 140, keepLines: true, keepNext: !ultimo }));
+      });
+      els.forEach((v, i) => {
+        body.push(Bullet(v, { keepLines: true, keepNext: i !== els.length - 1 }));
+      });
     });
   }
 
@@ -312,7 +319,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   const righeTabella = tot.righe.map(r => new TableRow({
     children: [
       cella([new TextRun({ text: `(${r.lettera})`, size: 16, font: FONT_BODY })], 9),
-      cella([new TextRun({ text: r.titolo, size: 20, bold: true, font: FONT_BODY })], 70),
+      cella([new TextRun({ text: r.titolo, size: 20, font: FONT_BODY })], 70),
       cella([new TextRun({ text: euroSimbolo(r.importo), size: 20, font: FONT_BODY })], 21, AlignmentType.RIGHT),
     ],
   }));
@@ -331,8 +338,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   righeTabella.push(new TableRow({
     children: [
       cellaTot([], 9),
-      cellaTot([new TextRun({ text: TESTI.totaleLabel, size: 20, bold: true, font: FONT_BODY })], 70),
-      cellaTot([new TextRun({ text: euroSimbolo(tot.lordo), size: 20, bold: true, font: FONT_BODY })], 21, AlignmentType.RIGHT),
+      cellaTot([new TextRun({ text: TESTI.totaleLabel, size: 20, font: FONT_BODY })], 70),
+      cellaTot([new TextRun({ text: euroSimbolo(tot.lordo), size: 20, font: FONT_BODY })], 21, AlignmentType.RIGHT),
     ],
   }));
 
@@ -353,8 +360,14 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   else if (tot.sconto > 0)      etichettaTotale += ` a seguito di sconto ${tot.sconto}%`;
   else if (tot.scontoFisso > 0) etichettaTotale += ` con sconto dedicato di ${euroSimbolo(tot.scontoFisso)}`;
 
-  body.push(P(`${etichettaTotale}: ${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)}) esclusi oneri fiscali e contributi integrativi.`,
-    { size: 21, bold: true, spacing: 300 }));
+  body.push(new Paragraph({
+    spacing: { after: 300 },
+    children: [
+      new TextRun({ text: `${etichettaTotale}: `, size: 21, font: FONT_BODY, color: "1E1E1E" }),
+      new TextRun({ text: `${euroSimbolo(tot.totale)} (${importoInLettere(tot.totale)})`, size: 21, bold: true, font: FONT_BODY, color: "1E1E1E" }),
+      new TextRun({ text: " esclusi oneri fiscali e contributi integrativi.", size: 21, font: FONT_BODY, color: "1E1E1E" }),
+    ],
+  }));
 
   // Modalità di pagamento
   const opzioni = MODALITA_PAGAMENTO.filter(o => (cfg.pagamento?.opzioni || []).includes(o.id));

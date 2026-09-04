@@ -84,7 +84,7 @@ export async function drawLogo(doc, s, { x2, y, scale = 1 }) {
 
 // Piè di pagina su tutte le pagine, identico al report.
 // skipFirst: non disegna il footer sulla pagina 1 (usato quando non serve).
-export function drawFooters(doc, s, { ml, mr, W, pageH, footerH, footerFont, footerFontStyle, fallbackTitle = "" }) {
+export function drawFooters(doc, s, { ml, mr, W, pageH, footerH, footerFont, footerFontStyle, fallbackTitle = "", line = true }) {
   const fLeft   = s?.report_footer_left   || "";
   const fCenter = s?.report_footer_center || "";
   const fRight  = s?.report_footer_right  || "";
@@ -93,8 +93,10 @@ export function drawFooters(doc, s, { ml, mr, W, pageH, footerH, footerFont, foo
   for (let i = 1; i <= tot; i++) {
     doc.setPage(i);
     const fy = pageH - footerH;
-    doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.3);
-    doc.line(ml, fy, W - mr, fy);
+    if (line) {
+      doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.3);
+      doc.line(ml, fy, W - mr, fy);
+    }
     doc.setFont(footerFont, footerFontStyle); doc.setFontSize(7.5); doc.setTextColor(140, 140, 140);
 
     const replace = (str) => String(str).replace(/\{pagina\}/g, i).replace(/\{totale\}/g, tot);
