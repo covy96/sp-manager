@@ -3,3 +3,6 @@ dist
 .DS_Store
 .env
 .env.local
+
+# Worktree effimeri creati dalle sessioni Claude Code — mai versionare
+.claude/worktrees/
