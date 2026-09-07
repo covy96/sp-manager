@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import SlidingTabs from "../components/SlidingTabs";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useStudio } from "../hooks/useStudio";
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
@@ -653,6 +654,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
 // ── PROJECT GANTT ─────────────────────────────────────────────────
 function ProjectGantt({ project, studioId, onBack, version }) {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const showToast = useToast();
   const [lavorazioni, setLavorazioni] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -665,7 +667,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     dipendenza_id: '',
   });
   const [savingNew, setSavingNew] = useState(false);
-  const [onlyChart, setOnlyChart] = useState(false);
+  // Su mobile parte in vista Grafico (la "visualizzazione"); su desktop mostra la tabella
+  const [onlyChart, setOnlyChart] = useState(() => window.innerWidth < 768);
   const [rowDragState, setRowDragState] = useState(null);
   const [impresaSuggest, setImpresaSuggest] = useState(null); // { rowId: string|'new' }
   const chartRef     = useRef(null);
@@ -870,6 +873,19 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     loadData();
   };
 
+  // ── RIORDINO CON FRECCE (mobile) ──────────────────────────────────
+  const moveRow = async (index, dir) => {
+    const target = index + dir;
+    if (target < 0 || target >= lavorazioni.length) return;
+    const reordered = [...lavorazioni];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const withOrder = reordered.map((l, i) => ({ ...l, order: i }));
+    setLavorazioni(withOrder);
+    await Promise.all(withOrder.map(l =>
+      supabase.from('lavorazioni_gantt').update({ order: l.order }).eq('id', l.id)
+    ));
+  };
+
   // ── DRAG ROW (riordino righe) ─────────────────────────────────────
   const onRowDragStart = useCallback((e, lav, lavIdx) => {
     e.preventDefault();
@@ -898,8 +914,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     };
 
     const onUp = async () => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
       document.body.style.cursor = '';
       setRowDragState(null);
 
@@ -922,8 +938,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       ));
     };
 
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   }, [lavorazioni, rowTops, measuredHeights]);
 
   // ── DRAG BAR ──────────────────────────────────────────────────────
@@ -938,8 +954,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       setLavorazioni(prev=>prev.map(l=>l.id===lav.id?{...l,data_inizio:newStart,data_fine:toISO(addDays(parseDate(newStart),Number(l.durata_giorni)-1))}:l));
     };
     const onUp = async (ev) => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
       const delta = Math.round((ev.clientX - startX) / dayW);
       if (delta) {
         const newStart = toISO(addDays(parseDate(origDate), delta));
@@ -963,8 +979,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         loadData();
       }
     };
-    document.addEventListener("mousemove",onMove);
-    document.addEventListener("mouseup",onUp);
+    document.addEventListener("pointermove",onMove);
+    document.addEventListener("pointerup",onUp);
   }, [dayW, loadData, studioId, project]);
 
   // ── RESIZE BAR ────────────────────────────────────────────────────
@@ -977,8 +993,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       setLavorazioni(prev=>prev.map(l=>l.id===lav.id?{...l,durata_giorni:newDurata,data_fine:toISO(addDays(parseDate(l.data_inizio),newDurata-1))}:l));
     };
     const onUp = async (ev) => {
-      document.removeEventListener("mousemove",onMove);
-      document.removeEventListener("mouseup",onUp);
+      document.removeEventListener("pointermove",onMove);
+      document.removeEventListener("pointerup",onUp);
       const newDurata = Math.max(1, origDurata+Math.round((ev.clientX-startX)/dayW));
       const newEnd = toISO(addDays(parseDate(lav.data_inizio), newDurata-1));
       await supabase.from("lavorazioni_gantt").update({durata_giorni:newDurata, data_fine:newEnd}).eq("id", lav.id);
@@ -995,8 +1011,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       }
       loadData();
     };
-    document.addEventListener("mousemove",onMove);
-    document.addEventListener("mouseup",onUp);
+    document.addEventListener("pointermove",onMove);
+    document.addEventListener("pointerup",onUp);
   }, [dayW, loadData]);
 
   const inputSt = {padding:'2px 4px', border:'none', background:'transparent', color:T.ink, fontSize:10, fontFamily:"'IBM Plex Mono', monospace", outline:'none', width:'100%', boxSizing:'border-box'};
@@ -1006,6 +1022,362 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   );
 
   const totalH = Math.max(newRowTop + ROW_H, window.innerHeight);
+
+  // ── CORPO CHART (condiviso desktop + mobile) ──────────────────────
+  const chartBody = (
+    <div style={{width:totalW,minWidth:'100%',position:'relative'}}>
+
+      {/* Header temporale sticky */}
+      <div style={{height:52,position:'sticky',top:0,zIndex:10,background:T.bg,borderBottom:`0.5px solid ${T.border}`}}>
+        {/* Mesi */}
+        <div style={{height:26,display:'flex',borderBottom:`0.5px solid ${T.border}`}}>
+          {timeHeaders.months.map((m,i)=>{
+            const [year,month]=m.label.split('-');
+            const label=new Date(Number(year),Number(month),1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+            return (
+              <div key={i} style={{width:m.width,flexShrink:0,padding:'0 8px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
+                <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.1em',textTransform:'uppercase',color:T.ink,whiteSpace:'nowrap'}}>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Settimane */}
+        <div style={{height:26,display:'flex'}}>
+          {viewMode==='week' ? timeHeaders.weeks.map((w,i)=>(
+            <div key={i} style={{width:w.width,flexShrink:0,padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
+              <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted,whiteSpace:'nowrap'}}>
+                {w.date?w.date.toLocaleDateString('it-IT',{day:'numeric',month:'short'}):''}
+              </span>
+            </div>
+          )) : Array.from({length:Math.ceil(totalDays/5)},(_,i)=>{
+            const d=addDays(startDate,i*5);
+            return (
+              <div key={i} style={{width:dayW*5,flexShrink:0,padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,background:T.bg}}>
+                <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted}}>{d.getDate()}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Grid corpo */}
+      <div style={{position:'relative',height:totalH}}>
+
+        {/* ── SFONDO COLORATO — tutto il calendario ── */}
+        {Array.from({length:totalDays},(_,i)=>{
+          const d = addDays(startDate, i);
+          const isWeekend = d.getDay()===0||d.getDay()===6;
+          const isMonday  = d.getDay()===1;
+          const weekNum   = Math.floor(i/7);
+          const isOdd     = weekNum%2===1;
+          const isToday   = toISO(d)===toISO(new Date());
+          return (
+            <div key={i} style={{
+              position:'absolute', left:i*dayW, top:0, width:dayW, height:totalH,
+              background: isToday
+                ? 'rgba(19,49,92,0.10)'
+                : isWeekend
+                ? T.border
+                : isOdd
+                ? 'rgba(19,49,92,0.03)'
+                : `${T.bg}80`,
+              borderRight:`0.5px solid ${isMonday?T.borderMd:T.border}`,
+              pointerEvents:'none',
+            }}/>
+          );
+        })}
+
+        {/* Linea oggi */}
+        <div style={{position:'absolute',left:todayX,top:0,width:2,height:totalH,background:T.navy,opacity:0.8,pointerEvents:'none',zIndex:5}}/>
+
+        {/* Linee orizzontali righe */}
+        {lavorazioni.map((_,i)=>(
+          <div key={i} style={{position:'absolute',left:0,top:getRowTop(i),right:0,height:getRowH(i),borderBottom:`0.5px solid ${T.border}`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
+        ))}
+        <div style={{position:'absolute',left:0,top:newRowTop,right:0,height:ROW_H,borderBottom:`0.5px solid ${T.border}`,pointerEvents:'none'}}/>
+
+        {/* SVG dipendenze */}
+        <svg style={{position:'absolute',top:0,left:0,width:totalW,height:totalH,pointerEvents:'none',overflow:'visible',zIndex:3}}>
+          <defs>
+            <marker id="arr" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill={T.muted}/>
+            </marker>
+          </defs>
+          {lavorazioni.filter(l=>l.dipendenza_id).map((lav)=>{
+            const dep=lavorazioni.find(d=>d.id===lav.dipendenza_id);
+            if (!dep||!dep.data_inizio||!lav.data_inizio) return null;
+            const di=lavorazioni.indexOf(dep); const li=lavorazioni.indexOf(lav);
+            const x1=dateToX(dep.data_inizio)+Number(dep.durata_giorni||1)*dayW;
+            const y1=getRowTop(di)+getRowH(di)/2;
+            const x2=dateToX(lav.data_inizio);
+            const y2=getRowTop(li)+getRowH(li)/2;
+            return (
+              <path key={lav.id} d={`M${x1} ${y1} C${x1+30} ${y1} ${x2-30} ${y2} ${x2} ${y2}`}
+                fill="none" stroke={T.muted} strokeWidth={1.5} strokeDasharray="4,3" markerEnd="url(#arr)"/>
+            );
+          })}
+        </svg>
+
+        {/* Barre lavorazioni */}
+        {lavorazioni.map((lav,i)=>{
+          const rH  = getRowH(i);
+          const rTop = getRowTop(i);
+          if (!lav.data_inizio) return (
+            <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH}}/>
+          );
+          const barX  = dateToX(lav.data_inizio);
+          const barW  = Math.max(Number(lav.durata_giorni||1)*dayW, 8);
+          const pct   = Number(lav.percentuale_completamento)||0;
+          const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+          return (
+            <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH,zIndex:4}}>
+              <div
+                onPointerDown={e=>onBarMouseDown(e,lav)}
+                style={{
+                  position:'absolute', left:barX, top:rH*0.18, height:rH*0.64,
+                  width:barW, background:color, cursor:'grab', borderRadius:4,
+                  overflow:'hidden', userSelect:'none', touchAction:'none',
+                  boxShadow:'0 2px 6px rgba(0,0,0,0.18)',
+                }}
+              >
+                {/* Progress */}
+                <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
+                {/* Label */}
+                {barW>60&&(
+                  <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:12,fontWeight:600,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
+                    {lav.descrizione}
+                  </div>
+                )}
+                {/* Date sotto la barra */}
+                <div style={{position:'absolute',top:'100%',left:0,marginTop:2,fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted,whiteSpace:'nowrap',pointerEvents:'none'}}>
+                  {fmtDate(lav.data_inizio)} → {fmtDate(lav.data_fine)}
+                </div>
+                {/* Resize handle */}
+                <div onPointerDown={e=>onResizeMouseDown(e,lav)} style={{position:'absolute',right:0,top:0,width:isMobile?16:8,height:'100%',cursor:'ew-resize',background:'rgba(0,0,0,0.15)',zIndex:6,touchAction:'none'}}/>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Riga nuova — preview barra */}
+        <div style={{position:'absolute',top:newRowTop,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
+          {newRow.data_inizio&&(
+            <div style={{position:'absolute',left:dateToX(newRow.data_inizio),top:ROW_H*0.18,height:ROW_H*0.64,width:Math.max(Number(newRow.durata_giorni||7)*dayW,8),background:T.navy,opacity:0.25,borderRadius:4}}/>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+
+  // ══════════════════════════════════════════════════════════════════
+  // LAYOUT MOBILE — toolbar compatta + toggle Grafico / Tabella
+  // ══════════════════════════════════════════════════════════════════
+  if (isMobile) {
+    const NAME_W = 116;
+    const mBtn = {background:'none',border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,cursor:'pointer',color:T.muted,padding:'7px 12px',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',minHeight:36,whiteSpace:'nowrap'};
+    const mLabel = {fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted,marginBottom:4,display:'block'};
+    const mInput = {width:'100%',boxSizing:'border-box',padding:'9px 10px',border:`1px solid ${T.border}`,borderRadius:8,background:T.surface2,color:T.ink,fontSize:13,fontFamily:"'IBM Plex Mono', monospace",outline:'none'};
+    const impresaOptions = Object.keys(impresaColorMap);
+
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+
+        {/* Toolbar */}
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,boxShadow:T.shadow,padding:'10px 12px',display:'flex',flexDirection:'column',gap:10}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <button onClick={onBack} style={mBtn}>←</button>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:15,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{project.name}</div>
+              <div style={{display:'flex',gap:8,marginTop:2,flexWrap:'wrap'}}>
+                {version&&<span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy}}>{version.name}</span>}
+                {project.client&&<span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{project.client}</span>}
+              </div>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+            <button onClick={()=>setOnlyChart(p=>!p)} style={{...mBtn,background:onlyChart?T.navy:'transparent',border:`0.5px solid ${onlyChart?T.navy:T.borderMd}`,color:onlyChart?T.bg:T.muted}}>
+              {onlyChart ? '⊞ Tabella' : '▦ Grafico'}
+            </button>
+            <SlidingTabs
+              tabs={[{ key:"week", label:"Sett." }, { key:"month", label:"Mesi" }]}
+              active={viewMode}
+              onChange={setViewMode}
+            />
+            <button onClick={()=>exportExcel(lavorazioni,project.name)} style={mBtn}>Excel</button>
+            <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={mBtn}>PDF</button>
+          </div>
+        </div>
+
+        {onlyChart ? (
+          /* ── VISTA GRAFICO — colonna nomi sticky + chart scrollabile ── */
+          <div style={{display:'flex',border:`1px solid ${T.border}`,borderRadius:T.radiusSm,background:T.surface,height:'70vh',minHeight:360,overflow:'hidden'}}>
+            {/* Colonna nomi (sincronizzata) */}
+            <div ref={leftRef} style={{width:NAME_W,flexShrink:0,overflowY:'hidden',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
+              <div style={{height:52,position:'sticky',top:0,zIndex:11,background:T.bg,borderBottom:`0.5px solid ${T.border}`,display:'flex',alignItems:'flex-end',padding:'0 8px 6px',boxSizing:'border-box'}}>
+                <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
+              </div>
+              {lavorazioni.map((lav,i)=>{
+                const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+                return (
+                  <div key={lav.id} style={{height:getRowH(i),display:'flex',alignItems:'center',gap:6,padding:'0 8px',borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,boxSizing:'border-box'}}>
+                    <span style={{width:7,height:7,borderRadius:'50%',background:color,flexShrink:0}}/>
+                    <span style={{fontSize:11,fontWeight:600,color:T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:"'Space Grotesk', sans-serif"}}>{lav.descrizione||'—'}</span>
+                  </div>
+                );
+              })}
+              <div style={{height:ROW_H,borderBottom:`0.5px solid ${T.border}`,background:T.navyLight}}/>
+            </div>
+            {/* Chart */}
+            <div ref={chartRef}
+              onScroll={e=>{ if(leftRef.current) leftRef.current.scrollTop=e.target.scrollTop; }}
+              style={{flex:1,minWidth:0,overflowX:'auto',overflowY:'auto',position:'relative'}}>
+              {chartBody}
+            </div>
+          </div>
+        ) : (
+          /* ── VISTA TABELLA — card editabili ── */
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {lavorazioni.map((lav,i)=>{
+              const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+              return (
+                <div key={lav.id} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,boxShadow:T.shadow,padding:12,display:'flex',flexDirection:'column',gap:10}}>
+                  {/* Riga titolo */}
+                  <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                    <span style={{width:10,height:10,borderRadius:'50%',background:color,flexShrink:0,marginTop:6}}/>
+                    <textarea
+                      ref={el=>{ if(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; } }}
+                      value={lav.descrizione||''}
+                      onChange={e=>{ e.target.style.height='auto'; e.target.style.height=e.target.scrollHeight+'px'; setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,descrizione:e.target.value}:l)); }}
+                      onBlur={e=>handleInlineEdit(lav,'descrizione',e.target.value)}
+                      rows={1}
+                      placeholder="Descrizione..."
+                      style={{flex:1,minWidth:0,border:'none',background:'transparent',color:T.ink,fontSize:15,fontWeight:600,fontFamily:"'Space Grotesk', sans-serif",resize:'none',overflow:'hidden',outline:'none',lineHeight:1.35,padding:0}}/>
+                    <div style={{display:'flex',flexDirection:'column',gap:2,flexShrink:0}}>
+                      <button onClick={()=>moveRow(i,-1)} disabled={i===0} style={{background:'none',border:`0.5px solid ${T.border}`,borderRadius:6,cursor:'pointer',color:T.muted,width:30,height:26,fontSize:12,opacity:i===0?0.3:1}}>↑</button>
+                      <button onClick={()=>moveRow(i,1)} disabled={i===lavorazioni.length-1} style={{background:'none',border:`0.5px solid ${T.border}`,borderRadius:6,cursor:'pointer',color:T.muted,width:30,height:26,fontSize:12,opacity:i===lavorazioni.length-1?0.3:1}}>↓</button>
+                    </div>
+                    <button onClick={()=>handleDelete(lav.id)} style={{background:'none',border:`0.5px solid ${T.border}`,borderRadius:6,cursor:'pointer',color:T.red,width:30,height:30,fontSize:18,lineHeight:1,flexShrink:0}}>×</button>
+                  </div>
+                  {/* Campi */}
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                    <div style={{position:'relative'}}>
+                      <label style={mLabel}>Impresa</label>
+                      <input value={lav.operatore||''}
+                        onChange={e=>{setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,operatore:e.target.value}:l));setImpresaSuggest({rowId:lav.id});}}
+                        onFocus={()=>setImpresaSuggest({rowId:lav.id})}
+                        onBlur={e=>{handleInlineEdit(lav,'operatore',e.target.value);setTimeout(()=>setImpresaSuggest(null),150);}}
+                        placeholder="—" style={mInput}/>
+                      {impresaSuggest?.rowId===lav.id && impresaOptions.filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).length>0 && (
+                        <div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:1000,marginTop:2,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius:8,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',maxHeight:160,overflowY:'auto'}}>
+                          {impresaOptions.filter(o=>!lav.operatore||o.toLowerCase().includes(lav.operatore.toLowerCase())).map(opt=>(
+                            <div key={opt} onMouseDown={()=>{handleInlineEdit(lav,'operatore',opt);setImpresaSuggest(null);}}
+                              style={{padding:'9px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:12,display:'flex',alignItems:'center',gap:8}}>
+                              <span style={{width:8,height:8,borderRadius:'50%',background:impresaColorMap[opt]||T.navy,flexShrink:0}}/>
+                              {opt}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label style={mLabel}>Dipende da</label>
+                      <select value={lav.dipendenza_id||''}
+                        onChange={e=>handleInlineEdit(lav,'dipendenza_id',e.target.value||null)}
+                        style={{...mInput,cursor:'pointer'}}>
+                        <option value=''>—</option>
+                        {lavorazioni.filter(l=>l.id!==lav.id).map(l=>(
+                          <option key={l.id} value={l.id}>{l.descrizione||'—'}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={mLabel}>Inizio</label>
+                      <input type="date" value={lav.data_inizio||''}
+                        onChange={e=>handleInlineEdit(lav,'data_inizio',e.target.value)} style={mInput}/>
+                    </div>
+                    <div>
+                      <label style={mLabel}>Fine</label>
+                      <input type="date" value={lav.data_fine||''}
+                        onChange={e=>handleInlineEdit(lav,'data_fine',e.target.value)} style={mInput}/>
+                    </div>
+                    <div>
+                      <label style={mLabel}>Durata (gg)</label>
+                      <input type="number" min={1} value={lav.durata_giorni||''}
+                        onChange={e=>setLavorazioni(p=>p.map(l=>l.id===lav.id?{...l,durata_giorni:e.target.value}:l))}
+                        onBlur={e=>handleInlineEdit(lav,'durata_giorni',e.target.value)} style={mInput}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Card nuova lavorazione */}
+            <div style={{background:T.navyLight,border:`1px dashed ${T.borderMd}`,borderRadius:T.radius,padding:12,display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{width:10,height:10,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
+                <input value={newRow.descrizione}
+                  onChange={e=>setNewRow(p=>({...p,descrizione:e.target.value}))}
+                  placeholder="+ Nuova lavorazione..."
+                  style={{flex:1,minWidth:0,border:'none',background:'transparent',color:T.ink,fontSize:15,fontWeight:600,fontFamily:"'Space Grotesk', sans-serif",outline:'none',padding:0}}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <div style={{position:'relative'}}>
+                  <label style={mLabel}>Impresa</label>
+                  <input value={newRow.operatore}
+                    onChange={e=>{updateNewRow('operatore',e.target.value);setImpresaSuggest({rowId:'new'});}}
+                    onFocus={()=>setImpresaSuggest({rowId:'new'})}
+                    onBlur={()=>setTimeout(()=>setImpresaSuggest(null),150)}
+                    placeholder="—" style={mInput}/>
+                  {impresaSuggest?.rowId==='new' && impresaOptions.filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).length>0 && (
+                    <div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:1000,marginTop:2,background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius:8,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',maxHeight:160,overflowY:'auto'}}>
+                      {impresaOptions.filter(o=>!newRow.operatore||o.toLowerCase().includes(newRow.operatore.toLowerCase())).map(opt=>(
+                        <div key={opt} onMouseDown={()=>{updateNewRow('operatore',opt);setImpresaSuggest(null);}}
+                          style={{padding:'9px 10px',cursor:'pointer',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:12,display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{width:8,height:8,borderRadius:'50%',background:impresaColorMap[opt]||T.navy,flexShrink:0}}/>
+                          {opt}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label style={mLabel}>Dipende da</label>
+                  <select value={newRow.dipendenza_id}
+                    onChange={e=>updateNewRow('dipendenza_id',e.target.value)}
+                    style={{...mInput,cursor:'pointer'}}>
+                    <option value=''>—</option>
+                    {lavorazioni.map(l=>(
+                      <option key={l.id} value={l.id}>{l.descrizione||'—'}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={mLabel}>Inizio</label>
+                  <input type="date" value={newRow.data_inizio}
+                    onChange={e=>updateNewRow('data_inizio',e.target.value)} style={mInput}/>
+                </div>
+                <div>
+                  <label style={mLabel}>Fine</label>
+                  <input type="date" value={newRow.data_fine}
+                    onChange={e=>updateNewRow('data_fine',e.target.value)} style={mInput}/>
+                </div>
+                <div>
+                  <label style={mLabel}>Durata (gg)</label>
+                  <input type="number" min={1} value={newRow.durata_giorni}
+                    onChange={e=>updateNewRow('durata_giorni',e.target.value)} style={mInput}/>
+                </div>
+              </div>
+              <button onClick={handleSaveNew} disabled={savingNew||!newRow.descrizione.trim()}
+                style={{background:T.navy,border:'none',cursor:'pointer',color:T.bg,padding:'11px',borderRadius:8,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>
+                + Aggiungi lavorazione
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
@@ -1065,7 +1437,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                   ref={el => { rowDivsRef.current[i] = el; }}
                   style={{minHeight:ROW_H,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,opacity:isDragging?0.35:1,transition:'opacity 0.1s'}}>
                   {/* Drag handle */}
-                  <div onMouseDown={e=>onRowDragStart(e,lav,i)} style={{display:'flex',alignItems:'center',justifyContent:'center',cursor:'grab',borderRight:`0.5px solid ${T.border}`,color:T.muted,fontSize:11,userSelect:'none',flexShrink:0}}>⠿</div>
+                  <div onPointerDown={e=>onRowDragStart(e,lav,i)} style={{display:'flex',alignItems:'center',justifyContent:'center',cursor:'grab',borderRight:`0.5px solid ${T.border}`,color:T.muted,fontSize:11,userSelect:'none',flexShrink:0,touchAction:'none'}}>⠿</div>
                   {/* Nome — textarea auto-height */}
                   <div style={{padding:'4px 8px',display:'flex',alignItems:'flex-start',gap:6,borderRight:`0.5px solid ${T.border}`}}>
                     <div style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0,marginTop:5}}/>
@@ -1222,149 +1594,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         <div ref={chartRef}
           onScroll={e=>{ if(leftRef.current) leftRef.current.scrollTop=e.target.scrollTop; }}
           style={{flex:1,overflowX:'auto',overflowY:'auto',position:'relative'}}>
-          <div style={{width:totalW,minWidth:'100%',position:'relative'}}>
-
-            {/* Header temporale sticky */}
-            <div style={{height:52,position:'sticky',top:0,zIndex:10,background:T.bg,borderBottom:`0.5px solid ${T.border}`}}>
-              {/* Mesi */}
-              <div style={{height:26,display:'flex',borderBottom:`0.5px solid ${T.border}`}}>
-                {timeHeaders.months.map((m,i)=>{
-                  const [year,month]=m.label.split('-');
-                  const label=new Date(Number(year),Number(month),1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
-                  return (
-                    <div key={i} style={{width:m.width,flexShrink:0,padding:'0 8px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
-                      <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.1em',textTransform:'uppercase',color:T.ink,whiteSpace:'nowrap'}}>{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Settimane */}
-              <div style={{height:26,display:'flex'}}>
-                {viewMode==='week' ? timeHeaders.weeks.map((w,i)=>(
-                  <div key={i} style={{width:w.width,flexShrink:0,padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
-                    <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted,whiteSpace:'nowrap'}}>
-                      {w.date?w.date.toLocaleDateString('it-IT',{day:'numeric',month:'short'}):''}
-                    </span>
-                  </div>
-                )) : Array.from({length:Math.ceil(totalDays/5)},(_,i)=>{
-                  const d=addDays(startDate,i*5);
-                  return (
-                    <div key={i} style={{width:dayW*5,flexShrink:0,padding:'0 4px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,background:T.bg}}>
-                      <span style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted}}>{d.getDate()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Grid corpo */}
-            <div style={{position:'relative',height:totalH}}>
-
-              {/* ── SFONDO COLORATO — tutto il calendario ── */}
-              {Array.from({length:totalDays},(_,i)=>{
-                const d = addDays(startDate, i);
-                const isWeekend = d.getDay()===0||d.getDay()===6;
-                const isMonday  = d.getDay()===1;
-                const weekNum   = Math.floor(i/7);
-                const isOdd     = weekNum%2===1;
-                const isToday   = toISO(d)===toISO(new Date());
-                return (
-                  <div key={i} style={{
-                    position:'absolute', left:i*dayW, top:0, width:dayW, height:totalH,
-                    background: isToday
-                      ? 'rgba(19,49,92,0.10)'
-                      : isWeekend
-                      ? T.border
-                      : isOdd
-                      ? 'rgba(19,49,92,0.03)'
-                      : `${T.bg}80`,
-                    borderRight:`0.5px solid ${isMonday?T.borderMd:T.border}`,
-                    pointerEvents:'none',
-                  }}/>
-                );
-              })}
-
-              {/* Linea oggi */}
-              <div style={{position:'absolute',left:todayX,top:0,width:2,height:totalH,background:T.navy,opacity:0.8,pointerEvents:'none',zIndex:5}}/>
-
-              {/* Linee orizzontali righe */}
-              {lavorazioni.map((_,i)=>(
-                <div key={i} style={{position:'absolute',left:0,top:getRowTop(i),right:0,height:getRowH(i),borderBottom:`0.5px solid ${T.border}`,background:i%2===0?'transparent':'rgba(14,14,13,0.01)',pointerEvents:'none'}}/>
-              ))}
-              <div style={{position:'absolute',left:0,top:newRowTop,right:0,height:ROW_H,borderBottom:`0.5px solid ${T.border}`,pointerEvents:'none'}}/>
-
-              {/* SVG dipendenze */}
-              <svg style={{position:'absolute',top:0,left:0,width:totalW,height:totalH,pointerEvents:'none',overflow:'visible',zIndex:3}}>
-                <defs>
-                  <marker id="arr" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
-                    <path d="M0,0 L6,3 L0,6 Z" fill={T.muted}/>
-                  </marker>
-                </defs>
-                {lavorazioni.filter(l=>l.dipendenza_id).map((lav)=>{
-                  const dep=lavorazioni.find(d=>d.id===lav.dipendenza_id);
-                  if (!dep||!dep.data_inizio||!lav.data_inizio) return null;
-                  const di=lavorazioni.indexOf(dep); const li=lavorazioni.indexOf(lav);
-                  const x1=dateToX(dep.data_inizio)+Number(dep.durata_giorni||1)*dayW;
-                  const y1=getRowTop(di)+getRowH(di)/2;
-                  const x2=dateToX(lav.data_inizio);
-                  const y2=getRowTop(li)+getRowH(li)/2;
-                  return (
-                    <path key={lav.id} d={`M${x1} ${y1} C${x1+30} ${y1} ${x2-30} ${y2} ${x2} ${y2}`}
-                      fill="none" stroke={T.muted} strokeWidth={1.5} strokeDasharray="4,3" markerEnd="url(#arr)"/>
-                  );
-                })}
-              </svg>
-
-              {/* Barre lavorazioni */}
-              {lavorazioni.map((lav,i)=>{
-                const rH  = getRowH(i);
-                const rTop = getRowTop(i);
-                if (!lav.data_inizio) return (
-                  <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH}}/>
-                );
-                const barX  = dateToX(lav.data_inizio);
-                const barW  = Math.max(Number(lav.durata_giorni||1)*dayW, 8);
-                const pct   = Number(lav.percentuale_completamento)||0;
-                const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
-                return (
-                  <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH,zIndex:4}}>
-                    <div
-                      onMouseDown={e=>onBarMouseDown(e,lav)}
-                      style={{
-                        position:'absolute', left:barX, top:rH*0.18, height:rH*0.64,
-                        width:barW, background:color, cursor:'grab', borderRadius:4,
-                        overflow:'hidden', userSelect:'none',
-                        boxShadow:'0 2px 6px rgba(0,0,0,0.18)',
-                      }}
-                    >
-                      {/* Progress */}
-                      <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
-                      {/* Label */}
-                      {barW>60&&(
-                        <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"'Space Grotesk', sans-serif",fontSize:12,fontWeight:600,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
-                          {lav.descrizione}
-                        </div>
-                      )}
-                      {/* Date sotto la barra */}
-                      <div style={{position:'absolute',top:'100%',left:0,marginTop:2,fontFamily:"'IBM Plex Mono', monospace",fontSize:8,color:T.muted,whiteSpace:'nowrap',pointerEvents:'none'}}>
-                        {fmtDate(lav.data_inizio)} → {fmtDate(lav.data_fine)}
-                      </div>
-                      {/* Resize handle */}
-                      <div onMouseDown={e=>onResizeMouseDown(e,lav)} style={{position:'absolute',right:0,top:0,width:8,height:'100%',cursor:'ew-resize',background:'rgba(0,0,0,0.15)',zIndex:6}}/>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Riga nuova — preview barra */}
-              <div style={{position:'absolute',top:newRowTop,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
-                {newRow.data_inizio&&(
-                  <div style={{position:'absolute',left:dateToX(newRow.data_inizio),top:ROW_H*0.18,height:ROW_H*0.64,width:Math.max(Number(newRow.durata_giorni||7)*dayW,8),background:T.navy,opacity:0.25,borderRadius:4}}/>
-                )}
-              </div>
-
-            </div>
-          </div>
+          {chartBody}
         </div>
       </div>
 
