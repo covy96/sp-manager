@@ -74,7 +74,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   const P = (testo, opts = {}) => {
     const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY, keepLines, keepNext } = opts;
     return new Paragraph({
-      alignment: align,
+      alignment: align ?? AlignmentType.JUSTIFIED,
       spacing: { after: spacing ?? 120, ...(opts.spacingBefore ? { before: opts.spacingBefore } : {}) },
       indent,
       ...(keepLines ? { keepLines: true } : {}),
@@ -88,6 +88,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   const Bullet = (testo, opts = {}) =>
     new Paragraph({
       bullet: { level: opts.level ?? 0 },
+      alignment: AlignmentType.JUSTIFIED,
       spacing: { after: opts.after ?? 80 },
       ...(opts.keepNext ? { keepNext: true } : {}),
       ...(opts.keepLines ? { keepLines: true } : {}),
@@ -160,7 +161,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     }
     const L = fLeft.split("\n"), C = fCenter.split("\n"), R = fRight.split("\n");
     const n = Math.max(L.length, C.length, R.length);
-    const larghezza = MM(210 - 40);
+    const larghezza = MM(210 - 30);
     const out = [];
     for (let i = 0; i < n; i++) {
       const children = [];
@@ -403,7 +404,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
         titlePage: !!cfg.copertina,
         page: {
           size: { width: MM(210), height: MM(297) },
-          margin: { top: MM(18), bottom: MM(20), left: MM(20), right: MM(20), header: MM(10), footer: MM(10) },
+          margin: { top: MM(18), bottom: MM(20), left: MM(15), right: MM(15), header: MM(10), footer: MM(10) },
         },
       },
       headers: { default: headerDefault, first: new Header({ children: [new Paragraph({ children: [] })] }) },

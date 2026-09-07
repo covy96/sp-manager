@@ -19,7 +19,7 @@ import {
 
 registerGroteskaFonts();
 
-const W = 210, H = 297, ML = 20, MR = 20, CW = W - ML - MR;
+const W = 210, H = 297, ML = 15, MR = 15, CW = W - ML - MR;
 const FOOTER_H = 15;
 const MAX_Y = H - FOOTER_H - 8;
 
@@ -76,43 +76,75 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   // ── Primitive di testo ─────────────────────────────────────────────────────
   const paragrafo = (testo, {
     size = 9.5, weight = "book", zone = "body", color = [30, 30, 30],
-    align = "left", lineH = 5, spaceAfter = 0, maxW = CW, x = ML, keepTogether = false,
+    align = "justify", lineH = 5, spaceAfter = 0, maxW = CW, x = ML, keepTogether = false,
   } = {}) => {
     if (!testo) return;
     setF(weight, zone); pdf.setFontSize(size); pdf.setTextColor(...color);
     const lines = pdf.splitTextToSize(String(testo), maxW);
     // Tiene il paragrafo unito: se non entra nello spazio residuo, va a pagina nuova.
     if (keepTogether) ensure(lines.length * lineH);
-    lines.forEach((line) => {
+    lines.forEach((line, idx) => {
       ensure(lineH);
-      const px = align === "center" ? x + maxW / 2 : align === "right" ? x + maxW : x;
-      pdf.text(line, px, y, { align });
+      const isLast = idx === lines.length - 1;
+      // Giustificato: distribuisce lo spazio extra tra le parole (non sull'ultima riga).
+      if (align === "justify" && !isLast && /\s/.test(line.trim())) {
+        const words = line.trim().split(/\s+/);
+        const wordsW = words.reduce((a, w) => a + pdf.getTextWidth(w), 0);
+        const gaps = words.length - 1;
+        const extra = gaps > 0 ? Math.max(0, (maxW - wordsW) / gaps) : 0;
+        let cx = x;
+        words.forEach((w) => { pdf.text(w, cx, y); cx += pdf.getTextWidth(w) + extra; });
+      } else {
+        const al = align === "justify" ? "left" : align;
+        const px = al === "center" ? x + maxW / 2 : al === "right" ? x + maxW : x;
+        pdf.text(line, px, y, { align: al });
+      }
       y += lineH;
     });
     y += spaceAfter;
   };
 
-  // Testo con porzioni in grassetto (**…**), a capo automatico.
-  const paragrafoRicco = (testo, { size = 9.5, x = ML, maxW = CW, lineH = 5, color = [30, 30, 30], spaceAfter = 0 } = {}) => {
+  // Testo con porzioni in grassetto (**…**), a capo automatico e giustificato.
+  const paragrafoRicco = (testo, { size = 9.5, x = ML, maxW = CW, lineH = 5, color = [30, 30, 30], spaceAfter = 0, justify = true } = {}) => {
     const segs = segmentaGrassetto(testo);
     pdf.setFontSize(size); pdf.setTextColor(...color);
-    let curX = x;
-    ensure(lineH);
+
+    // 1) Tokenizza mantenendo stile (bold) e larghezza di ogni token.
+    const tokens = [];
     segs.forEach((seg) => {
       setF(seg.bold ? "bold" : "book");
-      const tokens = seg.text.split(/(\s+)/).filter(t => t !== "");
-      tokens.forEach((tok) => {
-        const tw = pdf.getTextWidth(tok);
-        if (/^\s+$/.test(tok)) { if (curX > x) curX += tw; return; }
-        if (curX + tw > x + maxW && curX > x) {
-          y += lineH; curX = x;
-          if (y > MAX_Y) { nuovaPagina(); curX = x; }
-        }
-        pdf.text(tok, curX, y);
-        curX += tw;
+      seg.text.split(/(\s+)/).filter(t => t !== "").forEach((t) => {
+        tokens.push({ text: t, bold: seg.bold, space: /^\s+$/.test(t), w: pdf.getTextWidth(t) });
       });
     });
-    y += lineH + spaceAfter;
+
+    // 2) Raggruppa i token in righe che stanno entro maxW.
+    const lines = [];
+    let cur = [], curW = 0;
+    const trimTrailing = () => { while (cur.length && cur[cur.length - 1].space) { curW -= cur[cur.length - 1].w; cur.pop(); } };
+    tokens.forEach((tok) => {
+      if (tok.space) { if (cur.length) { cur.push(tok); curW += tok.w; } return; }
+      if (curW + tok.w > maxW && cur.length) { trimTrailing(); lines.push({ toks: cur, w: curW }); cur = [tok]; curW = tok.w; }
+      else { cur.push(tok); curW += tok.w; }
+    });
+    if (cur.length) { trimTrailing(); lines.push({ toks: cur, w: curW }); }
+
+    // 3) Rende ogni riga; giustifica tutte tranne l'ultima.
+    lines.forEach((ln, idx) => {
+      ensure(lineH);
+      const isLast = idx === lines.length - 1;
+      const spaces = ln.toks.filter(t => t.space).length;
+      const extra = (justify && !isLast && spaces > 0) ? Math.max(0, (maxW - ln.w) / spaces) : 0;
+      let cx = x;
+      ln.toks.forEach((tok) => {
+        if (tok.space) { cx += tok.w + extra; return; }
+        setF(tok.bold ? "bold" : "book");
+        pdf.text(tok.text, cx, y);
+        cx += tok.w;
+      });
+      y += lineH;
+    });
+    y += spaceAfter;
   };
 
   // Pallino pieno disegnato: indipendente dai glifi disponibili nel font
