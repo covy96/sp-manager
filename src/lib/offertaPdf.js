@@ -10,7 +10,7 @@ import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pdfCommon";
 import {
   resolveTemplate, PAGAMENTO_CHIUSURA,
-  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, testoRateC,
+  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC,
 } from "./offertaTemplate";
 import {
   sezioniAttive, vociAttive, importoSezione, importoVoce, calcolaTotali,
@@ -395,7 +395,8 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
   const opzioni = MODALITA_PAGAMENTO.filter(o => (cfg.pagamento?.opzioni || []).includes(o.id));
   if (opzioni.length > 0 || cfg.pagamento?.testoLibero) {
     titoloCentrato(TESTI.pagamentiTitolo, { spaceBefore: 8, spaceAfter: 7 });
-    if (opzioni.length > 0) elenco(opzioni.map(o => o.rate ? testoRateC(cfg.pagamento?.rateC) : o.testo));
+    // Opzione a rate (C): una riga per ogni rata; le altre opzioni una voce ciascuna.
+    if (opzioni.length > 0) elenco(opzioni.flatMap(o => o.rate ? righeRateC(cfg.pagamento?.rateC) : [o.testo]));
     if (cfg.pagamento?.testoLibero) { y += 2; paragrafo(cfg.pagamento.testoLibero, { spaceAfter: 2 }); }
     y += 4;
     paragrafo(PAGAMENTO_CHIUSURA, { spaceAfter: 8 });

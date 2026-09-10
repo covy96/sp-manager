@@ -321,6 +321,13 @@ export function testoRateC(rate) {
     .join("; ") + ".";
 }
 
+// Rate dell'Opzione C come righe separate, una per rata: ["30% accettazione", …].
+// Usato dai generatori per andare a capo su ogni rata quando ci sono più opzioni.
+export function righeRateC(rate) {
+  const list = Array.isArray(rate) && rate.length ? rate : RATE_C_DEFAULT;
+  return list.map(r => `${Number(r.percentuale) || 0}% ${(r.descrizione || "").trim()}`.trim());
+}
+
 export const MODALITA_PAGAMENTO = [
   { id: "A", testo: "SALDO alla presentazione." },
   { id: "B", testo: "Saldo all'accettazione dell'offerta." },

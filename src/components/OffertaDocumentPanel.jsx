@@ -95,7 +95,11 @@ export default function OffertaDocumentPanel({
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [createError, setCreateError] = useState("");
 
+  // Nome offerta modificabile in modifica (in creazione si usa `ana.nome_offerta`).
+  const [nomeEdit, setNomeEdit] = useState(() => offerta?.nome_offerta || "");
+
   useEffect(() => {
+    setNomeEdit(offerta?.nome_offerta || "");
     const nd = normalizzaDocumento(offerta?.documento, offerta, tpl);
     setDoc(nd);
     const vs = Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : [];
@@ -109,7 +113,9 @@ export default function OffertaDocumentPanel({
   const tot = useMemo(() => calcolaTotali(doc, tpl), [doc, tpl]);
 
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
-  const offGen = isCreate ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta, cliente: ana.cliente } : offerta;
+  const offGen = isCreate
+    ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta, cliente: ana.cliente }
+    : { ...offerta, nome_offerta: nomeEdit.trim() || offerta?.nome_offerta };
 
   // Cliente → committente: rispecchia il valore, ma non sovrascrive un
   // committente già modificato a mano.
@@ -192,6 +198,8 @@ export default function OffertaDocumentPanel({
     // diventano le voci, con sconti e totale allineati. Se il documento non ha
     // prestazioni attive le voci esistenti non vengono toccate.
     const patch = { documento: doc, documento_versioni: nuoveVersioni };
+    // Nome offerta editato nel pannello (salvato solo se non svuotato).
+    if (nomeEdit.trim() && nomeEdit.trim() !== offerta.nome_offerta) patch.nome_offerta = nomeEdit.trim();
     if (tot.righe.length > 0) {
       patch.voci = tot.righe.map((r, i) => ({ id: `sez${i}_${stamp}`, nome: r.titolo, prezzo: r.importo, attiva: true }));
       patch.sconto = Number(doc.sconto) || 0;
@@ -414,7 +422,7 @@ export default function OffertaDocumentPanel({
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {isCreate
                 ? (ana.nome_offerta || "Crea offerta dal documento")
-                : `${offerta?.numero_offerta} — ${offerta?.nome_offerta}`}
+                : `${offerta?.numero_offerta} — ${nomeEdit.trim() || offerta?.nome_offerta}`}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
@@ -509,6 +517,18 @@ export default function OffertaDocumentPanel({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Nome offerta — modificabile in modifica */}
+          {!isCreate && (
+            <div style={cardSt}>
+              <div style={labelSt}>Nome offerta</div>
+              <input value={nomeEdit} onChange={e => setNomeEdit(e.target.value)}
+                placeholder="Es. Ristrutturazione appartamento" style={inputSt} />
+              <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 6 }}>
+                Rinomina l'offerta: il nuovo nome viene salvato premendo <b>Salva</b> e usato nel file Word/PDF.
+              </div>
             </div>
           )}
 
