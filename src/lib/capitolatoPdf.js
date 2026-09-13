@@ -81,6 +81,12 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   const gruppi = componiGruppi(righe);
 
   let y = 0;
+  let bodyTop = 0; // y di inizio corpo tabella (per le righe verticali continue)
+  const drawVerticals = (y0, y1) => {
+    if (y1 <= y0) return;
+    pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
+    [ML, X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot, X.end].forEach((x) => pdf.line(x, y0, x, y1));
+  };
 
   // ── Intestazione di pagina (progetto a sx, studio a dx) ────────────────────
   const testata = () => {
@@ -97,8 +103,6 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     reg(7); pdf.setTextColor(110, 110, 110);
     if (emailStudio) pdf.text(emailStudio, W - MR, Math.max(logoBottom, ry) + (logo ? 3 : 0), { align: "right" });
 
-    pdf.setDrawColor(190, 190, 190); pdf.setLineWidth(0.3);
-    pdf.line(ML, top + 9, W - MR, top + 9);
     y = top + 13;
   };
 
@@ -126,10 +130,11 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     pdf.text("unitario", X.unit + COL.unit / 2, y + h1 + 3.3, { align: "center" });
     pdf.text("TOTALE", X.tot + COL.tot / 2, y + h1 + 3.3, { align: "center" });
     y += h1 + h2;
+    bodyTop = y;
   };
 
   const ensure = (needed) => {
-    if (y + needed > MAX_Y) { pdf.addPage(); testata(); intestazioneTabella(); }
+    if (y + needed > MAX_Y) { drawVerticals(bodyTop, y); pdf.addPage(); testata(); intestazioneTabella(); }
   };
 
   // ── COPERTINA ───────────────────────────────────────────────────────────────
@@ -187,7 +192,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     pdf.addPage(); testata();
     pdf.setFillColor(...NAVY);
     pdf.rect(ML, y, W - ML - MR, 6, "F");
-    bold(8.5); pdf.setTextColor(255, 255, 255); pdf.text(g.titoloPagina, ML + 2, y + 4.1);
+    bold(8.5); pdf.setTextColor(255, 255, 255); pdf.text(g.titoloPagina, W / 2, y + 4.1, { align: "center" });
     y += 6;
     intestazioneTabella();
 
@@ -202,24 +207,28 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       const headBlock = titLines.length * 3.6 + descLines.length * 3.1 + 5;
       ensure(headBlock + 4);
 
-      const blockTop = y;
-      // codice
-      reg(6.6); pdf.setTextColor(50, 50, 50);
-      pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3, { align: "center" });
-      // titolo (grassetto)
-      bold(7.3); pdf.setTextColor(...NAVY);
-      titLines.forEach((ln) => { ensure(3.8); pdf.text(ln, X.desig + 1.5, y + 3); y += 3.6; });
-      // descrizione (regular)
-      reg(7); pdf.setTextColor(55, 55, 55);
+      // banda grigia dietro codice + titolo (grassetto)
+      const titH = titLines.length * 3.6 + 1.8;
+      pdf.setFillColor(236, 237, 240);
+      pdf.rect(ML, y, W - ML - MR, titH, "F");
+      reg(6.6); pdf.setTextColor(60, 60, 60);
+      pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3.6, { align: "center" });
+      bold(7.3); pdf.setTextColor(30, 30, 30);
+      let ty = y + 3.6;
+      titLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, ty); ty += 3.6; });
+      y += titH;
+      // descrizione (regular, grigio)
+      reg(7); pdf.setTextColor(90, 90, 90);
       descLines.forEach((ln) => { ensure(3.4); pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
       // MISURAZIONI (corsivo)
       y += 1; ensure(4);
       ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.2); y += 4;
 
-      reg(7); pdf.setTextColor(55, 55, 55);
       misure.forEach((m) => {
         ensure(3.6);
+        reg(7); pdf.setTextColor(120, 120, 120);
         pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.2);
+        pdf.setTextColor(30, 30, 30);
         const cell = (key, val) => { const n = parseNum(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.2, { align: "right" }); };
         cell("lung", m.lung); cell("larg", m.larg); cell("hpeso", m.hpeso);
         const q = qtaMisurazione(m);
@@ -227,28 +236,32 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
         y += 3.4;
       });
 
-      // SOMMANO (corsivo, una o due righe fornitura/posa)
+      // SOMMANO (corsivo, una o due righe fornitura/posa) con cella importo evidenziata
       labels.forEach((lab) => {
         ensure(4);
+        pdf.setFillColor(255, 251, 227);
+        pdf.rect(X.tot, y - 0.6, COL.tot, 4, "F");
         ital(7); pdf.setTextColor(40, 40, 40);
         pdf.text(lab, X.desig + 1.5, y + 2.4);
         pdf.text(fmtNum(tot), RIGHT("qta"), y + 2.4, { align: "right" });
         y += 4;
       });
 
-      pdf.setDrawColor(225, 225, 225); pdf.setLineWidth(0.2);
-      pdf.line(ML, y + 0.5, X.end, y + 0.5);
-      [X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot].forEach((x) => pdf.line(x, blockTop, x, y + 0.5));
+      pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
+      pdf.line(ML, y + 0.8, X.end, y + 0.8);
       y += 2.5;
     });
 
-    // TOTALE categoria (importo vuoto)
-    ensure(6);
-    bold(7.5); pdf.setTextColor(...NAVY);
-    pdf.text(`TOTALE ${g.nomeIndice}`, X.desig + 1.5, y + 3);
-    pdf.setDrawColor(...NAVY); pdf.setLineWidth(0.3);
-    pdf.line(ML, y - 0.5, X.end, y - 0.5);
-    y += 6;
+    // chiude le righe verticali continue del corpo tabella
+    ensure(9);
+    drawVerticals(bodyTop, y);
+    // TOTALE categoria: banda blu, testo bianco
+    const totH = 6;
+    pdf.setFillColor(...NAVY);
+    pdf.rect(ML, y, W - ML - MR, totH, "F");
+    bold(7.8); pdf.setTextColor(255, 255, 255);
+    pdf.text(`TOTALE ${g.nomeIndice}`, X.desig + 1.5, y + 4);
+    y += totH + 2;
   });
 
   // ── RIEPILOGO ────────────────────────────────────────────────────────────────

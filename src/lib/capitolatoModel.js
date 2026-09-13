@@ -73,6 +73,9 @@ export function componiGruppi(righe) {
 
 // ── Costruzione riga da voce di libreria ──────────────────────────────────────
 export function rigaFromVoce(voce) {
+  // le voci "a corpo" partono sempre da quantità 1
+  const mis0 = emptyMisurazione();
+  if ((voce.unita || "").toLowerCase() === "a corpo") mis0.qta = "1";
   return {
     _key: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()),
     voce_id: voce.id,
@@ -84,7 +87,7 @@ export function rigaFromVoce(voce) {
     unita: voce.unita || "",
     tipo: voce.tipo || "singolo",
     sommano_labels: Array.isArray(voce.sommano_labels) ? voce.sommano_labels : [],
-    misurazioni: [emptyMisurazione()],
+    misurazioni: [mis0],
     note: "",
   };
 }
