@@ -169,23 +169,41 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
 
   // ── PREMESSA + INDICE ─────────────────────────────────────────────────────
   pdf.addPage(); testata();
-  bold(12); pdf.setTextColor(...NAVY); pdf.text("PREMESSA", ML, y); y += 6;
-  reg(7.5); pdf.setTextColor(60, 60, 60);
+  // barra PREMESSA (navy, testo bianco)
+  pdf.setFillColor(...NAVY); pdf.rect(ML, y, W - ML - MR, 6, "F");
+  reg(9.4); pdf.setTextColor(255, 255, 255); pdf.text("PREMESSA", ML + 2, y + 4.1);
+  y += 9;
   CAPITOLATO_PREMESSA.forEach((par) => {
+    const isSub = par.length < 40 && par === par.toUpperCase() && !par.includes("\n");
+    if (isSub) {
+      y += 1; ensure(6);
+      reg(9); pdf.setTextColor(20, 20, 20); pdf.text(par, ML, y + 2.5); y += 6;
+      return;
+    }
+    reg(8.4); pdf.setTextColor(40, 40, 40);
     par.split("\n").forEach((sub) => {
-      pdf.splitTextToSize(sub, W - ML - MR).forEach((ln) => { ensure(4); pdf.text(ln, ML, y); y += 3.6; });
+      pdf.splitTextToSize(sub, W - ML - MR).forEach((ln) => { ensure(4.2); pdf.text(ln, ML, y + 2.5); y += 3.9; });
     });
     y += 2.5;
   });
 
-  y += 4; ensure(10);
-  bold(12); pdf.setTextColor(...NAVY); pdf.text("INDICE", ML, y); y += 6;
+  y += 6; ensure(16);
+  // barra INDICE (grigia, centrata)
+  pdf.setFillColor(225, 227, 232); pdf.rect(ML, y, W - ML - MR, 6, "F");
+  reg(9.4); pdf.setTextColor(50, 50, 50); pdf.text("INDICE", W / 2, y + 4.1, { align: "center" });
+  y += 6;
+  const idxLetterX = ML + 30, idxNameX = ML + 60;
   gruppi.forEach((g) => {
-    ensure(6);
-    bold(9); pdf.setTextColor(...NAVY); pdf.text(g.code, ML + 2, y);
-    reg(9); pdf.setTextColor(50, 50, 50); pdf.text(g.nomeIndice, ML + 12, y);
-    y += 5.5;
+    ensure(6.5);
+    reg(9); pdf.setTextColor(30, 30, 30);
+    pdf.text(g.code, idxLetterX, y + 4, { align: "center" });
+    pdf.text(g.nomeIndice, idxNameX, y + 4);
+    pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
+    pdf.line(ML, y + 6, W - MR, y + 6);
+    y += 6;
   });
+  ital(7.9); pdf.setTextColor(80, 80, 80);
+  pdf.text(CAPITOLATO_NOTA_IVA, W / 2, MAX_Y, { align: "center" });
 
   // ── PAGINE PER CATEGORIA ────────────────────────────────────────────────────
   gruppi.forEach((g) => {
@@ -240,7 +258,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       labels.forEach((lab) => {
         ensure(4);
         pdf.setFillColor(255, 251, 227);
-        pdf.rect(X.tot, y - 0.6, COL.tot, 4, "F");
+        pdf.rect(X.unit, y - 0.6, COL.unit, 4, "F");
         ital(7); pdf.setTextColor(40, 40, 40);
         pdf.text(lab, X.desig + 1.5, y + 2.4);
         pdf.text(fmtNum(tot), RIGHT("qta"), y + 2.4, { align: "right" });

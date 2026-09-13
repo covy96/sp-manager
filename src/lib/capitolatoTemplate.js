@@ -1,5 +1,6 @@
 // AUTO-GENERATO da xlsm CAP. BASE — categorie, premessa e costanti del capitolato.
 // Rigenerare con lo script di estrazione se cambia il file base.
+// I sottotitoli della premessa (es. ALLESTIMENTO CANTIERE) sono righe brevi in maiuscolo.
 
 export const CAPITOLATO_CATEGORIE = [
   {
@@ -108,6 +109,7 @@ export const CAPITOLATO_CATEGORIE = [
 
 export const CAPITOLATO_PREMESSA = [
   "Nel presente computo metrico a voci di capitolato estese sono descritte nel dettaglio le opere necessarie per l'esecuzione dei lavori.",
+  "ALLESTIMENTO CANTIERE",
   "La descrizione delle opere può non contenere materiali accessori di dettaglio che devono comunque essere compresi, anche se non menzionati nei prezzi a corpo dei singoli componenti montati in opera a regola d'arte, onde consegnare le opere complete di tutto; pertanto nei prezzi relativi ad ogni singola voce si intendono compensati tutti indistintamente i materiali accessori e le opere complementari che, anche se non esplicitamente descritti, devono essere fornite per la posa a regola d'arte. Resta pertanto fin d'ora escluso il futuro riconoscimento di ogni e qualsiasi lavoro di completamento che fosse omesso per dimenticanza o per altre ragioni dall'offerta presentata. I particolari e le lavorazioni indicati sui disegni ma non menzionati nel seguente computo, o viceversa, dovranno essere eseguiti come se fossero menzionati nella stessa e indicati sui disegni. Ogni eventuale incongruenza deve essere segnalata dall'appaltatore prima dell'esecuzione.",
   "Nella quotazione sono compresi:\n- rilievi sul posto\n- progetto di cantiere\n- sottomissione per approvazione dei materiali\n- as-built\n- manuali uso e manutenzione\n- report fotografico ante e post lavori delle aree prese in consegna e limitrofe alle aree di cantiere\n- protezione con mezzo idoneo delle aree limitrofe alle aree di cantiere",
   "Tenuta del cantiere in stato di pulizia durante l'esecuzione dei lavori delle parti comuni di transito ove si rendesse necessario e pulizia finale delle aree oggetto di lavorazione e delle aree esterna. Compresa protezione di quanto consegnato e delle aree ed elementi limitrofi a quelli oggetto di cantiere. Compreso report fotografico dettagliato delle aree oggetto d’intervento o di transito delle maestranze o limitrofe, ante e post operazioni di demolizione, \nal fine di acclarare lo stato dei luoghi prima dell’allestimento del cantiere. \nPulizia di cantiere finale al fine dell'inserimento degli allestimenti. \nProtezione del pavimento finito con telo in plastica pesante e strato di tessuto non tessuto sottostante durante le opere di finitura."

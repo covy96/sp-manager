@@ -54,6 +54,7 @@ import ProfiloPage from "./pages/settings/ProfiloPage";
 import AspettoPage from "./pages/settings/AspettoPage";
 import GestioneServiziPage from "./pages/settings/GestioneServiziPage";
 import RegolazioneOffertaPage from "./pages/settings/RegolazioneOffertaPage";
+import RegolazioneCapitolatoPage from "./pages/settings/RegolazioneCapitolatoPage";
 import SettingsClientiPage from "./pages/settings/ClientiPage";
 import SettingsProgettiArchiviatiPage from "./pages/settings/ProgettiArchiviatiPage";
 import SettingsCommesseArchiviatePage from "./pages/settings/CommesseArchiviatePage";
@@ -401,6 +402,14 @@ export default function App({ session }) {
       />
       {/* La vecchia pagina "Voci Offerta" è confluita in "Regolazione offerta" */}
       <Route path="/impostazioni/voci-offerta" element={<Navigate to="/impostazioni/regolazione-offerta" replace />} />
+      <Route
+        path="/impostazioni/regolazione-capitolato"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><RegolazioneCapitolatoPage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
       <Route
         path="/impostazioni/clienti"
         element={

@@ -92,21 +92,72 @@ export function rigaFromVoce(voce) {
   };
 }
 
+// Etichette SOMMANO di default a partire da unità e tipo.
+export function defaultSommanoLabels(unita, tipo) {
+  const u = (unita || "").trim();
+  if (tipo === "fornitura_posa") {
+    return [`FORNITURA - sommano ${u}`.trim(), `POSA - sommano ${u}`.trim()];
+  }
+  return [`SOMMANO ${u}`.trim()];
+}
+
 // ── I/O Supabase ───────────────────────────────────────────────────────────────
 // Libreria voci: template globale (studio null) + voci custom dello studio.
-export async function loadLibreria(studioId) {
+// Una voce dello studio con stessa (categoria_code, codice) "oscura" quella globale
+// (pattern override: lo studio personalizza il testo base senza toccare il template).
+export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   let q = supabase
     .from("capitolato_voci")
     .select("*")
-    .eq("attiva", true)
     .order("categoria_code", { ascending: true })
     .order("ordine", { ascending: true });
-  // studio null OR studio = studioId
+  if (!includiInattive) q = q.eq("attiva", true);
   if (studioId) q = q.or(`studio.is.null,studio.eq.${studioId}`);
   else q = q.is("studio", null);
   const { data, error } = await q;
   if (error) throw error;
-  return data || [];
+
+  const byKey = new Map();
+  for (const v of data || []) {
+    const key = `${v.categoria_code}||${v.codice}`;
+    const ex = byKey.get(key);
+    if (!ex || (v.studio && !ex.studio)) byKey.set(key, v); // la voce studio vince sulla globale
+  }
+  return [...byKey.values()].sort((a, b) =>
+    a.categoria_code.localeCompare(b.categoria_code) || (a.ordine || 0) - (b.ordine || 0));
+}
+
+// Salva una voce nella libreria: se è già dello studio la aggiorna, altrimenti
+// (voce globale o nuova) crea/aggiorna un override dello studio.
+export async function saveVoceLibreria(voce, studioId) {
+  const payload = {
+    studio: studioId,
+    categoria_code: voce.categoria_code,
+    categoria_nome: voce.categoria_nome || "",
+    codice: voce.codice || "",
+    titolo: voce.titolo || "",
+    descrizione: voce.descrizione || "",
+    unita: voce.unita || "",
+    tipo: voce.tipo || "singolo",
+    sommano_labels: (voce.sommano_labels && voce.sommano_labels.length)
+      ? voce.sommano_labels : defaultSommanoLabels(voce.unita, voce.tipo),
+    ordine: voce.ordine || 0,
+    attiva: voce.attiva !== false,
+  };
+  if (voce.id && voce.studio === studioId) {
+    const { data, error } = await supabase.from("capitolato_voci")
+      .update(payload).eq("id", voce.id).select("*").single();
+    if (error) throw error; return data;
+  }
+  const { data, error } = await supabase.from("capitolato_voci")
+    .insert(payload).select("*").single();
+  if (error) throw error; return data;
+}
+
+// Elimina una voce dello studio (le globali non sono eliminabili via RLS).
+export async function deleteVoceLibreria(id) {
+  const { error } = await supabase.from("capitolato_voci").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // Capitolato del progetto (il più recente non cancellato) + righe.
