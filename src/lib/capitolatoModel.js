@@ -189,6 +189,26 @@ export async function loadCapitolato(projectId) {
   };
 }
 
+// Snapshot canonico (per confronto/versioni): meta + righe senza chiavi effimere.
+export function snapshotCapitolato(meta, righe) {
+  return {
+    nome: meta?.nome || "", committente: meta?.committente || "", localita: meta?.localita || "",
+    data: meta?.data || null, revisione: meta?.revisione || "",
+    righe: (righe || []).map((r) => ({
+      voce_id: r.voce_id || null, categoria_code: r.categoria_code, categoria_nome: r.categoria_nome || "",
+      codice: r.codice || "", titolo: r.titolo || "", descrizione: r.descrizione || "", unita: r.unita || "",
+      tipo: r.tipo || "singolo", sommano_labels: r.sommano_labels || [], misurazioni: r.misurazioni || [], note: r.note || null,
+    })),
+  };
+}
+
+// Aggiorna solo lo storico versioni del capitolato.
+export async function saveVersioni(capitolatoId, versioni) {
+  const { error } = await supabase.from("capitolati")
+    .update({ versioni, updated_at: new Date().toISOString() }).eq("id", capitolatoId);
+  if (error) throw error;
+}
+
 export async function createCapitolato(projectId, meta = {}) {
   const { data, error } = await supabase
     .from("capitolati")
@@ -201,10 +221,12 @@ export async function createCapitolato(projectId, meta = {}) {
 
 // Salva meta + righe. Le righe vengono riscritte (delete+insert): il set è piccolo
 // e questo evita diff complessi mantenendo l'ordine.
-export async function saveCapitolato(capitolatoId, meta, righe) {
+export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
+  const patch = { ...meta, updated_at: new Date().toISOString() };
+  if (versioni !== undefined) patch.versioni = versioni;
   const { error: eMeta } = await supabase
     .from("capitolati")
-    .update({ ...meta, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq("id", capitolatoId);
   if (eMeta) throw eMeta;
 

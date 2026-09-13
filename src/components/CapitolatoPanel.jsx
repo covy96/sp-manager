@@ -8,6 +8,7 @@ import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRiga, fmtNum, componiGruppi,
+  snapshotCapitolato, saveVersioni,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -17,6 +18,12 @@ const STUDIO_FIELDS =
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const oggi = () => new Date().toISOString().slice(0, 10);
+const formattaData = (iso) => {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
 
 export default function CapitolatoPanel({ projectId, studioId, project }) {
   const { T } = useTheme();
@@ -36,6 +43,10 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [versioni, setVersioni] = useState([]);
+  const [versioneAttiva, setVersioneAttiva] = useState(null);
+  const [versioniAperte, setVersioniAperte] = useState(false);
+  const [menuVer, setMenuVer] = useState(null);
 
   // ── caricamento all'apertura ────────────────────────────────────────────────
   useEffect(() => {
@@ -54,11 +65,18 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
         setStudio(stu?.data || null);
         if (existing) {
           const c = existing.capitolato;
-          setMeta({ id: c.id, nome: c.nome || "Capitolato", committente: c.committente || "", localita: c.localita || "", data: c.data || oggi(), revisione: c.revisione || "" });
+          const m = { id: c.id, nome: c.nome || "Capitolato", committente: c.committente || "", localita: c.localita || "", data: c.data || oggi(), revisione: c.revisione || "" };
+          setMeta(m);
           setRighe(existing.righe);
+          const vers = Array.isArray(c.versioni) ? c.versioni : [];
+          setVersioni(vers);
+          const snap = JSON.stringify(snapshotCapitolato(m, existing.righe));
+          setVersioneAttiva(vers.find((v) => JSON.stringify(v.snapshot) === snap)?.n ?? null);
         } else {
           setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
           setRighe([]);
+          setVersioni([]);
+          setVersioneAttiva(null);
         }
         setDirty(false);
       } catch (e) {
@@ -120,12 +138,50 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     try {
       let id = meta.id;
       if (!id) { const c = await createCapitolato(projectId, metaDb()); id = c.id; setMeta((m) => ({ ...m, id })); }
-      await saveCapitolato(id, metaDb(), righe);
-      setDirty(false);
-      showToast?.("Capitolato salvato", "success");
+      // storico versioni: se lo stato coincide con una versione esistente la si rende
+      // attiva, altrimenti se ne registra una nuova (più recente in cima, max 30).
+      const snap = snapshotCapitolato(metaDb(), righe);
+      const snapStr = JSON.stringify(snap);
+      const esistente = versioni.find((v) => JSON.stringify(v.snapshot) === snapStr);
+      let nuove = versioni, attivaN;
+      if (esistente) { attivaN = esistente.n; }
+      else {
+        const nPrec = versioni.reduce((mx, v) => Math.max(mx, Number(v.n) || 0), 0);
+        const nv = { n: nPrec + 1, ts: new Date().toISOString(), snapshot: snap };
+        nuove = [nv, ...versioni].slice(0, 30);
+        attivaN = nv.n;
+      }
+      await saveCapitolato(id, metaDb(), righe, nuove);
+      setVersioni(nuove); setVersioneAttiva(attivaN); setDirty(false);
+      showToast?.(esistente ? `Versione ${attivaN} resa principale` : `Versione ${attivaN} salvata`, "success");
     } catch (e) {
       console.error(e); showToast?.("Errore nel salvataggio", "error");
     } finally { setSaving(false); }
+  };
+
+  const caricaVersione = (v) => {
+    const s = v.snapshot || {};
+    setMeta((m) => ({ ...m, nome: s.nome || "Capitolato", committente: s.committente || "", localita: s.localita || "", data: s.data || oggi(), revisione: s.revisione || "" }));
+    setRighe((s.righe || []).map((r) => ({
+      ...r,
+      _key: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()),
+      misurazioni: Array.isArray(r.misurazioni) && r.misurazioni.length ? r.misurazioni : [emptyMisurazione()],
+      sommano_labels: Array.isArray(r.sommano_labels) ? r.sommano_labels : [],
+    })));
+    setVersioneAttiva(v.n); setVersioniAperte(false); setDirty(true);
+    showToast?.(`Versione ${v.n} caricata — premi Salva per renderla principale`, "success");
+  };
+
+  const eliminaVersione = async (v) => {
+    setMenuVer(null);
+    if (!window.confirm(`Eliminare la Versione ${v.n}? L'operazione non è reversibile.`)) return;
+    const nuove = versioni.filter((x) => x.n !== v.n);
+    try {
+      if (meta.id) await saveVersioni(meta.id, nuove);
+      setVersioni(nuove);
+      if (versioneAttiva === v.n) setVersioneAttiva(null);
+      showToast?.(`Versione ${v.n} eliminata`, "success");
+    } catch (e) { console.error(e); showToast?.("Errore eliminazione versione", "error"); }
   };
 
   const exportSnapshot = () => ({ capitolato: metaDb(), righe, project, studio });
@@ -194,6 +250,41 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                 </div>
               ))}
             </div>
+
+            {/* Versioni salvate */}
+            {versioni.length > 0 && (
+              <div style={{ borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+                <div onClick={() => setVersioniAperte((x) => !x)} style={{ padding: "9px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                  <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: T.muted }}>
+                    Versioni salvate ({versioni.length}){versioneAttiva ? ` · attiva v${versioneAttiva}` : dirty ? " · modifiche non salvate" : ""}
+                  </div>
+                  <span style={{ color: T.muted, fontSize: 11 }}>{versioniAperte ? "▲" : "▼"}</span>
+                </div>
+                {versioniAperte && (
+                  <div style={{ maxHeight: 180, overflowY: "auto", padding: "0 20px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                    {versioni.map((v) => {
+                      const nv = (v.snapshot?.righe || []).length;
+                      const rev = v.snapshot?.revisione;
+                      const att = versioneAttiva === v.n;
+                      return (
+                        <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${att ? T.navy : T.border}`, borderRadius: T.radiusSm, background: att ? T.surface2 : "transparent" }}>
+                          <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 600, color: att ? T.navy : T.ink }}>Versione {v.n}</span>
+                          {rev ? <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>rev {rev}</span> : null}
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)} · {nv} {nv === 1 ? "voce" : "voci"}</span>
+                          <button onClick={() => caricaVersione(v)} style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>Carica</button>
+                          <button onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 15, lineHeight: 1, padding: "2px 4px" }}>⋮</button>
+                          {menuVer === v.n && (
+                            <div style={{ position: "absolute", right: 6, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 150 }}>
+                              <button onClick={() => eliminaVersione(v)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, fontFamily: mono, fontSize: 11, padding: "9px 12px" }}>Elimina versione</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {loading ? (
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
