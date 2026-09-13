@@ -1,14 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Export Excel del capitolato: ricalca la struttura a fogli del file "CAP. BASE"
 // (Copertina, un foglio per categoria, Riepilogo). Colonne A–H come l'originale.
-// Le colonne IMPORTI (unitario/TOTALE) restano vuote (computo non estimativo).
+// Categorie re-letterate (A, B, C…) e voci renumerate come nel PDF; numeri a 2
+// decimali. Le colonne IMPORTI (unitario/TOTALE) restano vuote (non estimativo).
 // ─────────────────────────────────────────────────────────────────────────────
 import * as XLSX from "xlsx";
-import {
-  CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA,
-  CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA,
-} from "./capitolatoTemplate";
-import { totaleRiga, qtaMisurazione, parseNum } from "./capitolatoModel";
+import { CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
+import { componiGruppi, totaleRiga, qtaMisurazione, parseNum } from "./capitolatoModel";
 
 const dataIt = (iso) => {
   if (!iso) return "";
@@ -18,47 +16,53 @@ const dataIt = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
-// numero grezzo per Excel (null se vuoto): tiene i valori numerici, non stringhe
-const num = (v) => {
-  const n = parseNum(v);
-  return Number.isFinite(n) && n !== 0 ? n : null;
-};
+const num = (v) => { const n = parseNum(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 
-function foglioCategoria(cat, righe) {
+// applica il formato "0.00" a tutte le celle numeriche del foglio
+function formatta2Decimali(ws) {
+  const ref = ws["!ref"]; if (!ref) return;
+  const range = XLSX.utils.decode_range(ref);
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (cell && cell.t === "n") cell.z = "0.00";
+    }
+  }
+}
+
+function foglioCategoria(g) {
   const aoa = [];
-  aoa.push([cat.titoloPagina]);
+  aoa.push([g.titoloPagina]);
   aoa.push(["r. Ord", "DESIGNAZIONE DEI LAVORI", "Dimensioni", null, null, "Quantità", "IMPORTI", null]);
   aoa.push([null, null, "Lung.", "Larg.", "H/peso", null, "unitario", "TOTALE"]);
 
-  righe.forEach((r) => {
-    aoa.push([r.codice || "", (r.titolo || "").toUpperCase()]);
+  g.items.forEach((r) => {
+    aoa.push([r._code || r.codice || "", (r.titolo || "").toUpperCase()]);
     if (r.descrizione) aoa.push([null, r.descrizione]);
     if (r.note) aoa.push([null, "NOTE: " + r.note]);
     aoa.push([null, "MISURAZIONI:"]);
     (r.misurazioni || [])
       .filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta)
-      .forEach((m) => {
-        aoa.push([null, m.descrizione || "", num(m.lung), num(m.larg), num(m.hpeso), qtaMisurazione(m) || null]);
-      });
+      .forEach((m) => aoa.push([null, m.descrizione || "", num(m.lung), num(m.larg), num(m.hpeso), qtaMisurazione(m) || null]));
     const tot = totaleRiga(r);
-    const labels = (r.sommano_labels && r.sommano_labels.length)
-      ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
+    const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
     labels.forEach((lab) => aoa.push([null, lab, null, null, null, tot || null, null, null]));
     aoa.push([]);
   });
-  aoa.push([null, `TOTALE ${cat.nomeIndice}`]);
+  aoa.push([null, `TOTALE ${g.nomeIndice}`]);
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [{ wch: 8 }, { wch: 55 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 11 }, { wch: 12 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 60 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 11 }, { wch: 12 }];
+  formatta2Decimali(ws);
   return ws;
 }
 
 export function generaCapitolatoXlsx({ capitolato, righe, project, modo = "salva" }) {
   const wb = XLSX.utils.book_new();
+  const gruppi = componiGruppi(righe);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
     ? capitolato.nome : (project?.name || "Progetto");
 
-  // Copertina
   const cop = XLSX.utils.aoa_to_sheet([
     [CAPITOLATO_TITOLO],
     ["COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE"],
@@ -75,28 +79,21 @@ export function generaCapitolatoXlsx({ capitolato, righe, project, modo = "salva
   cop["!cols"] = [{ wch: 16 }, { wch: 50 }];
   XLSX.utils.book_append_sheet(wb, cop, "Copertina");
 
-  // Premessa
   const prem = XLSX.utils.aoa_to_sheet([["PREMESSA"], [], ...CAPITOLATO_PREMESSA.map((p) => [p])]);
   prem["!cols"] = [{ wch: 120 }];
   XLSX.utils.book_append_sheet(wb, prem, "Premessa");
 
-  // Un foglio per categoria usata
-  const usate = [];
-  CAPITOLATO_CATEGORIE.forEach((cat) => {
-    const rr = righe.filter((r) => r.categoria_code === cat.code);
-    if (!rr.length) return;
-    usate.push(cat);
-    const nome = `${cat.code} - ${cat.nome}`.slice(0, 31);
-    XLSX.utils.book_append_sheet(wb, foglioCategoria(cat, rr), nome);
+  gruppi.forEach((g) => {
+    const nome = `${g.code} - ${g.nomeIndice}`.slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, foglioCategoria(g), nome);
   });
 
-  // Riepilogo
   const rie = XLSX.utils.aoa_to_sheet([
     [CAPITOLATO_TITOLO],
     ["Riepilogo generale per categoria di lavori"],
     [],
     ["Cod.", "Descrizione", "Importo"],
-    ...usate.map((c) => [c.code, c.nomeIndice, null]),
+    ...gruppi.map((g) => [g.code, g.nomeIndice, null]),
   ]);
   rie["!cols"] = [{ wch: 8 }, { wch: 45 }, { wch: 14 }];
   XLSX.utils.book_append_sheet(wb, rie, "Riepilogo");

@@ -7,7 +7,7 @@ import { useToast } from "../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
-  rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRiga, fmtNum,
+  rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRiga, fmtNum, componiGruppi,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -86,12 +86,8 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     return CAPITOLATO_CATEGORIE.filter((c) => s.has(c.code));
   }, [libreria]);
 
-  // righe raggruppate per categoria, nell'ordine ufficiale
-  const gruppi = useMemo(() => {
-    return CAPITOLATO_CATEGORIE
-      .map((c) => ({ cat: c, items: righe.filter((r) => r.categoria_code === c.code) }))
-      .filter((g) => g.items.length > 0);
-  }, [righe]);
+  // righe raggruppate per categoria, con lettere/codici re-assegnati (come nell'export)
+  const gruppi = useMemo(() => componiGruppi(righe), [righe]);
 
   // ── mutazioni righe ──────────────────────────────────────────────────────────
   const touch = () => setDirty(true);
@@ -170,8 +166,8 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
       </button>
 
       {open && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", padding: 12 }}>
-          <div style={{ width: "100%", maxWidth: 1180, height: "92vh", display: "flex", flexDirection: "column", background: T.surface, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.62)", padding: 12 }}>
+          <div style={{ width: "100%", maxWidth: 1180, height: "92vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
 
             {/* Intestazione */}
             <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexShrink: 0 }}>
@@ -240,9 +236,9 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                       Cerca una voce a sinistra e aggiungila al capitolato.
                     </div>
                   ) : gruppi.map((g) => (
-                    <div key={g.cat.code} style={{ marginBottom: 22 }}>
+                    <div key={g.code} style={{ marginBottom: 22 }}>
                       <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>
-                        {g.cat.titoloPagina}
+                        {g.titoloPagina}
                       </div>
                       {g.items.map((r) => (
                         <RigaEditor key={r._key} r={r} T={T} mono={mono} miniInput={miniInput}
@@ -297,12 +293,19 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: mono, fontSize: 9, fontWeight: 700, color: T.navy }}>{r.codice}</span>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: T.ink }}>{r.titolo}</span>
-            {r.unita ? <span style={{ fontFamily: mono, fontSize: 8, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 5px" }}>{r.unita}</span> : null}
-            {r.tipo === "fornitura_posa" ? <span style={{ fontFamily: mono, fontSize: 8, color: "#b45309" }}>F+P</span> : null}
+            <span style={{ fontFamily: mono, fontSize: 9, fontWeight: 700, color: T.navy, flexShrink: 0 }}>{r._code || r.codice}</span>
+            <input value={r.titolo} onChange={(e) => onPatch({ titolo: e.target.value })}
+              style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: T.ink, background: "transparent", border: "none", borderBottom: `1px dashed transparent`, outline: "none", fontFamily: "'Space Grotesk', sans-serif", padding: "1px 0" }}
+              onFocus={(e) => (e.target.style.borderBottomColor = T.borderMd)}
+              onBlur={(e) => (e.target.style.borderBottomColor = "transparent")} />
+            {r.unita ? <span style={{ fontFamily: mono, fontSize: 8, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 5px", flexShrink: 0 }}>{r.unita}</span> : null}
+            {r.tipo === "fornitura_posa" ? <span style={{ fontFamily: mono, fontSize: 8, color: "#b45309", flexShrink: 0 }}>F+P</span> : null}
           </div>
-          <div style={{ fontSize: 10.5, color: T.muted, marginTop: 3, whiteSpace: "pre-wrap" }}>{r.descrizione}</div>
+          <textarea value={r.descrizione} onChange={(e) => onPatch({ descrizione: e.target.value })}
+            rows={Math.max(2, String(r.descrizione || "").split("\n").length)}
+            style={{ width: "100%", boxSizing: "border-box", fontSize: 10.5, color: T.muted, marginTop: 4, background: "transparent", border: `1px solid transparent`, borderRadius: T.radiusSm, outline: "none", resize: "vertical", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.35, padding: "2px 4px" }}
+            onFocus={(e) => (e.target.style.borderColor = T.borderMd)}
+            onBlur={(e) => (e.target.style.borderColor = "transparent")} />
         </div>
         <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
           <button title="Su" onClick={() => onMove(-1)} style={iconBtn(T)}>↑</button>
@@ -344,7 +347,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
       <div style={{ marginTop: 6, paddingTop: 6, borderTop: `0.5px dashed ${T.border}` }}>
         {labels.map((lab, i) => (
           <div key={i} style={{ display: "flex", justifyContent: "space-between", fontFamily: mono, fontSize: 10.5, fontWeight: 700, color: T.ink }}>
-            <span>{lab}</span><span>{fmtNum(tot) || "0"}</span>
+            <span>{lab}</span><span>{fmtNum(tot)}</span>
           </div>
         ))}
       </div>

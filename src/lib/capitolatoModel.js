@@ -4,16 +4,20 @@
 // Condiviso da CapitolatoPanel, capitolatoPdf e capitolatoXlsx.
 // ─────────────────────────────────────────────────────────────────────────────
 import { supabase } from "./supabase";
+import { CAPITOLATO_CATEGORIE } from "./capitolatoTemplate";
 
-// ── Formattazione numeri (it-IT, virgola decimale) ───────────────────────────
-// Fino a `dec` decimali, zeri finali rimossi (es. 6.9225 → "6,9225", 12 → "12").
-export function fmtNum(v, dec = 4) {
+// Alfabeto italiano (senza J, K, W, X, Y): la numerazione di categoria salta
+// quelle lettere, come nel file base (… H, I, L, M …).
+export const ALFABETO_IT = "ABCDEFGHILMNOPQRSTUVZ".split("");
+
+// ── Formattazione numeri (it-IT, virgola decimale, sempre 2 decimali) ─────────
+// Es. 15 → "15,00", 2.13 → "2,13", vuoto/NaN → "".
+export function fmtNum(v, dec = 2) {
   const n = Number(v);
-  if (!Number.isFinite(n) || n === 0) return "";
+  if (!Number.isFinite(n)) return "";
   const [intero, frac = ""] = Math.abs(n).toFixed(dec).split(".");
   const conMigliaia = intero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  const fracTrim = frac.replace(/0+$/, "");
-  return (n < 0 ? "-" : "") + conMigliaia + (fracTrim ? "," + fracTrim : "");
+  return (n < 0 ? "-" : "") + conMigliaia + (dec > 0 ? "," + frac : "");
 }
 
 // Accetta "2,13" o "2.13"; ritorna Number o NaN.
@@ -43,6 +47,28 @@ export function qtaMisurazione(m) {
 // Totale (SOMMANO) di una voce = somma delle quantità delle misurazioni.
 export function totaleRiga(riga) {
   return (riga?.misurazioni || []).reduce((s, m) => s + qtaMisurazione(m), 0);
+}
+
+// ── Composizione documento: categorie usate + re-letterazione ─────────────────
+// Raggruppa le righe nelle categorie usate (ordine ufficiale) e riassegna le
+// lettere in sequenza (A, B, C…) saltando eventuali categorie mancanti; le voci
+// prendono un codice progressivo <lettera><nn>. Usato da UI, PDF ed Excel.
+export function componiGruppi(righe) {
+  const presenti = CAPITOLATO_CATEGORIE
+    .map((cat) => ({ cat, items: righe.filter((r) => r.categoria_code === cat.code) }))
+    .filter((g) => g.items.length > 0);
+  return presenti.map((g, gi) => {
+    const letter = ALFABETO_IT[gi] || g.cat.code;
+    const namePart = (g.cat.titoloPagina || "").split(") ").slice(1).join(") ")
+      || (g.cat.nomeIndice || "").toUpperCase();
+    return {
+      code: letter,
+      nomeIndice: g.cat.nomeIndice,
+      titoloPagina: `${letter}) ${namePart}`,
+      originalCode: g.cat.code,
+      items: g.items.map((r, ri) => ({ ...r, _code: `${letter}${String(ri + 1).padStart(2, "0")}` })),
+    };
+  });
 }
 
 // ── Costruzione riga da voce di libreria ──────────────────────────────────────
