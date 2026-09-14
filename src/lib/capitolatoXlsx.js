@@ -187,7 +187,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   testataFoglio(cop, wb, nomeProgetto, logo);
   const copCell = (row, v, o) => { const c = cop.getCell(row, 1); c.value = v; st(c, o); };
   const copMerge = (row) => cop.mergeCells(row, 1, row, 8);
-  copMerge(2); copCell(2, CAPITOLATO_TITOLO, { b: true, sz: 15, color: "FFFFFFFF", fill: NAVY, align: "center" }); cop.getRow(2).height = 18;
+  copMerge(2); copCell(2, CAPITOLATO_TITOLO, { b: true, sz: 16, color: NAVY, align: "center" }); cop.getRow(2).height = 22;
   copMerge(3); copCell(3, "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 10.5, align: "center" }); cop.getRow(3).height = 14;
   copMerge(4); copCell(4, "Capitolato d'appalto", { sz: 10.5, color: "FF808080", align: "center" }); cop.getRow(4).height = 14;
   [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]

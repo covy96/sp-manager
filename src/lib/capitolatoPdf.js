@@ -166,7 +166,11 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     pdf.line(boxX + 28, ry + 1.5, boxX + boxW, ry + 1.5);
   });
   reg(8); pdf.setTextColor(120, 120, 120);
-  pdf.text(CAPITOLATO_NOTA_IVA, W / 2, MAX_Y, { align: "center" });
+  pdf.text(CAPITOLATO_NOTA_IVA, W / 2, MAX_Y - 5, { align: "center" });
+  const _g = new Date(); const _p = (n) => String(n).padStart(2, "0");
+  const genStamp = `${_p(_g.getDate())}/${_p(_g.getMonth() + 1)}/${_g.getFullYear()} ${_p(_g.getHours())}:${_p(_g.getMinutes())}`;
+  reg(7.5); pdf.setTextColor(175, 175, 175);
+  pdf.text(`Generato il ${genStamp}`, W / 2, MAX_Y, { align: "center" });
 
   // ── PREMESSA + INDICE ─────────────────────────────────────────────────────
   pdf.addPage(); testata();
@@ -191,16 +195,16 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   });
 
   y += 6; ensure(16);
-  // barra INDICE (grigia, centrata) — elenco completo delle categorie (A–S)
+  // barra INDICE (grigia, centrata) — elenco dei fogli attivi (come l'Excel)
   pdf.setFillColor(225, 227, 232); pdf.rect(ML, y, W - ML - MR, 6, "F");
   reg(9.4); pdf.setTextColor(50, 50, 50); pdf.text("INDICE", W / 2, y + 4.1, { align: "center" });
   y += 6;
   const idxLetterX = ML + 30, idxNameX = ML + 60;
-  CAPITOLATO_CATEGORIE.forEach((cat) => {
+  gruppi.forEach((g) => {
     ensure(6.2);
     reg(8.7); pdf.setTextColor(30, 30, 30);
-    pdf.text(cat.code, idxLetterX, y + 4, { align: "center" });
-    pdf.text(cat.nomeIndice, idxNameX, y + 4);
+    pdf.text(g.code, idxLetterX, y + 4, { align: "center" });
+    pdf.text(g.nomeIndice, idxNameX, y + 4);
     pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
     pdf.line(ML, y + 5.6, W - MR, y + 5.6);
     y += 5.6;
@@ -314,10 +318,18 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     ensure(6);
     bold(8); pdf.setTextColor(...NAVY); pdf.text(g.code, ML + 2, y + 4);
     reg(8); pdf.setTextColor(50, 50, 50); pdf.text(g.nomeIndice, ML + 20, y + 4);
+    pdf.text("0,00 €", W - MR - 2, y + 4, { align: "right" });
     pdf.setDrawColor(225, 225, 225); pdf.setLineWidth(0.2);
     pdf.line(ML, y + 6, W - MR, y + 6);
     y += 6;
   });
+  // TOTALE GENERALE (banda blu)
+  ensure(7);
+  pdf.setFillColor(...NAVY); pdf.rect(ML, y, rW, 6, "F");
+  bold(8.5); pdf.setTextColor(255, 255, 255);
+  pdf.text("TOTALE GENERALE", ML + 2, y + 4);
+  pdf.text("0,00 €", W - MR - 2, y + 4, { align: "right" });
+  y += 9;
   reg(8); pdf.setTextColor(120, 120, 120);
   pdf.text(CAPITOLATO_NOTA_IVA, ML, MAX_Y);
 
