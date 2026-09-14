@@ -109,20 +109,29 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
 
   // ── Riga di intestazione tabella (colonne) ─────────────────────────────────
   const intestazioneTabella = () => {
-    const h1 = 5, h2 = 5;
+    const h1 = 5, h2 = 5, H = h1 + h2;
     pdf.setFillColor(238, 240, 244);
-    pdf.rect(ML, y, W - ML - MR, h1 + h2, "F");
+    pdf.rect(ML, y, W - ML - MR, H, "F");
     pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
-    [X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot, X.end].forEach((x) => pdf.line(x, y, x, y + h1 + h2));
-    pdf.line(ML, y, X.end, y); pdf.line(ML, y + h1 + h2, X.end, y + h1 + h2);
-    pdf.line(ML, y + h1, X.end, y + h1);
+    // Bordi esterni
+    pdf.line(ML, y, X.end, y); pdf.line(ML, y + H, X.end, y + H);
+    // Verticali a tutta altezza: solo confini dei gruppi (r.Ord | Designazione |
+    // Dimensioni | Quantità | Importi). "Dimensioni" e "IMPORTI" restano celle
+    // unite nella riga superiore.
+    [X.desig, X.lung, X.qta, X.unit, X.end].forEach((x) => pdf.line(x, y, x, y + H));
+    // Verticali solo nella riga inferiore: sotto-colonne di Dimensioni e Importi
+    [X.larg, X.hpeso, X.tot].forEach((x) => pdf.line(x, y + h1, x, y + H));
+    // Linea orizzontale intermedia solo sotto "Dimensioni" e "IMPORTI"
+    pdf.line(X.lung, y + h1, X.qta, y + h1);
+    pdf.line(X.unit, y + h1, X.end, y + h1);
 
     reg(6.3); pdf.setTextColor(60, 60, 60);
-    pdf.text("r. Ord", X.ord + COL.ord / 2, y + 3.4, { align: "center" });
-    pdf.text("DESIGNAZIONE DEI LAVORI", X.desig + 2, y + 3.4);
+    const midY = y + 5.9; // baseline centrata sulle celle unite a tutta altezza
+    pdf.text("r. Ord", X.ord + COL.ord / 2, midY, { align: "center" });
+    pdf.text("DESIGNAZIONE DEI LAVORI", X.desig + 2, midY);
     const dimW = COL.lung + COL.larg + COL.hpeso;
     pdf.text("Dimensioni", X.lung + dimW / 2, y + 3.4, { align: "center" });
-    pdf.text("Quantità", X.qta + COL.qta / 2, y + 3.4, { align: "center" });
+    pdf.text("Quantità", X.qta + COL.qta / 2, midY, { align: "center" });
     pdf.text("IMPORTI", X.unit + (COL.unit + COL.tot) / 2, y + 3.4, { align: "center" });
     reg(6);
     pdf.text("Lung.", X.lung + COL.lung / 2, y + h1 + 3.3, { align: "center" });
