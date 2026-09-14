@@ -45,13 +45,14 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
   const [dirty, setDirty] = useState(false);
   const [versioni, setVersioni] = useState([]);
   const [versioneAttiva, setVersioneAttiva] = useState(null);
-  const [versioniAperte, setVersioniAperte] = useState(false);
   const [menuVer, setMenuVer] = useState(null);
+  const [view, setView] = useState("versioni"); // versioni | recap | edit
 
   // ── caricamento all'apertura ────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     let alive = true;
+    setView("versioni"); setMenuVer(null);
     (async () => {
       setLoading(true);
       try {
@@ -70,7 +71,6 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
           setRighe(existing.righe);
           const vers = Array.isArray(c.versioni) ? c.versioni : [];
           setVersioni(vers);
-          setVersioniAperte(vers.length > 0);
           const snap = JSON.stringify(snapshotCapitolato(m, existing.righe));
           setVersioneAttiva(vers.find((v) => JSON.stringify(v.snapshot) === snap)?.n ?? null);
         } else {
@@ -170,7 +170,8 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     } finally { setSaving(false); }
   };
 
-  const caricaVersione = (v) => {
+  // Apre una versione: ne carica lo snapshot in stato e va al recap.
+  const apriVersione = (v) => {
     const s = v.snapshot || {};
     setMeta((m) => ({ ...m, nome: s.nome || "Capitolato", committente: s.committente || "", localita: s.localita || "", data: s.data || oggi(), revisione: s.revisione || "" }));
     setRighe((s.righe || []).map((r) => ({
@@ -179,8 +180,7 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
       misurazioni: Array.isArray(r.misurazioni) && r.misurazioni.length ? r.misurazioni : [emptyMisurazione()],
       sommano_labels: Array.isArray(r.sommano_labels) ? r.sommano_labels : [],
     })));
-    setVersioneAttiva(v.n); setVersioniAperte(false); setDirty(true);
-    showToast?.(`Versione ${v.n} caricata — premi Salva per renderla principale`, "success");
+    setVersioneAttiva(v.n); setDirty(false); setMenuVer(null); setView("recap");
   };
 
   const eliminaVersione = async (v) => {
@@ -237,58 +237,51 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
           <div style={{ width: "100%", maxWidth: 1180, height: "92vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
 
             {/* Intestazione */}
-            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexShrink: 0 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Capitolato · Computo metrico</div>
-                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
-                  {project?.name || "Progetto"} · {nVoci} {nVoci === 1 ? "voce" : "voci"}{dirty ? " · modifiche non salvate" : ""}
+            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                {!loading && view !== "versioni" && (
+                  <button onClick={() => setView(view === "edit" ? "recap" : "versioni")} title="Indietro" style={{ ...iconBtn(T), width: 30, height: 30, fontSize: 16 }}>←</button>
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>
+                    Capitolato · {view === "versioni" ? "Versioni" : view === "recap" ? "Recap" : "Modifica"}
+                  </div>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
+                    {project?.name || "Progetto"}
+                    {view === "versioni"
+                      ? ` · ${versioni.length} ${versioni.length === 1 ? "versione" : "versioni"}`
+                      : ` · ${nVoci} ${nVoci === 1 ? "voce" : "voci"}${versioneAttiva ? ` · v${versioneAttiva}` : ""}${dirty ? " · non salvato" : ""}`}
+                  </div>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
             </div>
 
-            {/* Meta copertina */}
-            <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: "2fr 2fr 1.4fr 1fr", gap: 10, flexShrink: 0 }}>
-              {[
-                ["Nome / Locale", "nome"],
-                ["Committente", "committente"],
-                ["Località", "localita"],
-                ["Revisione", "revisione"],
-              ].map(([lab, key]) => (
-                <div key={key}>
-                  <div style={labelSt}>{lab}</div>
-                  <input style={{ ...inputSt, width: "100%" }} value={meta[key]} onChange={(e) => { setMeta((m) => ({ ...m, [key]: e.target.value })); touch(); }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Versioni salvate */}
-            {!loading && (
-              <div style={{ borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
-                <div onClick={() => setVersioniAperte((x) => !x)} style={{ padding: "9px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-                  <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: T.muted }}>
-                    Versioni salvate ({versioni.length}){versioneAttiva ? ` · attiva v${versioneAttiva}` : dirty ? " · modifiche non salvate" : ""}
+            {loading ? (
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
+            ) : view === "versioni" ? (
+              <div style={{ flex: 1, overflowY: "auto", padding: 20, minHeight: 0 }}>
+                {versioni.length === 0 ? (
+                  <div style={{ textAlign: "center", marginTop: 40, color: T.muted, fontFamily: mono, fontSize: 12 }}>
+                    <div style={{ marginBottom: 14 }}>Nessuna versione salvata.</div>
+                    <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
                   </div>
-                  <span style={{ color: T.muted, fontSize: 11 }}>{versioniAperte ? "▲" : "▼"}</span>
-                </div>
-                {versioniAperte && versioni.length === 0 && (
-                  <div style={{ padding: "0 20px 12px", fontFamily: mono, fontSize: 10, color: T.muted }}>
-                    Nessuna versione ancora. Premi <b>Salva</b> per creare la prima versione.
-                  </div>
-                )}
-                {versioniAperte && versioni.length > 0 && (
-                  <div style={{ maxHeight: 180, overflowY: "auto", padding: "0 20px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 720, margin: "0 auto" }}>
                     {versioni.map((v) => {
                       const nv = (v.snapshot?.righe || []).length;
                       const rev = v.snapshot?.revisione;
                       const att = versioneAttiva === v.n;
                       return (
-                        <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${att ? T.navy : T.border}`, borderRadius: T.radiusSm, background: att ? T.surface2 : "transparent" }}>
-                          <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 600, color: att ? T.navy : T.ink }}>Versione {v.n}</span>
-                          {rev ? <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>rev {rev}</span> : null}
-                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)} · {nv} {nv === 1 ? "voce" : "voci"}</span>
-                          <button onClick={() => caricaVersione(v)} style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>Carica</button>
-                          <button onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 15, lineHeight: 1, padding: "2px 4px" }}>⋮</button>
+                        <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", border: `0.5px solid ${att ? T.navy : T.border}`, borderRadius: T.radiusSm, background: T.surface }}>
+                          <button onClick={() => apriVersione(v)} style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: att ? T.navy : T.ink }}>Versione {v.n}</span>
+                            {rev ? <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 6px" }}>rev {rev}</span> : null}
+                            <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)} · {nv} {nv === 1 ? "voce" : "voci"}</span>
+                            {att ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy }}>attiva</span> : null}
+                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy }}>Apri →</span>
+                          </button>
+                          <button onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 16, lineHeight: 1, padding: "2px 4px" }}>⋮</button>
                           {menuVer === v.n && (
                             <div style={{ position: "absolute", right: 6, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 150 }}>
                               <button onClick={() => eliminaVersione(v)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, fontFamily: mono, fontSize: 11, padding: "9px 12px" }}>Elimina versione</button>
@@ -300,12 +293,55 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                   </div>
                 )}
               </div>
-            )}
-
-            {loading ? (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
+            ) : view === "recap" ? (
+              <div style={{ flex: 1, overflowY: "auto", padding: 20, minHeight: 0 }}>
+                <div style={{ maxWidth: 820, margin: "0 auto" }}>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginBottom: 14 }}>
+                    {[meta.committente && `Committente: ${meta.committente}`, meta.localita && `Località: ${meta.localita}`, meta.revisione && `Rev ${meta.revisione}`, versioneAttiva && `Versione ${versioneAttiva}`].filter(Boolean).join("  ·  ") || "—"}
+                  </div>
+                  {gruppi.length === 0 ? (
+                    <div style={{ textAlign: "center", marginTop: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>
+                      <div style={{ marginBottom: 14 }}>Capitolato vuoto.</div>
+                      <button onClick={() => setView("edit")} style={btnPrimary}>Aggiungi voci</button>
+                    </div>
+                  ) : gruppi.map((g) => (
+                    <button key={g.code} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
+                      <div style={{ border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow: "hidden", background: T.surface }}>
+                        <div style={{ background: T.navy, color: "#fff", padding: "7px 12px", fontFamily: mono, fontSize: 11, fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
+                          <span>{g.titoloPagina}</span>
+                          <span style={{ opacity: 0.85 }}>{g.items.length} {g.items.length === 1 ? "voce" : "voci"}</span>
+                        </div>
+                        <div style={{ padding: "8px 12px" }}>
+                          {g.items.map((r) => (
+                            <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0", fontSize: 12 }}>
+                              <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
+                              <span style={{ color: T.ink, flex: 1 }}>{r.titolo}</span>
+                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{fmtNum(totaleRiga(r))} {r.unita}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
-              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+              <>
+                {/* Meta copertina */}
+                <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: "2fr 2fr 1.4fr 1fr", gap: 10, flexShrink: 0 }}>
+                  {[
+                    ["Nome / Locale", "nome"],
+                    ["Committente", "committente"],
+                    ["Località", "localita"],
+                    ["Revisione", "revisione"],
+                  ].map(([lab, key]) => (
+                    <div key={key}>
+                      <div style={labelSt}>{lab}</div>
+                      <input style={{ ...inputSt, width: "100%" }} value={meta[key]} onChange={(e) => { setMeta((m) => ({ ...m, [key]: e.target.value })); touch(); }} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
                 {/* Colonna ricerca */}
                 <div style={{ width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
                   <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
@@ -360,19 +396,24 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                   ))}
                 </div>
               </div>
+              </>
             )}
 
-            {/* Footer azioni */}
-            <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>
-              <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
-                {nVoci} voci in {gruppi.length} {gruppi.length === 1 ? "categoria" : "categorie"}
+            {/* Footer azioni — per vista */}
+            {!loading && view !== "versioni" && (
+              <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>
+                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
+                  {nVoci} voci in {gruppi.length} {gruppi.length === 1 ? "categoria" : "categorie"}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={handleXlsx} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel</button>
+                  <button onClick={handlePdf} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>{busy ? "…" : "Stampa PDF"}</button>
+                  {view === "recap"
+                    ? <button onClick={() => setView("edit")} style={btnPrimary}>Modifica</button>
+                    : <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>{saving ? "Salvo…" : "Salva"}</button>}
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={handleXlsx} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel</button>
-                <button onClick={handlePdf} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>{busy ? "…" : "Stampa PDF"}</button>
-                <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>{saving ? "Salvo…" : "Salva"}</button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
