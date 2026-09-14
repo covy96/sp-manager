@@ -31,7 +31,8 @@ const nlines = (txt, cpl = 44) => {
 
 // stile su una cella ExcelJS
 function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, unlock } = {}) {
-  cell.font = { name: FONT, size: sz, bold: b, italic: i, ...(color ? { color: { argb: color } } : {}) };
+  // usa il vero font corsivo (Groteska-BookItalic) invece del corsivo sintetico sul romano
+  cell.font = { name: i ? "Groteska-BookItalic" : FONT, size: sz, bold: b, italic: i, ...(color ? { color: { argb: color } } : {}) };
   cell.alignment = { vertical: wrap ? "top" : "middle", ...(align ? { horizontal: align } : {}), wrapText: !!wrap };
   if (fill) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
   if (border) cell.border = border;
@@ -40,7 +41,21 @@ function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num,
 }
 const COLS = [4.5, 38, 5.5, 5.5, 6, 8, 10.5, 11.5];
 
-function buildCategoria(wb, g) {
+// impaginazione stampa (A4 verticale, adatta larghezza) + intestazione progetto/studio
+function impagina(ws, hdr) {
+  ws.pageSetup = {
+    paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+    horizontalCentered: true, margins: { left: 0.4, right: 0.4, top: 0.6, bottom: 0.5, header: 0.2, footer: 0.2 },
+  };
+  ws.headerFooter = { differentFirst: false, oddHeader: hdr, oddFooter: "&CPagina &P di &N" };
+}
+function intestazione(nomeProgetto, localita, nomeStudio, email) {
+  const L = [nomeProgetto, localita].filter(Boolean).join("\n");
+  const R = [nomeStudio, email].filter(Boolean).join("\n");
+  return `&L&"Groteska-Bold"${L}&R&"Groteska-Bold"${R}`;
+}
+
+function buildCategoria(wb, g, hdr) {
   const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false }] });
   COLS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
   let r = 0;
@@ -128,6 +143,7 @@ function buildCategoria(wb, g) {
     C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }),
     F(`SUM(H4:H${lastContent})`, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR }),
   ], 16);
+  impagina(ws, hdr);
   return { name: ws.name, totRow };
 }
 
@@ -138,11 +154,16 @@ function scarica(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export async function generaCapitolatoXlsx({ capitolato, righe, project, modo = "salva" }) {
+export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva" }) {
   const wb = new ExcelJS.Workbook();
   const gruppi = componiGruppi(righe);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
     ? capitolato.nome : (project?.name || "Progetto");
+  const s = studio || {};
+  const hdr = intestazione(
+    String(nomeProgetto).toUpperCase(), capitolato?.localita || "",
+    s.report_header_name || s.name || "", s.report_header_email || s.email || ""
+  );
 
   // Copertina
   const cop = wb.addWorksheet("Copertina", { views: [{ showGridLines: false }] });
@@ -154,6 +175,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, modo = 
   [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
     .forEach((p, i) => { copCell(`A${5 + i}`, p[0], { b: true, sz: 10 }); copCell(`B${5 + i}`, p[1], { sz: 10 }); });
   copCell("A11", CAPITOLATO_NOTA_IVA, { i: true, sz: 9, color: "FF808080" });
+  impagina(cop, hdr);
 
   // Premessa
   const prem = wb.addWorksheet("Premessa", { views: [{ showGridLines: false }] });
@@ -165,10 +187,11 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, modo = 
     pr += 1; const c = prem.getCell(`A${pr}`); c.value = p; st(c, { b: isSub, sz: isSub ? 9 : 8, wrap: true });
     prem.getRow(pr).height = Math.max(14, nlines(p, 120) * 11 + 4);
   });
+  impagina(prem, hdr);
 
   // Categorie
   const info = [];
-  gruppi.forEach((g) => { const { name, totRow } = buildCategoria(wb, g); info.push({ code: g.code, nome: g.nomeIndice, name, totRow }); });
+  gruppi.forEach((g) => { const { name, totRow } = buildCategoria(wb, g, hdr); info.push({ code: g.code, nome: g.nomeIndice, name, totRow }); });
 
   // Riepilogo
   const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false }] });
@@ -182,6 +205,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, modo = 
     const b = rie.getCell(rr, 2); b.value = c.nome; st(b, { sz: 9, border: box });
     const im = rie.getCell(rr, 3); im.value = { formula: `'${c.name}'!H${c.totRow}` }; st(im, { sz: 9, align: "right", border: box, num: F_EUR });
   });
+  impagina(rie, hdr);
 
   const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}.xlsx`;
   const buf = await wb.xlsx.writeBuffer();
