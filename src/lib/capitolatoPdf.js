@@ -251,13 +251,14 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       vAll(titTop, titH); hF(titTop); y += titH; hF(y);
       const noteTop = y;
 
-      // descrizione (nero) — celle centrali senza riempimento (bianche)
+      // descrizione (nero) — un'unica cella (niente linee tra le righe di testo)
       reg(7); pdf.setTextColor(20, 20, 20);
-      descLines.forEach((ln) => { ensure(3.4); pdf.text(ln, X.desig + 1.5, y + 2.2); vBody(y, 3.1); y += 3.1; hL(y); });
-      y += 0.6;
+      const descTop = y;
+      descLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
+      y += 0.8;
+      vBody(descTop, y - descTop); hL(y);
 
-      // MISURAZIONI (corsivo)
-      ensure(4);
+      // MISURAZIONI (corsivo) — una riga
       ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); vBody(y, 4); y += 4; hL(y);
 
       misure.forEach((m) => {
