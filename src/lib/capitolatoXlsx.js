@@ -30,10 +30,10 @@ const nlines = (txt, cpl = 44) => {
 };
 
 // stile su una cella ExcelJS
-function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, unlock } = {}) {
+function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, unlock, vtop } = {}) {
   // usa il vero font corsivo (Groteska-BookItalic) invece del corsivo sintetico sul romano
   cell.font = { name: i ? "Groteska-BookItalic" : FONT, size: sz, bold: b, italic: i, ...(color ? { color: { argb: color } } : {}) };
-  cell.alignment = { vertical: wrap ? "top" : "middle", ...(align ? { horizontal: align } : {}), wrapText: !!wrap };
+  cell.alignment = { vertical: (wrap || vtop) ? "top" : "middle", ...(align ? { horizontal: align } : {}), wrapText: !!wrap };
   if (fill) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
   if (border) cell.border = border;
   if (num) cell.numFmt = num;
@@ -95,7 +95,7 @@ function buildCategoria(wb, g, hdr) {
     const descRow = setRow([
       C("", { border: box }), C(it.descrizione || "", { sz: 8, wrap: true, border: box }),
       C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
-      C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", border: box }), C("", { border: box }),
+      C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", border: box, vtop: true, align: "left" }), C("", { border: box }),
     ], Math.max(22, nlines(it.descrizione || "", 44) * 11.5 + 6));
     // MISURAZIONI (corsivo)
     setRow([
@@ -209,6 +209,11 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
     const b = rie.getCell(rr, 2); b.value = c.nome; st(b, { sz: 9, border: box });
     const im = rie.getCell(rr, 3); im.value = { formula: `'${c.name}'!H${c.totRow}` }; st(im, { sz: 9, align: "right", border: box, num: F_EUR });
   });
+  // TOTALE GENERALE (banda blu)
+  const tgRow = 5 + info.length;
+  const ta = rie.getCell(tgRow, 1); ta.value = ""; st(ta, { fill: NAVY });
+  const tb = rie.getCell(tgRow, 2); tb.value = "TOTALE GENERALE"; st(tb, { b: true, sz: 10, color: "FFFFFFFF", fill: NAVY });
+  const tc = rie.getCell(tgRow, 3); tc.value = info.length ? { formula: `SUM(C5:C${4 + info.length})` } : 0; st(tc, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR });
   impagina(rie, hdr);
 
   const now = new Date();
