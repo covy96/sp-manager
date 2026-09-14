@@ -11,7 +11,7 @@ import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pd
 import {
   CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
-import { componiGruppi, totaleRiga, qtaMisurazione, fmtNum, parseNum } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum } from "./capitolatoModel";
 
 registerGroteskaFonts();
 
@@ -219,7 +219,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     intestazioneTabella();
 
     // helper griglia (grigio chiaro)
-    const TITLEG = [225, 229, 238];
+    const TITLEG = [238, 241, 246];
     const gc = () => { pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2); };
     const hL = (yy) => { gc(); pdf.line(ML, yy, X.unit, yy); };          // riga: solo parte sinistra (l'area NOTE resta aperta)
     const hF = (yy) => { gc(); pdf.line(ML, yy, X.end, yy); };           // riga intera
@@ -229,7 +229,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     g.items.forEach((r) => {
       const misure = (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
       const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
-      const tot = totaleRiga(r);
+      const tot = totaleRigaEff(r);
 
       reg(7);
       const descLines = pdf.splitTextToSize(r.descrizione || "", DESC_W);

@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
-import { componiGruppi, totaleRiga, qtaMisurazione, parseNum } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum } from "./capitolatoModel";
 import { urlToBase64, imageSize } from "./pdfCommon";
 
 const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
@@ -96,7 +96,7 @@ function buildCategoria(wb, g, nomeProgetto, logo) {
     const misure = (it.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
     const labels = (it.sommano_labels && it.sommano_labels.length) ? it.sommano_labels : [`SOMMANO ${it.unita || ""}`.trim()];
     // titolo (grigio, top medium)
-    const topb = { top: medium, left: thin, bottom: thin, right: thin };
+    const topb = { top: { style: "medium", color: { argb: NAVY } }, left: thin, bottom: thin, right: thin };
     setRow([
       C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
       C((it.titolo || "").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
@@ -131,16 +131,16 @@ function buildCategoria(wb, g, nomeProgetto, logo) {
     // NOTE = un'unica cella (merge G:H da descrizione a fine misure)
     ws.mergeCells(descRow, 7, Math.max(descRow, misEnd), 8);
     // SOMMANO (grassetto+corsivo, senza riempimento; solo unitario crema e sbloccato)
-    const tot = totaleRiga(it);
+    const tot = totaleRigaEff(it);
     labels.forEach((lab) => {
       const rr = r + 1;
       const fSum = (misure.length && misStart <= misEnd) ? `SUM(F${misStart}:F${misEnd})` : null;
       setRow([
-        C("", { b: true, i: true, sz: 8, border: box }),
-        C(lab, { b: true, i: true, sz: 8, border: box }),
+        C("", { i: true, sz: 8, border: box }),
+        C(lab, { i: true, sz: 8, border: box }),
         C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
-        fSum ? F(fSum, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM })
-          : C(tot || null, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM }),
+        fSum ? F(fSum, { i: true, sz: 8, align: "right", border: box, num: F_NUM })
+          : C(tot || null, { i: true, sz: 8, align: "right", border: box, num: F_NUM }),
         C("", { fill: CREAM, border: box, num: F_EUR, unlock: true }),
         F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),
       ], 14);

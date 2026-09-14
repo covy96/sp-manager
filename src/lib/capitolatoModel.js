@@ -49,6 +49,14 @@ export function totaleRiga(riga) {
   return (riga?.misurazioni || []).reduce((s, m) => s + qtaMisurazione(m), 0);
 }
 
+// Totale effettivo per l'output: le voci "a corpo" valgono sempre almeno 1
+// (mai 0 o vuoto).
+export function totaleRigaEff(riga) {
+  const t = totaleRiga(riga);
+  if (t) return t;
+  return String(riga?.unita || "").toLowerCase() === "a corpo" ? 1 : t;
+}
+
 // ── Composizione documento: categorie usate + re-letterazione ─────────────────
 // Raggruppa le righe nelle categorie usate (ordine ufficiale) e riassegna le
 // lettere in sequenza (A, B, C…) saltando eventuali categorie mancanti; le voci

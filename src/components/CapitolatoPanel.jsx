@@ -7,7 +7,7 @@ import { useToast } from "../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
-  rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRiga, fmtNum, componiGruppi,
+  rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
@@ -316,7 +316,7 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                             <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0", fontSize: 12 }}>
                               <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
                               <span style={{ color: T.ink, flex: 1 }}>{r.titolo}</span>
-                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{fmtNum(totaleRiga(r))} {r.unita}</span>
+                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{fmtNum(totaleRigaEff(r))} {r.unita}</span>
                             </div>
                           ))}
                         </div>
@@ -431,7 +431,7 @@ function chip(T, active) {
 
 // ── Editor di una singola voce (riga) ──────────────────────────────────────────
 function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMisura, onPatchMisura, onRemoveMisura }) {
-  const tot = totaleRiga(r);
+  const tot = totaleRigaEff(r);
   const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
   const cellHead = { fontFamily: mono, fontSize: 8, color: T.muted, textAlign: "center", paddingBottom: 2 };
   const grid = "1fr 52px 52px 52px 60px 24px"; // descrizione, lung, larg, hpeso, qta, x
