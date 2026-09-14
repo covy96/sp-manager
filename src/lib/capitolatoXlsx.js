@@ -187,19 +187,19 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   testataFoglio(cop, wb, nomeProgetto, logo);
   const copCell = (row, v, o) => { const c = cop.getCell(row, 1); c.value = v; st(c, o); };
   const copMerge = (row) => cop.mergeCells(row, 1, row, 8);
-  copMerge(3); copCell(3, CAPITOLATO_TITOLO, { b: true, sz: 16, color: "FFFFFFFF", fill: NAVY, align: "center" }); cop.getRow(3).height = 26;
-  copMerge(4); copCell(4, "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 11, align: "center" });
-  copMerge(5); copCell(5, "Capitolato d'appalto", { sz: 11, color: "FF808080", align: "center" });
+  copMerge(2); copCell(2, CAPITOLATO_TITOLO, { b: true, sz: 15, color: "FFFFFFFF", fill: NAVY, align: "center" }); cop.getRow(2).height = 18;
+  copMerge(3); copCell(3, "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 10.5, align: "center" }); cop.getRow(3).height = 14;
+  copMerge(4); copCell(4, "Capitolato d'appalto", { sz: 10.5, color: "FF808080", align: "center" }); cop.getRow(4).height = 14;
   [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
     .forEach((p, i) => {
-      const rr = 8 + i;
+      const rr = 6 + i; cop.getRow(rr).height = 15;
       cop.mergeCells(rr, 1, rr, 3); const l = cop.getCell(rr, 1); l.value = p[0]; st(l, { b: true, sz: 10, align: "right" });
       cop.mergeCells(rr, 4, rr, 8); const val = cop.getCell(rr, 4); val.value = p[1]; st(val, { sz: 10 });
     });
-  cop.mergeCells(15, 1, 15, 8); const iva = cop.getCell(15, 1); iva.value = CAPITOLATO_NOTA_IVA; st(iva, { i: true, sz: 9, color: "FF808080", align: "center" });
+  cop.mergeCells(12, 1, 12, 8); const iva = cop.getCell(12, 1); iva.value = CAPITOLATO_NOTA_IVA; st(iva, { i: true, sz: 9, color: "FF808080", align: "center" });
   const gen = new Date(); const p2 = (n) => String(n).padStart(2, "0");
   const stamp = `${p2(gen.getDate())}/${p2(gen.getMonth() + 1)}/${gen.getFullYear()} ${p2(gen.getHours())}:${p2(gen.getMinutes())}`;
-  cop.mergeCells(17, 1, 17, 8); const gc = cop.getCell(17, 1); gc.value = `Generato il ${stamp}`; st(gc, { i: true, sz: 8, color: "FFB0B0B0", align: "center" });
+  cop.mergeCells(13, 1, 13, 8); const gc = cop.getCell(13, 1); gc.value = `Generato il ${stamp}`; st(gc, { i: true, sz: 8, color: "FFB0B0B0", align: "center" });
   impagina(cop);
 
   // ── Premessa ──────────────────────────────────────────────────────────────
@@ -210,7 +210,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   prem.mergeCells(pr, 1, pr, 8); const pc0 = prem.getCell(pr, 1); pc0.value = "PREMESSA"; st(pc0, { b: true, sz: 11, color: "FFFFFFFF", fill: NAVY });
   CAPITOLATO_PREMESSA.forEach((p) => {
     pr += 1; prem.mergeCells(pr, 1, pr, 8); const c = prem.getCell(pr, 1); c.value = p; st(c, { sz: 9, wrap: true, vtop: true });
-    prem.getRow(pr).height = Math.max(14, nlines(p, 150) * 12 + 6);
+    prem.getRow(pr).height = nlines(p, 88) * 11.3 + 2;
   });
   // INDICE dei fogli attivi
   pr += 2; prem.mergeCells(pr, 1, pr, 8); const ic = prem.getCell(pr, 1); ic.value = "INDICE"; st(ic, { b: true, sz: 10, fill: HEADER, align: "center" });
