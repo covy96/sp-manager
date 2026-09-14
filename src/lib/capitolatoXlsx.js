@@ -24,6 +24,12 @@ const dataIt = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 const numOrNull = (v) => { const n = parseNum(v); return Number.isFinite(n) && n !== 0 ? n : null; };
+// stima numero righe di testo per una cella larga ~cpl caratteri (col B)
+const nlines = (txt, cpl = 44) => {
+  const s = String(txt || "");
+  const paras = s.split("\n");
+  return Math.max(1, paras.reduce((n, p) => n + Math.max(1, Math.ceil((p.length || 1) / cpl)), 0));
+};
 
 // factory cella con stile
 function C(v, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, formula } = {}) {
@@ -32,7 +38,7 @@ function C(v, { b = false, i = false, sz = 8, color, fill, align, wrap, num, bor
   else { cell.v = v == null ? "" : v; cell.t = typeof v === "number" ? "n" : "s"; }
   cell.s = {
     font: { name: FONT, sz, bold: b, italic: i, ...(color ? { color: { rgb: color } } : {}) },
-    alignment: { vertical: "center", ...(align ? { horizontal: align } : {}), ...(wrap ? { wrapText: true } : {}) },
+    alignment: { vertical: wrap ? "top" : "center", ...(align ? { horizontal: align } : {}), ...(wrap ? { wrapText: true } : {}) },
     ...(fill ? { fill: { patternType: "solid", fgColor: { rgb: fill } } } : {}),
     ...(border ? { border } : {}),
     ...(num ? { numFmt: num } : {}),
@@ -79,14 +85,14 @@ function buildCategoria(g) {
       C("", { fill: TITLE, border: topb, num: F_NUM }), C("", { fill: TITLE, border: topb, num: F_NUM }),
       C("", { fill: TITLE, border: topb, num: F_EUR }), C("", { fill: TITLE, border: topb, num: F_EUR }),
     ];
-    push(tr, 15);
+    push(tr, Math.max(15, nlines((r.titolo || "").toUpperCase(), 40) * 12 + 4));
     // descrizione
     const descTxt = r.descrizione || "";
     const descRow = push([
       C("", { border: box }), C(descTxt, { sz: 8, wrap: true, border: box }),
       C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
       C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, border: box, num: F_EUR }), C("", { border: box }),
-    ], Math.max(24, Math.ceil((descTxt.length || 1) / 60) * 11 + 6));
+    ], Math.max(22, nlines(descTxt, 44) * 11.5 + 6));
     // MISURAZIONI (corsivo)
     push([
       C("", { border: box }), C("MISURAZIONI:", { i: true, sz: 8, wrap: true, border: box }),

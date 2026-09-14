@@ -87,6 +87,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2);
     [ML, X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot, X.end].forEach((x) => pdf.line(x, y0, x, y1));
   };
+  const hline = (yy) => { pdf.setDrawColor(205, 205, 205); pdf.setLineWidth(0.2); pdf.line(ML, yy, X.end, yy); };
 
   // ── Intestazione di pagina (progetto a sx, studio a dx) ────────────────────
   const testata = () => {
@@ -225,60 +226,60 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       const headBlock = titLines.length * 3.6 + descLines.length * 3.1 + 5;
       ensure(headBlock + 4);
 
+      // separatore superiore voce (grigio, un filo più marcato)
+      pdf.setDrawColor(150, 150, 150); pdf.setLineWidth(0.35); pdf.line(ML, y, X.end, y);
       // banda grigia dietro codice + titolo (grassetto)
       const titH = titLines.length * 3.6 + 1.8;
       pdf.setFillColor(236, 237, 240);
       pdf.rect(ML, y, W - ML - MR, titH, "F");
       reg(6.6); pdf.setTextColor(60, 60, 60);
       pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3.6, { align: "center" });
-      bold(7.3); pdf.setTextColor(30, 30, 30);
+      bold(7.3); pdf.setTextColor(20, 20, 20);
       let ty = y + 3.6;
       titLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, ty); ty += 3.6; });
-      y += titH;
+      y += titH; hline(y);
       // descrizione (regular, grigio)
       reg(7); pdf.setTextColor(90, 90, 90);
       descLines.forEach((ln) => { ensure(3.4); pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
+      y += 0.6; hline(y);
       // MISURAZIONI (corsivo)
-      y += 1; ensure(4);
-      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.2); y += 4;
+      ensure(4);
+      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); y += 4; hline(y);
 
       misure.forEach((m) => {
-        ensure(3.6);
-        reg(7); pdf.setTextColor(120, 120, 120);
-        pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.2);
-        pdf.setTextColor(30, 30, 30);
-        const cell = (key, val) => { const n = parseNum(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.2, { align: "right" }); };
+        ensure(3.8);
+        reg(7); pdf.setTextColor(110, 110, 110);
+        pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.6);
+        pdf.setTextColor(20, 20, 20);
+        const cell = (key, val) => { const n = parseNum(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.6, { align: "right" }); };
         cell("lung", m.lung); cell("larg", m.larg); cell("hpeso", m.hpeso);
         const q = qtaMisurazione(m);
-        if (q) pdf.text(fmtNum(q), RIGHT("qta"), y + 2.2, { align: "right" });
-        y += 3.4;
+        if (q) pdf.text(fmtNum(q), RIGHT("qta"), y + 2.6, { align: "right" });
+        y += 3.8; hline(y);
       });
 
-      // SOMMANO (corsivo, una o due righe fornitura/posa) con cella importo evidenziata
+      // SOMMANO (corsivo, scuro) con cella importo evidenziata sotto unitario
       labels.forEach((lab) => {
-        ensure(4);
-        pdf.setFillColor(255, 251, 227);
-        pdf.rect(X.unit, y - 0.6, COL.unit, 4, "F");
-        ital(7); pdf.setTextColor(40, 40, 40);
-        pdf.text(lab, X.desig + 1.5, y + 2.4);
-        pdf.text(fmtNum(tot), RIGHT("qta"), y + 2.4, { align: "right" });
-        y += 4;
+        ensure(4.2);
+        pdf.setFillColor(255, 249, 214);
+        pdf.rect(X.unit, y, COL.unit, 4.2, "F");
+        ital(7.2); pdf.setTextColor(0, 0, 0);
+        pdf.text(lab, X.desig + 1.5, y + 2.9);
+        pdf.text(fmtNum(tot), RIGHT("qta"), y + 2.9, { align: "right" });
+        y += 4.2; hline(y);
       });
-
-      pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
-      pdf.line(ML, y + 0.8, X.end, y + 0.8);
-      y += 2.5;
     });
 
     // chiude le righe verticali continue del corpo tabella
     ensure(9);
     drawVerticals(bodyTop, y);
-    // TOTALE categoria: banda blu, testo bianco
+    // TOTALE categoria: banda blu, testo bianco, con importo 0,00 €
     const totH = 6;
     pdf.setFillColor(...NAVY);
     pdf.rect(ML, y, W - ML - MR, totH, "F");
     bold(7.8); pdf.setTextColor(255, 255, 255);
     pdf.text(`TOTALE ${g.nomeIndice}`, X.desig + 1.5, y + 4);
+    pdf.text("0,00 €", RIGHT("tot"), y + 4, { align: "right" });
     y += totH + 2;
   });
 
