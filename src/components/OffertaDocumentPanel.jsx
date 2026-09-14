@@ -95,11 +95,13 @@ export default function OffertaDocumentPanel({
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [createError, setCreateError] = useState("");
 
-  // Nome offerta modificabile in modifica (in creazione si usa `ana.nome_offerta`).
+  // Nome e numero offerta modificabili in modifica (in creazione si usa `ana.*`).
   const [nomeEdit, setNomeEdit] = useState(() => offerta?.nome_offerta || "");
+  const [numeroEdit, setNumeroEdit] = useState(() => offerta?.numero_offerta || "");
 
   useEffect(() => {
     setNomeEdit(offerta?.nome_offerta || "");
+    setNumeroEdit(offerta?.numero_offerta || "");
     const nd = normalizzaDocumento(offerta?.documento, offerta, tpl);
     setDoc(nd);
     const vs = Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : [];
@@ -115,7 +117,7 @@ export default function OffertaDocumentPanel({
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
   const offGen = isCreate
     ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta, cliente: ana.cliente }
-    : { ...offerta, nome_offerta: nomeEdit.trim() || offerta?.nome_offerta };
+    : { ...offerta, nome_offerta: nomeEdit.trim() || offerta?.nome_offerta, numero_offerta: numeroEdit.trim() || offerta?.numero_offerta };
 
   // Cliente → committente: rispecchia il valore, ma non sovrascrive un
   // committente già modificato a mano.
@@ -198,8 +200,9 @@ export default function OffertaDocumentPanel({
     // diventano le voci, con sconti e totale allineati. Se il documento non ha
     // prestazioni attive le voci esistenti non vengono toccate.
     const patch = { documento: doc, documento_versioni: nuoveVersioni };
-    // Nome offerta editato nel pannello (salvato solo se non svuotato).
+    // Nome e numero offerta editati nel pannello (salvati solo se non svuotati).
     if (nomeEdit.trim() && nomeEdit.trim() !== offerta.nome_offerta) patch.nome_offerta = nomeEdit.trim();
+    if (numeroEdit.trim() && numeroEdit.trim() !== offerta.numero_offerta) patch.numero_offerta = numeroEdit.trim();
     if (tot.righe.length > 0) {
       patch.voci = tot.righe.map((r, i) => ({ id: `sez${i}_${stamp}`, nome: r.titolo, prezzo: r.importo, attiva: true }));
       patch.sconto = Number(doc.sconto) || 0;
@@ -422,7 +425,7 @@ export default function OffertaDocumentPanel({
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {isCreate
                 ? (ana.nome_offerta || "Crea offerta dal documento")
-                : `${offerta?.numero_offerta} — ${nomeEdit.trim() || offerta?.nome_offerta}`}
+                : `${numeroEdit.trim() || offerta?.numero_offerta} — ${nomeEdit.trim() || offerta?.nome_offerta}`}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
@@ -520,14 +523,23 @@ export default function OffertaDocumentPanel({
             </div>
           )}
 
-          {/* Nome offerta — modificabile in modifica */}
+          {/* Numero e nome offerta — modificabili in modifica */}
           {!isCreate && (
             <div style={cardSt}>
-              <div style={labelSt}>Nome offerta</div>
-              <input value={nomeEdit} onChange={e => setNomeEdit(e.target.value)}
-                placeholder="Es. Ristrutturazione appartamento" style={inputSt} />
+              <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12 }}>
+                <div>
+                  <div style={labelSt}>N° Offerta</div>
+                  <input value={numeroEdit} onChange={e => setNumeroEdit(e.target.value)}
+                    placeholder="OFF.001" style={inputSt} />
+                </div>
+                <div>
+                  <div style={labelSt}>Nome offerta</div>
+                  <input value={nomeEdit} onChange={e => setNomeEdit(e.target.value)}
+                    placeholder="Es. Ristrutturazione appartamento" style={inputSt} />
+                </div>
+              </div>
               <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 6 }}>
-                Rinomina l'offerta: il nuovo nome viene salvato premendo <b>Salva</b> e usato nel file Word/PDF.
+                Numero e nome vengono salvati premendo <b>Salva</b> e usati nel file Word/PDF.
               </div>
             </div>
           )}
@@ -546,7 +558,7 @@ export default function OffertaDocumentPanel({
                   style={{ display: "inline-block", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 3px", outline: "none" }} />
               </div>
               <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                {offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER {campoInline(doc.oggettoIncarico, v => set({ oggettoIncarico: v }), "oggetto dell'incarico", { textTransform: "uppercase" })}.
+                {numeroEdit.trim() || offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER {campoInline(doc.oggettoIncarico, v => set({ oggettoIncarico: v }), "oggetto dell'incarico", { textTransform: "uppercase" })}.
               </div>
               <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 14px" }} />
               <div style={{ marginBottom: 12 }}>OGGETTO: Offerta di prestazioni professionali.</div>
