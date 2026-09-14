@@ -204,10 +204,10 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     catch (e) { console.error(e); showToast?.("Errore nella generazione del PDF", "error"); }
     finally { setBusy(false); }
   };
-  const handleXlsx = () => {
+  const handleXlsx = async () => {
     if (!righe.length) { showToast?.("Aggiungi almeno una voce", "error"); return; }
     setBusy(true);
-    try { generaCapitolatoXlsx(exportSnapshot()); }
+    try { await generaCapitolatoXlsx(exportSnapshot()); }
     catch (e) { console.error(e); showToast?.("Errore nell'export Excel", "error"); }
     finally { setBusy(false); }
   };

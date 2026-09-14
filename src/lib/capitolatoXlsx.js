@@ -1,226 +1,188 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Export Excel del capitolato — ricalca fedelmente il file "CAP. BASE":
+// Export Excel del capitolato con ExcelJS — ricalca il file "CAP. BASE":
 // barra titolo navy, header grigio con celle unite (Dimensioni/IMPORTI), righe
 // voce su fondo grigio con bordi, MISURAZIONI/SOMMANO in corsivo, cella unitario
-// evidenziata (crema), formati numero/€, larghezze colonne, riga TOTALE e
-// Riepilogo con formule. Usa xlsx-js-style (SheetJS con stili).
+// evidenziata (crema), formati numero/€, larghezze colonne, TOTALE e Riepilogo
+// con formule. Il foglio è PROTETTO: si può modificare SOLO la cella "unitario".
 // ─────────────────────────────────────────────────────────────────────────────
-import * as XLSX from "xlsx-js-style";
+import ExcelJS from "exceljs";
 import { CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
 import { componiGruppi, totaleRiga, qtaMisurazione, parseNum } from "./capitolatoModel";
 
-const NAVY = "1F3864", HEADER = "D6DCE4", TITLE = "EEF1F6", CREAM = "FFF7D6", GRIDCOL = "808080";
+const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
 const FONT = "Groteska-Book";
-const F_NUM = "#,##0.00", F_EUR = '#,##0.00\\ \\€';
-const thin = { style: "thin", color: { rgb: GRIDCOL } };
-const medium = { style: "medium", color: { rgb: "404040" } };
-const box = { top: thin, bottom: thin, left: thin, right: thin };
+const F_NUM = "#,##0.00", F_EUR = '#,##0.00" €"';
+const thin = { style: "thin", color: { argb: GRID } };
+const medium = { style: "medium", color: { argb: "FF404040" } };
+const box = { top: thin, left: thin, bottom: thin, right: thin };
+const PROTECT = { selectLockedCells: true, selectUnlockedCells: true, formatCells: false, insertRows: false, deleteRows: false };
 
 const dataIt = (iso) => {
   if (!iso) return "";
-  const d = new Date(iso);
-  if (isNaN(d)) return String(iso);
+  const d = new Date(iso); if (isNaN(d)) return String(iso);
   const p = (n) => String(n).padStart(2, "0");
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
-const numOrNull = (v) => { const n = parseNum(v); return Number.isFinite(n) && n !== 0 ? n : null; };
-// stima numero righe di testo per una cella larga ~cpl caratteri (col B)
+const numOrBlank = (v) => { const n = parseNum(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 const nlines = (txt, cpl = 44) => {
   const s = String(txt || "");
-  const paras = s.split("\n");
-  return Math.max(1, paras.reduce((n, p) => n + Math.max(1, Math.ceil((p.length || 1) / cpl)), 0));
+  return Math.max(1, s.split("\n").reduce((n, p) => n + Math.max(1, Math.ceil((p.length || 1) / cpl)), 0));
 };
 
-// factory cella con stile
-function C(v, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, formula } = {}) {
-  const cell = {};
-  if (formula) { cell.f = formula; cell.t = "n"; }
-  else { cell.v = v == null ? "" : v; cell.t = typeof v === "number" ? "n" : "s"; }
-  cell.s = {
-    font: { name: FONT, sz, bold: b, italic: i, ...(color ? { color: { rgb: color } } : {}) },
-    alignment: { vertical: wrap ? "top" : "center", ...(align ? { horizontal: align } : {}), ...(wrap ? { wrapText: true } : {}) },
-    ...(fill ? { fill: { patternType: "solid", fgColor: { rgb: fill } } } : {}),
-    ...(border ? { border } : {}),
-    ...(num ? { numFmt: num } : {}),
-  };
-  return cell;
+// stile su una cella ExcelJS
+function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, unlock } = {}) {
+  cell.font = { name: FONT, size: sz, bold: b, italic: i, ...(color ? { color: { argb: color } } : {}) };
+  cell.alignment = { vertical: wrap ? "top" : "middle", ...(align ? { horizontal: align } : {}), wrapText: !!wrap };
+  if (fill) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+  if (border) cell.border = border;
+  if (num) cell.numFmt = num;
+  cell.protection = { locked: !unlock };
 }
-const empty = 8; // n. colonne A..H
+const COLS = [4.5, 38, 5.5, 5.5, 6, 8, 10.5, 11.5];
 
-function buildCategoria(g) {
-  const rows = [];      // array di array di celle
-  const merges = [];    // {s:{r,c}, e:{r,c}}
-  const heights = {};   // rowIndex -> altezza
-  const push = (cells, h) => { const idx = rows.length; rows.push(cells); if (h) heights[idx] = h; return idx; };
-  const blank = () => Array.from({ length: empty }, () => C(""));
+function buildCategoria(wb, g) {
+  const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false }] });
+  COLS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  let r = 0;
+  const setRow = (cells, h) => {
+    r += 1; const row = ws.getRow(r);
+    cells.forEach((c, ci) => { const cell = row.getCell(ci + 1); if (c) { if (c.f) cell.value = { formula: c.f }; else if (c.v != null) cell.value = c.v; st(cell, c); } });
+    if (h) row.height = h;
+    return r;
+  };
+  const C = (v, opts) => ({ v, ...opts });
+  const F = (formula, opts) => ({ f: formula, ...opts });
 
-  // r0: titolo categoria (navy, bianco, merge A:H)
-  const r0 = blank();
-  r0[0] = C(g.titoloPagina, { b: true, sz: 13, color: "FFFFFF", fill: NAVY, align: "center" });
-  for (let c = 1; c < empty; c++) r0[c] = C("", { fill: NAVY });
-  push(r0, 20);
-  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: empty - 1 } });
+  // r1 titolo categoria (navy)
+  setRow([C(g.titoloPagina, { b: true, sz: 13, color: "FFFFFFFF", fill: NAVY, align: "center" }),
+    ...[0, 0, 0, 0, 0, 0, 0].map(() => C("", { fill: NAVY }))], 20);
+  ws.mergeCells(1, 1, 1, 8);
 
-  // r1-r2: header grigio con merge
-  const hstyle = { b: true, sz: 8, fill: HEADER, align: "center", border: box };
-  const r1 = [C("r. Ord", hstyle), C("DESIGNAZIONE DEI LAVORI", hstyle), C("Dimensioni", hstyle), C("", { ...hstyle }), C("", { ...hstyle }), C("Quantità", hstyle), C("IMPORTI", hstyle), C("", { ...hstyle })];
-  const r2 = [C("", hstyle), C("", hstyle), C("Lung.", hstyle), C("Larg.", hstyle), C("H/peso", hstyle), C("", hstyle), C("unitario", hstyle), C("TOTALE", hstyle)];
-  const hr1 = push(r1, 15); const hr2 = push(r2, 15);
-  merges.push({ s: { r: hr1, c: 0 }, e: { r: hr2, c: 0 } });       // r.Ord
-  merges.push({ s: { r: hr1, c: 1 }, e: { r: hr2, c: 1 } });       // DESIGNAZIONE
-  merges.push({ s: { r: hr1, c: 2 }, e: { r: hr1, c: 4 } });       // Dimensioni
-  merges.push({ s: { r: hr1, c: 5 }, e: { r: hr2, c: 5 } });       // Quantità
-  merges.push({ s: { r: hr1, c: 6 }, e: { r: hr1, c: 7 } });       // IMPORTI
+  // r2-3 header
+  const H = { b: true, sz: 8, fill: HEADER, align: "center", border: box };
+  setRow([C("r. Ord", H), C("DESIGNAZIONE DEI LAVORI", H), C("Dimensioni", H), C("", H), C("", H), C("Quantità", H), C("IMPORTI", H), C("", H)], 15);
+  setRow([C("", H), C("", H), C("Lung.", H), C("Larg.", H), C("H/peso", H), C("", H), C("unitario", H), C("TOTALE", H)], 15);
+  ws.mergeCells("A2:A3"); ws.mergeCells("B2:B3"); ws.mergeCells("C2:E2"); ws.mergeCells("F2:F3"); ws.mergeCells("G2:H2");
 
-  // voci
-  g.items.forEach((r) => {
-    const misure = (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
-    const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
-    // riga titolo (grigio, top medium)
-    const topb = { top: medium, bottom: thin, left: thin, right: thin };
-    const tr = [
-      C(r._code || r.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
-      C((r.titolo || "").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
+  g.items.forEach((it) => {
+    const misure = (it.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
+    const labels = (it.sommano_labels && it.sommano_labels.length) ? it.sommano_labels : [`SOMMANO ${it.unita || ""}`.trim()];
+    // titolo (grigio, top medium)
+    const topb = { top: medium, left: thin, bottom: thin, right: thin };
+    setRow([
+      C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
+      C((it.titolo || "").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
       C("", { fill: TITLE, border: topb, num: F_NUM }), C("", { fill: TITLE, border: topb, num: F_NUM }),
       C("", { fill: TITLE, border: topb, num: F_NUM }), C("", { fill: TITLE, border: topb, num: F_NUM }),
       C("", { fill: TITLE, border: topb, num: F_EUR }), C("", { fill: TITLE, border: topb, num: F_EUR }),
-    ];
-    push(tr, Math.max(15, nlines((r.titolo || "").toUpperCase(), 40) * 12 + 4));
-    // descrizione
-    const descTxt = r.descrizione || "";
-    const descRow = push([
-      C("", { border: box }), C(descTxt, { sz: 8, wrap: true, border: box }),
-      C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
-      C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, border: box, num: F_EUR }), C("", { border: box }),
-    ], Math.max(22, nlines(descTxt, 44) * 11.5 + 6));
+    ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
+    // descrizione + NOTE
+    const descRow = setRow([
+      C("", { fill: ZONE, border: box }), C(it.descrizione || "", { sz: 8, wrap: true, fill: ZONE, border: box }),
+      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }),
+      C("", { fill: ZONE, border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
+    ], Math.max(22, nlines(it.descrizione || "", 44) * 11.5 + 6));
     // MISURAZIONI (corsivo)
-    push([
-      C("", { border: box }), C("MISURAZIONI:", { i: true, sz: 8, wrap: true, border: box }),
-      C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
-      C("", { border: box, num: F_NUM }), C("", { border: box }), C("", { border: box }),
+    setRow([
+      C("", { fill: ZONE, border: box }), C("MISURAZIONI:", { i: true, sz: 8, fill: ZONE, border: box }),
+      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }),
+      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
     ], 13);
-    // righe misura
-    const misStart = rows.length;
+    const misStart = r + 1;
     misure.forEach((m) => {
-      push([
-        C("", { border: box }), C(m.descrizione || "", { sz: 8, wrap: true, border: box }),
-        C(numOrNull(m.lung), { sz: 8, align: "right", border: box, num: F_NUM }),
-        C(numOrNull(m.larg), { sz: 8, align: "right", border: box, num: F_NUM }),
-        C(numOrNull(m.hpeso), { sz: 8, align: "right", border: box, num: F_NUM }),
-        C(qtaMisurazione(m) || null, { sz: 8, align: "right", border: box, num: F_NUM }),
-        C("", { border: box }), C("", { border: box }),
+      setRow([
+        C("", { fill: ZONE, border: box }), C(m.descrizione || "", { sz: 8, color: "FF595959", fill: ZONE, border: box }),
+        C(numOrBlank(m.lung), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
+        C(numOrBlank(m.larg), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
+        C(numOrBlank(m.hpeso), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
+        C(qtaMisurazione(m) || null, { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
+        C("", { fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
       ], 13);
     });
-    const misEnd = rows.length - 1;
-    // NOTE merge: da descRow fino all'ultima riga misura (o descRow se nessuna)
-    merges.push({ s: { r: descRow, c: 6 }, e: { r: Math.max(descRow, misEnd), c: 7 } });
-    // SOMMANO (bold+italic), F=somma misure, G crema, H formula €
-    const tot = totaleRiga(r);
+    const misEnd = r;
+    // NOTE merge da descRow a fine misure
+    ws.mergeCells(descRow, 7, Math.max(descRow, misEnd), 8);
+    // SOMMANO (grassetto+corsivo, unitario sbloccato)
+    const tot = totaleRiga(it);
     labels.forEach((lab) => {
-      const rr = rows.length;
-      const f = (misure.length && misStart <= misEnd)
-        ? `SUM(F${misStart + 1}:F${misEnd + 1})` : null;
-      push([
-        C("", { b: true, i: true, sz: 8, border: box }),
-        C(lab, { b: true, i: true, sz: 8, wrap: true, border: box }),
-        C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
-        f ? C(null, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM, formula: f })
-          : C(tot || null, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM }),
-        C("", { fill: CREAM, border: box, num: F_EUR }),
-        C(null, { sz: 8, border: box, num: F_EUR, formula: `IF(G${rr + 1}="","",F${rr + 1}*G${rr + 1})` }),
-      ], 13);
+      const rr = r + 1;
+      const fSum = (misure.length && misStart <= misEnd) ? `SUM(F${misStart}:F${misEnd})` : null;
+      setRow([
+        C("", { b: true, i: true, sz: 8, fill: TITLE, border: box }),
+        C(lab, { b: true, i: true, sz: 8, fill: TITLE, border: box }),
+        C("", { fill: TITLE, border: box, num: F_NUM }), C("", { fill: TITLE, border: box, num: F_NUM }), C("", { fill: TITLE, border: box, num: F_NUM }),
+        fSum ? F(fSum, { b: true, i: true, sz: 8, align: "right", fill: TITLE, border: box, num: F_NUM })
+          : C(tot || null, { b: true, i: true, sz: 8, align: "right", fill: TITLE, border: box, num: F_NUM }),
+        C("", { fill: CREAM, border: box, num: F_EUR, unlock: true }),
+        F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, fill: TITLE, border: box, num: F_EUR }),
+      ], 14);
     });
   });
 
-  // TOTALE categoria (navy)
-  const totRowIdx = rows.length;
-  const trow = blank();
-  trow[1] = C(`TOTALE ${g.nomeIndice}`, { b: true, sz: 10, color: "FFFFFF", fill: NAVY });
-  for (let c = 0; c < empty; c++) if (c !== 1) trow[c] = C("", { fill: NAVY, num: c >= 6 ? F_EUR : undefined });
-  push(trow, 16);
-
-  // ws
-  const aoa = rows; // già celle stilizzate
-  const ws = {};
-  const range = { s: { r: 0, c: 0 }, e: { r: rows.length - 1, c: empty - 1 } };
-  rows.forEach((cells, r) => cells.forEach((cell, c) => { ws[XLSX.utils.encode_cell({ r, c })] = cell; }));
-  ws["!ref"] = XLSX.utils.encode_range(range);
-  ws["!merges"] = merges;
-  ws["!cols"] = [{ wch: 4.5 }, { wch: 38 }, { wch: 5.5 }, { wch: 5.5 }, { wch: 6 }, { wch: 8 }, { wch: 10.5 }, { wch: 11.5 }];
-  // imposta altezze riga
-  const rowArr = [];
-  for (let r = 0; r < rows.length; r++) rowArr[r] = heights[r] ? { hpt: heights[r] } : {};
-  ws["!rows"] = rowArr;
-  return { name: `${g.code} - ${g.nomeIndice}`.slice(0, 31), ws, totRow: totRowIdx + 1 };
+  // TOTALE categoria (navy) — H = somma degli H voce
+  const totRow = setRow([
+    C("", { fill: NAVY }), C(`TOTALE ${g.nomeIndice}`, { b: true, sz: 10, color: "FFFFFFFF", fill: NAVY }),
+    C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }),
+    F(`SUM(H4:H${r})`, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR }),
+  ], 16);
+  return { name: ws.name, totRow };
 }
 
-export function generaCapitolatoXlsx({ capitolato, righe, project, modo = "salva" }) {
-  const wb = XLSX.utils.book_new();
+function scarica(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+export async function generaCapitolatoXlsx({ capitolato, righe, project, modo = "salva" }) {
+  const wb = new ExcelJS.Workbook();
   const gruppi = componiGruppi(righe);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
     ? capitolato.nome : (project?.name || "Progetto");
 
   // Copertina
-  const cop = XLSX.utils.aoa_to_sheet([[""]]);
-  const copRows = [
-    [C(CAPITOLATO_TITOLO, { b: true, sz: 16, color: "FFFFFF", fill: NAVY, align: "center" })],
-    [C("COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 11, align: "center" })],
-    [C("Capitolato d'appalto", { sz: 11, align: "center", color: "808080" })],
-    [C("")],
-    [C("Progetto:", { b: true, sz: 10 }), C(nomeProgetto, { sz: 10 })],
-    [C("Committente:", { b: true, sz: 10 }), C(capitolato?.committente || "", { sz: 10 })],
-    [C("Località:", { b: true, sz: 10 }), C(capitolato?.localita || "", { sz: 10 })],
-    [C("Data:", { b: true, sz: 10 }), C(dataIt(capitolato?.data), { sz: 10 })],
-    [C("Revisione:", { b: true, sz: 10 }), C(capitolato?.revisione || "", { sz: 10 })],
-    [C("")],
-    [C(CAPITOLATO_NOTA_IVA, { i: true, sz: 9, color: "808080" })],
-  ];
-  copRows.forEach((cells, r) => cells.forEach((cell, c) => { cop[XLSX.utils.encode_cell({ r, c })] = cell; }));
-  cop["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: copRows.length - 1, c: 7 } });
-  cop["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }];
-  cop["!cols"] = [{ wch: 14 }, { wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }];
-  XLSX.utils.book_append_sheet(wb, cop, "Copertina");
+  const cop = wb.addWorksheet("Copertina", { views: [{ showGridLines: false }] });
+  cop.getColumn(1).width = 14; cop.getColumn(2).width = 46;
+  const copCell = (addr, v, o) => { const c = cop.getCell(addr); c.value = v; st(c, o); };
+  cop.mergeCells("A1:H1"); copCell("A1", CAPITOLATO_TITOLO, { b: true, sz: 16, color: "FFFFFFFF", fill: NAVY, align: "center" }); cop.getRow(1).height = 24;
+  cop.mergeCells("A2:H2"); copCell("A2", "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 11, align: "center" });
+  cop.mergeCells("A3:H3"); copCell("A3", "Capitolato d'appalto", { sz: 11, color: "FF808080", align: "center" });
+  [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
+    .forEach((p, i) => { copCell(`A${5 + i}`, p[0], { b: true, sz: 10 }); copCell(`B${5 + i}`, p[1], { sz: 10 }); });
+  copCell("A11", CAPITOLATO_NOTA_IVA, { i: true, sz: 9, color: "FF808080" });
 
   // Premessa
-  const prem = {};
-  const premRows = [[C("PREMESSA", { b: true, sz: 11, color: "FFFFFF", fill: NAVY })], [C("")]];
+  const prem = wb.addWorksheet("Premessa", { views: [{ showGridLines: false }] });
+  prem.getColumn(1).width = 110;
+  prem.mergeCells("A1:A1"); const pc0 = prem.getCell("A1"); pc0.value = "PREMESSA"; st(pc0, { b: true, sz: 11, color: "FFFFFFFF", fill: NAVY });
+  let pr = 2;
   CAPITOLATO_PREMESSA.forEach((p) => {
     const isSub = p.length < 40 && p === p.toUpperCase() && !p.includes("\n");
-    premRows.push([C(p, { b: isSub, sz: isSub ? 9 : 8, wrap: true })]);
+    pr += 1; const c = prem.getCell(`A${pr}`); c.value = p; st(c, { b: isSub, sz: isSub ? 9 : 8, wrap: true });
+    prem.getRow(pr).height = Math.max(14, nlines(p, 120) * 11 + 4);
   });
-  premRows.forEach((cells, r) => cells.forEach((cell, c) => { prem[XLSX.utils.encode_cell({ r, c })] = cell; }));
-  prem["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: premRows.length - 1, c: 7 } });
-  prem["!merges"] = premRows.map((_, r) => ({ s: { r, c: 0 }, e: { r, c: 7 } }));
-  prem["!cols"] = [{ wch: 100 }];
-  XLSX.utils.book_append_sheet(wb, prem, "Premessa");
 
   // Categorie
-  const catInfo = [];
-  gruppi.forEach((g) => { const { name, ws, totRow } = buildCategoria(g); catInfo.push({ code: g.code, nome: g.nomeIndice, name, totRow }); XLSX.utils.book_append_sheet(wb, ws, name); });
+  const info = [];
+  gruppi.forEach((g) => { const { name, totRow } = buildCategoria(wb, g); info.push({ code: g.code, nome: g.nomeIndice, name, totRow }); });
 
   // Riepilogo
-  const rie = {};
-  const rieRows = [
-    [C(CAPITOLATO_TITOLO, { b: true, sz: 13, color: "FFFFFF", fill: NAVY, align: "center" }), ...Array.from({ length: 2 }, () => C("", { fill: NAVY }))],
-    [C("Riepilogo generale per categoria di lavori", { i: true, sz: 9, color: "808080" })],
-    [C("")],
-    [C("Cod.", { b: true, sz: 9, fill: HEADER, align: "center", border: box }), C("Descrizione", { b: true, sz: 9, fill: HEADER, border: box }), C("Importo", { b: true, sz: 9, fill: HEADER, align: "center", border: box })],
-  ];
-  catInfo.forEach((c) => rieRows.push([
-    C(c.code, { b: true, sz: 9, align: "center", border: box }),
-    C(c.nome, { sz: 9, border: box }),
-    C(null, { sz: 9, align: "right", border: box, num: F_EUR, formula: `'${c.name}'!H${c.totRow}` }),
-  ]));
-  rieRows.forEach((cells, r) => cells.forEach((cell, c) => { rie[XLSX.utils.encode_cell({ r, c })] = cell; }));
-  rie["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rieRows.length - 1, c: 2 } });
-  rie["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }];
-  rie["!cols"] = [{ wch: 8 }, { wch: 45 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, rie, "Riepilogo");
+  const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false }] });
+  rie.getColumn(1).width = 8; rie.getColumn(2).width = 45; rie.getColumn(3).width = 14;
+  rie.mergeCells("A1:C1"); const rc0 = rie.getCell("A1"); rc0.value = CAPITOLATO_TITOLO; st(rc0, { b: true, sz: 13, color: "FFFFFFFF", fill: NAVY, align: "center" });
+  const rc1 = rie.getCell("A2"); rc1.value = "Riepilogo generale per categoria di lavori"; st(rc1, { i: true, sz: 9, color: "FF808080" });
+  ["Cod.", "Descrizione", "Importo"].forEach((t, i) => { const c = rie.getCell(4, i + 1); c.value = t; st(c, { b: true, sz: 9, fill: HEADER, align: i === 1 ? "left" : "center", border: box }); });
+  info.forEach((c, i) => {
+    const rr = 5 + i;
+    const a = rie.getCell(rr, 1); a.value = c.code; st(a, { b: true, sz: 9, align: "center", border: box });
+    const b = rie.getCell(rr, 2); b.value = c.nome; st(b, { sz: 9, border: box });
+    const im = rie.getCell(rr, 3); im.value = { formula: `'${c.name}'!H${c.totRow}` }; st(im, { sz: 9, align: "right", border: box, num: F_EUR });
+  });
 
   const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}.xlsx`;
-  if (modo === "blob") {
-    const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    return new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  }
-  XLSX.writeFile(wb, filename);
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  if (modo === "blob") return blob;
+  scarica(blob, filename);
 }
