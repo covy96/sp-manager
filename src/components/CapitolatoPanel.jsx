@@ -152,11 +152,21 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
         nuove = [nv, ...versioni].slice(0, 30);
         attivaN = nv.n;
       }
-      await saveCapitolato(id, metaDb(), righe, nuove);
-      setVersioni(nuove); setVersioneAttiva(attivaN); setDirty(false);
-      showToast?.(esistente ? `Versione ${attivaN} resa principale` : `Versione ${attivaN} salvata`, "success");
+      try {
+        await saveCapitolato(id, metaDb(), righe, nuove);
+        setVersioni(nuove); setVersioneAttiva(attivaN); setDirty(false);
+        showToast?.(esistente ? `Versione ${attivaN} resa principale` : `Versione ${attivaN} salvata`, "success");
+      } catch (e) {
+        // colonna 'versioni' non ancora creata sul DB (migration mancante): salva comunque
+        const missing = e?.code === "42703" || /versioni/i.test(e?.message || "") && /(does not exist|column)/i.test(e?.message || "");
+        if (missing) {
+          await saveCapitolato(id, metaDb(), righe); // senza versioni
+          setDirty(false);
+          showToast?.("Capitolato salvato. Per lo storico versioni esegui la migration DB (capitolato_versioni.sql): non è ancora applicata.", "warning");
+        } else { throw e; }
+      }
     } catch (e) {
-      console.error(e); showToast?.("Errore nel salvataggio", "error");
+      console.error(e); showToast?.("Errore nel salvataggio: " + (e?.message || e?.details || e?.hint || ""), "error");
     } finally { setSaving(false); }
   };
 
