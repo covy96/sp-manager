@@ -70,6 +70,7 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
           setRighe(existing.righe);
           const vers = Array.isArray(c.versioni) ? c.versioni : [];
           setVersioni(vers);
+          setVersioniAperte(vers.length > 0);
           const snap = JSON.stringify(snapshotCapitolato(m, existing.righe));
           setVersioneAttiva(vers.find((v) => JSON.stringify(v.snapshot) === snap)?.n ?? null);
         } else {
@@ -252,7 +253,7 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
             </div>
 
             {/* Versioni salvate */}
-            {versioni.length > 0 && (
+            {!loading && (
               <div style={{ borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
                 <div onClick={() => setVersioniAperte((x) => !x)} style={{ padding: "9px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
                   <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: T.muted }}>
@@ -260,7 +261,12 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                   </div>
                   <span style={{ color: T.muted, fontSize: 11 }}>{versioniAperte ? "▲" : "▼"}</span>
                 </div>
-                {versioniAperte && (
+                {versioniAperte && versioni.length === 0 && (
+                  <div style={{ padding: "0 20px 12px", fontFamily: mono, fontSize: 10, color: T.muted }}>
+                    Nessuna versione ancora. Premi <b>Salva</b> per creare la prima versione.
+                  </div>
+                )}
+                {versioniAperte && versioni.length > 0 && (
                   <div style={{ maxHeight: 180, overflowY: "auto", padding: "0 20px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
                     {versioni.map((v) => {
                       const nv = (v.snapshot?.righe || []).length;
