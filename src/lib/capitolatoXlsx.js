@@ -76,54 +76,57 @@ function buildCategoria(wb, g) {
       C("", { fill: TITLE, border: topb, num: F_NUM }), C("", { fill: TITLE, border: topb, num: F_NUM }),
       C("", { fill: TITLE, border: topb, num: F_EUR }), C("", { fill: TITLE, border: topb, num: F_EUR }),
     ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
-    // descrizione + NOTE
+    // descrizione + NOTE (celle centrali senza riempimento, bianche)
     const descRow = setRow([
-      C("", { fill: ZONE, border: box }), C(it.descrizione || "", { sz: 8, wrap: true, fill: ZONE, border: box }),
-      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }),
-      C("", { fill: ZONE, border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
+      C("", { border: box }), C(it.descrizione || "", { sz: 8, wrap: true, border: box }),
+      C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
+      C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", border: box }), C("", { border: box }),
     ], Math.max(22, nlines(it.descrizione || "", 44) * 11.5 + 6));
     // MISURAZIONI (corsivo)
     setRow([
-      C("", { fill: ZONE, border: box }), C("MISURAZIONI:", { i: true, sz: 8, fill: ZONE, border: box }),
-      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box, num: F_NUM }),
-      C("", { fill: ZONE, border: box, num: F_NUM }), C("", { fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
+      C("", { border: box }), C("MISURAZIONI:", { i: true, sz: 8, border: box }),
+      C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
+      C("", { border: box, num: F_NUM }), C("", { border: box }), C("", { border: box }),
     ], 13);
     const misStart = r + 1;
     misure.forEach((m) => {
       setRow([
-        C("", { fill: ZONE, border: box }), C(m.descrizione || "", { sz: 8, color: "FF595959", fill: ZONE, border: box }),
-        C(numOrBlank(m.lung), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
-        C(numOrBlank(m.larg), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
-        C(numOrBlank(m.hpeso), { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
-        C(qtaMisurazione(m) || null, { sz: 8, align: "right", fill: ZONE, border: box, num: F_NUM }),
-        C("", { fill: ZONE, border: box }), C("", { fill: ZONE, border: box }),
+        C("", { border: box }), C(m.descrizione || "", { sz: 8, color: "FF595959", border: box }),
+        C(numOrBlank(m.lung), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(numOrBlank(m.larg), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(numOrBlank(m.hpeso), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(qtaMisurazione(m) || null, { sz: 8, align: "right", border: box, num: F_NUM }),
+        C("", { border: box }), C("", { border: box }),
       ], 13);
     });
     const misEnd = r;
-    // NOTE merge da descRow a fine misure
+    // NOTE = un'unica cella (merge G:H da descrizione a fine misure)
     ws.mergeCells(descRow, 7, Math.max(descRow, misEnd), 8);
-    // SOMMANO (grassetto+corsivo, unitario sbloccato)
+    // SOMMANO (grassetto+corsivo, senza riempimento; solo unitario crema e sbloccato)
     const tot = totaleRiga(it);
     labels.forEach((lab) => {
       const rr = r + 1;
       const fSum = (misure.length && misStart <= misEnd) ? `SUM(F${misStart}:F${misEnd})` : null;
       setRow([
-        C("", { b: true, i: true, sz: 8, fill: TITLE, border: box }),
-        C(lab, { b: true, i: true, sz: 8, fill: TITLE, border: box }),
-        C("", { fill: TITLE, border: box, num: F_NUM }), C("", { fill: TITLE, border: box, num: F_NUM }), C("", { fill: TITLE, border: box, num: F_NUM }),
-        fSum ? F(fSum, { b: true, i: true, sz: 8, align: "right", fill: TITLE, border: box, num: F_NUM })
-          : C(tot || null, { b: true, i: true, sz: 8, align: "right", fill: TITLE, border: box, num: F_NUM }),
+        C("", { b: true, i: true, sz: 8, border: box }),
+        C(lab, { b: true, i: true, sz: 8, border: box }),
+        C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
+        fSum ? F(fSum, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM })
+          : C(tot || null, { b: true, i: true, sz: 8, align: "right", border: box, num: F_NUM }),
         C("", { fill: CREAM, border: box, num: F_EUR, unlock: true }),
-        F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, fill: TITLE, border: box, num: F_EUR }),
+        F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),
       ], 14);
     });
   });
 
+  // riga vuota prima del totale
+  const lastContent = r;
+  setRow([], 6);
   // TOTALE categoria (navy) — H = somma degli H voce
   const totRow = setRow([
     C("", { fill: NAVY }), C(`TOTALE ${g.nomeIndice}`, { b: true, sz: 10, color: "FFFFFFFF", fill: NAVY }),
     C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }), C("", { fill: NAVY }),
-    F(`SUM(H4:H${r})`, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR }),
+    F(`SUM(H4:H${lastContent})`, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR }),
   ], 16);
   return { name: ws.name, totRow };
 }
