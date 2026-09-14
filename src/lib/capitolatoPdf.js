@@ -135,7 +135,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   };
 
   const ensure = (needed) => {
-    if (y + needed > MAX_Y) { drawVerticals(bodyTop, y); pdf.addPage(); testata(); intestazioneTabella(); }
+    if (y + needed > MAX_Y) { pdf.addPage(); testata(); intestazioneTabella(); }
   };
 
   // ── COPERTINA ───────────────────────────────────────────────────────────────
@@ -218,15 +218,13 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     y += 6;
     intestazioneTabella();
 
-    // sfondi zona voce
-    const ZONE = [245, 246, 249], TITLEG = [225, 229, 238];
-    const fillRow = (yy, h, rgb) => { pdf.setFillColor(...rgb); pdf.rect(ML, yy, W - ML - MR, h, "F"); };
-    // testo grassetto-corsivo (faux-bold ridisegnando con micro-offset)
-    const biText = (txt, x, yy, align) => {
-      ital(7.2); pdf.setTextColor(0, 0, 0);
-      const o = align ? { align } : undefined;
-      pdf.text(txt, x, yy, o); pdf.text(txt, x + 0.18, yy, o);
-    };
+    // helper griglia (grigio chiaro)
+    const TITLEG = [225, 229, 238];
+    const gc = () => { pdf.setDrawColor(200, 200, 200); pdf.setLineWidth(0.2); };
+    const hL = (yy) => { gc(); pdf.line(ML, yy, X.unit, yy); };          // riga: solo parte sinistra (l'area NOTE resta aperta)
+    const hF = (yy) => { gc(); pdf.line(ML, yy, X.end, yy); };           // riga intera
+    const vBody = (yy, h) => { gc(); [ML, X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.end].forEach((x) => pdf.line(x, yy, x, yy + h)); };
+    const vAll = (yy, h) => { gc(); [ML, X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot, X.end].forEach((x) => pdf.line(x, yy, x, yy + h)); };
 
     g.items.forEach((r) => {
       const misure = (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
@@ -236,33 +234,34 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       reg(7);
       const descLines = pdf.splitTextToSize(r.descrizione || "", DESC_W);
       const titLines = pdf.splitTextToSize((r.titolo || "").toUpperCase(), DESC_W);
-      const headBlock = titLines.length * 3.7 + descLines.length * 3.1 + 12;
-      ensure(headBlock + 4);
+      const titH = titLines.length * 3.7 + 2.2;
+      ensure(titH + descLines.length * 3.1 + 16);
 
       // riga blu spessa di separazione tra le voci
       pdf.setFillColor(...NAVY); pdf.rect(ML, y, W - ML - MR, 1.0, "F"); y += 1.0;
 
-      // riga titolo (grigio più marcato) — codice + titolo in nero
-      const titH = titLines.length * 3.7 + 2.2;
-      fillRow(y, titH, TITLEG); hline(y);
+      // riga titolo (grigio) — codice + titolo in nero
+      const titTop = y;
+      pdf.setFillColor(...TITLEG); pdf.rect(ML, y, W - ML - MR, titH, "F");
       reg(6.8); pdf.setTextColor(70, 70, 70);
       pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3.8, { align: "center" });
       bold(7.8); pdf.setTextColor(0, 0, 0);
       let ty = y + 3.8;
       titLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, ty); ty += 3.7; });
-      y += titH;
+      vAll(titTop, titH); hF(titTop); y += titH; hF(y);
+      const noteTop = y;
 
-      // descrizione (nero) su zona grigina + NOTE nell'area IMPORTI
+      // descrizione (nero) — celle centrali senza riempimento (bianche)
       reg(7); pdf.setTextColor(20, 20, 20);
-      descLines.forEach((ln, li) => { ensure(3.4); fillRow(y, 3.1, ZONE); if (li === 0) { hline(y); reg(6.6); pdf.setTextColor(90, 90, 90); pdf.text("NOTE:", X.unit + 1.5, y + 2.4); reg(7); pdf.setTextColor(20, 20, 20); } pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
+      descLines.forEach((ln) => { ensure(3.4); pdf.text(ln, X.desig + 1.5, y + 2.2); vBody(y, 3.1); y += 3.1; hL(y); });
       y += 0.6;
 
       // MISURAZIONI (corsivo)
-      ensure(4); fillRow(y, 4, ZONE); hline(y);
-      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); y += 4;
+      ensure(4);
+      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); vBody(y, 4); y += 4; hL(y);
 
       misure.forEach((m) => {
-        ensure(3.8); fillRow(y, 3.8, ZONE); hline(y);
+        ensure(3.8);
         reg(7); pdf.setTextColor(90, 90, 90);
         pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.6);
         pdf.setTextColor(20, 20, 20);
@@ -270,23 +269,27 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
         cell("lung", m.lung); cell("larg", m.larg); cell("hpeso", m.hpeso);
         const q = qtaMisurazione(m);
         if (q) pdf.text(fmtNum(q), RIGHT("qta"), y + 2.6, { align: "right" });
-        y += 3.8;
+        vBody(y, 3.8); y += 3.8; hL(y);
       });
+      // NOTE = cella unica nell'area IMPORTI
+      hF(y); // chiude in basso la cella NOTE e le celle di sinistra
+      reg(6.6); pdf.setTextColor(120, 120, 120); pdf.text("NOTE:", X.unit + 1.5, noteTop + 2.8);
 
-      // SOMMANO — come il titolo (grigio) ma testo grassetto-corsivo; cella unitario crema
+      // SOMMANO — corsivo pulito; cella unitario crema
       labels.forEach((lab) => {
-        ensure(4.6); fillRow(y, 4.6, TITLEG); hline(y);
+        ensure(4.6);
         pdf.setFillColor(255, 249, 214); pdf.rect(X.unit, y, COL.unit, 4.6, "F");
-        biText(lab, X.desig + 1.5, y + 3.1);
-        biText(fmtNum(tot), RIGHT("qta"), y + 3.1, "right");
-        y += 4.6;
+        ital(7); pdf.setTextColor(0, 0, 0);
+        pdf.text(lab, X.desig + 1.5, y + 3.1);
+        pdf.text(fmtNum(tot), RIGHT("qta"), y + 3.1, { align: "right" });
+        vAll(y, 4.6); y += 4.6; hF(y);
       });
     });
 
-    // chiude le righe verticali continue del corpo tabella
-    ensure(9);
-    drawVerticals(bodyTop, y);
+    // riga vuota prima del totale
+    y += 3.5;
     // TOTALE categoria: banda blu, testo bianco, con importo 0,00 €
+    ensure(8);
     const totH = 6;
     pdf.setFillColor(...NAVY);
     pdf.rect(ML, y, W - ML - MR, totH, "F");
