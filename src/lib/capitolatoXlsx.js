@@ -175,6 +175,10 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
     .forEach((p, i) => { copCell(`A${5 + i}`, p[0], { b: true, sz: 10 }); copCell(`B${5 + i}`, p[1], { sz: 10 }); });
   copCell("A11", CAPITOLATO_NOTA_IVA, { i: true, sz: 9, color: "FF808080" });
+  const gen = new Date();
+  const p2 = (n) => String(n).padStart(2, "0");
+  const stamp = `${p2(gen.getDate())}/${p2(gen.getMonth() + 1)}/${gen.getFullYear()} ${p2(gen.getHours())}:${p2(gen.getMinutes())}`;
+  copCell("A13", `Generato il ${stamp}`, { i: true, sz: 8, color: "FFB0B0B0" });
   impagina(cop, hdr);
 
   // Premessa
@@ -207,7 +211,10 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   });
   impagina(rie, hdr);
 
-  const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}.xlsx`;
+  const now = new Date();
+  const pz = (n) => String(n).padStart(2, "0");
+  const ts = `${now.getFullYear()}${pz(now.getMonth() + 1)}${pz(now.getDate())}_${pz(now.getHours())}${pz(now.getMinutes())}`;
+  const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}_${ts}.xlsx`;
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   if (modo === "blob") return blob;
