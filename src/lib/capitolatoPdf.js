@@ -9,7 +9,7 @@ import { jsPDF } from "jspdf";
 import { registerGroteskaFonts } from "../assets/fonts/groteskaFonts";
 import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pdfCommon";
 import {
-  CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
+  CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
 import { componiGruppi, totaleRiga, qtaMisurazione, fmtNum, parseNum } from "./capitolatoModel";
 
@@ -174,14 +174,16 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   pdf.setFillColor(...NAVY); pdf.rect(ML, y, W - ML - MR, 6, "F");
   reg(9.4); pdf.setTextColor(255, 255, 255); pdf.text("PREMESSA", ML + 2, y + 4.1);
   y += 9;
-  CAPITOLATO_PREMESSA.forEach((par) => {
+  CAPITOLATO_PREMESSA.forEach((par, pi) => {
     const isSub = par.length < 40 && par === par.toUpperCase() && !par.includes("\n");
+    const isLast = pi === CAPITOLATO_PREMESSA.length - 1; // paragrafo "Tenuta del cantiere…" → blu grassetto
     if (isSub) {
       y += 1; ensure(6);
       reg(9); pdf.setTextColor(20, 20, 20); pdf.text(par, ML, y + 2.5); y += 6;
       return;
     }
-    reg(8.4); pdf.setTextColor(40, 40, 40);
+    if (isLast) { y += 1; bold(8.4); pdf.setTextColor(...NAVY); }
+    else { reg(8.4); pdf.setTextColor(40, 40, 40); }
     par.split("\n").forEach((sub) => {
       pdf.splitTextToSize(sub, W - ML - MR).forEach((ln) => { ensure(4.2); pdf.text(ln, ML, y + 2.5); y += 3.9; });
     });
@@ -189,20 +191,21 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   });
 
   y += 6; ensure(16);
-  // barra INDICE (grigia, centrata)
+  // barra INDICE (grigia, centrata) — elenco completo delle categorie (A–S)
   pdf.setFillColor(225, 227, 232); pdf.rect(ML, y, W - ML - MR, 6, "F");
   reg(9.4); pdf.setTextColor(50, 50, 50); pdf.text("INDICE", W / 2, y + 4.1, { align: "center" });
   y += 6;
   const idxLetterX = ML + 30, idxNameX = ML + 60;
-  gruppi.forEach((g) => {
-    ensure(6.5);
-    reg(9); pdf.setTextColor(30, 30, 30);
-    pdf.text(g.code, idxLetterX, y + 4, { align: "center" });
-    pdf.text(g.nomeIndice, idxNameX, y + 4);
+  CAPITOLATO_CATEGORIE.forEach((cat) => {
+    ensure(6.2);
+    reg(8.7); pdf.setTextColor(30, 30, 30);
+    pdf.text(cat.code, idxLetterX, y + 4, { align: "center" });
+    pdf.text(cat.nomeIndice, idxNameX, y + 4);
     pdf.setDrawColor(210, 210, 210); pdf.setLineWidth(0.2);
-    pdf.line(ML, y + 6, W - MR, y + 6);
-    y += 6;
+    pdf.line(ML, y + 5.6, W - MR, y + 5.6);
+    y += 5.6;
   });
+  y += 3;
   ital(7.9); pdf.setTextColor(80, 80, 80);
   pdf.text(CAPITOLATO_NOTA_IVA, W / 2, MAX_Y, { align: "center" });
 
@@ -215,6 +218,16 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     y += 6;
     intestazioneTabella();
 
+    // sfondi zona voce
+    const ZONE = [245, 246, 249], TITLEG = [225, 229, 238];
+    const fillRow = (yy, h, rgb) => { pdf.setFillColor(...rgb); pdf.rect(ML, yy, W - ML - MR, h, "F"); };
+    // testo grassetto-corsivo (faux-bold ridisegnando con micro-offset)
+    const biText = (txt, x, yy, align) => {
+      ital(7.2); pdf.setTextColor(0, 0, 0);
+      const o = align ? { align } : undefined;
+      pdf.text(txt, x, yy, o); pdf.text(txt, x + 0.18, yy, o);
+    };
+
     g.items.forEach((r) => {
       const misure = (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
       const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
@@ -223,50 +236,50 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       reg(7);
       const descLines = pdf.splitTextToSize(r.descrizione || "", DESC_W);
       const titLines = pdf.splitTextToSize((r.titolo || "").toUpperCase(), DESC_W);
-      const headBlock = titLines.length * 3.6 + descLines.length * 3.1 + 5;
+      const headBlock = titLines.length * 3.7 + descLines.length * 3.1 + 12;
       ensure(headBlock + 4);
 
-      // separatore superiore voce (grigio, un filo più marcato)
-      pdf.setDrawColor(150, 150, 150); pdf.setLineWidth(0.35); pdf.line(ML, y, X.end, y);
-      // banda grigia dietro codice + titolo (grassetto)
-      const titH = titLines.length * 3.6 + 1.8;
-      pdf.setFillColor(236, 237, 240);
-      pdf.rect(ML, y, W - ML - MR, titH, "F");
-      reg(6.6); pdf.setTextColor(60, 60, 60);
-      pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3.6, { align: "center" });
-      bold(7.3); pdf.setTextColor(20, 20, 20);
-      let ty = y + 3.6;
-      titLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, ty); ty += 3.6; });
-      y += titH; hline(y);
-      // descrizione (regular, grigio)
-      reg(7); pdf.setTextColor(90, 90, 90);
-      descLines.forEach((ln) => { ensure(3.4); pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
-      y += 0.6; hline(y);
+      // riga blu spessa di separazione tra le voci
+      pdf.setFillColor(...NAVY); pdf.rect(ML, y, W - ML - MR, 1.0, "F"); y += 1.0;
+
+      // riga titolo (grigio più marcato) — codice + titolo in nero
+      const titH = titLines.length * 3.7 + 2.2;
+      fillRow(y, titH, TITLEG); hline(y);
+      reg(6.8); pdf.setTextColor(70, 70, 70);
+      pdf.text(r._code || r.codice || "", X.ord + COL.ord / 2, y + 3.8, { align: "center" });
+      bold(7.8); pdf.setTextColor(0, 0, 0);
+      let ty = y + 3.8;
+      titLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, ty); ty += 3.7; });
+      y += titH;
+
+      // descrizione (nero) su zona grigina + NOTE nell'area IMPORTI
+      reg(7); pdf.setTextColor(20, 20, 20);
+      descLines.forEach((ln, li) => { ensure(3.4); fillRow(y, 3.1, ZONE); if (li === 0) { hline(y); reg(6.6); pdf.setTextColor(90, 90, 90); pdf.text("NOTE:", X.unit + 1.5, y + 2.4); reg(7); pdf.setTextColor(20, 20, 20); } pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
+      y += 0.6;
+
       // MISURAZIONI (corsivo)
-      ensure(4);
-      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); y += 4; hline(y);
+      ensure(4); fillRow(y, 4, ZONE); hline(y);
+      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); y += 4;
 
       misure.forEach((m) => {
-        ensure(3.8);
-        reg(7); pdf.setTextColor(110, 110, 110);
+        ensure(3.8); fillRow(y, 3.8, ZONE); hline(y);
+        reg(7); pdf.setTextColor(90, 90, 90);
         pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.6);
         pdf.setTextColor(20, 20, 20);
         const cell = (key, val) => { const n = parseNum(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.6, { align: "right" }); };
         cell("lung", m.lung); cell("larg", m.larg); cell("hpeso", m.hpeso);
         const q = qtaMisurazione(m);
         if (q) pdf.text(fmtNum(q), RIGHT("qta"), y + 2.6, { align: "right" });
-        y += 3.8; hline(y);
+        y += 3.8;
       });
 
-      // SOMMANO (corsivo, scuro) con cella importo evidenziata sotto unitario
+      // SOMMANO — come il titolo (grigio) ma testo grassetto-corsivo; cella unitario crema
       labels.forEach((lab) => {
-        ensure(4.2);
-        pdf.setFillColor(255, 249, 214);
-        pdf.rect(X.unit, y, COL.unit, 4.2, "F");
-        ital(7.2); pdf.setTextColor(0, 0, 0);
-        pdf.text(lab, X.desig + 1.5, y + 2.9);
-        pdf.text(fmtNum(tot), RIGHT("qta"), y + 2.9, { align: "right" });
-        y += 4.2; hline(y);
+        ensure(4.6); fillRow(y, 4.6, TITLEG); hline(y);
+        pdf.setFillColor(255, 249, 214); pdf.rect(X.unit, y, COL.unit, 4.6, "F");
+        biText(lab, X.desig + 1.5, y + 3.1);
+        biText(fmtNum(tot), RIGHT("qta"), y + 3.1, "right");
+        y += 4.6;
       });
     });
 
