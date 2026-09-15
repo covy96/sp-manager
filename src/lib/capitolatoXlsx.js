@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, IMPIANTI_ASSISTENZA } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, IMPIANTI_ASSISTENZA, assistenzaBasi } from "./capitolatoModel";
 import { urlToBase64, imageSize } from "./pdfCommon";
 
 const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
@@ -99,15 +99,17 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
     // (% × TOTALE del foglio impianto base). Il totale base viene collegato dopo
     // che tutti i fogli categoria sono costruiti (evita riferimenti circolari).
     if (it.assistenza) {
-      const impNome = IMPIANTI_ASSISTENZA.find((x) => x.code === it.assistenza.base)?.nome || it.assistenza.base || "impianto";
-      const perc = Number(it.assistenza.perc) || 0;
+      const basi = assistenzaBasi(it.assistenza);
+      const impNomi = basi.map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c).join(", ") || "impianti";
+      const percRaw = it.assistenza.perc;
+      const hasPerc = percRaw !== "" && percRaw != null;
       setRow([
         C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
         C((it.titolo || "ASSISTENZE MURARIE").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
         C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb }),
         C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb, num: F_EUR }), C("", { fill: TITLE, border: topb, num: F_EUR }),
       ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
-      const desc = it.descrizione || `Assistenze murarie e oneri connessi — ${impNome}.`;
+      const desc = it.descrizione || `Assistenze murarie e oneri connessi — ${impNomi}.`;
       setRow([
         C("", { border: box }), C(desc, { sz: 8, wrap: true, border: box }),
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
@@ -116,13 +118,13 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
       const rr = r + 1;
       setRow([
         C("", { i: true, sz: 8, border: box }),
-        C(`Assistenza muraria — ${perc}% del TOTALE ${impNome}`, { i: true, sz: 8, border: box }),
+        C(`Assistenza muraria — ${hasPerc ? percRaw + "% " : ""}su totale ${impNomi}`, { i: true, sz: 8, border: box }),
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
-        C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),          // F: totale impianto base (formula, collegata dopo)
-        C(perc / 100, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (editabile)
-        F(`IF(F${rr}=0,"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),          // H: importo
+        C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),                       // F: somma totali impianti (formula, dopo)
+        C(hasPerc ? Number(percRaw) / 100 : null, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (impresa)
+        F(`IF(OR(F${rr}=0,G${rr}=""),"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),        // H: importo
       ], 14);
-      assistenzePending.push({ ws, fRow: rr, base: it.assistenza.base });
+      assistenzePending.push({ ws, fRow: rr, basi });
       return;
     }
 
@@ -274,11 +276,11 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
     info.push({ code: g.code, nome: g.nomeIndice, name, totRow });
     totBySource[g.originalCode] = { name, totRow };
   });
-  // Collega ogni assistenza al TOTALE (cella H) del foglio impianto base: F = totale
-  // impianto, così H = F × G(%) si aggiorna quando l'impresa compila i prezzi.
+  // Collega ogni assistenza ai TOTALI (celle H) dei fogli impianto scelti: F = somma
+  // dei totali, così H = F × G(%) si aggiorna quando l'impresa compila i prezzi.
   assistenzePending.forEach((p) => {
-    const src = totBySource[p.base];
-    p.ws.getCell(p.fRow, 6).value = src ? { formula: `'${src.name}'!H${src.totRow}` } : 0;
+    const refs = (p.basi || []).map((b) => totBySource[b]).filter(Boolean).map((s) => `'${s.name}'!H${s.totRow}`);
+    p.ws.getCell(p.fRow, 6).value = refs.length ? { formula: refs.join("+") } : 0;
   });
 
   // ── Riepilogo ──────────────────────────────────────────────────────────────

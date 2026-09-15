@@ -112,19 +112,27 @@ export function defaultSommanoLabels(unita, tipo) {
 }
 
 // ── Assistenze murarie a percentuale ──────────────────────────────────────────
-// Voce speciale: nessuna misurazione, ma una % applicata al TOTALE di un impianto
-// (E idrico, F elettrico, G meccanico). Nell'Excel diventa una formula viva
-// (% × totale del foglio impianto); nel PDF è testo. { base: "F", perc: 10 }
+// Voce speciale: nessuna misurazione, ma una % applicata al TOTALE di uno o più
+// impianti (E idrico, F elettrico, G meccanico). Nell'Excel diventa una formula
+// viva (% × somma totali impianti); nel PDF è testo. La percentuale può restare
+// vuota: la sceglie l'impresa nell'Excel. { basi: ["E","F"], perc: "" }
+// Retrocompatibile con il vecchio { base: "F", perc: 10 }.
 export const IMPIANTI_ASSISTENZA = [
   { code: "E", nome: "Impianto idrico-sanitario" },
   { code: "F", nome: "Impianto elettrico" },
   { code: "G", nome: "Impianto meccanico" },
 ];
+export function assistenzaBasi(a) {
+  if (!a) return [];
+  if (Array.isArray(a.basi)) return a.basi.filter(Boolean);
+  return a.base ? [a.base] : [];
+}
 export function assistenzaLabel(a) {
   if (!a) return "";
-  const imp = IMPIANTI_ASSISTENZA.find((x) => x.code === a.base);
-  const p = String(a.perc ?? 0).replace(".", ",");
-  return `Assistenza muraria ${p}% — ${imp?.nome || a.base || "impianto"}`;
+  const nomi = assistenzaBasi(a).map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c);
+  const impTxt = nomi.length ? nomi.join(", ") : "impianti";
+  const p = (a.perc === "" || a.perc == null) ? "" : String(a.perc).replace(".", ",");
+  return `Assistenza muraria${p ? ` ${p}%` : ""} — ${impTxt}`;
 }
 
 // ── I/O Supabase ───────────────────────────────────────────────────────────────
