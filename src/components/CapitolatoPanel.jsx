@@ -50,6 +50,7 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
   const [importOpen, setImportOpen] = useState(false);
   const [importList, setImportList] = useState([]);
   const [importLoading, setImportLoading] = useState(false);
+  const [versCount, setVersCount] = useState(0); // badge sul pulsante: n. versioni salvate
 
   // ── caricamento all'apertura ────────────────────────────────────────────────
   useEffect(() => {
@@ -92,6 +93,21 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     })();
     return () => { alive = false; };
   }, [open, projectId, studioId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Conteggio versioni per il badge sul pulsante: caricato all'avvio e ad ogni
+  // chiusura del pannello (così riflette salvataggi/eliminazioni appena fatti).
+  useEffect(() => {
+    if (open) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.from("capitolati")
+        .select("versioni").eq("project_id", projectId).is("deleted_at", null)
+        .order("created_at", { ascending: false }).limit(1);
+      const v = data?.[0]?.versioni; // colonna assente → data null → resta 0
+      if (alive) setVersCount(Array.isArray(v) ? v.length : 0);
+    })();
+    return () => { alive = false; };
+  }, [open, projectId]);
 
   // ── ricerca voci ─────────────────────────────────────────────────────────────
   const risultati = useMemo(() => {
@@ -247,10 +263,14 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     <>
       <button onClick={() => setOpen(true)} style={{
         display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 14px",
-        border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent",
-        cursor: "pointer", color: T.ink, fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+        border: `0.5px solid ${versCount > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
+        background: versCount > 0 ? T.navyLight : "transparent",
+        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
-        ▤ Capitolato
+        <span style={{ color: versCount > 0 ? T.navy : T.ink, fontWeight: versCount > 0 ? 600 : 400 }}>▤ Capitolato</span>
+        {versCount > 0
+          ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{versCount}</span>
+          : <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>+ Apri</span>}
       </button>
 
       {open && (
