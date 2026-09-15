@@ -13,6 +13,7 @@ export const ALFABETO_IT = "ABCDEFGHILMNOPQRSTUVZ".split("");
 // ── Formattazione numeri (it-IT, virgola decimale, sempre 2 decimali) ─────────
 // Es. 15 → "15,00", 2.13 → "2,13", vuoto/NaN → "".
 export function fmtNum(v, dec = 2) {
+  if (v === null || v === undefined || v === "") return ""; // vuoto → "" (lo 0 numerico resta "0,00")
   const n = Number(v);
   if (!Number.isFinite(n)) return "";
   const [intero, frac = ""] = Math.abs(n).toFixed(dec).split(".");
@@ -195,6 +196,58 @@ export async function loadCapitolato(projectId) {
       sommano_labels: Array.isArray(r.sommano_labels) ? r.sommano_labels : [],
     })),
   };
+}
+
+// ── Import "usa come base" ────────────────────────────────────────────────────
+// Elenco dei capitolati importabili: uno per progetto (il più recente), dello
+// stesso studio, escluso il progetto corrente. Per il selettore "Importa da progetto".
+export async function loadCapitolatiImportabili(studioId, exceptProjectId) {
+  if (!studioId) return [];
+  const { data, error } = await supabase
+    .from("capitolati")
+    .select("id, project_id, nome, updated_at, created_at, righe:capitolato_righe(count), projects!inner(name, studio)")
+    .is("deleted_at", null)
+    .eq("projects.studio", studioId)
+    .neq("project_id", exceptProjectId)
+    .order("updated_at", { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  const perProgetto = new Map(); // un solo capitolato per progetto: il più recente
+  for (const c of data || []) {
+    if (perProgetto.has(c.project_id)) continue;
+    perProgetto.set(c.project_id, {
+      capitolato_id: c.id,
+      project_id: c.project_id,
+      project_name: c.projects?.name || "Progetto",
+      nVoci: c.righe?.[0]?.count ?? 0,
+      aggiornato: c.updated_at || c.created_at || null,
+    });
+  }
+  return [...perProgetto.values()].filter((x) => x.nVoci > 0);
+}
+
+// Carica le righe di un capitolato come nuove righe (chiavi effimere fresche, senza
+// id), pronte per essere aggiunte al capitolato corrente.
+export async function loadRigheImport(capitolatoId) {
+  const { data, error } = await supabase
+    .from("capitolato_righe")
+    .select("*")
+    .eq("capitolato_id", capitolatoId)
+    .order("ordine", { ascending: true });
+  if (error) throw error;
+  return (data || []).map((r) => ({
+    _key: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()),
+    voce_id: r.voce_id || null,
+    categoria_code: r.categoria_code,
+    categoria_nome: r.categoria_nome || "",
+    codice: r.codice || "",
+    titolo: r.titolo || "",
+    descrizione: r.descrizione || "",
+    unita: r.unita || "",
+    tipo: r.tipo || "singolo",
+    sommano_labels: Array.isArray(r.sommano_labels) ? r.sommano_labels : [],
+    misurazioni: Array.isArray(r.misurazioni) && r.misurazioni.length ? r.misurazioni : [emptyMisurazione()],
+    note: r.note || "",
+  }));
 }
 
 // Snapshot canonico (per confronto/versioni): meta + righe senza chiavi effimere.
