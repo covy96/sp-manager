@@ -9,6 +9,7 @@ import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
+  defaultSommanoLabels,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -18,6 +19,32 @@ const STUDIO_FIELDS =
 
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const oggi = () => new Date().toISOString().slice(0, 10);
+
+// Preset di "sommano" scegliibili per ogni voce dentro il capitolato.
+// Un'unità (tipo singolo) oppure Fornitura + Posa (tipo fornitura_posa, mantiene
+// l'unità corrente). Cambiare preset rigenera anche le etichette SOMMANO.
+const SOMMANO_PRESETS = [
+  { key: "mq", label: "Sommano mq", unita: "mq", tipo: "singolo" },
+  { key: "ml", label: "Sommano ml", unita: "ml", tipo: "singolo" },
+  { key: "mc", label: "Sommano mc", unita: "mc", tipo: "singolo" },
+  { key: "kg", label: "Sommano kg", unita: "kg", tipo: "singolo" },
+  { key: "cad", label: "Sommano cad", unita: "cad", tipo: "singolo" },
+  { key: "corpo", label: "Sommano a corpo", unita: "a corpo", tipo: "singolo" },
+  { key: "fp", label: "Fornitura + Posa", unita: null, tipo: "fornitura_posa" },
+];
+// Chiave del preset attivo per una riga (per posizionare la select).
+const presetKeyOf = (r) => {
+  if (r.tipo === "fornitura_posa") return "fp";
+  const u = String(r.unita || "").toLowerCase();
+  return SOMMANO_PRESETS.find((p) => p.key !== "fp" && p.unita === u)?.key || "";
+};
+// Patch da applicare quando si sceglie un preset per la riga r.
+const presetPatch = (r, key) => {
+  const p = SOMMANO_PRESETS.find((x) => x.key === key);
+  if (!p) return null;
+  const unita = p.tipo === "fornitura_posa" ? (r.unita || "mq") : p.unita;
+  return { unita, tipo: p.tipo, sommano_labels: defaultSommanoLabels(unita, p.tipo) };
+};
 const formattaData = (iso) => {
   const d = new Date(iso);
   if (isNaN(d)) return "";
@@ -219,8 +246,12 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     // deps: le righe e i campi meta (non meta.id, per non ri-scattare dopo la create)
   }, [righe, meta.nome, meta.committente, meta.localita, meta.data, meta.revisione]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Alla chiusura del pannello annulla eventuali auto-save ancora in coda.
+  useEffect(() => { if (!open) clearTimeout(autosaveTimer.current); }, [open]);
+
   const handleSave = async () => {
     setSaving(true);
+    let ok = true;
     try {
       let id = meta.id || capIdRef.current;
       if (!id) { const c = await createCapitolato(projectId, metaDb()); id = c.id; capIdRef.current = id; setMeta((m) => ({ ...m, id })); }
@@ -251,8 +282,19 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         } else { throw e; }
       }
     } catch (e) {
+      ok = false;
       console.error(e); showToast?.("Errore nel salvataggio: " + (e?.message || e?.details || e?.hint || ""), "error");
     } finally { setSaving(false); }
+    return ok;
+  };
+
+  // "Salva ed esci": crea/aggiorna la VERSIONE e chiude il pannello. La versione
+  // si crea solo qui (non durante la compilazione, che usa l'auto-save bozza),
+  // così non si accumulano decine di versioni in pochi minuti.
+  const handleSaveExit = async () => {
+    clearTimeout(autosaveTimer.current); // annulla un eventuale auto-save in coda
+    const ok = await handleSave();
+    if (ok) setOpen(false);
   };
 
   // Apre una versione: ne carica lo snapshot in stato e va al recap.
@@ -580,7 +622,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <button onClick={handlePdf} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>{busy ? "…" : "Stampa PDF"}</button>
                   {view === "recap"
                     ? <button onClick={() => setView("edit")} style={btnPrimary}>Modifica</button>
-                    : <button onClick={handleSave} disabled={saving || !nVoci} style={{ ...btnPrimary, opacity: saving || !nVoci ? 0.6 : 1 }} title="Salva una versione (snapshot storico)">{saving ? "Salvo…" : "Salva versione"}</button>}
+                    : <button onClick={handleSaveExit} disabled={saving || !nVoci} style={{ ...btnPrimary, opacity: saving || !nVoci ? 0.6 : 1 }} title="Salva una versione (snapshot) e chiudi. Durante la compilazione la bozza si salva da sola.">{saving ? "Salvo…" : "Salva ed esci"}</button>}
                 </div>
               </div>
             )}
@@ -679,8 +721,13 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
               style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: T.ink, background: "transparent", border: "none", borderBottom: `1px dashed transparent`, outline: "none", fontFamily: "'Space Grotesk', sans-serif", padding: "1px 0" }}
               onFocus={(e) => (e.target.style.borderBottomColor = T.borderMd)}
               onBlur={(e) => (e.target.style.borderBottomColor = "transparent")} />
-            {r.unita ? <span style={{ fontFamily: mono, fontSize: 8, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 5px", flexShrink: 0 }}>{r.unita}</span> : null}
-            {r.tipo === "fornitura_posa" ? <span style={{ fontFamily: mono, fontSize: 8, color: "#b45309", flexShrink: 0 }}>F+P</span> : null}
+            {/* Selettore "sommano": unità o Fornitura + Posa */}
+            <select value={presetKeyOf(r)} title="Tipo di sommano"
+              onChange={(e) => { const p = presetPatch(r, e.target.value); if (p) onPatch(p); }}
+              style={{ flexShrink: 0, fontFamily: mono, fontSize: 9, color: r.tipo === "fornitura_posa" ? "#b45309" : T.navy, background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 3, padding: "2px 4px", cursor: "pointer", outline: "none" }}>
+              {presetKeyOf(r) === "" && <option value="">{r.unita || "unità…"}</option>}
+              {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
           </div>
           <textarea value={r.descrizione} onChange={(e) => onPatch({ descrizione: e.target.value })}
             rows={Math.max(2, String(r.descrizione || "").split("\n").length)}
