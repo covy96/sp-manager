@@ -6,6 +6,7 @@ import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
 import SlidingTabs from "./SlidingTabs";
+import CapexAnalisiUpload from "./CapexAnalisiUpload";
 
 const CATEGORIE = [
   "Edile", "Elettricista", "Idraulico", "Illuminotecnica", "Falegnameria",
@@ -322,6 +323,9 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   // ── Tab Preventivi ─────────────────────────────────────────────────
   const tabPreventivi = (
     <div>
+      {/* Caricamento + analisi AI di un preventivo (PDF/Excel) */}
+      <CapexAnalisiUpload projectId={projectId} onCreated={load} />
+
       {/* Form inserimento / modifica */}
       <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, borderRadius: T.radius, background: T.bg, padding: 16, marginBottom: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
