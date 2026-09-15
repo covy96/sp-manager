@@ -115,16 +115,20 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
       ], Math.max(20, nlines(desc, 44) * 11.5 + 6));
-      const rr = r + 1;
-      setRow([
-        C("", { i: true, sz: 8, border: box }),
-        C(`Assistenza muraria — ${hasPerc ? percRaw + "% " : ""}su totale ${impNomi}`, { i: true, sz: 8, border: box }),
-        C("", { border: box }), C("", { border: box }), C("", { border: box }),
-        C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),                       // F: somma totali impianti (formula, dopo)
-        C(hasPerc ? Number(percRaw) / 100 : null, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (impresa)
-        F(`IF(OR(F${rr}=0,G${rr}=""),"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),        // H: importo
-      ], 14);
-      assistenzePending.push({ ws, fRow: rr, basi });
+      // Una riga per impianto: F = totale di QUEL foglio impianto, G = %, H = F×G.
+      (basi.length ? basi : [null]).forEach((base) => {
+        const nome = IMPIANTI_ASSISTENZA.find((x) => x.code === base)?.nome || "impianto";
+        const rr = r + 1;
+        setRow([
+          C("", { i: true, sz: 8, border: box }),
+          C(`Assistenza muraria — ${hasPerc ? percRaw + "% " : ""}su totale ${nome}`, { i: true, sz: 8, border: box }),
+          C("", { border: box }), C("", { border: box }), C("", { border: box }),
+          C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),                       // F: totale impianto (formula, dopo)
+          C(hasPerc ? Number(percRaw) / 100 : null, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (impresa)
+          F(`IF(OR(F${rr}=0,G${rr}=""),"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),        // H: importo
+        ], 14);
+        assistenzePending.push({ ws, fRow: rr, basi: base ? [base] : [] });
+      });
       return;
     }
 

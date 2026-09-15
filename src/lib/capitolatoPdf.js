@@ -244,12 +244,15 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     g.items.forEach((r) => {
       const isAssist = !!r.assistenza;
       const misure = isAssist ? [] : (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
-      // Assistenza: label "% su totale <impianti>"; % scritta a mano nella cella crema.
+      // Assistenza: una riga per impianto, con % a mano nella cella crema.
       const aPerc = isAssist ? r.assistenza.perc : null;
       const aHasPerc = isAssist && aPerc !== "" && aPerc != null;
-      const aImpianti = isAssist ? assistenzaBasi(r.assistenza).map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c).join(", ") : "";
+      const aBasi = isAssist ? assistenzaBasi(r.assistenza) : [];
       const labels = isAssist
-        ? [`Assistenza muraria — ${aHasPerc ? aPerc + "% " : "% "}su totale ${aImpianti || "impianti"}`]
+        ? (aBasi.length ? aBasi : [null]).map((c) => {
+            const nome = IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || "impianto";
+            return `Assistenza muraria — ${aHasPerc ? aPerc + "% " : "% "}su totale ${nome}`;
+          })
         : ((r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()]);
       const tot = isAssist ? "" : totaleRigaEff(r); // importo/quantità calcolati nell'Excel
 
