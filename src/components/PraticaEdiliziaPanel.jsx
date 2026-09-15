@@ -438,7 +438,7 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
 }
 
 // ── COMPONENTE PRINCIPALE ─────────────────────────────────────────
-export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [], autoOpenForm = false }) {
+export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [], autoOpenForm = false, openSignal }) {
   const { T } = useTheme();
   const showToast = useToast();
   const navigate = useNavigate();
@@ -457,6 +457,8 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
 
   const [listOpen, setListOpen]   = useState(false);
   const [formOpen, setFormOpen]   = useState(false);
+  // apertura esterna (dal Centro documenti)
+  useEffect(() => { if (openSignal) setListOpen(true); }, [openSignal]);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(EMPTY_FORM);
 
