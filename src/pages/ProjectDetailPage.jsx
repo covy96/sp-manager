@@ -12,6 +12,7 @@ import CommessePanel from '../components/CommessePanel';
 import ReportCantierePanel from '../components/ReportCantierePanel';
 import CapexPanel from '../components/CapexPanel';
 import CapitolatoPanel from '../components/CapitolatoPanel';
+import DocumentiPanel from '../components/DocumentiPanel';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -761,6 +762,7 @@ export default function ProjectDetailPage() {
             <AnagraficaPanel projectId={id} studioId={studioId} />
             {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
             <CapitolatoPanel projectId={id} studioId={studioId} project={project} />
+            <DocumentiPanel projectId={id} studioId={studioId} project={project} commesse={commesseProgetto} />
             <CommessePanel commesse={commesseProgetto} />
             <ActivityLogPanel projectId={id} studioId={studioId} />
             <div style={{ position: 'relative' }}>
