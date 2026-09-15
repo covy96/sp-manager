@@ -11,7 +11,7 @@ import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pd
 import {
   CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, assistenzaLabel } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, IMPIANTI_ASSISTENZA, assistenzaBasi } from "./capitolatoModel";
 
 registerGroteskaFonts();
 
@@ -244,8 +244,12 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     g.items.forEach((r) => {
       const isAssist = !!r.assistenza;
       const misure = isAssist ? [] : (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
+      // Assistenza: label "% su totale <impianti>"; % scritta a mano nella cella crema.
+      const aPerc = isAssist ? r.assistenza.perc : null;
+      const aHasPerc = isAssist && aPerc !== "" && aPerc != null;
+      const aImpianti = isAssist ? assistenzaBasi(r.assistenza).map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c).join(", ") : "";
       const labels = isAssist
-        ? [assistenzaLabel(r.assistenza)]
+        ? [`Assistenza muraria — ${aHasPerc ? aPerc + "% " : "% "}su totale ${aImpianti || "impianti"}`]
         : ((r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()]);
       const tot = isAssist ? "" : totaleRigaEff(r); // importo/quantità calcolati nell'Excel
 
@@ -294,13 +298,20 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       hF(y); // chiude in basso la cella NOTE e le celle di sinistra
       reg(6.6); pdf.setTextColor(120, 120, 120); pdf.text("NOTE:", X.unit + 1.5, noteTop + 2.8);
 
-      // SOMMANO — corsivo pulito; cella unitario crema
+      // SOMMANO — corsivo pulito; cella unitario crema.
+      // Per l'assistenza: la cella crema ospita la % (scritta a mano dall'impresa,
+      // col simbolo %) e la cella TOTALE resta vuota per l'importo.
       labels.forEach((lab) => {
         ensure(4.6);
         pdf.setFillColor(255, 249, 214); pdf.rect(X.unit, y, COL.unit, 4.6, "F");
         ital(7); pdf.setTextColor(0, 0, 0);
         pdf.text(lab, X.desig + 1.5, y + 3.1);
-        pdf.text(fmtNum(tot), RIGHT("qta"), y + 3.1, { align: "right" });
+        if (isAssist) {
+          reg(7); pdf.setTextColor(0, 0, 0);
+          pdf.text(aHasPerc ? `${String(aPerc).replace(".", ",")} %` : "%", RIGHT("unit"), y + 3.1, { align: "right" });
+        } else {
+          pdf.text(fmtNum(tot), RIGHT("qta"), y + 3.1, { align: "right" });
+        }
         vAll(y, 4.6); y += 4.6; hF(y);
       });
     });
