@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
@@ -53,12 +53,23 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const [importList, setImportList] = useState([]);
   const [importLoading, setImportLoading] = useState(false);
   const [versCount, setVersCount] = useState(0); // badge sul pulsante: n. versioni salvate
+  const [catInsert, setCatInsert] = useState(null); // macro-categoria in cui finiscono le voci aggiunte
+  const [catPickerOpen, setCatPickerOpen] = useState(false); // selettore "mega voce"
+  const [autoState, setAutoState] = useState("idle"); // idle | saving | saved (auto-save bozza)
+
+  // Ref per l'auto-save bozza (debounce + guardie anti-doppioni).
+  const autosaveTimer = useRef(null);
+  const skipAutosave = useRef(true); // salta il primo run dopo un caricamento/reset
+  const creatingRow = useRef(false);  // evita create concorrenti della riga capitolato
+  const capIdRef = useRef(null);      // id riga capitolato, aggiornato subito dopo la create
 
   // ── caricamento all'apertura ────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     let alive = true;
     setView("versioni"); setMenuVer(null);
+    setCatInsert(null); setCatPickerOpen(false); setAutoState("idle");
+    skipAutosave.current = true; // il set di stato del caricamento non deve auto-salvare
     (async () => {
       setLoading(true);
       try {
@@ -73,6 +84,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         if (existing) {
           const c = existing.capitolato;
           const m = { id: c.id, nome: c.nome || "Capitolato", committente: c.committente || "", localita: c.localita || "", data: c.data || oggi(), revisione: c.revisione || "" };
+          capIdRef.current = c.id;
           setMeta(m);
           setRighe(existing.righe);
           const vers = Array.isArray(c.versioni) ? c.versioni : [];
@@ -80,6 +92,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
           const snap = JSON.stringify(snapshotCapitolato(m, existing.righe));
           setVersioneAttiva(vers.find((v) => JSON.stringify(v.snapshot) === snap)?.n ?? null);
         } else {
+          capIdRef.current = null;
           setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
           setRighe([]);
           setVersioni([]);
@@ -131,7 +144,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
 
   // ── mutazioni righe ──────────────────────────────────────────────────────────
   const touch = () => setDirty(true);
-  const addVoce = (voce) => { setRighe((p) => [...p, rigaFromVoce(voce)]); touch(); };
+  // La voce aggiunta finisce nella macro-categoria scelta (catInsert), non in
+  // quella d'origine della libreria; senza scelta usa quella della voce.
+  const addVoce = (voce) => {
+    const code = catInsert || voce.categoria_code;
+    const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === code);
+    const riga = { ...rigaFromVoce(voce), categoria_code: code, categoria_nome: cat?.nome || voce.categoria_nome || "" };
+    setRighe((p) => [...p, riga]); touch();
+  };
   const removeRiga = (key) => { setRighe((p) => p.filter((r) => r._key !== key)); touch(); };
   const patchRiga = (key, patch) => { setRighe((p) => p.map((r) => (r._key === key ? { ...r, ...patch } : r))); touch(); };
   const addMisura = (key) => setRighe((p) => { touch(); return p.map((r) => (r._key === key ? { ...r, misurazioni: [...r.misurazioni, emptyMisurazione()] } : r)); });
@@ -155,11 +175,55 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // ── salvataggio ed export ─────────────────────────────────────────────────────
   const metaDb = () => ({ nome: meta.nome || "Capitolato", committente: meta.committente || null, localita: meta.localita || null, data: meta.data || null, revisione: meta.revisione || null });
 
+  // Apre il selettore di macro-categoria ("mega voce") per iniziare ad aggiungere.
+  const openCatPicker = () => setCatPickerOpen(true);
+  const scegliCategoria = (code) => {
+    setCatInsert(code);
+    setCatFilter(code);      // pre-filtra la libreria sulla categoria scelta
+    setCatPickerOpen(false);
+    setView("edit");
+  };
+
+  // ── Auto-save bozza ──────────────────────────────────────────────────────────
+  // Ogni modifica alle righe/meta persiste la bozza nel DB (senza creare versioni);
+  // il tasto "Salva" resta per lo snapshot di versione. Debounce per non salvare
+  // ad ogni tasto. Al primo inserimento crea la riga capitolato.
+  useEffect(() => {
+    if (!open || loading) return;
+    if (skipAutosave.current) { skipAutosave.current = false; return; }
+    if (!capIdRef.current && righe.length === 0) return; // niente da persistere, niente righe fantasma
+    setAutoState("saving");
+    clearTimeout(autosaveTimer.current);
+    const run = async () => {
+      if (creatingRow.current) { autosaveTimer.current = setTimeout(run, 200); return; } // create in corso: riprova
+      try {
+        let id = capIdRef.current;
+        if (!id) {
+          creatingRow.current = true;
+          const c = await createCapitolato(projectId, metaDb());
+          id = c.id;
+          capIdRef.current = id;
+          setMeta((m) => ({ ...m, id }));
+          creatingRow.current = false;
+        }
+        await saveCapitolato(id, metaDb(), righe); // solo bozza, nessuna versione
+        setAutoState("saved");
+      } catch (e) {
+        creatingRow.current = false;
+        console.error("auto-save capitolato", e);
+        setAutoState("idle");
+      }
+    };
+    autosaveTimer.current = setTimeout(run, 900);
+    return () => clearTimeout(autosaveTimer.current);
+    // deps: le righe e i campi meta (non meta.id, per non ri-scattare dopo la create)
+  }, [righe, meta.nome, meta.committente, meta.localita, meta.data, meta.revisione]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      let id = meta.id;
-      if (!id) { const c = await createCapitolato(projectId, metaDb()); id = c.id; setMeta((m) => ({ ...m, id })); }
+      let id = meta.id || capIdRef.current;
+      if (!id) { const c = await createCapitolato(projectId, metaDb()); id = c.id; capIdRef.current = id; setMeta((m) => ({ ...m, id })); }
       // storico versioni: se lo stato coincide con una versione esistente la si rende
       // attiva, altrimenti se ne registra una nuova (più recente in cima, max 30).
       const snap = snapshotCapitolato(metaDb(), righe);
@@ -206,10 +270,15 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
 
   // Azzera lo stato in memoria a "capitolato nuovo, vuoto" (dopo un'eliminazione).
   const resetCapitolatoLocale = () => {
+    skipAutosave.current = true; // il reset non deve ri-creare una riga vuota
+    clearTimeout(autosaveTimer.current);
+    capIdRef.current = null;
     setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
     setRighe([]);
     setVersioni([]);
     setVersioneAttiva(null);
+    setCatInsert(null);
+    setAutoState("idle");
     setDirty(false);
     setView("versioni");
   };
@@ -326,7 +395,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     {project?.name || "Progetto"}
                     {view === "versioni"
                       ? ` · ${versioni.length} ${versioni.length === 1 ? "versione" : "versioni"}`
-                      : ` · ${nVoci} ${nVoci === 1 ? "voce" : "voci"}${versioneAttiva ? ` · v${versioneAttiva}` : ""}${dirty ? " · non salvato" : ""}`}
+                      : ` · ${nVoci} ${nVoci === 1 ? "voce" : "voci"}${versioneAttiva ? ` · v${versioneAttiva}` : ""}${autoState === "saving" ? " · salvataggio…" : autoState === "saved" ? " · bozza salvata" : ""}`}
                   </div>
                 </div>
               </div>
@@ -345,9 +414,9 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         : "Nessuna versione salvata."}
                     </div>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                      <button onClick={() => setView(nVoci > 0 ? "recap" : "edit")} style={btnPrimary}>
-                        {nVoci > 0 ? "Apri capitolato" : "Nuovo capitolato"}
-                      </button>
+                      {nVoci > 0
+                        ? <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
+                        : <button onClick={openCatPicker} style={btnPrimary}>+ Aggiungi voce</button>}
                       <button onClick={openImport} style={btnGhost}>Importa da un altro progetto</button>
                       {(meta.id || nVoci > 0) && (
                         <button onClick={eliminaCapitolato} style={{ ...btnGhost, color: T.red, borderColor: T.red }}>Elimina capitolato</button>
@@ -390,7 +459,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   {gruppi.length === 0 ? (
                     <div style={{ textAlign: "center", marginTop: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>
                       <div style={{ marginBottom: 14 }}>Capitolato vuoto.</div>
-                      <button onClick={() => setView("edit")} style={btnPrimary}>Aggiungi voci</button>
+                      <button onClick={openCatPicker} style={btnPrimary}>+ Aggiungi voce</button>
                     </div>
                   ) : gruppi.map((g) => (
                     <button key={g.code} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
@@ -432,6 +501,16 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                 <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
                 {/* Colonna ricerca */}
                 <div style={{ width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  {/* Banner: macro-categoria ("mega voce") in cui finiscono le voci aggiunte */}
+                  <div style={{ padding: "9px 14px", borderBottom: `1px solid ${T.border}`, background: catInsert ? T.navyLight : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={labelSt}>Inserisci in</div>
+                      <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: catInsert ? T.navy : T.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {catInsert ? (CAPITOLATO_CATEGORIE.find((c) => c.code === catInsert)?.titoloPagina || catInsert) : "categoria della voce"}
+                      </div>
+                    </div>
+                    <button onClick={openCatPicker} style={{ ...btnGhost, padding: "5px 10px", flexShrink: 0 }}>{catInsert ? "Cambia" : "Scegli"}</button>
+                  </div>
                   <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
                     <input autoFocus placeholder="Cerca voci (es. cartongessi)…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...inputSt, width: "100%" }} />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
@@ -501,7 +580,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <button onClick={handlePdf} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>{busy ? "…" : "Stampa PDF"}</button>
                   {view === "recap"
                     ? <button onClick={() => setView("edit")} style={btnPrimary}>Modifica</button>
-                    : <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity: saving ? 0.6 : 1 }}>{saving ? "Salvo…" : "Salva"}</button>}
+                    : <button onClick={handleSave} disabled={saving || !nVoci} style={{ ...btnPrimary, opacity: saving || !nVoci ? 0.6 : 1 }} title="Salva una versione (snapshot storico)">{saving ? "Salvo…" : "Salva versione"}</button>}
                 </div>
               </div>
             )}
@@ -538,6 +617,33 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     </div>
                   </div>
                   <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selettore "mega voce": in quale macro-categoria inserire le voci */}
+      {catPickerOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
+          onClick={() => setCatPickerOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Scegli la categoria</div>
+                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Le voci che aggiungi finiranno in questa macro-categoria</div>
+              </div>
+              <button onClick={() => setCatPickerOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 12, minHeight: 0 }}>
+              {CAPITOLATO_CATEGORIE.map((c) => (
+                <button key={c.code} onClick={() => scegliCategoria(c.code)}
+                  style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, textAlign: "left", padding: "10px 13px", marginBottom: 6, background: catInsert === c.code ? T.navyLight : T.surface, border: `0.5px solid ${catInsert === c.code ? T.navy : T.border}`, borderRadius: T.radiusSm, cursor: "pointer" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.navy; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = catInsert === c.code ? T.navy : T.border; }}>
+                  <span style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, width: 20, flexShrink: 0 }}>{c.code}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: T.ink }}>{c.nomeIndice || c.nome}</span>
                 </button>
               ))}
             </div>
