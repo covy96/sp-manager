@@ -11,6 +11,7 @@ import OrePanel from '../components/OrePanel';
 import CommessePanel from '../components/CommessePanel';
 import ReportCantierePanel from '../components/ReportCantierePanel';
 import CapexPanel from '../components/CapexPanel';
+import CapitolatoPanel from '../components/CapitolatoPanel';
 import LinkedCommesseField from '../components/LinkedCommesseField';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
@@ -796,6 +797,7 @@ export default function ProjectDetailPage() {
             )}
             <AnagraficaPanel projectId={id} studioId={studioId} />
             {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
+            <CapitolatoPanel projectId={id} studioId={studioId} project={project} />
             <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
               <button onClick={() => setMenuOpen(p => !p)} style={{

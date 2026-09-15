@@ -231,6 +231,7 @@ export default function MobileLayout({ session, children }) {
                     { label:'Clienti',        icon:'profilo',  path:'/impostazioni/clienti'        },
                     { label:'Servizi',        icon:'settings', path:'/impostazioni/servizi'        },
                     { label:'Regolazione Offerta', icon:'report', path:'/impostazioni/regolazione-offerta' },
+                    { label:'Regolazione Capitolato', icon:'report', path:'/impostazioni/regolazione-capitolato' },
                     { label:'Notifiche',      icon:'settings', path:'/impostazioni/notifiche'      },
                     { label:'Esporta dati',   icon:'esporta',  path:'/impostazioni/esporta'        },
                     { label:'Cestino',        icon:'cestino',  path:'/impostazioni/cestino'        },
