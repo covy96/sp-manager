@@ -9,7 +9,7 @@ import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
-  defaultSommanoLabels,
+  defaultSommanoLabels, saveVoceLibreria,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -82,6 +82,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const [versCount, setVersCount] = useState(0); // badge sul pulsante: n. versioni salvate
   const [catInsert, setCatInsert] = useState(null); // macro-categoria in cui finiscono le voci aggiunte
   const [catPickerOpen, setCatPickerOpen] = useState(false); // selettore "mega voce"
+  const [nuovaOpen, setNuovaOpen] = useState(false); // form "nuova voce" (non in libreria)
+  const [nuova, setNuova] = useState({ titolo: "", descrizione: "", categoria_code: "", unita: "mq", tipo: "singolo", salvaLibreria: true });
   const [autoState, setAutoState] = useState("idle"); // idle | saving | saved (auto-save bozza)
 
   // Ref per l'auto-save bozza (debounce + guardie anti-doppioni).
@@ -209,6 +211,44 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setCatFilter(code);      // pre-filtra la libreria sulla categoria scelta
     setCatPickerOpen(false);
     setView("edit");
+  };
+
+  // ── Nuova voce (non in libreria) ─────────────────────────────────────────────
+  // Apre il form precompilando titolo dalla ricerca e categoria dalla mega voce.
+  const openNuovaVoce = () => {
+    setNuova({ titolo: query.trim(), descrizione: "", categoria_code: catInsert || "", unita: "mq", tipo: "singolo", salvaLibreria: true });
+    setNuovaOpen(true);
+  };
+  const confermaNuovaVoce = async () => {
+    const titolo = nuova.titolo.trim();
+    if (!titolo) { showToast?.("Inserisci un titolo per la voce", "error"); return; }
+    if (!nuova.categoria_code) { showToast?.("Scegli la categoria (mega voce)", "error"); return; }
+    setBusy(true);
+    try {
+      const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === nuova.categoria_code);
+      let voce = {
+        id: null, categoria_code: nuova.categoria_code, categoria_nome: cat?.nome || "",
+        codice: "", titolo, descrizione: nuova.descrizione.trim(), unita: nuova.unita, tipo: nuova.tipo,
+        sommano_labels: defaultSommanoLabels(nuova.unita, nuova.tipo),
+      };
+      // Salvataggio in libreria (opzionale): dà un id per collegare la riga e la
+      // rende ricercabile nei prossimi capitolati. Codice univoco per non collidere
+      // con altre voci custom nella stessa categoria (dedup per categoria+codice).
+      if (nuova.salvaLibreria && studioId) {
+        try {
+          voce = { ...voce, codice: "PERS-" + Math.random().toString(36).slice(2, 7).toUpperCase() };
+          const saved = await saveVoceLibreria(voce, studioId);
+          voce = { ...voce, id: saved.id };
+          setLibreria((p) => [...p.filter((v) => v.id !== saved.id), saved]);
+        } catch (e) { console.error(e); showToast?.("Voce aggiunta al capitolato, ma non salvata in libreria", "warning"); }
+      }
+      // Aggiunge la riga al capitolato nella categoria scelta.
+      const riga = { ...rigaFromVoce(voce), categoria_code: nuova.categoria_code, categoria_nome: cat?.nome || "" };
+      setRighe((p) => [...p, riga]); touch();
+      if (catInsert !== nuova.categoria_code) setCatInsert(nuova.categoria_code);
+      setNuovaOpen(false); setView("edit");
+      showToast?.("Voce aggiunta al capitolato", "success");
+    } finally { setBusy(false); }
   };
 
   // ── Auto-save bozza ──────────────────────────────────────────────────────────
@@ -561,10 +601,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         <button key={c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome} style={{ ...chip(T, catFilter === c.code) }}>{c.code}</button>
                       ))}
                     </div>
+                    <button onClick={openNuovaVoce} style={{ ...btnGhost, width: "100%", marginTop: 8, padding: "7px 10px", borderStyle: "dashed" }}>+ Nuova voce (non in libreria)</button>
                   </div>
                   <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
                     {risultati.length === 0 ? (
-                      <div style={{ color: T.muted, fontFamily: mono, fontSize: 11, padding: 12, textAlign: "center" }}>Nessuna voce</div>
+                      <div style={{ color: T.muted, fontFamily: mono, fontSize: 11, padding: 12, textAlign: "center" }}>
+                        <div style={{ marginBottom: 10 }}>Nessuna voce{query.trim() ? ` per "${query.trim()}"` : ""}</div>
+                        <button onClick={openNuovaVoce} style={{ ...btnGhost, padding: "6px 12px" }}>+ Crea nuova voce</button>
+                      </div>
                     ) : risultati.map((v) => (
                       <button key={v.id} onClick={() => addVoce(v)} disabled={v._added}
                         style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginBottom: 5, background: v._added ? T.surface2 : "transparent", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: v._added ? "default" : "pointer", opacity: v._added ? 0.55 : 1 }}
@@ -688,6 +732,58 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: T.ink }}>{c.nomeIndice || c.nome}</span>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form "Nuova voce" (non presente in libreria) */}
+      {nuovaOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
+          onClick={() => setNuovaOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "88vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Nuova voce</div>
+                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Voce personalizzata, aggiunta al capitolato corrente</div>
+              </div>
+              <button onClick={() => setNuovaOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={labelSt}>Titolo *</div>
+                <input autoFocus value={nuova.titolo} onChange={(e) => setNuova((n) => ({ ...n, titolo: e.target.value }))} placeholder="es. Rasatura pareti esistenti" style={{ ...inputSt, width: "100%" }} />
+              </div>
+              <div>
+                <div style={labelSt}>Descrizione</div>
+                <textarea value={nuova.descrizione} onChange={(e) => setNuova((n) => ({ ...n, descrizione: e.target.value }))} rows={3}
+                  style={{ ...inputSt, width: "100%", resize: "vertical", lineHeight: 1.35 }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <div style={labelSt}>Categoria (mega voce) *</div>
+                  <select value={nuova.categoria_code} onChange={(e) => setNuova((n) => ({ ...n, categoria_code: e.target.value }))} style={{ ...inputSt, width: "100%", cursor: "pointer" }}>
+                    <option value="">— scegli —</option>
+                    {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.code}) {c.nomeIndice || c.nome}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={labelSt}>Tipo di sommano</div>
+                  <select value={nuova.tipo === "fornitura_posa" ? "fp" : (SOMMANO_PRESETS.find((p) => p.key !== "fp" && p.unita === nuova.unita)?.key || "mq")}
+                    onChange={(e) => { const p = SOMMANO_PRESETS.find((x) => x.key === e.target.value); if (p) setNuova((n) => ({ ...n, tipo: p.tipo, unita: p.tipo === "fornitura_posa" ? (n.unita || "mq") : p.unita })); }}
+                    style={{ ...inputSt, width: "100%", cursor: "pointer" }}>
+                    {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: mono, fontSize: 11, color: T.ink, cursor: studioId ? "pointer" : "not-allowed", opacity: studioId ? 1 : 0.5 }}>
+                <input type="checkbox" checked={nuova.salvaLibreria && !!studioId} disabled={!studioId} onChange={(e) => setNuova((n) => ({ ...n, salvaLibreria: e.target.checked }))} />
+                Salva anche in libreria (riutilizzabile nei prossimi capitolati)
+              </label>
+            </div>
+            <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setNuovaOpen(false)} style={btnGhost}>Annulla</button>
+              <button onClick={confermaNuovaVoce} disabled={busy || !nuova.titolo.trim() || !nuova.categoria_code} style={{ ...btnPrimary, opacity: busy || !nuova.titolo.trim() || !nuova.categoria_code ? 0.5 : 1 }}>{busy ? "…" : "Aggiungi al capitolato"}</button>
             </div>
           </div>
         </div>
