@@ -187,19 +187,26 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   testataFoglio(cop, wb, nomeProgetto, logo);
   const copCell = (row, v, o) => { const c = cop.getCell(row, 1); c.value = v; st(c, o); };
   const copMerge = (row) => cop.mergeCells(row, 1, row, 8);
-  copMerge(2); copCell(2, CAPITOLATO_TITOLO, { b: true, sz: 16, color: NAVY, align: "center" }); cop.getRow(2).height = 22;
-  copMerge(3); copCell(3, "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 10.5, align: "center" }); cop.getRow(3).height = 14;
-  copMerge(4); copCell(4, "Capitolato d'appalto", { sz: 10.5, color: "FF808080", align: "center" }); cop.getRow(4).height = 14;
+  // Distribuzione verticale come nel PDF: titolo ~1/4 pagina, blocco dati ~metà,
+  // nota IVA in fondo. Le righe spaziatrici danno l'aria della copertina PDF.
+  cop.getRow(2).height = 130; // spazio prima del titolo
+  copMerge(3); copCell(3, CAPITOLATO_TITOLO, { b: true, sz: 16, color: NAVY, align: "center" }); cop.getRow(3).height = 24;
+  copMerge(4); copCell(4, "COMPUTO OPERE EDILI IMPIANTISTICHE E DI FINITURE", { sz: 10.5, align: "center" }); cop.getRow(4).height = 15;
+  copMerge(5); copCell(5, "Capitolato d'appalto", { sz: 10.5, color: "FF808080", align: "center" }); cop.getRow(5).height = 16;
+  cop.getRow(6).height = 150; // spazio prima del blocco dati
+  const underline = { bottom: { style: "thin", color: { argb: "FFC8C8C8" } } };
   [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
     .forEach((p, i) => {
-      const rr = 6 + i; cop.getRow(rr).height = 15;
-      cop.mergeCells(rr, 1, rr, 3); const l = cop.getCell(rr, 1); l.value = p[0]; st(l, { b: true, sz: 10, align: "right" });
+      const rr = 7 + i; cop.getRow(rr).height = 16;
+      cop.mergeCells(rr, 1, rr, 3); const l = cop.getCell(rr, 1); l.value = p[0]; st(l, { b: true, sz: 10, color: NAVY, align: "right" });
       cop.mergeCells(rr, 4, rr, 8); const val = cop.getCell(rr, 4); val.value = p[1]; st(val, { sz: 10 });
+      for (let cc = 4; cc <= 8; cc++) cop.getCell(rr, cc).border = underline; // sottolineatura campo (come PDF)
     });
-  cop.mergeCells(12, 1, 12, 8); const iva = cop.getCell(12, 1); iva.value = CAPITOLATO_NOTA_IVA; st(iva, { i: true, sz: 9, color: "FF808080", align: "center" });
+  cop.getRow(12).height = 210; // spazio fino in fondo pagina
+  cop.mergeCells(13, 1, 13, 8); const iva = cop.getCell(13, 1); iva.value = CAPITOLATO_NOTA_IVA; st(iva, { i: true, sz: 9, color: "FF808080", align: "center" }); cop.getRow(13).height = 15;
   const gen = new Date(); const p2 = (n) => String(n).padStart(2, "0");
   const stamp = `${p2(gen.getDate())}/${p2(gen.getMonth() + 1)}/${gen.getFullYear()} ${p2(gen.getHours())}:${p2(gen.getMinutes())}`;
-  cop.mergeCells(13, 1, 13, 8); const gc = cop.getCell(13, 1); gc.value = `Generato il ${stamp}`; st(gc, { i: true, sz: 8, color: "FFB0B0B0", align: "center" });
+  cop.mergeCells(14, 1, 14, 8); const gc = cop.getCell(14, 1); gc.value = `Generato il ${stamp}`; st(gc, { i: true, sz: 8, color: "FFB0B0B0", align: "center" }); cop.getRow(14).height = 13;
   impagina(cop);
 
   // ── Premessa ──────────────────────────────────────────────────────────────
@@ -208,8 +215,10 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   testataFoglio(prem, wb, nomeProgetto, logo);
   let pr = 2; // dopo l'intestazione
   prem.mergeCells(pr, 1, pr, 8); const pc0 = prem.getCell(pr, 1); pc0.value = "PREMESSA"; st(pc0, { b: true, sz: 11, color: "FFFFFFFF", fill: NAVY });
-  CAPITOLATO_PREMESSA.forEach((p) => {
-    pr += 1; prem.mergeCells(pr, 1, pr, 8); const c = prem.getCell(pr, 1); c.value = p; st(c, { sz: 9, wrap: true, vtop: true });
+  CAPITOLATO_PREMESSA.forEach((p, pi) => {
+    const isLast = pi === CAPITOLATO_PREMESSA.length - 1; // "Tenuta del cantiere…" → blu grassetto (come PDF)
+    pr += 1; prem.mergeCells(pr, 1, pr, 8); const c = prem.getCell(pr, 1); c.value = p;
+    st(c, { sz: 9, wrap: true, vtop: true, ...(isLast ? { b: true, color: NAVY } : {}) });
     prem.getRow(pr).height = nlines(p, 88) * 11.3 + 2;
   });
   // INDICE dei fogli attivi
