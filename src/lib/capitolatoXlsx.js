@@ -195,6 +195,9 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
     F(`SUM(H${firstVoceRow}:H${lastContent})`, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR }),
   ], 16);
   impagina(ws);
+  // Ripeti su ogni pagina stampata: intestazione progetto + titolo categoria +
+  // intestazioni di colonna (evita l'header vuoto dalla 2ª pagina in poi).
+  ws.pageSetup.printTitlesRow = `1:${h2}`;
   return { name: ws.name, totRow };
 }
 
@@ -289,25 +292,31 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
 
   // ── Riepilogo ──────────────────────────────────────────────────────────────
   const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false, style: "pageLayout" }] });
-  rie.getColumn(1).width = 10; rie.getColumn(2).width = 50; rie.getColumn(3).width = 16;
-  for (let i = 3; i < 8; i++) rie.getColumn(i + 1).width = 6;
+  COLS.forEach((w, i) => { rie.getColumn(i + 1).width = w; }); // stesse larghezze dei fogli categoria
   testataFoglio(rie, wb, nomeProgetto, logo);
-  rie.mergeCells(3, 1, 3, 3); const rc0 = rie.getCell(3, 1); rc0.value = CAPITOLATO_TITOLO; st(rc0, { b: true, sz: 13, color: "FFFFFFFF", fill: NAVY, align: "center" });
-  const rc1 = rie.getCell(4, 1); rc1.value = "Riepilogo generale per categoria di lavori"; st(rc1, { i: true, sz: 9, color: "FF808080" });
+  rie.mergeCells(3, 1, 3, 8); const rc0 = rie.getCell(3, 1); rc0.value = CAPITOLATO_TITOLO; st(rc0, { b: true, sz: 13, color: "FFFFFFFF", fill: NAVY, align: "center" }); rie.getRow(3).height = 20;
+  rie.mergeCells(4, 1, 4, 8); const rc1 = rie.getCell(4, 1); rc1.value = "Riepilogo generale per categoria di lavori"; st(rc1, { i: true, sz: 9, color: "FF808080" });
   const rieHead = 6;
-  ["Cod.", "Descrizione", "Importo"].forEach((t, i) => { const c = rie.getCell(rieHead, i + 1); c.value = t; st(c, { b: true, sz: 9, fill: HEADER, align: i === 1 ? "left" : "center", border: box }); });
+  // Header: Cod. (1) · Descrizione (2-7) · Importo (8), a piena larghezza
+  const hCod = rie.getCell(rieHead, 1); hCod.value = "Cod."; st(hCod, { b: true, sz: 9, fill: HEADER, align: "center", border: box });
+  rie.mergeCells(rieHead, 2, rieHead, 7); const hDes = rie.getCell(rieHead, 2); hDes.value = "Descrizione"; st(hDes, { b: true, sz: 9, fill: HEADER, align: "left", border: box });
+  for (let c = 3; c <= 7; c++) st(rie.getCell(rieHead, c), { fill: HEADER, border: box });
+  const hImp = rie.getCell(rieHead, 8); hImp.value = "Importo"; st(hImp, { b: true, sz: 9, fill: HEADER, align: "center", border: box });
   info.forEach((c, i) => {
     const rr = rieHead + 1 + i;
     const a = rie.getCell(rr, 1); a.value = c.code; st(a, { b: true, sz: 9, align: "center", border: box });
-    const b = rie.getCell(rr, 2); b.value = c.nome; st(b, { sz: 9, border: box });
-    const im = rie.getCell(rr, 3); im.value = { formula: `'${c.name}'!H${c.totRow}` }; st(im, { sz: 9, align: "right", border: box, num: F_EUR });
+    rie.mergeCells(rr, 2, rr, 7); const b = rie.getCell(rr, 2); b.value = c.nome; st(b, { sz: 9, border: box });
+    for (let cc = 3; cc <= 7; cc++) st(rie.getCell(rr, cc), { border: box });
+    const im = rie.getCell(rr, 8); im.value = { formula: `'${c.name}'!H${c.totRow}` }; st(im, { sz: 9, align: "right", border: box, num: F_EUR });
   });
-  // TOTALE GENERALE (banda blu)
+  // TOTALE GENERALE (banda blu) a piena larghezza
   const tgRow = rieHead + 1 + info.length;
-  const ta = rie.getCell(tgRow, 1); ta.value = ""; st(ta, { fill: NAVY });
-  const tb = rie.getCell(tgRow, 2); tb.value = "TOTALE GENERALE"; st(tb, { b: true, sz: 10, color: "FFFFFFFF", fill: NAVY });
-  const tc = rie.getCell(tgRow, 3); tc.value = info.length ? { formula: `SUM(C${rieHead + 1}:C${rieHead + info.length})` } : 0; st(tc, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR });
+  rie.mergeCells(tgRow, 1, tgRow, 7); const tgL = rie.getCell(tgRow, 1); tgL.value = "TOTALE GENERALE"; st(tgL, { b: true, sz: 10, color: "FFFFFFFF", fill: NAVY, align: "left" });
+  for (let cc = 2; cc <= 7; cc++) st(rie.getCell(tgRow, cc), { fill: NAVY });
+  const tc = rie.getCell(tgRow, 8); tc.value = info.length ? { formula: `SUM(H${rieHead + 1}:H${rieHead + info.length})` } : 0; st(tc, { b: true, sz: 10, color: "FFFFFFFF", align: "right", fill: NAVY, num: F_EUR });
+  rie.getRow(tgRow).height = 16;
   impagina(rie);
+  rie.pageSetup.printTitlesRow = `1:${rieHead}`;
 
   const now = new Date();
   const pz = (n) => String(n).padStart(2, "0");
