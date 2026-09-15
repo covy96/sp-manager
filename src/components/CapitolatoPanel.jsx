@@ -8,7 +8,7 @@ import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
-  snapshotCapitolato, saveVersioni, loadCapitolatiImportabili, loadRigheImport,
+  snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -25,13 +25,15 @@ const formattaData = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-export default function CapitolatoPanel({ projectId, studioId, project }) {
+export default function CapitolatoPanel({ projectId, studioId, project, openSignal }) {
   const { T } = useTheme();
   const showToast = useToast();
 
   const [open, setOpen] = useState(false);
   useBodyScrollLock(open);
   useEscKey(() => setOpen(false), open);
+  // apertura esterna (dal Centro documenti)
+  useEffect(() => { if (openSignal) setOpen(true); }, [openSignal]);
 
   const [loading, setLoading] = useState(false);
   const [libreria, setLibreria] = useState([]);
@@ -204,9 +206,26 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
 
   const eliminaVersione = async (v) => {
     setMenuVer(null);
-    if (!window.confirm(`Eliminare la Versione ${v.n}? L'operazione non è reversibile.`)) return;
     const nuove = versioni.filter((x) => x.n !== v.n);
+    const ultima = nuove.length === 0; // era l'unica versione rimasta
+    const msg = ultima
+      ? `Eliminare la Versione ${v.n}? È l'unica versione: verrà eliminato l'intero capitolato e si ripartirà da zero.`
+      : `Eliminare la Versione ${v.n}? L'operazione non è reversibile.`;
+    if (!window.confirm(msg)) return;
     try {
+      if (ultima) {
+        // Ultima versione → elimina l'intero capitolato e azzera lo stato, così
+        // il prossimo capitolato del progetto parte davvero da zero.
+        if (meta.id) await deleteCapitolato(meta.id);
+        setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
+        setRighe([]);
+        setVersioni([]);
+        setVersioneAttiva(null);
+        setDirty(false);
+        setView("versioni");
+        showToast?.("Capitolato eliminato", "success");
+        return;
+      }
       if (meta.id) await saveVersioni(meta.id, nuove);
       setVersioni(nuove);
       if (versioneAttiva === v.n) setVersioneAttiva(null);

@@ -270,6 +270,15 @@ export async function saveVersioni(capitolatoId, versioni) {
   if (error) throw error;
 }
 
+// Elimina (soft-delete) l'intero capitolato: valorizza deleted_at così che il
+// prossimo loadCapitolato ritorni null e il progetto riparta da zero.
+export async function deleteCapitolato(capitolatoId) {
+  const { error } = await supabase.from("capitolati")
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", capitolatoId);
+  if (error) throw error;
+}
+
 export async function createCapitolato(projectId, meta = {}) {
   const { data, error } = await supabase
     .from("capitolati")
