@@ -19,14 +19,16 @@ const fmtData = (iso) => {
 
 // definizione dei tipi di documento e come leggerli
 const TIPI = [
+  // Nota: uso select("*") per non dipendere dai nomi esatti delle colonne (evita
+  // errori silenziosi se una colonna opzionale non esiste). L'ordinamento è fatto
+  // lato client su una data ricavata in modo difensivo.
   {
     key: "offerte", label: "Offerte", color: "#0369a1",
     async load({ commessaIds }) {
       if (!commessaIds.length) return [];
-      const { data } = await supabase.from("offerte")
-        .select("id, nome_offerta, nome, stato, data, created_at")
-        .in("commessa_id", commessaIds).eq("archived", false).is("deleted_at", null)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("offerte")
+        .select("*").in("commessa_id", commessaIds).eq("archived", false).is("deleted_at", null);
+      if (error) throw error;
       return (data || []).map((o) => ({
         id: o.id, titolo: o.nome_offerta || o.nome || "Offerta",
         stato: o.stato || "", data: o.data || o.created_at,
@@ -36,10 +38,9 @@ const TIPI = [
   {
     key: "capitolati", label: "Capitolato", color: "#1F3864",
     async load({ projectId }) {
-      const { data } = await supabase.from("capitolati")
-        .select("id, nome, versioni, updated_at, created_at")
-        .eq("project_id", projectId).is("deleted_at", null)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("capitolati")
+        .select("*").eq("project_id", projectId).is("deleted_at", null);
+      if (error) throw error;
       return (data || []).map((c) => ({
         id: c.id, titolo: c.nome || "Capitolato",
         versioni: Array.isArray(c.versioni) ? c.versioni.length : 0,
@@ -50,9 +51,9 @@ const TIPI = [
   {
     key: "pratiche", label: "Pratiche edilizie", color: "#b45309",
     async load({ projectId }) {
-      const { data } = await supabase.from("pratiche_edilizie")
-        .select("id, tipo_pratica, protocollo, stato, numero, updated_at, created_at")
-        .eq("project_id", projectId).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("pratiche_edilizie")
+        .select("*").eq("project_id", projectId);
+      if (error) throw error;
       return (data || []).map((p) => ({
         id: p.id,
         titolo: p.tipo_pratica || p.numero || p.protocollo || "Pratica",
@@ -63,18 +64,24 @@ const TIPI = [
   {
     key: "report", label: "Report cantiere", color: "#166534",
     async load({ projectId }) {
-      const { data } = await supabase.from("report_cantiere")
-        .select("id, numero, titolo, data, created_at")
-        .eq("project_id", projectId).is("deleted_at", null)
-        .order("numero", { ascending: false });
+      const { data, error } = await supabase.from("report_cantiere")
+        .select("*").eq("project_id", projectId).is("deleted_at", null);
+      if (error) throw error;
       return (data || []).map((r) => ({
         id: r.id,
         titolo: r.titolo || (r.numero != null ? `Report n. ${r.numero}` : "Report"),
-        data: r.data || r.created_at,
+        data: r.data || r.updated_at || r.created_at,
       }));
     },
   },
 ];
+
+// ordina per data (più recente prima), voci senza data in fondo
+const perData = (items) => [...items].sort((a, b) => {
+  const da = a.data ? new Date(a.data).getTime() : 0;
+  const db = b.data ? new Date(b.data).getTime() : 0;
+  return db - da;
+});
 
 export default function DocumentiPanel({ projectId, studioId, project, commesse }) {
   const { T } = useTheme();
@@ -92,8 +99,9 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse 
     setLoading(true);
     try {
       const ctx = { projectId, studioId, commessaIds };
-      const risultati = await Promise.all(TIPI.map((t) => t.load(ctx).catch(() => [])));
-      const g = TIPI.map((t, i) => ({ key: t.key, label: t.label, color: t.color, items: risultati[i] }));
+      const risultati = await Promise.all(TIPI.map((t) =>
+        t.load(ctx).catch((e) => { console.error(`Documenti · ${t.key}:`, e?.message || e); return []; })));
+      const g = TIPI.map((t, i) => ({ key: t.key, label: t.label, color: t.color, items: perData(risultati[i]) }));
       setGruppi(g);
       setCount(g.reduce((s, x) => s + x.items.length, 0));
     } finally {
@@ -107,7 +115,8 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse 
     let alive = true;
     (async () => {
       const ctx = { projectId, studioId, commessaIds };
-      const risultati = await Promise.all(TIPI.map((t) => t.load(ctx).catch(() => [])));
+      const risultati = await Promise.all(TIPI.map((t) =>
+        t.load(ctx).catch((e) => { console.error(`Documenti · ${t.key}:`, e?.message || e); return []; })));
       if (alive) setCount(risultati.reduce((s, x) => s + x.length, 0));
     })();
     return () => { alive = false; };
