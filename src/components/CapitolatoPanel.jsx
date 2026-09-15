@@ -204,6 +204,16 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setVersioneAttiva(v.n); setDirty(false); setMenuVer(null); setView("recap");
   };
 
+  // Azzera lo stato in memoria a "capitolato nuovo, vuoto" (dopo un'eliminazione).
+  const resetCapitolatoLocale = () => {
+    setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
+    setRighe([]);
+    setVersioni([]);
+    setVersioneAttiva(null);
+    setDirty(false);
+    setView("versioni");
+  };
+
   const eliminaVersione = async (v) => {
     setMenuVer(null);
     const nuove = versioni.filter((x) => x.n !== v.n);
@@ -217,12 +227,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         // Ultima versione → elimina l'intero capitolato e azzera lo stato, così
         // il prossimo capitolato del progetto parte davvero da zero.
         if (meta.id) await deleteCapitolato(meta.id);
-        setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
-        setRighe([]);
-        setVersioni([]);
-        setVersioneAttiva(null);
-        setDirty(false);
-        setView("versioni");
+        resetCapitolatoLocale();
         showToast?.("Capitolato eliminato", "success");
         return;
       }
@@ -231,6 +236,17 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
       if (versioneAttiva === v.n) setVersioneAttiva(null);
       showToast?.(`Versione ${v.n} eliminata`, "success");
     } catch (e) { console.error(e); showToast?.("Errore eliminazione versione", "error"); }
+  };
+
+  // Elimina l'intero capitolato (righe + versioni), anche quando non ci sono
+  // versioni salvate: rimuove la bozza residua nel DB e riparte da zero.
+  const eliminaCapitolato = async () => {
+    if (!window.confirm("Eliminare l'intero capitolato? Tutte le voci verranno rimosse e si ripartirà da zero. L'operazione non è reversibile.")) return;
+    try {
+      if (meta.id) await deleteCapitolato(meta.id);
+      resetCapitolatoLocale();
+      showToast?.("Capitolato eliminato", "success");
+    } catch (e) { console.error(e); showToast?.("Errore eliminazione capitolato", "error"); }
   };
 
   // ── Importa "usa come base" da un altro progetto ─────────────────────────────
@@ -323,10 +339,19 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
               <div style={{ flex: 1, overflowY: "auto", padding: 20, minHeight: 0 }}>
                 {versioni.length === 0 ? (
                   <div style={{ textAlign: "center", marginTop: 40, color: T.muted, fontFamily: mono, fontSize: 12 }}>
-                    <div style={{ marginBottom: 14 }}>Nessuna versione salvata.</div>
-                    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                      <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
+                    <div style={{ marginBottom: 14 }}>
+                      {nVoci > 0
+                        ? `Nessuna versione salvata · bozza con ${nVoci} ${nVoci === 1 ? "voce" : "voci"}`
+                        : "Nessuna versione salvata."}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                      <button onClick={() => setView(nVoci > 0 ? "recap" : "edit")} style={btnPrimary}>
+                        {nVoci > 0 ? "Apri capitolato" : "Nuovo capitolato"}
+                      </button>
                       <button onClick={openImport} style={btnGhost}>Importa da un altro progetto</button>
+                      {(meta.id || nVoci > 0) && (
+                        <button onClick={eliminaCapitolato} style={{ ...btnGhost, color: T.red, borderColor: T.red }}>Elimina capitolato</button>
+                      )}
                     </div>
                   </div>
                 ) : (
