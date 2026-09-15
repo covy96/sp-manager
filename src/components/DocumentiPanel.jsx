@@ -83,7 +83,7 @@ const perData = (items) => [...items].sort((a, b) => {
   return db - da;
 });
 
-export default function DocumentiPanel({ projectId, studioId, project, commesse }) {
+export default function DocumentiPanel({ projectId, studioId, project, commesse, onOpen }) {
   const { T } = useTheme();
   const [open, setOpen] = useState(false);
   useBodyScrollLock(open);
@@ -168,7 +168,10 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse 
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         {g.items.map((it) => (
-                          <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 13px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface }}>
+                          <button key={it.id} onClick={() => { onOpen?.(g.key, it.id); setOpen(false); }}
+                            style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 13px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, cursor: "pointer", textAlign: "left", width: "100%" }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.navy; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.titolo}</div>
                               <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -177,7 +180,8 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse 
                                 {it.stato ? <span>· {it.stato}</span> : null}
                               </div>
                             </div>
-                          </div>
+                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Apri →</span>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -187,7 +191,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse 
             </div>
 
             <div style={{ padding: "10px 20px", borderTop: `1px solid ${T.border}`, flexShrink: 0, fontFamily: mono, fontSize: 9.5, color: T.muted, textAlign: "center" }}>
-              Vista di sola lettura · apri offerte, capitolati, pratiche e report dai rispettivi pannelli
+              Clicca un documento per aprirlo nel pannello corrispondente
             </div>
           </div>
         </div>

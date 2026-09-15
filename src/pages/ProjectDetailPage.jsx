@@ -326,6 +326,12 @@ export default function ProjectDetailPage() {
   usePageTitleOnMount("Progetto");
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  // Apertura di un documento dal Centro documenti: offerte via rotta, gli altri aprendo il pannello.
+  const [docOpenReq, setDocOpenReq] = useState({ type: null, n: 0 });
+  const openDoc = (type, docId) => {
+    if (type === "offerte") { navigate(`/offerte/${docId}`, { state: { openDoc: true } }); return; }
+    setDocOpenReq({ type, n: Date.now() });
+  };
   const { id: projectId } = useParams();
   const { studioId, teamMember } = useStudio();
   const permissions = usePermissions();
@@ -750,19 +756,20 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
             )}
-            <PraticaEdiliziaPanel projectId={id} studioId={studioId} />
+            <PraticaEdiliziaPanel projectId={id} studioId={studioId} openSignal={docOpenReq.type === "pratiche" ? docOpenReq.n : 0} />
             <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
             {isPro && permissions.canViewReportCantiere && (
               <ReportCantierePanel
                 projectId={id}
                 studioId={studioId}
                 canManage={permissions.canManageReportCantiere}
+                openSignal={docOpenReq.type === "report" ? docOpenReq.n : 0}
               />
             )}
             <AnagraficaPanel projectId={id} studioId={studioId} />
             {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
-            <CapitolatoPanel projectId={id} studioId={studioId} project={project} />
-            <DocumentiPanel projectId={id} studioId={studioId} project={project} commesse={commesseProgetto} />
+            <CapitolatoPanel projectId={id} studioId={studioId} project={project} openSignal={docOpenReq.type === "capitolati" ? docOpenReq.n : 0} />
+            <DocumentiPanel projectId={id} studioId={studioId} project={project} commesse={commesseProgetto} onOpen={openDoc} />
             <CommessePanel commesse={commesseProgetto} />
             <ActivityLogPanel projectId={id} studioId={studioId} />
             <div style={{ position: 'relative' }}>

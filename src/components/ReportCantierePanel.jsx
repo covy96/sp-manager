@@ -454,7 +454,7 @@ const emptyForm = (address = "") => ({
   presenti: [],
 });
 
-export default function ReportCantierePanel({ projectId, studioId, canManage = false }) {
+export default function ReportCantierePanel({ projectId, studioId, canManage = false, openSignal }) {
   const { T } = useTheme();
   const inputSt = inputCss(T);
   const fileRef = useRef(null);
@@ -462,6 +462,8 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
   const [open, setOpen]       = useState(false);
   useBodyScrollLock(open);
+  // apertura esterna (dal Centro documenti)
+  useEffect(() => { if (openSignal) setOpen(true); }, [openSignal]);
   // "list" | "form" | "header" | "preview"
   const [view, setView]           = useState("list");
   const viewRef = useRef("list");

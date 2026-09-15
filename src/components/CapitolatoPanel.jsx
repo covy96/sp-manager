@@ -25,13 +25,15 @@ const formattaData = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-export default function CapitolatoPanel({ projectId, studioId, project }) {
+export default function CapitolatoPanel({ projectId, studioId, project, openSignal }) {
   const { T } = useTheme();
   const showToast = useToast();
 
   const [open, setOpen] = useState(false);
   useBodyScrollLock(open);
   useEscKey(() => setOpen(false), open);
+  // apertura esterna (dal Centro documenti)
+  useEffect(() => { if (openSignal) setOpen(true); }, [openSignal]);
 
   const [loading, setLoading] = useState(false);
   const [libreria, setLibreria] = useState([]);
