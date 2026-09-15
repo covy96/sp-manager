@@ -8,7 +8,7 @@ import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
-  snapshotCapitolato, saveVersioni,
+  snapshotCapitolato, saveVersioni, loadCapitolatiImportabili, loadRigheImport,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -47,6 +47,10 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
   const [versioneAttiva, setVersioneAttiva] = useState(null);
   const [menuVer, setMenuVer] = useState(null);
   const [view, setView] = useState("versioni"); // versioni | recap | edit
+  const [importOpen, setImportOpen] = useState(false);
+  const [importList, setImportList] = useState([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [versCount, setVersCount] = useState(0); // badge sul pulsante: n. versioni salvate
 
   // ── caricamento all'apertura ────────────────────────────────────────────────
   useEffect(() => {
@@ -89,6 +93,21 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     })();
     return () => { alive = false; };
   }, [open, projectId, studioId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Conteggio versioni per il badge sul pulsante: caricato all'avvio e ad ogni
+  // chiusura del pannello (così riflette salvataggi/eliminazioni appena fatti).
+  useEffect(() => {
+    if (open) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.from("capitolati")
+        .select("versioni").eq("project_id", projectId).is("deleted_at", null)
+        .order("created_at", { ascending: false }).limit(1);
+      const v = data?.[0]?.versioni; // colonna assente → data null → resta 0
+      if (alive) setVersCount(Array.isArray(v) ? v.length : 0);
+    })();
+    return () => { alive = false; };
+  }, [open, projectId]);
 
   // ── ricerca voci ─────────────────────────────────────────────────────────────
   const risultati = useMemo(() => {
@@ -195,6 +214,24 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     } catch (e) { console.error(e); showToast?.("Errore eliminazione versione", "error"); }
   };
 
+  // ── Importa "usa come base" da un altro progetto ─────────────────────────────
+  const openImport = async () => {
+    setImportOpen(true); setImportLoading(true);
+    try { setImportList(await loadCapitolatiImportabili(studioId, projectId)); }
+    catch (e) { console.error(e); showToast?.("Errore nel caricamento dei progetti", "error"); }
+    finally { setImportLoading(false); }
+  };
+  const doImport = async (item) => {
+    setBusy(true);
+    try {
+      const nuove = await loadRigheImport(item.capitolato_id);
+      setRighe((p) => [...p, ...nuove]); touch();
+      setImportOpen(false); setView("edit");
+      showToast?.(`Importate ${nuove.length} ${nuove.length === 1 ? "voce" : "voci"} da ${item.project_name}`, "success");
+    } catch (e) { console.error(e); showToast?.("Errore nell'import", "error"); }
+    finally { setBusy(false); }
+  };
+
   const exportSnapshot = () => ({ capitolato: metaDb(), righe, project, studio });
 
   const handlePdf = async () => {
@@ -226,10 +263,14 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
     <>
       <button onClick={() => setOpen(true)} style={{
         display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 14px",
-        border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent",
-        cursor: "pointer", color: T.ink, fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+        border: `0.5px solid ${versCount > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
+        background: versCount > 0 ? T.navyLight : "transparent",
+        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
-        ▤ Capitolato
+        <span style={{ color: versCount > 0 ? T.navy : T.ink, fontWeight: versCount > 0 ? 600 : 400 }}>▤ Capitolato</span>
+        {versCount > 0
+          ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{versCount}</span>
+          : <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>+ Apri</span>}
       </button>
 
       {open && (
@@ -264,7 +305,10 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                 {versioni.length === 0 ? (
                   <div style={{ textAlign: "center", marginTop: 40, color: T.muted, fontFamily: mono, fontSize: 12 }}>
                     <div style={{ marginBottom: 14 }}>Nessuna versione salvata.</div>
-                    <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                      <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
+                      <button onClick={openImport} style={btnGhost}>Importa da un altro progetto</button>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 720, margin: "0 auto" }}>
@@ -402,8 +446,11 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
             {/* Footer azioni — per vista */}
             {!loading && view !== "versioni" && (
               <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>
-                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
-                  {nVoci} voci in {gruppi.length} {gruppi.length === 1 ? "categoria" : "categorie"}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
+                    {nVoci} voci in {gruppi.length} {gruppi.length === 1 ? "categoria" : "categorie"}
+                  </div>
+                  <button onClick={openImport} disabled={busy} style={{ ...btnGhost, padding: "6px 12px", opacity: busy ? 0.5 : 1 }}>⤵ Importa da progetto</button>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={handleXlsx} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel</button>
@@ -414,6 +461,42 @@ export default function CapitolatoPanel({ projectId, studioId, project }) {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Selettore "Importa da un altro progetto" */}
+      {importOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
+          onClick={() => setImportOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Importa da un altro progetto</div>
+                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Le voci vengono aggiunte al capitolato corrente</div>
+              </div>
+              <button onClick={() => setImportOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 12, minHeight: 0 }}>
+              {importLoading ? (
+                <div style={{ textAlign: "center", padding: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
+              ) : importList.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>Nessun altro progetto con un capitolato.</div>
+              ) : importList.map((it) => (
+                <button key={it.capitolato_id} onClick={() => doImport(it)} disabled={busy}
+                  style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "11px 13px", marginBottom: 6, background: T.surface, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+                  onMouseEnter={(e) => { if (!busy) e.currentTarget.style.borderColor = T.navy; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.project_name}</div>
+                    <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
+                      {it.nVoci} {it.nVoci === 1 ? "voce" : "voci"}{it.aggiornato ? ` · ${formattaData(it.aggiornato)}` : ""}
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
