@@ -76,7 +76,9 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   const emailStudio = s.report_header_email || s.email || "";
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
     ? capitolato.nome : (project?.name || "PROGETTO");
-  const localita = capitolato?.localita || "";
+  // Committente e località: se non compilati nel capitolato, presi dal progetto (cliente / indirizzo).
+  const committente = capitolato?.committente || project?.client || "";
+  const localita = capitolato?.localita || project?.address || "";
 
   const gruppi = componiGruppi(righe);
 
@@ -162,7 +164,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   const boxX = 55, boxW = 100, rowH = 12;
   const campi = [
     ["Progetto:", nomeProgetto],
-    ["Committente:", capitolato?.committente || ""],
+    ["Committente:", committente],
     ["Località:", localita],
     ["Data:", dataIt(capitolato?.data)],
     ["Revisione:", capitolato?.revisione || ""],

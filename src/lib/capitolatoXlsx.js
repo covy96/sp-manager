@@ -65,7 +65,7 @@ function testataFoglio(ws, wb, nomeProgetto, logo) {
 }
 
 function buildCategoria(wb, g, nomeProgetto, logo) {
-  const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false }] });
+  const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false, style: "pageLayout" }] });
   COLS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
   let r = 0;
   const setRow = (cells, h) => {
@@ -182,7 +182,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   }
 
   // ── Copertina ──────────────────────────────────────────────────────────────
-  const cop = wb.addWorksheet("Copertina", { views: [{ showGridLines: false }] });
+  const cop = wb.addWorksheet("Copertina", { views: [{ showGridLines: false, style: "pageLayout" }] });
   COLS.forEach((w, i) => { cop.getColumn(i + 1).width = w; });
   testataFoglio(cop, wb, nomeProgetto, logo);
   const copCell = (row, v, o) => { const c = cop.getCell(row, 1); c.value = v; st(c, o); };
@@ -195,7 +195,10 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   copMerge(5); copCell(5, "Capitolato d'appalto", { sz: 10.5, color: "FF808080", align: "center" }); cop.getRow(5).height = 16;
   cop.getRow(6).height = 150; // spazio prima del blocco dati
   const underline = { bottom: { style: "thin", color: { argb: "FFC8C8C8" } } };
-  [["Progetto:", nomeProgetto], ["Committente:", capitolato?.committente || ""], ["Località:", capitolato?.localita || ""], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
+  // Committente e località: se non compilati nel capitolato, presi dal progetto (cliente / indirizzo).
+  const committente = capitolato?.committente || project?.client || "";
+  const localita = capitolato?.localita || project?.address || "";
+  [["Progetto:", nomeProgetto], ["Committente:", committente], ["Località:", localita], ["Data:", dataIt(capitolato?.data)], ["Revisione:", capitolato?.revisione || ""]]
     .forEach((p, i) => {
       const rr = 7 + i; cop.getRow(rr).height = 16;
       cop.mergeCells(rr, 1, rr, 3); const l = cop.getCell(rr, 1); l.value = p[0]; st(l, { b: true, sz: 10, color: NAVY, align: "right" });
@@ -210,7 +213,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   impagina(cop);
 
   // ── Premessa ──────────────────────────────────────────────────────────────
-  const prem = wb.addWorksheet("Premessa", { views: [{ showGridLines: false }] });
+  const prem = wb.addWorksheet("Premessa", { views: [{ showGridLines: false, style: "pageLayout" }] });
   COLS.forEach((w, i) => { prem.getColumn(i + 1).width = w; });
   testataFoglio(prem, wb, nomeProgetto, logo);
   let pr = 2; // dopo l'intestazione
@@ -235,7 +238,7 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   gruppi.forEach((g) => { const { name, totRow } = buildCategoria(wb, g, nomeProgetto, logo); info.push({ code: g.code, nome: g.nomeIndice, name, totRow }); });
 
   // ── Riepilogo ──────────────────────────────────────────────────────────────
-  const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false }] });
+  const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false, style: "pageLayout" }] });
   rie.getColumn(1).width = 10; rie.getColumn(2).width = 50; rie.getColumn(3).width = 16;
   for (let i = 3; i < 8; i++) rie.getColumn(i + 1).width = 6;
   testataFoglio(rie, wb, nomeProgetto, logo);
