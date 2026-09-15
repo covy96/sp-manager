@@ -98,6 +98,7 @@ export function rigaFromVoce(voce) {
     sommano_labels: Array.isArray(voce.sommano_labels) ? voce.sommano_labels : [],
     misurazioni: [mis0],
     note: "",
+    assistenza: voce.assistenza || null,
   };
 }
 
@@ -108,6 +109,22 @@ export function defaultSommanoLabels(unita, tipo) {
     return [`FORNITURA - sommano ${u}`.trim(), `POSA - sommano ${u}`.trim()];
   }
   return [`SOMMANO ${u}`.trim()];
+}
+
+// ── Assistenze murarie a percentuale ──────────────────────────────────────────
+// Voce speciale: nessuna misurazione, ma una % applicata al TOTALE di un impianto
+// (E idrico, F elettrico, G meccanico). Nell'Excel diventa una formula viva
+// (% × totale del foglio impianto); nel PDF è testo. { base: "F", perc: 10 }
+export const IMPIANTI_ASSISTENZA = [
+  { code: "E", nome: "Impianto idrico-sanitario" },
+  { code: "F", nome: "Impianto elettrico" },
+  { code: "G", nome: "Impianto meccanico" },
+];
+export function assistenzaLabel(a) {
+  if (!a) return "";
+  const imp = IMPIANTI_ASSISTENZA.find((x) => x.code === a.base);
+  const p = String(a.perc ?? 0).replace(".", ",");
+  return `Assistenza muraria ${p}% — ${imp?.nome || a.base || "impianto"}`;
 }
 
 // ── I/O Supabase ───────────────────────────────────────────────────────────────
@@ -259,6 +276,7 @@ export function snapshotCapitolato(meta, righe) {
       voce_id: r.voce_id || null, categoria_code: r.categoria_code, categoria_nome: r.categoria_nome || "",
       codice: r.codice || "", titolo: r.titolo || "", descrizione: r.descrizione || "", unita: r.unita || "",
       tipo: r.tipo || "singolo", sommano_labels: r.sommano_labels || [], misurazioni: r.misurazioni || [], note: r.note || null,
+      assistenza: r.assistenza || null,
     })),
   };
 }
@@ -320,9 +338,15 @@ export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
       sommano_labels: r.sommano_labels || [],
       misurazioni: r.misurazioni || [],
       note: r.note || null,
+      assistenza: r.assistenza || null,
       ordine: i,
     }));
-    const { error: eIns } = await supabase.from("capitolato_righe").insert(payload);
+    let { error: eIns } = await supabase.from("capitolato_righe").insert(payload);
+    // colonna 'assistenza' non ancora creata (migration mancante): reinserisci senza
+    if (eIns && (eIns.code === "42703" || /assistenza/i.test(eIns.message || ""))) {
+      const senza = payload.map(({ assistenza, ...rest }) => rest); // eslint-disable-line no-unused-vars
+      ({ error: eIns } = await supabase.from("capitolato_righe").insert(senza));
+    }
     if (eIns) throw eIns;
   }
 }

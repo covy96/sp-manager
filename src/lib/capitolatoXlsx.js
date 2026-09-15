@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, IMPIANTI_ASSISTENZA } from "./capitolatoModel";
 import { urlToBase64, imageSize } from "./pdfCommon";
 
 const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
@@ -64,7 +64,7 @@ function testataFoglio(ws, wb, nomeProgetto, logo) {
   return 1;
 }
 
-function buildCategoria(wb, g, nomeProgetto, logo) {
+function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
   const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false, style: "pageLayout" }] });
   COLS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
   let r = 0;
@@ -93,10 +93,42 @@ function buildCategoria(wb, g, nomeProgetto, logo) {
   const firstVoceRow = h2 + 1;
 
   g.items.forEach((it) => {
+    const topb = { top: { style: "medium", color: { argb: NAVY } }, left: thin, bottom: thin, right: thin };
+
+    // ── Voce ASSISTENZA MURARIA a %: nessuna misura, l'importo è una formula viva
+    // (% × TOTALE del foglio impianto base). Il totale base viene collegato dopo
+    // che tutti i fogli categoria sono costruiti (evita riferimenti circolari).
+    if (it.assistenza) {
+      const impNome = IMPIANTI_ASSISTENZA.find((x) => x.code === it.assistenza.base)?.nome || it.assistenza.base || "impianto";
+      const perc = Number(it.assistenza.perc) || 0;
+      setRow([
+        C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
+        C((it.titolo || "ASSISTENZE MURARIE").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
+        C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb }),
+        C("", { fill: TITLE, border: topb }), C("", { fill: TITLE, border: topb, num: F_EUR }), C("", { fill: TITLE, border: topb, num: F_EUR }),
+      ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
+      const desc = it.descrizione || `Assistenze murarie e oneri connessi — ${impNome}.`;
+      setRow([
+        C("", { border: box }), C(desc, { sz: 8, wrap: true, border: box }),
+        C("", { border: box }), C("", { border: box }), C("", { border: box }),
+        C("", { border: box }), C("", { border: box }), C("", { border: box }),
+      ], Math.max(20, nlines(desc, 44) * 11.5 + 6));
+      const rr = r + 1;
+      setRow([
+        C("", { i: true, sz: 8, border: box }),
+        C(`Assistenza muraria — ${perc}% del TOTALE ${impNome}`, { i: true, sz: 8, border: box }),
+        C("", { border: box }), C("", { border: box }), C("", { border: box }),
+        C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),          // F: totale impianto base (formula, collegata dopo)
+        C(perc / 100, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (editabile)
+        F(`IF(F${rr}=0,"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),          // H: importo
+      ], 14);
+      assistenzePending.push({ ws, fRow: rr, base: it.assistenza.base });
+      return;
+    }
+
     const misure = (it.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
     const labels = (it.sommano_labels && it.sommano_labels.length) ? it.sommano_labels : [`SOMMANO ${it.unita || ""}`.trim()];
     // titolo (grigio, top medium)
-    const topb = { top: { style: "medium", color: { argb: NAVY } }, left: thin, bottom: thin, right: thin };
     setRow([
       C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
       C((it.titolo || "").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
@@ -235,7 +267,19 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
 
   // ── Categorie ──────────────────────────────────────────────────────────────
   const info = [];
-  gruppi.forEach((g) => { const { name, totRow } = buildCategoria(wb, g, nomeProgetto, logo); info.push({ code: g.code, nome: g.nomeIndice, name, totRow }); });
+  const assistenzePending = [];       // celle assistenza da collegare al totale impianto
+  const totBySource = {};             // originalCode impianto -> { name, totRow }
+  gruppi.forEach((g) => {
+    const { name, totRow } = buildCategoria(wb, g, nomeProgetto, logo, assistenzePending);
+    info.push({ code: g.code, nome: g.nomeIndice, name, totRow });
+    totBySource[g.originalCode] = { name, totRow };
+  });
+  // Collega ogni assistenza al TOTALE (cella H) del foglio impianto base: F = totale
+  // impianto, così H = F × G(%) si aggiorna quando l'impresa compila i prezzi.
+  assistenzePending.forEach((p) => {
+    const src = totBySource[p.base];
+    p.ws.getCell(p.fRow, 6).value = src ? { formula: `'${src.name}'!H${src.totRow}` } : 0;
+  });
 
   // ── Riepilogo ──────────────────────────────────────────────────────────────
   const rie = wb.addWorksheet("Riepilogo", { views: [{ showGridLines: false, style: "pageLayout" }] });

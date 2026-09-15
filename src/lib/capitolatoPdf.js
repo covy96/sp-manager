@@ -11,7 +11,7 @@ import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pd
 import {
   CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, assistenzaLabel } from "./capitolatoModel";
 
 registerGroteskaFonts();
 
@@ -242,9 +242,12 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     const vAll = (yy, h) => { gc(); [ML, X.desig, X.lung, X.larg, X.hpeso, X.qta, X.unit, X.tot, X.end].forEach((x) => pdf.line(x, yy, x, yy + h)); };
 
     g.items.forEach((r) => {
-      const misure = (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
-      const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
-      const tot = totaleRigaEff(r);
+      const isAssist = !!r.assistenza;
+      const misure = isAssist ? [] : (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
+      const labels = isAssist
+        ? [assistenzaLabel(r.assistenza)]
+        : ((r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()]);
+      const tot = isAssist ? "" : totaleRigaEff(r); // importo/quantità calcolati nell'Excel
 
       reg(7);
       const descLines = pdf.splitTextToSize(r.descrizione || "", DESC_W);
@@ -273,8 +276,8 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       y += 0.8;
       vBody(descTop, y - descTop); hL(y);
 
-      // MISURAZIONI (corsivo) — una riga
-      ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); vBody(y, 4); y += 4; hL(y);
+      // MISURAZIONI (corsivo) — una riga (non per le assistenze a %)
+      if (!isAssist) { ital(6.8); pdf.setTextColor(90, 90, 90); pdf.text("MISURAZIONI:", X.desig + 1.5, y + 2.6); vBody(y, 4); y += 4; hL(y); }
 
       misure.forEach((m) => {
         ensure(3.8);

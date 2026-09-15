@@ -9,7 +9,7 @@ import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
-  defaultSommanoLabels, saveVoceLibreria,
+  defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -31,19 +31,26 @@ const SOMMANO_PRESETS = [
   { key: "cad", label: "Sommano cad", unita: "cad", tipo: "singolo" },
   { key: "corpo", label: "Sommano a corpo", unita: "a corpo", tipo: "singolo" },
   { key: "fp", label: "Fornitura + Posa", unita: null, tipo: "fornitura_posa" },
+  { key: "assist", label: "Assistenza muraria %", unita: "%", tipo: "assistenza" },
 ];
 // Chiave del preset attivo per una riga (per posizionare la select).
 const presetKeyOf = (r) => {
+  if (r.assistenza) return "assist";
   if (r.tipo === "fornitura_posa") return "fp";
   const u = String(r.unita || "").toLowerCase();
-  return SOMMANO_PRESETS.find((p) => p.key !== "fp" && p.unita === u)?.key || "";
+  return SOMMANO_PRESETS.find((p) => p.key !== "fp" && p.key !== "assist" && p.unita === u)?.key || "";
 };
 // Patch da applicare quando si sceglie un preset per la riga r.
 const presetPatch = (r, key) => {
   const p = SOMMANO_PRESETS.find((x) => x.key === key);
   if (!p) return null;
+  if (p.key === "assist") {
+    // diventa assistenza a %: base impianto ≠ categoria della voce, se possibile
+    const base = (IMPIANTI_ASSISTENZA.find((x) => x.code !== r.categoria_code) || IMPIANTI_ASSISTENZA[1]).code;
+    return { unita: "%", tipo: "assistenza", sommano_labels: [], assistenza: r.assistenza || { base, perc: 10 } };
+  }
   const unita = p.tipo === "fornitura_posa" ? (r.unita || "mq") : p.unita;
-  return { unita, tipo: p.tipo, sommano_labels: defaultSommanoLabels(unita, p.tipo) };
+  return { unita, tipo: p.tipo, sommano_labels: defaultSommanoLabels(unita, p.tipo), assistenza: null };
 };
 const formattaData = (iso) => {
   const d = new Date(iso);
@@ -555,7 +562,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                             <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0", fontSize: 12 }}>
                               <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
                               <span style={{ color: T.ink, flex: 1 }}>{r.titolo}</span>
-                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{fmtNum(totaleRigaEff(r))} {r.unita}</span>
+                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{r.assistenza ? `${r.assistenza.perc || 0}% ${r.assistenza.base}` : `${fmtNum(totaleRigaEff(r))} ${r.unita}`}</span>
                             </div>
                           ))}
                         </div>
@@ -838,6 +845,9 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
         </div>
       </div>
 
+      {r.assistenza ? (
+        <AssistenzaEditor r={r} T={T} mono={mono} onPatch={onPatch} />
+      ) : (<>
       {/* Misurazioni */}
       <div style={{ marginTop: 8 }}>
         <div style={{ display: "grid", gridTemplateColumns: grid, gap: 5, alignItems: "center" }}>
@@ -875,6 +885,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
           </div>
         ))}
       </div>
+      </>)}
 
       {/* Nota */}
       <input placeholder="NOTE (opzionale)" value={r.note || ""} onChange={(e) => onPatch({ note: e.target.value })}
@@ -885,4 +896,43 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
 
 function iconBtn(T) {
   return { width: 24, height: 24, borderRadius: T.radiusSm, border: `0.5px solid ${T.border}`, background: "transparent", color: T.ink, cursor: "pointer", fontSize: 13, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" };
+}
+
+// ── Editor assistenza muraria a % ───────────────────────────────────────────────
+// La voce non ha misurazioni: si sceglie l'impianto base (E/F/G) e la percentuale.
+// Nell'Excel esportato l'importo = % × TOTALE del foglio impianto (formula viva).
+function AssistenzaEditor({ r, T, mono, onPatch }) {
+  const a = r.assistenza || { base: "F", perc: 10 };
+  const set = (patch) => onPatch({ assistenza: { ...a, ...patch } });
+  const inSt = { padding: "5px 8px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: mono, outline: "none" };
+  const lab = { fontFamily: mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, marginBottom: 3 };
+  return (
+    <div style={{ marginTop: 8, padding: "10px 12px", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: T.navyLight }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 10, alignItems: "end" }}>
+        <div>
+          <div style={lab}>Impianto base (% sul totale)</div>
+          <select value={a.base} onChange={(e) => set({ base: e.target.value })} style={{ ...inSt, width: "100%", cursor: "pointer" }}>
+            {IMPIANTI_ASSISTENZA.map((imp) => (
+              <option key={imp.code} value={imp.code} disabled={imp.code === r.categoria_code}>
+                {imp.code}) {imp.nome}{imp.code === r.categoria_code ? " — stessa categoria" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <div style={lab}>Percentuale</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <input type="number" min="0" step="0.5" value={a.perc}
+              onChange={(e) => set({ perc: e.target.value === "" ? "" : Number(e.target.value) })}
+              style={{ ...inSt, width: "100%", textAlign: "right" }} />
+            <span style={{ fontFamily: mono, fontSize: 12, color: T.navy }}>%</span>
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 8, fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 700 }}>{assistenzaLabel(a)}</div>
+      <div style={{ marginTop: 2, fontFamily: mono, fontSize: 9, color: T.muted }}>
+        L'importo si calcola nell'Excel: {a.perc || 0}% × totale {IMPIANTI_ASSISTENZA.find((x) => x.code === a.base)?.nome || "impianto"} (si aggiorna quando l'impresa compila i prezzi).
+      </div>
+    </div>
+  );
 }
