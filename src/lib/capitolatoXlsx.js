@@ -125,7 +125,7 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
           C("", { border: box }), C("", { border: box }), C("", { border: box }),
           C(null, { i: true, sz: 8, align: "right", border: box, num: F_EUR }),                       // F: totale impianto (formula, dopo)
           C(hasPerc ? Number(percRaw) / 100 : null, { fill: CREAM, sz: 8, align: "right", border: box, num: "0.00%", unlock: true }), // G: percentuale (impresa)
-          F(`IF(OR(F${rr}=0,G${rr}=""),"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),        // H: importo
+          F(`IF(OR(F${rr}=0,G${rr}=""),"",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR, unlock: true }), // H: importo
         ], 14);
         assistenzePending.push({ ws, fRow: rr, basi: base ? [base] : [] });
       });
@@ -180,7 +180,7 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
         fSum ? F(fSum, { i: true, sz: 8, align: "right", border: box, num: F_NUM })
           : C(tot || null, { i: true, sz: 8, align: "right", border: box, num: F_NUM }),
         C("", { fill: CREAM, border: box, num: F_EUR, unlock: true }),
-        F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR }),
+        F(`IF(G${rr}="","",F${rr}*G${rr})`, { sz: 8, border: box, num: F_EUR, unlock: true }),
       ], 14);
     });
   });
@@ -317,6 +317,10 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
   rie.getRow(tgRow).height = 16;
   impagina(rie);
   rie.pageSetup.printTitlesRow = `1:${rieHead}`;
+
+  // Protezione fogli: tutto bloccato tranne le celle sbloccate (colonne G/H delle
+  // righe SOMMANO/assistenza, dove l'impresa inserisce prezzi unitari e importi).
+  wb.worksheets.forEach((ws) => { ws.sheetProtection = { sheet: true, ...PROTECT }; });
 
   const now = new Date();
   const pz = (n) => String(n).padStart(2, "0");
