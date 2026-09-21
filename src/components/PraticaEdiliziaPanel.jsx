@@ -8,12 +8,17 @@ import { useToast } from "../contexts/ToastContext";
 
 // ── TIPI E CATEGORIE ──────────────────────────────────────────────
 const CATEGORIE = [
-  { id:"edilizia",  label:"Edilizia",         icon:"🏗️" },
-  { id:"osap",      label:"OSAP",              icon:"🚧" },
-  { id:"insegne",   label:"Insegne",           icon:"🪧" },
-  { id:"scia_comm", label:"SCIA Commerciale",  icon:"🏪" },
-  { id:"catasto",   label:"Catasto",           icon:"📐" },
+  { id:"edilizia",     label:"Edilizia",                icon:"🏗️" },
+  { id:"osap",         label:"OSAP",                    icon:"🚧" },
+  { id:"insegne",      label:"Insegne",                 icon:"🪧" },
+  { id:"scia_comm",    label:"SCIA Commerciale",        icon:"🏪" },
+  { id:"catasto",      label:"Catasto",                 icon:"📐" },
+  { id:"paesaggistica",label:"Paesaggistica",           icon:"🌄" },
+  { id:"monumentale",  label:"Monumentale",             icon:"🏛️" },
 ];
+
+const TIPO_PAESAGGISTICA = "Autorizzazione paesaggistica";
+const TIPO_MONUMENTALE    = "Autorizzazione monumentale";
 
 const TIPI_EDILIZIA = ["CILA","SCIA art. 22","SCIA art. 23","Permesso a Costruire"];
 const TIPI_CATASTO  = ["Variazione catastale","Aggiornamento planimetria","Fusione / Frazionamento","Altro"];
@@ -26,6 +31,8 @@ function catFromTipo(tipo) {
   if (tipo === "Insegna")             return "insegne";
   if (tipo === "SCIA Commerciale")    return "scia_comm";
   if (TIPI_CATASTO.includes(tipo))    return "catasto";
+  if (tipo === TIPO_PAESAGGISTICA)    return "paesaggistica";
+  if (tipo === TIPO_MONUMENTALE)      return "monumentale";
   return "edilizia";
 }
 
@@ -793,7 +800,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                 {CATEGORIE.map(cat => (
                   <button key={cat.id}
                     onClick={() => {
-                      const defaultTipo = cat.id==="osap" ? "OSAP" : cat.id==="insegne" ? "Insegna" : cat.id==="scia_comm" ? "SCIA Commerciale" : "";
+                      const defaultTipo = cat.id==="osap" ? "OSAP" : cat.id==="insegne" ? "Insegna" : cat.id==="scia_comm" ? "SCIA Commerciale" : cat.id==="paesaggistica" ? TIPO_PAESAGGISTICA : cat.id==="monumentale" ? TIPO_MONUMENTALE : "";
                       setForm(p => ({ ...p, categoria:cat.id, tipo_pratica:defaultTipo }));
                     }}
                     style={{
@@ -914,6 +921,48 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                   <div>
                     <FieldLabel T={T}>Data presentazione</FieldLabel>
                     <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                  </div>
+                  <div style={{ gridColumn:"span 2" }}>
+                    <FieldLabel T={T}>Note</FieldLabel>
+                    <input type="text" value={form.nota} onChange={e => setField("nota", e.target.value)} placeholder="Note aggiuntive..." style={inputSt}/>
+                  </div>
+                </>}
+
+                {/* PAESAGGISTICA */}
+                {form.categoria === "paesaggistica" && <>
+                  <div>
+                    <FieldLabel T={T}>Data presentazione</FieldLabel>
+                    <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                  </div>
+                  <div>
+                    <FieldLabel T={T}>Data rilascio autorizzazione</FieldLabel>
+                    <input type="date" value={form.data_protocollazione} onChange={e => setField("data_protocollazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                  </div>
+                  <div style={{ gridColumn:"span 2" }}>
+                    <FieldLabel T={T}>N° Protocollo / Autorizzazione</FieldLabel>
+                    <input type="text" value={form.protocollo} onChange={e => setField("protocollo", e.target.value)} placeholder="Es. Aut. paes. 2024-001" style={inputSt}/>
+                    <div style={{ ...mono, fontSize:8, color:T.muted, marginTop:3 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
+                  </div>
+                  <div style={{ gridColumn:"span 2" }}>
+                    <FieldLabel T={T}>Note</FieldLabel>
+                    <input type="text" value={form.nota} onChange={e => setField("nota", e.target.value)} placeholder="Note aggiuntive..." style={inputSt}/>
+                  </div>
+                </>}
+
+                {/* MONUMENTALE */}
+                {form.categoria === "monumentale" && <>
+                  <div>
+                    <FieldLabel T={T}>Data presentazione</FieldLabel>
+                    <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                  </div>
+                  <div>
+                    <FieldLabel T={T}>Data rilascio autorizzazione</FieldLabel>
+                    <input type="date" value={form.data_protocollazione} onChange={e => setField("data_protocollazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
+                  </div>
+                  <div style={{ gridColumn:"span 2" }}>
+                    <FieldLabel T={T}>N° Protocollo / Autorizzazione</FieldLabel>
+                    <input type="text" value={form.protocollo} onChange={e => setField("protocollo", e.target.value)} placeholder="Es. Aut. mon. 2024-001" style={inputSt}/>
+                    <div style={{ ...mono, fontSize:8, color:T.muted, marginTop:3 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
                   </div>
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>

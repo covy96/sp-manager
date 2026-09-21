@@ -1,9 +1,6 @@
--- Fix: il CHECK su pratiche_edilizie.tipo_pratica era limitato ai soli tipi
--- "edilizia" originari, ma il frontend ora invia anche valori per le categorie
--- OSAP, Insegne, SCIA Commerciale e Catasto.
--- Errore corretto:
---   new row for relation "pratiche_edilizie" violates check constraint
---   "pratiche_edilizie_tipo_pratica_check"
+-- Aggiunge le categorie "Paesaggistica" e "Monumentale" al pannello Pratiche.
+-- Estende il CHECK su pratiche_edilizie.tipo_pratica con i due nuovi tipi.
+-- Eseguire su Supabase beta.
 
 ALTER TABLE pratiche_edilizie
   DROP CONSTRAINT IF EXISTS pratiche_edilizie_tipo_pratica_check;
