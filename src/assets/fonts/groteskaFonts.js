@@ -35,3 +35,31 @@ export const GROTESKA_VARIANTS = [
   { key: "Groteska-BookItalic", label: "BookItalic", family: "Groteska-BookItalic", style: "italic" },
   { key: "Groteska-Bold", label: "Bold", family: "Groteska-Bold", style: "normal" },
 ];
+
+// Estrae i TTF (base64) delle varianti Groteska riutilizzando gli stessi dati
+// già registrati per jsPDF, senza duplicare i font. Ritorna una mappa
+// { "Groteska-Book.ttf": "<base64>", ... }. Utile per l'embedding in altri
+// formati (es. Word .docx), così il font è incorporato anche se non installato.
+let _vfsCache = null;
+export function getGroteskaVFS() {
+  if (_vfsCache) return _vfsCache;
+  const vfs = {};
+  const collector = {
+    addFileToVFS(name, b64) { vfs[name] = b64; },
+    addFont() {},
+  };
+  const realEvents = jsPDF.API.events;
+  const captured = [];
+  jsPDF.API.events = { push: (entry) => captured.push(entry) };
+  const prevRegistered = _registered;
+  _registered = false;
+  try {
+    registerGroteskaFonts();
+  } finally {
+    _registered = prevRegistered;
+    jsPDF.API.events = realEvents;
+  }
+  captured.forEach(([, cb]) => cb.call(collector));
+  _vfsCache = vfs;
+  return vfs;
+}

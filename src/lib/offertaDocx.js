@@ -12,12 +12,50 @@ import {
 import {
   sezioniAttive, vociAttive, importoVoce, calcolaTotali, euroSimbolo, numero2, importoInLettere, dataEstesa,
 } from "./offertaModel";
-import { GROTESKA_VARIANTS } from "../assets/fonts/groteskaFonts";
+import { GROTESKA_VARIANTS, getGroteskaVFS } from "../assets/fonts/groteskaFonts";
 
 const MM = (mm) => Math.round(mm * 56.6929);        // mm → twip
 const PX = (mm) => Math.round(mm * 96 / 25.4);      // mm → px (immagini)
 
-const FONT_BODY = "Calibri";
+const FONT_FALLBACK = "Calibri";
+
+// Nomi con cui i font Groteska vengono incorporati nel .docx e referenziati
+// dai run. Devono coincidere tra `fonts:[]` del Document e `font:` dei TextRun.
+const GROTESKA_DOCX = {
+  book:   { name: "Groteska Book", file: "Groteska-Book.ttf" },
+  bold:   { name: "Groteska Bold", file: "Groteska-Bold.ttf" },
+};
+
+function b64ToUint8(b64) {
+  const bin = atob(String(b64));
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+// La libreria `docx` incorpora i font nel pacchetto (word/fonts/*.odttf +
+// fontTable.xml) ma NON scrive in settings.xml il flag <w:embedTrueTypeFonts/>,
+// che Word desktop richiede per attivare i font incorporati. Senza questo flag
+// Word ignora i font e li sostituisce. Qui lo iniettiamo post-generazione.
+async function abilitaFontIncorporati(blob) {
+  try {
+    const { default: JSZip } = await import("jszip");
+    const zip = await JSZip.loadAsync(blob);
+    const f = zip.file("word/settings.xml");
+    if (!f) return blob;
+    let xml = await f.async("string");
+    if (!/embedTrueTypeFonts/.test(xml)) {
+      xml = xml.replace(/(<w:settings\b[^>]*>)/, "$1<w:embedTrueTypeFonts/><w:saveSubsetFonts w:val=\"0\"/>");
+      zip.file("word/settings.xml", xml);
+    }
+    return await zip.generateAsync({
+      type: "blob",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+  } catch {
+    return blob; // in caso di errore meglio il docx (font non attivato) che nessun file
+  }
+}
 
 function dataUrlToUint8(dataUrl) {
   const b64 = String(dataUrl).split(",")[1] || "";
@@ -57,8 +95,27 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   const { BLOCCHI_FISSI, INQUADRAMENTO, MODALITA_PAGAMENTO } = tpl;
   const tot = calcolaTotali(cfg, tpl);
 
+  // ── Font: parità con il PDF ─────────────────────────────────────────────
+  // Il PDF usa Groteska quando lo studio ha impostato un font Groteska in
+  // report_footer_font. Qui replichiamo lo stesso comportamento e — a
+  // differenza di prima — incorporiamo i TTF nel .docx, così il font è
+  // visibile anche su macchine dove Groteska non è installato.
   const groteska = GROTESKA_VARIANTS.find(g => g.key === (s.report_footer_font || ""));
-  const fontFooter = groteska ? "Groteska Book" : FONT_BODY;
+  const useGroteska = !!groteska;
+
+  const FONT_BODY = useGroteska ? GROTESKA_DOCX.book.name : FONT_FALLBACK;
+  const FONT_BOLD = useGroteska ? GROTESKA_DOCX.bold.name : FONT_FALLBACK;
+  const fontFooter = FONT_BODY;
+
+  // TTF da incorporare (solo se Groteska attivo)
+  const embedFonts = [];
+  if (useGroteska) {
+    const vfs = getGroteskaVFS();
+    for (const v of [GROTESKA_DOCX.book, GROTESKA_DOCX.bold]) {
+      const b64 = vfs[v.file];
+      if (b64) embedFonts.push({ name: v.name, data: b64ToUint8(b64) });
+    }
+  }
 
   const NESSUN_BORDO = {
     top:    { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
@@ -68,8 +125,16 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   };
 
   // ── Helper di composizione ────────────────────────────────────────────────
-  const runs = (testo, extra = {}) =>
-    segmentaGrassetto(testo).map(seg => new TextRun({ text: seg.text, bold: seg.bold, ...extra }));
+  const runs = (testo, extra = {}) => {
+    const { bold: forcedBold, font: extraFont, ...rest } = extra;
+    return segmentaGrassetto(testo).map(seg => {
+      const isBold = forcedBold !== undefined ? forcedBold : seg.bold;
+      // Con Groteska il grassetto è una famiglia dedicata (Groteska Bold):
+      // usiamo quel font e disattiviamo il flag bold per evitare il faux-bold.
+      const font = useGroteska ? (isBold ? FONT_BOLD : FONT_BODY) : (extraFont || FONT_BODY);
+      return new TextRun({ text: seg.text, bold: useGroteska ? false : isBold, font, ...rest });
+    });
+  };
 
   const P = (testo, opts = {}) => {
     const { size = 20, bold, align, spacing, indent, underline, color = "1E1E1E", font = FONT_BODY, keepLines, keepNext } = opts;
@@ -398,6 +463,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   // ── Documento ─────────────────────────────────────────────────────────────
   const doc = new Document({
+    ...(embedFonts.length ? { fonts: embedFonts } : {}),
     styles: {
       default: {
         document: { run: { font: FONT_BODY, size: 20, color: "1E1E1E" } },
@@ -417,7 +483,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
     }],
   });
 
-  const blob = await Packer.toBlob(doc);
+  let blob = await Packer.toBlob(doc);
+  if (embedFonts.length) blob = await abilitaFontIncorporati(blob);
   const nomeFile = `${(offerta?.numero_offerta || "offerta").replace(/[^a-zA-Z0-9_\-. ]/g, "")} - ${(offerta?.nome_offerta || "").replace(/[^a-zA-Z0-9_\-. ]/g, "")}`.trim() || "offerta";
 
   const a = document.createElement("a");
