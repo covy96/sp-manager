@@ -1014,6 +1014,18 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     return m;
   }, [commesse]);
 
+  // Valore contratto per id commessa: è la FONTE DI VERITÀ del valore accettato
+  // (l'offerta può avere importo_offerta_base stale se accettata a prezzo
+  // negoziato senza "aggiorna offerta"). Coerente con le tab Commesse/Economica.
+  const commessaValById = useMemo(() => {
+    const m = {};
+    for (const c of commesse) m[c.id] = Number(c.importo_offerta_base) || Number(c.importo_totale) || 0;
+    return m;
+  }, [commesse]);
+  // Valore di un'offerta accettata: quello della commessa collegata se esiste,
+  // altrimenti il campo dell'offerta.
+  const valAccettata = (o) => (o.commessa_id && commessaValById[o.commessa_id] != null ? commessaValById[o.commessa_id] : imp(o));
+
   const off = useMemo(
     () => (anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno)),
     [offerte, anno]
@@ -1025,7 +1037,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
 
   const stats = useMemo(() => {
     const impTutte = off.map(imp).filter(x => x > 0);
-    const impAcc   = accettate.map(imp).filter(x => x > 0);
+    const impAcc   = accettate.map(valAccettata).filter(x => x > 0);
     const impRif   = rifiutate.map(imp).filter(x => x > 0);
 
     // tempo di accettazione (giorni): data_commessa − data_offerta
@@ -1047,15 +1059,15 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     return {
       nTot: off.length, nAcc: accettate.length, nRif: rifiutate.length, nCorso: inCorso.length,
       mediaTutte: media(impTutte), mediaAcc: media(impAcc), mediaRif: media(impRif),
-      valTot: off.reduce((s, o) => s + imp(o), 0),
-      valAcc: accettate.reduce((s, o) => s + imp(o), 0),
+      valTot: off.reduce((s, o) => s + (o.stato === "accettata" ? valAccettata(o) : imp(o)), 0),
+      valAcc: accettate.reduce((s, o) => s + valAccettata(o), 0),
       valRif: rifiutate.reduce((s, o) => s + imp(o), 0),
       valCorso: inCorso.reduce((s, o) => s + imp(o), 0),
       conversione: off.length > 0 ? Math.round((accettate.length / off.length) * 100) : null,
       tempoMedio, tempoMediano, nConTempo: giorni.length,
       scontoMedio: scontoDi(off), scontoAcc: scontoDi(accettate), scontoRif: scontoDi(rifiutate),
     };
-  }, [off, accettate, rifiutate, inCorso, commessaDataById]);
+  }, [off, accettate, rifiutate, inCorso, commessaDataById, commessaValById]);
 
   // andamento: per mese (anno scelto) o per anno (tutti gli anni)
   const trend = useMemo(() => {
@@ -1085,13 +1097,13 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       const k = (o.cliente || "—").trim() || "—";
       if (!map[k]) map[k] = { cliente: k, n: 0, acc: 0, rif: 0, valAcc: 0 };
       const e = map[k]; e.n++;
-      if (o.stato === "accettata") { e.acc++; e.valAcc += imp(o); }
+      if (o.stato === "accettata") { e.acc++; e.valAcc += valAccettata(o); }
       else if (o.stato === "rifiutata") e.rif++;
     }
     return Object.values(map)
       .map(e => ({ ...e, tasso: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null }))
       .sort((a, b) => b.valAcc - a.valAcc || b.n - a.n);
-  }, [off]);
+  }, [off, commessaValById]);
 
   // Incassato sulle accettate: offerta accettata → commessa collegata → incassato
   // (incrocia offerte, commesse e pagamenti già calcolati a monte).
@@ -1233,7 +1245,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       if (!map[y]) map[y] = { anno: y, n: 0, acc: 0, rif: 0, valAcc: 0, impAcc: [], giorni: [] };
       const e = map[y]; e.n++;
       if (o.stato === "accettata") {
-        e.acc++; const v = imp(o); e.valAcc += v; if (v > 0) e.impAcc.push(v);
+        e.acc++; const v = valAccettata(o); e.valAcc += v; if (v > 0) e.impAcc.push(v);
         const dc = o.commessa_id ? commessaDataById[o.commessa_id] : null;
         if (o.data_offerta && dc) {
           const d1 = new Date(o.data_offerta), d2 = new Date(dc);
@@ -1248,7 +1260,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       valAcc: e.valAcc,
       tempoMedio: e.giorni.length ? Math.round(media(e.giorni)) : null,
     })).sort((a, b) => b.anno - a.anno);
-  }, [offerte, commessaDataById]);
+  }, [offerte, commessaDataById, commessaValById]);
 
   const thSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "9px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 14px", borderBottom: `0.5px solid ${T.border}` };
