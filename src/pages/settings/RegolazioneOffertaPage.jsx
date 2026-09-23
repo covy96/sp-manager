@@ -309,6 +309,10 @@ export default function RegolazioneOffertaPage() {
                                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
                                   <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy }}>VOCE AGGIUNTA</div>
                                   <textarea value={v.testo} onChange={e => setVoceExtra(sez.id, idx, { testo: e.target.value })} rows={2} placeholder="Testo della voce…" style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                    <input value={v.nomeApp || ""} onChange={e => setVoceExtra(sez.id, idx, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "3px 8px" }} />
+                                  </div>
                                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                                     <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
                                       <Check checked={v.prezzo !== false} onChange={() => setVoceExtra(sez.id, idx, { prezzo: v.prezzo === false })} /> Con prezzo
@@ -341,6 +345,10 @@ export default function RegolazioneOffertaPage() {
                               {arrows}
                               <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
                                 <textarea value={testo} onChange={e => setVoceOv(sez.id, v.id, { testo: e.target.value })} rows={2} style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                  <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                  <input value={vo.nomeApp || ""} onChange={e => setVoceOv(sez.id, v.id, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "3px 8px" }} />
+                                </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                                   <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
                                     <Check checked={nascosta} onChange={() => setVoceOv(sez.id, v.id, { nascosta: !nascosta })} /> Nascondi

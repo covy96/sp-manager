@@ -391,6 +391,8 @@ export function resolveTemplate(studio) {
           return {
             ...v,
             testo: (vo.testo != null && vo.testo !== "") ? vo.testo : v.testo,
+            // Nome breve solo per l'app (ricerca/etichetta): mai nel PDF/Word.
+            nomeApp: (vo.nomeApp != null && vo.nomeApp !== "") ? vo.nomeApp : (v.nomeApp || undefined),
             prezzoLabel: vo.prezzoLabel !== undefined ? (vo.prezzoLabel || undefined) : v.prezzoLabel,
             prezzoDefault: vo.prezzoDefault != null ? vo.prezzoDefault : v.prezzoDefault,
           };
@@ -403,6 +405,7 @@ export function resolveTemplate(studio) {
         voci: extra.map(v => ({
           id: v.id,
           testo: v.testo,
+          nomeApp: v.nomeApp || undefined,
           prezzo: v.prezzo !== false,
           prezzoLabel: v.prezzoLabel || undefined,
           prezzoDefault: v.prezzoDefault != null ? v.prezzoDefault : undefined,

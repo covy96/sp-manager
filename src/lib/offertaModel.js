@@ -87,8 +87,12 @@ export function documentoDefault(offerta = {}, tpl = DEFAULT_TEMPLATE) {
   const sezioni = {};
   SEZIONI.forEach(s => {
     const voci = {};
+    // Le sezioni "prezzo per voce" nascono con le voci spente: è l'utente a
+    // scegliere quali attivare. Le forfettarie mantengono le righe descrittive
+    // attive (il prezzo è unico per la sezione).
+    const vociAttiveDefault = s.modoPrezzo !== "voci";
     s.gruppi.forEach(g => g.voci.forEach(v => {
-      voci[v.id] = { attiva: true, prezzo: v.prezzoDefault != null ? v.prezzoDefault : "", campi: campiVuoti(v.testo) };
+      voci[v.id] = { attiva: vociAttiveDefault, prezzo: v.prezzoDefault != null ? v.prezzoDefault : "", campi: campiVuoti(v.testo) };
     }));
     sezioni[s.id] = { attiva: DEFAULTS.sezioniAttive.includes(s.id), prezzo: s.prezzoDefault != null ? s.prezzoDefault : "", voci };
   });

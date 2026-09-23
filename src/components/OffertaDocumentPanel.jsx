@@ -75,6 +75,7 @@ export default function OffertaDocumentPanel({
   const [saving, setSaving]   = useState(false);
   const [busy, setBusy]       = useState("");
   const [aperte, setAperte]   = useState({});
+  const [ricerca, setRicerca] = useState("");   // ricerca voci per nome app / testo
 
   // Storico versioni: ogni salvataggio aggiunge uno snapshot in cima.
   const [versioni, setVersioni] = useState(() => Array.isArray(offerta?.documento_versioni) ? offerta.documento_versioni : []);
@@ -113,6 +114,41 @@ export default function OffertaDocumentPanel({
   }, [offerta?.id]);
 
   const tot = useMemo(() => calcolaTotali(doc, tpl), [doc, tpl]);
+
+  // Indice piatto delle voci per la casella di ricerca (nome app + testo).
+  const indiceVoci = useMemo(() => {
+    const out = [];
+    SEZIONI.forEach(sez => sez.gruppi.forEach(g => g.voci.forEach(v => {
+      out.push({ sezId: sez.id, sezTitolo: sez.titolo, voceId: v.id, nomeApp: v.nomeApp || "", testo: pulisci(v.testo) });
+    })));
+    return out;
+  }, [SEZIONI]);
+
+  const risultatiRicerca = useMemo(() => {
+    const q = ricerca.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return indiceVoci
+      .filter(x => x.nomeApp.toLowerCase().includes(q) || x.testo.toLowerCase().includes(q))
+      .sort((a, b) => {
+        // Priorità ai match sul nome app.
+        const an = a.nomeApp.toLowerCase().includes(q) ? 0 : 1;
+        const bn = b.nomeApp.toLowerCase().includes(q) ? 0 : 1;
+        return an - bn;
+      })
+      .slice(0, 12);
+  }, [ricerca, indiceVoci]);
+
+  // Flag da ricerca: attiva voce + sezione (e apre la sezione), o disattiva la voce.
+  const toggleDaRicerca = (r) => {
+    const attiva = !!doc.sezioni?.[r.sezId]?.voci?.[r.voceId]?.attiva;
+    if (attiva) {
+      setVoce(r.sezId, r.voceId, { attiva: false });
+    } else {
+      setSez(r.sezId, { attiva: true });
+      setVoce(r.sezId, r.voceId, { attiva: true });
+      setAperte(a => ({ ...a, [r.sezId]: true }));
+    }
+  };
 
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
   const offGen = isCreate
@@ -639,7 +675,33 @@ export default function OffertaDocumentPanel({
           </div>
 
           {/* Sezioni prestazione */}
-          <div style={{ ...labelSt, marginTop: 18, marginBottom: 8 }}>Prestazioni</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 18, marginBottom: 8 }}>
+            <div style={{ ...labelSt, marginBottom: 0 }}>Prestazioni</div>
+            <div style={{ position: "relative", width: 230, maxWidth: "55%" }}>
+              <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca voce (es. CILA)…"
+                style={{ ...inputSt, height: 30, padding: "5px 10px", fontSize: 11.5 }} />
+              {ricerca.trim().length >= 2 && (
+                <div style={{ position: "absolute", left: 0, right: 0, top: "100%", marginTop: 4, zIndex: 40, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 300, overflowY: "auto" }}>
+                  {risultatiRicerca.length === 0 ? (
+                    <div style={{ ...mono, fontSize: 10, color: T.muted, padding: "10px 12px" }}>Nessuna voce trovata</div>
+                  ) : risultatiRicerca.map(r => {
+                    const attiva = !!doc.sezioni?.[r.sezId]?.voci?.[r.voceId]?.attiva;
+                    return (
+                      <button key={r.sezId + r.voceId} type="button" onClick={() => toggleDaRicerca(r)}
+                        style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: `0.5px solid ${T.border}`, cursor: "pointer", padding: "9px 11px" }}>
+                        <span style={{ marginTop: 1, color: attiva ? T.green : T.muted, fontSize: 13, lineHeight: 1 }}>{attiva ? "☑" : "☐"}</span>
+                        <span style={{ minWidth: 0, flex: 1 }}>
+                          {r.nomeApp && <span style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.navy, letterSpacing: "0.06em" }}>{r.nomeApp}</span>}
+                          <span style={{ display: "block", ...mono, fontSize: 8.5, color: T.muted, marginTop: 1 }}>{r.sezTitolo}</span>
+                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 11, color: T.ink, marginTop: 2, lineHeight: 1.4 }}>{r.testo}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
           {SEZIONI.map(sez => {
             const cfgS = doc.sezioni[sez.id];
             const aperta = aperte[sez.id] ?? false;
@@ -680,6 +742,9 @@ export default function OffertaDocumentPanel({
                                 <Check checked={vc.attiva} onChange={() => setVoce(sez.id, v.id, { attiva: !vc.attiva })} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
+                                {v.nomeApp && (
+                                  <span style={{ display: "inline-block", ...mono, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.08em", color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 5, padding: "1px 6px", marginBottom: 4 }}>{v.nomeApp}</span>
+                                )}
                                 <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
                                   {pulisci(compilaTesto(v.testo, vc.campi))}
                                 </div>
