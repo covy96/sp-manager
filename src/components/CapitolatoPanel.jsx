@@ -88,8 +88,6 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const [importList, setImportList] = useState([]);
   const [importLoading, setImportLoading] = useState(false);
   const [versCount, setVersCount] = useState(0); // badge sul pulsante: n. versioni salvate
-  const [catInsert, setCatInsert] = useState(null); // macro-categoria in cui finiscono le voci aggiunte
-  const [catPickerOpen, setCatPickerOpen] = useState(false); // selettore "mega voce"
   const [nuovaOpen, setNuovaOpen] = useState(false); // form "nuova voce" (non in libreria)
   const [nuova, setNuova] = useState({ titolo: "", descrizione: "", categoria_code: "", unita: "mq", tipo: "singolo", salvaLibreria: true });
   const [autoState, setAutoState] = useState("idle"); // idle | saving | saved (auto-save bozza)
@@ -105,7 +103,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     if (!open) return;
     let alive = true;
     setView("versioni"); setMenuVer(null);
-    setCatInsert(null); setCatPickerOpen(false); setAutoState("idle");
+    setAutoState("idle");
     skipAutosave.current = true; // il set di stato del caricamento non deve auto-salvare
     (async () => {
       setLoading(true);
@@ -181,13 +179,16 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
 
   // ── mutazioni righe ──────────────────────────────────────────────────────────
   const touch = () => setDirty(true);
-  // La voce aggiunta finisce nella macro-categoria scelta (catInsert), non in
-  // quella d'origine della libreria; senza scelta usa quella della voce.
+  // La voce aggiunta finisce nella SUA macro-categoria naturale (demolizioni,
+  // costruzioni…): non si sceglie l'elenco ogni volta. Con il menu ⋮ della riga
+  // la si può eventualmente spostare in un'altra mega-voce.
   const addVoce = (voce) => {
-    const code = catInsert || voce.categoria_code;
+    setRighe((p) => [...p, rigaFromVoce(voce)]); touch();
+  };
+  // Sposta una riga in un'altra macro-categoria (dal menu ⋮ della voce).
+  const moveRigaCat = (key, code) => {
     const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === code);
-    const riga = { ...rigaFromVoce(voce), categoria_code: code, categoria_nome: cat?.nome || voce.categoria_nome || "" };
-    setRighe((p) => [...p, riga]); touch();
+    patchRiga(key, { categoria_code: code, categoria_nome: cat?.nome || "" });
   };
   const removeRiga = (key) => { setRighe((p) => p.filter((r) => r._key !== key)); touch(); };
   const patchRiga = (key, patch) => { setRighe((p) => p.map((r) => (r._key === key ? { ...r, ...patch } : r))); touch(); };
@@ -212,19 +213,11 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // ── salvataggio ed export ─────────────────────────────────────────────────────
   const metaDb = () => ({ nome: meta.nome || "Capitolato", committente: meta.committente || null, localita: meta.localita || null, data: meta.data || null, revisione: meta.revisione || null });
 
-  // Apre il selettore di macro-categoria ("mega voce") per iniziare ad aggiungere.
-  const openCatPicker = () => setCatPickerOpen(true);
-  const scegliCategoria = (code) => {
-    setCatInsert(code);
-    setCatFilter(code);      // pre-filtra la libreria sulla categoria scelta
-    setCatPickerOpen(false);
-    setView("edit");
-  };
-
   // ── Nuova voce (non in libreria) ─────────────────────────────────────────────
-  // Apre il form precompilando titolo dalla ricerca e categoria dalla mega voce.
+  // Apre il form precompilando il titolo dalla ricerca; la categoria si sceglie
+  // nel form (la voce personalizzata non ne ha una naturale).
   const openNuovaVoce = () => {
-    setNuova({ titolo: query.trim(), descrizione: "", categoria_code: catInsert || "", unita: "mq", tipo: "singolo", salvaLibreria: true });
+    setNuova({ titolo: query.trim(), descrizione: "", categoria_code: "", unita: "mq", tipo: "singolo", salvaLibreria: true });
     setNuovaOpen(true);
   };
   const confermaNuovaVoce = async () => {
@@ -253,7 +246,6 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
       // Aggiunge la riga al capitolato nella categoria scelta.
       const riga = { ...rigaFromVoce(voce), categoria_code: nuova.categoria_code, categoria_nome: cat?.nome || "" };
       setRighe((p) => [...p, riga]); touch();
-      if (catInsert !== nuova.categoria_code) setCatInsert(nuova.categoria_code);
       setNuovaOpen(false); setView("edit");
       showToast?.("Voce aggiunta al capitolato", "success");
     } finally { setBusy(false); }
@@ -367,7 +359,6 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setRighe([]);
     setVersioni([]);
     setVersioneAttiva(null);
-    setCatInsert(null);
     setAutoState("idle");
     setDirty(false);
     setView("versioni");
@@ -380,10 +371,9 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setRighe([]);
     setMeta((m) => ({ ...m, revisione: "", data: oggi() }));
     setVersioneAttiva(null);
-    setCatInsert(null); setCatFilter(""); setQuery("");
+    setCatFilter(""); setQuery("");
     setDirty(true);
     setView("edit");
-    openCatPicker();
   };
 
   const eliminaVersione = async (v) => {
@@ -519,7 +509,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                       {nVoci > 0
                         ? <button onClick={() => setView("recap")} style={btnPrimary}>Apri capitolato</button>
-                        : <button onClick={openCatPicker} style={btnPrimary}>+ Aggiungi voce</button>}
+                        : <button onClick={() => setView("edit")} style={btnPrimary}>+ Aggiungi voce</button>}
                       <button onClick={openImport} style={btnGhost}>Importa da un altro progetto</button>
                       {(meta.id || nVoci > 0) && (
                         <button onClick={eliminaCapitolato} style={{ ...btnGhost, color: T.red, borderColor: T.red }}>Elimina capitolato</button>
@@ -565,7 +555,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   {gruppi.length === 0 ? (
                     <div style={{ textAlign: "center", marginTop: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>
                       <div style={{ marginBottom: 14 }}>Capitolato vuoto.</div>
-                      <button onClick={openCatPicker} style={btnPrimary}>+ Aggiungi voce</button>
+                      <button onClick={() => setView("edit")} style={btnPrimary}>+ Aggiungi voce</button>
                     </div>
                   ) : gruppi.map((g) => (
                     <button key={g.code} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
@@ -607,15 +597,11 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                 <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
                 {/* Colonna ricerca */}
                 <div style={{ width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                  {/* Banner: macro-categoria ("mega voce") in cui finiscono le voci aggiunte */}
-                  <div style={{ padding: "9px 14px", borderBottom: `1px solid ${T.border}`, background: catInsert ? T.navyLight : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={labelSt}>Inserisci in</div>
-                      <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: catInsert ? T.navy : T.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {catInsert ? (CAPITOLATO_CATEGORIE.find((c) => c.code === catInsert)?.titoloPagina || catInsert) : "categoria della voce"}
-                      </div>
+                  {/* Le voci finiscono da sole nella loro mega-voce; con ⋮ si spostano */}
+                  <div style={{ padding: "9px 14px", borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, lineHeight: 1.4 }}>
+                      Ogni voce entra nella sua mega-voce (demolizioni, costruzioni…). Usa ⋮ sulla voce per spostarla.
                     </div>
-                    <button onClick={openCatPicker} style={{ ...btnGhost, padding: "5px 10px", flexShrink: 0 }}>{catInsert ? "Cambia" : "Scegli"}</button>
                   </div>
                   <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
                     <input autoFocus placeholder="Cerca voci (es. cartongessi)…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...inputSt, width: "100%" }} />
@@ -665,6 +651,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                           onPatch={(patch) => patchRiga(r._key, patch)}
                           onRemove={() => removeRiga(r._key)}
                           onMove={(d) => moveRiga(r._key, d)}
+                          onMoveCat={(code) => moveRigaCat(r._key, code)}
                           onAddMisura={() => addMisura(r._key)}
                           onPatchMisura={(i, p) => patchMisura(r._key, i, p)}
                           onRemoveMisura={(i) => removeMisura(r._key, i)} />
@@ -727,33 +714,6 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     </div>
                   </div>
                   <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Selettore "mega voce": in quale macro-categoria inserire le voci */}
-      {catPickerOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
-          onClick={() => setCatPickerOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Scegli la categoria</div>
-                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Le voci che aggiungi finiranno in questa macro-categoria</div>
-              </div>
-              <button onClick={() => setCatPickerOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: 12, minHeight: 0 }}>
-              {CAPITOLATO_CATEGORIE.map((c) => (
-                <button key={c.code} onClick={() => scegliCategoria(c.code)}
-                  style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, textAlign: "left", padding: "10px 13px", marginBottom: 6, background: catInsert === c.code ? T.navyLight : T.surface, border: `0.5px solid ${catInsert === c.code ? T.navy : T.border}`, borderRadius: T.radiusSm, cursor: "pointer" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.navy; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = catInsert === c.code ? T.navy : T.border; }}>
-                  <span style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, width: 20, flexShrink: 0 }}>{c.code}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: T.ink }}>{c.nomeIndice || c.nome}</span>
                 </button>
               ))}
             </div>
@@ -825,7 +785,8 @@ function chip(T, active) {
 }
 
 // ── Editor di una singola voce (riga) ──────────────────────────────────────────
-function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMisura, onPatchMisura, onRemoveMisura }) {
+function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCat, onAddMisura, onPatchMisura, onRemoveMisura }) {
+  const [catMenu, setCatMenu] = useState(false); // menu ⋮ "sposta in un'altra mega-voce"
   const tot = totaleRigaEff(r);
   const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
   const cellHead = { fontFamily: mono, fontSize: 8, color: T.muted, textAlign: "center", paddingBottom: 2 };
@@ -858,6 +819,28 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onAddMis
         <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
           <button title="Su" onClick={() => onMove(-1)} style={iconBtn(T)}>↑</button>
           <button title="Giù" onClick={() => onMove(1)} style={iconBtn(T)}>↓</button>
+          <div style={{ position: "relative" }}>
+            <button title="Sposta in un'altra mega-voce" onClick={() => setCatMenu((v) => !v)} style={iconBtn(T)}>⋮</button>
+            {catMenu && (
+              <>
+                <div onClick={() => setCatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
+                <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 220, maxHeight: 280, overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,0.28)" }}>
+                  <div style={{ padding: "7px 12px", fontFamily: mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, borderBottom: `0.5px solid ${T.border}` }}>Sposta in</div>
+                  {CAPITOLATO_CATEGORIE.map((c) => {
+                    const cur = c.code === r.categoria_code;
+                    return (
+                      <button key={c.code} onClick={() => { if (!cur) onMoveCat(c.code); setCatMenu(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: cur ? T.navyLight : "none", border: "none", cursor: cur ? "default" : "pointer", fontFamily: mono, fontSize: 11, color: cur ? T.navy : T.ink, padding: "8px 12px" }}>
+                        <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{c.code}</span>
+                        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nomeIndice || c.nome}</span>
+                        {cur ? <span style={{ marginLeft: "auto", fontSize: 9 }}>✓</span> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
           <button title="Rimuovi" onClick={onRemove} style={{ ...iconBtn(T), color: T.red }}>×</button>
         </div>
       </div>
