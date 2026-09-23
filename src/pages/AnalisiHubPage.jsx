@@ -985,7 +985,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
 // tempo medio di accettazione (proxy: data_commessa − data_offerta, solo
 // accettate, perché non esiste una data di esito salvata) e viste per
 // mese e per cliente.
-function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa, T, anno, isMobile }) {
+function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa, studioId, isOwner, T, anno, isMobile }) {
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
   const media = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
   const imp   = o => Number(o.importo_offerta_base) || 0;
@@ -1145,6 +1145,106 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
 
   const pctIncassato = stats.valAcc > 0 ? Math.round((incassato / stats.valAcc) * 100) : null;
 
+  // ── Margine sulle offerte accettate (solo owner) ────────────────────────────
+  // Incrocia offerta accettata → commessa → costi reali (ore×costo_orario +
+  // costi esterni/interni), come la tab Economica. Dati caricati a parte perché
+  // sensibili e non necessari alle altre statistiche.
+  const [eco, setEco] = useState(null);
+  useEffect(() => {
+    if (!isOwner || !studioId) return;
+    let alive = true;
+    (async () => {
+      const [{ data: mem }, { data: ce }, { data: co }, { data: ci }] = await Promise.all([
+        supabase.from("team_members").select("id,costo_orario").eq("studio", studioId).eq("active", true),
+        supabase.from("costi_extra").select("commessa_id,importo").eq("studio", studioId).is("deleted_at", null),
+        supabase.from("collaboratori_esterni").select("commessa_id,importo").eq("studio", studioId),
+        supabase.from("costi_interni").select("commessa_id,importo").eq("studio", studioId).is("deleted_at", null),
+      ]);
+      const projectIds = [...new Set(commesse.map(c => c.project_id).filter(Boolean))];
+      const ts = [];
+      if (projectIds.length) {
+        const PAGE = 1000;
+        for (let from = 0; ; from += PAGE) {
+          const { data: page, error } = await supabase.from("timesheet")
+            .select("project_id,hours,team_member").in("project_id", projectIds)
+            .is("deleted_at", null).order("id", { ascending: true }).range(from, from + PAGE - 1);
+          if (error) break;
+          ts.push(...(page ?? []));
+          if (!page || page.length < PAGE) break;
+        }
+      }
+      if (alive) setEco({ members: mem ?? [], timesheet: ts, costiExtra: ce ?? [], collab: co ?? [], costiInterni: ci ?? [] });
+    })();
+    return () => { alive = false; };
+  }, [isOwner, studioId, commesse]);
+
+  const margineStats = useMemo(() => {
+    if (!eco) return null;
+    const rateById = {}; eco.members.forEach(m => { rateById[m.id] = Number(m.costo_orario) || 0; });
+    const costoOreByProject = {};
+    eco.timesheet.forEach(t => { costoOreByProject[t.project_id] = (costoOreByProject[t.project_id] || 0) + Number(t.hours || 0) * (rateById[t.team_member] || 0); });
+    const sumBy = (arr, id) => arr.filter(x => x.commessa_id === id).reduce((s, x) => s + Number(x.importo || 0), 0);
+    const commById = {}; commesse.forEach(c => { commById[c.id] = c; });
+    const perc = [];
+    let margineTot = 0, valoreTot = 0;
+    for (const o of accettate) {
+      const c = o.commessa_id ? commById[o.commessa_id] : null;
+      if (!c) continue;
+      const valoreBase = Number(c.importo_offerta_base) || imp(o) || 0;
+      if (valoreBase <= 0) continue;
+      const costo = (c.project_id ? (costoOreByProject[c.project_id] || 0) : 0) + sumBy(eco.costiExtra, c.id) + sumBy(eco.collab, c.id) + sumBy(eco.costiInterni, c.id);
+      const margine = valoreBase - costo;
+      perc.push((margine / valoreBase) * 100);
+      margineTot += margine; valoreTot += valoreBase;
+    }
+    return { n: perc.length, margineMedioPerc: perc.length ? media(perc) : null, margineTot, valoreTot };
+  }, [eco, accettate, commesse]);
+
+  // ── Stagionalità della conversione (tasso accettazione per mese/anno) ────────
+  const stagionalita = useMemo(() => {
+    const toRow = (label, acc, rif) => ({ label, conv: acc + rif > 0 ? Math.round((acc / (acc + rif)) * 100) : null });
+    if (anno === 0) {
+      const perY = new Map();
+      for (const o of offerte) {
+        const y = new Date(o.data_offerta || o.created_at).getFullYear(); if (!y) continue;
+        if (!perY.has(y)) perY.set(y, { acc: 0, rif: 0, label: String(y) });
+        const e = perY.get(y); if (o.stato === "accettata") e.acc++; else if (o.stato === "rifiutata") e.rif++;
+      }
+      return [...perY.values()].sort((a, b) => Number(a.label) - Number(b.label)).map(e => toRow(e.label, e.acc, e.rif));
+    }
+    const m = MONTHS.map(x => ({ label: x, acc: 0, rif: 0 }));
+    for (const o of off) {
+      const d = new Date(o.data_offerta || o.created_at); if (isNaN(d)) continue;
+      if (o.stato === "accettata") m[d.getMonth()].acc++; else if (o.stato === "rifiutata") m[d.getMonth()].rif++;
+    }
+    return m.map(e => toRow(e.label, e.acc, e.rif));
+  }, [off, offerte, anno]);
+
+  // ── Confronto anno su anno (ignora il filtro anno) ──────────────────────────
+  const perAnno = useMemo(() => {
+    const map = {};
+    for (const o of offerte) {
+      const y = new Date(o.data_offerta || o.created_at).getFullYear(); if (!y) continue;
+      if (!map[y]) map[y] = { anno: y, n: 0, acc: 0, rif: 0, valAcc: 0, impAcc: [], giorni: [] };
+      const e = map[y]; e.n++;
+      if (o.stato === "accettata") {
+        e.acc++; const v = imp(o); e.valAcc += v; if (v > 0) e.impAcc.push(v);
+        const dc = o.commessa_id ? commessaDataById[o.commessa_id] : null;
+        if (o.data_offerta && dc) {
+          const d1 = new Date(o.data_offerta), d2 = new Date(dc);
+          if (!isNaN(d1) && !isNaN(d2)) { const d = Math.round((d2 - d1) / 86400000); if (d >= 0) e.giorni.push(d); }
+        }
+      } else if (o.stato === "rifiutata") e.rif++;
+    }
+    return Object.values(map).map(e => ({
+      anno: e.anno, n: e.n, acc: e.acc,
+      conversione: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null,
+      mediaAcc: e.impAcc.length ? media(e.impAcc) : 0,
+      valAcc: e.valAcc,
+      tempoMedio: e.giorni.length ? Math.round(media(e.giorni)) : null,
+    })).sort((a, b) => b.anno - a.anno);
+  }, [offerte, commessaDataById]);
+
   const thSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "9px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 14px", borderBottom: `0.5px solid ${T.border}` };
 
@@ -1171,6 +1271,34 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
         <KpiCard label="Tempo medio accett." value={stats.tempoMedio == null ? "—" : `${stats.tempoMedio}${gg}`} T={T} />
         <KpiCard label="Sconto medio"    value={`${stats.scontoMedio.toFixed(1)}%`} T={T} />
       </div>
+
+      {/* Margine sulle offerte accettate (solo owner) */}
+      {isOwner && (
+        <Panel title="Margine sulle offerte accettate" T={T}>
+          {eco == null
+            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 22 }}>Carico i costi…</div>
+            : !margineStats || margineStats.n === 0
+              ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 22 }}>Nessuna commessa con costi collegata alle accettate.</div>
+              : (
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 1, background: T.border }}>
+                  {[
+                    ["Margine medio", margineStats.margineMedioPerc == null ? "—" : `${margineStats.margineMedioPerc.toFixed(1)}%`, margineStats.margineMedioPerc == null ? T.ink : margineStats.margineMedioPerc >= 0 ? T.green : T.red],
+                    ["Margine totale", currency(margineStats.margineTot), margineStats.margineTot >= 0 ? T.green : T.red],
+                    ["Valore accettato (con costi)", currency(margineStats.valoreTot), T.ink],
+                    ["Commesse valutate", String(margineStats.n), T.ink],
+                  ].map(([lab, val, col]) => (
+                    <div key={lab} style={{ background: T.surface, padding: "16px 18px" }}>
+                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{lab}</div>
+                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: col, lineHeight: 1 }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+          <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+            Margine = valore contratto − (ore × costo orario + costi esterni + costi interni). Stessa base della tab Economica.
+          </div>
+        </Panel>
+      )}
 
       {/* Valori per stato + dettaglio tempo/sconto */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, alignItems: "start" }}>
@@ -1237,6 +1365,59 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
           </div>
         </div>
       </Panel>
+
+      {/* Stagionalità: tasso di conversione nel tempo */}
+      <Panel T={T}>
+        <div style={{ padding: "16px 20px" }}>
+          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+            Tasso di conversione — {anno === 0 ? "per anno" : `per mese, ${anno}`}
+          </div>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stagionalita}>
+                <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={v => [`${v}%`, "Conversione"]} />
+                <Line type="monotone" dataKey="conv" name="Conversione" stroke={T.navy} strokeWidth={2} connectNulls dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 8 }}>Conversione = accettate / (accettate + rifiutate) nel periodo. I periodi senza esiti non compaiono.</div>
+        </div>
+      </Panel>
+
+      {/* Confronto anno su anno */}
+      {perAnno.length > 1 && (
+        <Panel title="Confronto per anno" T={T} style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+            <thead>
+              <tr>
+                <th style={thSt}>Anno</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Accettate</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Conversione</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Offerta media (acc.)</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Valore accettato</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Tempo medio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {perAnno.map(r => (
+                <tr key={r.anno}>
+                  <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 700 }}>{r.anno}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
+                  <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{r.conversione == null ? "—" : `${r.conversione}%`}</td>
+                  <td style={{ ...tdSt, textAlign: "right" }}>{currency(r.mediaAcc)}</td>
+                  <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.tempoMedio == null ? "—" : `${r.tempoMedio}${gg}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      )}
 
       {/* Conversione per prestazione + per fascia di importo */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr", gap: 16, alignItems: "start" }}>
@@ -1441,7 +1622,7 @@ export default function AnalisiHubPage() {
         <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "statistiche" && (
-        <TabStatistiche offerte={offerte} commesse={commesse} vociTemplate={vociTemplate} incassatoPerCommessa={incassatoPerCommessa} T={T} anno={annoOfferte} isMobile={isMobile} />
+        <TabStatistiche offerte={offerte} commesse={commesse} vociTemplate={vociTemplate} incassatoPerCommessa={incassatoPerCommessa} studioId={studioId} isOwner={permissions.isOwner} T={T} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} isMobile={isMobile} />
