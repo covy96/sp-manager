@@ -980,11 +980,227 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
   );
 }
 
+// ── TAB 4: Statistiche offerte ────────────────────────────────────
+// Analisi aggregata sulle offerte: medie per stato, conversione, sconto,
+// tempo medio di accettazione (proxy: data_commessa − data_offerta, solo
+// accettate, perché non esiste una data di esito salvata) e viste per
+// mese e per cliente.
+function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
+  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const media = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
+  const imp   = o => Number(o.importo_offerta_base) || 0;
+  const gg    = " gg";
+
+  // data_commessa per id commessa: serve per il tempo di accettazione (proxy)
+  const commessaDataById = useMemo(() => {
+    const m = {};
+    for (const c of commesse) m[c.id] = c.data_commessa || c.created_at || null;
+    return m;
+  }, [commesse]);
+
+  const off = useMemo(
+    () => (anno === 0 ? offerte : offerte.filter(o => new Date(o.data_offerta || o.created_at).getFullYear() === anno)),
+    [offerte, anno]
+  );
+
+  const accettate = useMemo(() => off.filter(o => o.stato === "accettata"), [off]);
+  const rifiutate = useMemo(() => off.filter(o => o.stato === "rifiutata"), [off]);
+  const inCorso   = useMemo(() => off.filter(o => o.stato === "offerta"), [off]);
+
+  const stats = useMemo(() => {
+    const impTutte = off.map(imp).filter(x => x > 0);
+    const impAcc   = accettate.map(imp).filter(x => x > 0);
+    const impRif   = rifiutate.map(imp).filter(x => x > 0);
+    const decise   = accettate.length + rifiutate.length;
+
+    // tempo di accettazione (giorni): data_commessa − data_offerta
+    const giorni = [];
+    for (const o of accettate) {
+      const dc = o.commessa_id ? commessaDataById[o.commessa_id] : null;
+      if (!o.data_offerta || !dc) continue;
+      const d1 = new Date(o.data_offerta), d2 = new Date(dc);
+      if (isNaN(d1) || isNaN(d2)) continue;
+      const d = Math.round((d2 - d1) / 86400000);
+      if (d >= 0) giorni.push(d);
+    }
+    giorni.sort((a, b) => a - b);
+    const tempoMedio   = giorni.length ? Math.round(media(giorni)) : null;
+    const tempoMediano = giorni.length ? giorni[Math.floor((giorni.length - 1) / 2)] : null;
+
+    const scontoDi = arr => (arr.length ? media(arr.map(o => Number(o.sconto) || 0)) : 0);
+
+    return {
+      nTot: off.length, nAcc: accettate.length, nRif: rifiutate.length, nCorso: inCorso.length,
+      mediaTutte: media(impTutte), mediaAcc: media(impAcc), mediaRif: media(impRif),
+      valTot: off.reduce((s, o) => s + imp(o), 0),
+      valAcc: accettate.reduce((s, o) => s + imp(o), 0),
+      valRif: rifiutate.reduce((s, o) => s + imp(o), 0),
+      valCorso: inCorso.reduce((s, o) => s + imp(o), 0),
+      conversione: decise > 0 ? Math.round((accettate.length / decise) * 100) : null,
+      tempoMedio, tempoMediano, nConTempo: giorni.length,
+      scontoMedio: scontoDi(off), scontoAcc: scontoDi(accettate), scontoRif: scontoDi(rifiutate),
+    };
+  }, [off, accettate, rifiutate, inCorso, commessaDataById]);
+
+  // andamento: per mese (anno scelto) o per anno (tutti gli anni)
+  const trend = useMemo(() => {
+    if (anno === 0) {
+      const perY = new Map();
+      for (const o of off) {
+        const y = new Date(o.data_offerta || o.created_at).getFullYear();
+        if (!y) continue;
+        if (!perY.has(y)) perY.set(y, { label: String(y), offerte: 0, accettate: 0 });
+        const e = perY.get(y); e.offerte++; if (o.stato === "accettata") e.accettate++;
+      }
+      return [...perY.values()].sort((a, b) => Number(a.label) - Number(b.label));
+    }
+    const m = MONTHS.map(x => ({ label: x, offerte: 0, accettate: 0 }));
+    for (const o of off) {
+      const d = new Date(o.data_offerta || o.created_at);
+      if (isNaN(d)) continue;
+      m[d.getMonth()].offerte++; if (o.stato === "accettata") m[d.getMonth()].accettate++;
+    }
+    return m;
+  }, [off, anno]);
+
+  // riepilogo per cliente (ordinato per valore accettato)
+  const perCliente = useMemo(() => {
+    const map = {};
+    for (const o of off) {
+      const k = (o.cliente || "—").trim() || "—";
+      if (!map[k]) map[k] = { cliente: k, n: 0, acc: 0, rif: 0, valAcc: 0 };
+      const e = map[k]; e.n++;
+      if (o.stato === "accettata") { e.acc++; e.valAcc += imp(o); }
+      else if (o.stato === "rifiutata") e.rif++;
+    }
+    return Object.values(map)
+      .map(e => ({ ...e, tasso: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null }))
+      .sort((a, b) => b.valAcc - a.valAcc || b.n - a.n);
+  }, [off]);
+
+  const thSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "9px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 14px", borderBottom: `0.5px solid ${T.border}` };
+
+  if (off.length === 0) return (
+    <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 48 }}>
+      Nessuna offerta{anno !== 0 ? ` per il ${anno}` : ""}.
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Sottotitolo con i conteggi */}
+      <div style={{ ...mono, fontSize: 10, color: T.muted }}>
+        {stats.nTot} offerte · <span style={{ color: STATI.accettata.color }}>{stats.nAcc} accettate</span> · <span style={{ color: STATI.rifiutata.color }}>{stats.nRif} rifiutate</span> · <span style={{ color: STATI.offerta.color }}>{stats.nCorso} in corso</span>
+      </div>
+
+      {/* KPI medie e tassi */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(150px, 1fr))", gap: isMobile ? 8 : 12 }}>
+        <KpiCard label="Offerta media"   value={currency(stats.mediaTutte)} T={T} />
+        <KpiCard label="Media accettate" value={currency(stats.mediaAcc)} color={STATI.accettata.color} T={T} />
+        <KpiCard label="Media rifiutate" value={currency(stats.mediaRif)} color={STATI.rifiutata.color} T={T} />
+        <KpiCard label="Conversione"     value={stats.conversione == null ? "—" : `${stats.conversione}%`} T={T} />
+        <KpiCard label="Tempo medio accett." value={stats.tempoMedio == null ? "—" : `${stats.tempoMedio}${gg}`} T={T} />
+        <KpiCard label="Sconto medio"    value={`${stats.scontoMedio.toFixed(1)}%`} T={T} />
+      </div>
+
+      {/* Valori per stato + dettaglio tempo/sconto */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, alignItems: "start" }}>
+        <Panel title="Valore per stato" T={T}>
+          {[
+            ["Offerto (totale)", stats.valTot, stats.nTot, T.ink],
+            ["Accettato",        stats.valAcc, stats.nAcc, STATI.accettata.color],
+            ["Perso (rifiutate)", stats.valRif, stats.nRif, STATI.rifiutata.color],
+            ["In corso",         stats.valCorso, stats.nCorso, STATI.offerta.color],
+          ].map(([lab, val, n, col], i) => (
+            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <div style={{ width: 9, height: 9, borderRadius: "50%", background: col, flexShrink: 0 }} />
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
+              <div style={{ ...mono, fontSize: 9, color: T.muted }}>{n} off.</div>
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600, color: col, minWidth: 110, textAlign: "right" }}>{currency(val)}</div>
+            </div>
+          ))}
+        </Panel>
+
+        <Panel title="Tempi e sconti" T={T}>
+          {[
+            ["Tempo medio di accettazione", stats.tempoMedio == null ? "—" : `${stats.tempoMedio} giorni`],
+            ["Tempo mediano di accettazione", stats.tempoMediano == null ? "—" : `${stats.tempoMediano} giorni`],
+            ["Sconto medio (accettate)", `${stats.scontoAcc.toFixed(1)}%`],
+            ["Sconto medio (rifiutate)", `${stats.scontoRif.toFixed(1)}%`],
+          ].map(([lab, val], i) => (
+            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
+              <div style={{ ...mono, fontSize: 13, fontWeight: 600, color: T.ink }}>{val}</div>
+            </div>
+          ))}
+          <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+            Tempo su {stats.nConTempo} offert{stats.nConTempo === 1 ? "a" : "e"} accettat{stats.nConTempo === 1 ? "a" : "e"} con data disponibile.
+          </div>
+        </Panel>
+      </div>
+
+      {/* Andamento */}
+      <Panel T={T}>
+        <div style={{ padding: "16px 20px" }}>
+          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+            Offerte emesse e accettate — {anno === 0 ? "tutti gli anni" : anno}
+          </div>
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trend}>
+                <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} />
+                <Line type="monotone" dataKey="offerte" name="Emesse" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="accettate" name="Accettate" stroke={STATI.accettata.color} strokeWidth={2} dot={{ r: 3, fill: STATI.accettata.color, strokeWidth: 0 }} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
+            <span style={{ ...mono, fontSize: 10, color: T.muted, display: "inline-flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: T.navy, display: "inline-block" }} /> Emesse</span>
+            <span style={{ ...mono, fontSize: 10, color: T.muted, display: "inline-flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: STATI.accettata.color, display: "inline-block" }} /> Accettate</span>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Per cliente */}
+      <Panel title="Per cliente" T={T} style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+          <thead>
+            <tr>
+              <th style={thSt}>Cliente</th>
+              <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+              <th style={{ ...thSt, textAlign: "right" }}>Accettate</th>
+              <th style={{ ...thSt, textAlign: "right" }}>Conversione</th>
+              <th style={{ ...thSt, textAlign: "right" }}>Valore accettato</th>
+            </tr>
+          </thead>
+          <tbody>
+            {perCliente.slice(0, 12).map(r => (
+              <tr key={r.cliente}>
+                <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.cliente}</td>
+                <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
+                <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
+                <td style={{ ...tdSt, textAlign: "right", color: r.tasso == null ? T.muted : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
+                <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Panel>
+    </div>
+  );
+}
+
 // ── MAIN PAGE ─────────────────────────────────────────────────────
 const HUB_TABS = [
-  { key: "offerte",   label: "Offerte"    },
-  { key: "commesse",  label: "Commesse"   },
-  { key: "economica", label: "Economica"  },
+  { key: "offerte",     label: "Offerte"      },
+  { key: "statistiche", label: "Statistiche"  },
+  { key: "commesse",    label: "Commesse"     },
+  { key: "economica",   label: "Economica"    },
 ];
 
 export default function AnalisiHubPage() {
@@ -1066,7 +1282,7 @@ export default function AnalisiHubPage() {
       {/* Tabs + filtri */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <SlidingTabs tabs={permissions.isOwner ? HUB_TABS : HUB_TABS.filter(t => t.key !== "economica")} active={activeTab} onChange={setActiveTab} />
-        {activeTab === "offerte" && (
+        {(activeTab === "offerte" || activeTab === "statistiche") && (
           <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
             style={{ marginLeft: isMobile ? 0 : "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
             <option value={0}>Tutti gli anni</option>
@@ -1094,6 +1310,9 @@ export default function AnalisiHubPage() {
       {/* Contenuto tab */}
       {activeTab === "offerte" && (
         <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
+      )}
+      {activeTab === "statistiche" && (
+        <TabStatistiche offerte={offerte} commesse={commesse} T={T} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} isMobile={isMobile} />
