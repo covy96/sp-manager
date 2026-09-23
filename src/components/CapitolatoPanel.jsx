@@ -373,6 +373,22 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setView("versioni");
   };
 
+  // "+ Nuovo capitolato": riparte da una bozza vuota mantenendo lo storico
+  // versioni; al "Salva ed esci" diventa la versione successiva.
+  const nuovoCapitolato = () => {
+    const snapStr = JSON.stringify(snapshotCapitolato(metaDb(), righe));
+    const bozzaNonSalvata = righe.length > 0 && !versioni.some((v) => JSON.stringify(v.snapshot) === snapStr);
+    if (bozzaNonSalvata && !window.confirm("La bozza attuale non è salvata in nessuna versione e verrà svuotata. Continuare?")) return;
+    setMenuVer(null);
+    setRighe([]);
+    setMeta((m) => ({ ...m, revisione: "", data: oggi() }));
+    setVersioneAttiva(null);
+    setCatInsert(null); setCatFilter(""); setQuery("");
+    setDirty(true);
+    setView("edit");
+    openCatPicker();
+  };
+
   const eliminaVersione = async (v) => {
     setMenuVer(null);
     const nuove = versioni.filter((x) => x.n !== v.n);
@@ -515,6 +531,9 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 720, margin: "0 auto" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+                      <button onClick={nuovoCapitolato} style={btnPrimary} title="Parti da zero: lo storico versioni resta, al salvataggio diventa una nuova versione">+ Nuovo capitolato</button>
+                    </div>
                     {versioni.map((v) => {
                       const nv = (v.snapshot?.righe || []).length;
                       const rev = v.snapshot?.revisione;
