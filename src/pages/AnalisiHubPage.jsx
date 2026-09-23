@@ -1104,24 +1104,30 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
   // dentro le offerte con lo stato. Ogni voce conta una volta per offerta.
   const perVoce = useMemo(() => {
     const map = {};
-    for (const t of (vociTemplate || [])) map[t.nome.trim().toLowerCase()] = { nome: t.nome, order: t.order ?? 0, n: 0, acc: 0, rif: 0, valAcc: 0 };
+    for (const t of (vociTemplate || [])) map[t.nome.trim().toLowerCase()] = { nome: t.nome, order: t.order ?? 0, n: 0, acc: 0, valOff: 0, valAcc: 0 };
     for (const o of off) {
-      const seen = new Set();
+      // aggrega il prezzo per prestazione DENTRO l'offerta, così ogni voce conta
+      // una sola volta per offerta anche se comparisse duplicata.
+      const perNome = {};
       for (const v of normVoci(o)) {
         const k = v.nome.toLowerCase();
         if (!map[k]) continue; // solo voci del template (coerente con la tab Offerte)
-        if (!seen.has(k)) {
-          seen.add(k);
-          map[k].n++;
-          if (o.stato === "accettata") map[k].acc++;
-          else if (o.stato === "rifiutata") map[k].rif++;
-        }
-        if (o.stato === "accettata") map[k].valAcc += v.prezzo;
+        perNome[k] = (perNome[k] || 0) + v.prezzo;
+      }
+      for (const k of Object.keys(perNome)) {
+        const e = map[k];
+        e.n++; e.valOff += perNome[k];
+        if (o.stato === "accettata") { e.acc++; e.valAcc += perNome[k]; }
       }
     }
     return Object.values(map)
       .filter(e => e.n > 0)
-      .map(e => ({ ...e, tasso: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null }))
+      .map(e => ({
+        ...e,
+        tasso: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null,
+        mediaOff: e.n > 0 ? e.valOff / e.n : 0,
+        mediaAcc: e.acc > 0 ? e.valAcc / e.acc : 0,
+      }))
       .sort((a, b) => (b.tasso ?? -1) - (a.tasso ?? -1) || b.n - a.n);
   }, [off, vociTemplate]);
 
@@ -1418,36 +1424,50 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
         </Panel>
       )}
 
-      {/* Conversione per prestazione + per fascia di importo */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr", gap: 16, alignItems: "start" }}>
-        <Panel title="Conversione per prestazione" T={T} style={{ overflowX: "auto" }}>
-          {perVoce.length === 0
-            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 28 }}>Nessuna voce nelle offerte</div>
-            : <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 380 }}>
-                <thead>
-                  <tr>
-                    <th style={thSt}>Prestazione</th>
-                    <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
-                    <th style={{ ...thSt, textAlign: "right" }}>Accett.</th>
-                    <th style={{ ...thSt, textAlign: "right" }}>Conv.</th>
-                    <th style={{ ...thSt, textAlign: "right" }}>Valore accett.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {perVoce.map(r => (
+      {/* Conversione per prestazione (larghezza piena) */}
+      <Panel title="Conversione e valore per prestazione" T={T} style={{ overflowX: "auto" }}>
+        {perVoce.length === 0
+          ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 28 }}>Nessuna voce nelle offerte</div>
+          : <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+              <thead>
+                <tr>
+                  <th style={thSt}>Prestazione</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Accett.</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Conv.</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Val. medio offerta</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Val. medio accett.</th>
+                  <th style={{ ...thSt, textAlign: "right" }}>Valore accett. tot.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {perVoce.map(r => {
+                  const delta = r.acc > 0 && r.mediaOff > 0 ? Math.round((r.mediaAcc / r.mediaOff - 1) * 100) : null;
+                  return (
                     <tr key={r.nome}>
                       <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.nome}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
                       <td style={{ ...tdSt, textAlign: "right", fontWeight: 600, color: r.tasso == null ? T.muted : r.tasso >= 50 ? STATI.accettata.color : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
-                      <td style={{ ...tdSt, textAlign: "right" }}>{currency(r.valAcc)}</td>
+                      <td style={{ ...tdSt, textAlign: "right" }}>{r.n > 0 ? currency(r.mediaOff) : "—"}</td>
+                      <td style={{ ...tdSt, textAlign: "right" }}>
+                        {r.acc > 0 ? currency(r.mediaAcc) : "—"}
+                        {delta != null && delta !== 0 && <span style={{ ...mono, fontSize: 9, marginLeft: 6, color: delta > 0 ? STATI.accettata.color : STATI.rifiutata.color }}>{delta > 0 ? "+" : ""}{delta}%</span>}
+                      </td>
+                      <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-          }
-        </Panel>
+                  );
+                })}
+              </tbody>
+            </table>
+        }
+        <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+          Val. medio offerta = media della prestazione su tutte le offerte che la contengono · Val. medio accett. = media sulle sole accettate (con scostamento % rispetto all'offerta).
+        </div>
+      </Panel>
 
+      {/* Per fascia di importo + per cliente */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.3fr", gap: 16, alignItems: "start" }}>
         <Panel title="Conversione per fascia di importo" T={T} style={{ overflowX: "auto" }}>
           {perFascia.length === 0
             ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 28 }}>Nessun dato</div>
@@ -1473,33 +1493,32 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
               </table>
           }
         </Panel>
-      </div>
 
-      {/* Per cliente */}
-      <Panel title="Per cliente" T={T} style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
-          <thead>
-            <tr>
-              <th style={thSt}>Cliente</th>
-              <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
-              <th style={{ ...thSt, textAlign: "right" }}>Accettate</th>
-              <th style={{ ...thSt, textAlign: "right" }}>Conversione</th>
-              <th style={{ ...thSt, textAlign: "right" }}>Valore accettato</th>
-            </tr>
-          </thead>
-          <tbody>
-            {perCliente.slice(0, 12).map(r => (
-              <tr key={r.cliente}>
-                <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.cliente}</td>
-                <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
-                <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
-                <td style={{ ...tdSt, textAlign: "right", color: r.tasso == null ? T.muted : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
-                <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
+        <Panel title="Per cliente" T={T} style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 420 }}>
+            <thead>
+              <tr>
+                <th style={thSt}>Cliente</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Accettate</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Conversione</th>
+                <th style={{ ...thSt, textAlign: "right" }}>Valore accettato</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Panel>
+            </thead>
+            <tbody>
+              {perCliente.slice(0, 12).map(r => (
+                <tr key={r.cliente}>
+                  <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.cliente}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
+                  <td style={{ ...tdSt, textAlign: "right", color: r.tasso == null ? T.muted : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
+                  <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+      </div>
     </div>
   );
 }
