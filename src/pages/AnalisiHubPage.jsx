@@ -1027,7 +1027,6 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     const impTutte = off.map(imp).filter(x => x > 0);
     const impAcc   = accettate.map(imp).filter(x => x > 0);
     const impRif   = rifiutate.map(imp).filter(x => x > 0);
-    const decise   = accettate.length + rifiutate.length;
 
     // tempo di accettazione (giorni): data_commessa − data_offerta
     const giorni = [];
@@ -1052,7 +1051,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       valAcc: accettate.reduce((s, o) => s + imp(o), 0),
       valRif: rifiutate.reduce((s, o) => s + imp(o), 0),
       valCorso: inCorso.reduce((s, o) => s + imp(o), 0),
-      conversione: decise > 0 ? Math.round((accettate.length / decise) * 100) : null,
+      conversione: off.length > 0 ? Math.round((accettate.length / off.length) * 100) : null,
       tempoMedio, tempoMediano, nConTempo: giorni.length,
       scontoMedio: scontoDi(off), scontoAcc: scontoDi(accettate), scontoRif: scontoDi(rifiutate),
     };
@@ -1090,7 +1089,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       else if (o.stato === "rifiutata") e.rif++;
     }
     return Object.values(map)
-      .map(e => ({ ...e, tasso: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null }))
+      .map(e => ({ ...e, tasso: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null }))
       .sort((a, b) => b.valAcc - a.valAcc || b.n - a.n);
   }, [off]);
 
@@ -1122,7 +1121,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     }
     return Object.values(map)
       .filter(e => e.n > 0)
-      .map(e => ({ ...e, tasso: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null }))
+      .map(e => ({ ...e, tasso: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null }))
       .sort((a, b) => (b.tasso ?? -1) - (a.tasso ?? -1) || b.n - a.n);
   }, [off, vociTemplate]);
 
@@ -1138,8 +1137,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     return FASCE.map(f => {
       const inF = off.filter(o => { const v = imp(o); return v >= f.min && v < f.max; });
       const acc = inF.filter(o => o.stato === "accettata").length;
-      const rif = inF.filter(o => o.stato === "rifiutata").length;
-      return { label: f.label, n: inF.length, acc, tasso: acc + rif > 0 ? Math.round((acc / (acc + rif)) * 100) : null };
+      return { label: f.label, n: inF.length, acc, tasso: inF.length > 0 ? Math.round((acc / inF.length) * 100) : null };
     }).filter(f => f.n > 0);
   }, [off]);
 
@@ -1202,22 +1200,23 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
 
   // ── Stagionalità della conversione (tasso accettazione per mese/anno) ────────
   const stagionalita = useMemo(() => {
-    const toRow = (label, acc, rif) => ({ label, conv: acc + rif > 0 ? Math.round((acc / (acc + rif)) * 100) : null });
+    // Conversione = accettate / totale offerte del periodo (coerente con il resto).
+    const toRow = (label, acc, tot) => ({ label, conv: tot > 0 ? Math.round((acc / tot) * 100) : null });
     if (anno === 0) {
       const perY = new Map();
       for (const o of offerte) {
         const y = new Date(o.data_offerta || o.created_at).getFullYear(); if (!y) continue;
-        if (!perY.has(y)) perY.set(y, { acc: 0, rif: 0, label: String(y) });
-        const e = perY.get(y); if (o.stato === "accettata") e.acc++; else if (o.stato === "rifiutata") e.rif++;
+        if (!perY.has(y)) perY.set(y, { acc: 0, tot: 0, label: String(y) });
+        const e = perY.get(y); e.tot++; if (o.stato === "accettata") e.acc++;
       }
-      return [...perY.values()].sort((a, b) => Number(a.label) - Number(b.label)).map(e => toRow(e.label, e.acc, e.rif));
+      return [...perY.values()].sort((a, b) => Number(a.label) - Number(b.label)).map(e => toRow(e.label, e.acc, e.tot));
     }
-    const m = MONTHS.map(x => ({ label: x, acc: 0, rif: 0 }));
+    const m = MONTHS.map(x => ({ label: x, acc: 0, tot: 0 }));
     for (const o of off) {
       const d = new Date(o.data_offerta || o.created_at); if (isNaN(d)) continue;
-      if (o.stato === "accettata") m[d.getMonth()].acc++; else if (o.stato === "rifiutata") m[d.getMonth()].rif++;
+      m[d.getMonth()].tot++; if (o.stato === "accettata") m[d.getMonth()].acc++;
     }
-    return m.map(e => toRow(e.label, e.acc, e.rif));
+    return m.map(e => toRow(e.label, e.acc, e.tot));
   }, [off, offerte, anno]);
 
   // ── Confronto anno su anno (ignora il filtro anno) ──────────────────────────
@@ -1238,7 +1237,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     }
     return Object.values(map).map(e => ({
       anno: e.anno, n: e.n, acc: e.acc,
-      conversione: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null,
+      conversione: e.n > 0 ? Math.round((e.acc / e.n) * 100) : null,
       mediaAcc: e.impAcc.length ? media(e.impAcc) : 0,
       valAcc: e.valAcc,
       tempoMedio: e.giorni.length ? Math.round(media(e.giorni)) : null,
@@ -1383,7 +1382,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 8 }}>Conversione = accettate / (accettate + rifiutate) nel periodo. I periodi senza esiti non compaiono.</div>
+          <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 8 }}>Conversione = accettate / offerte totali del periodo (incluse quelle in corso). I periodi senza offerte non compaiono.</div>
         </div>
       </Panel>
 
