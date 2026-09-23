@@ -376,9 +376,6 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // "+ Nuovo capitolato": riparte da una bozza vuota mantenendo lo storico
   // versioni; al "Salva ed esci" diventa la versione successiva.
   const nuovoCapitolato = () => {
-    const snapStr = JSON.stringify(snapshotCapitolato(metaDb(), righe));
-    const bozzaNonSalvata = righe.length > 0 && !versioni.some((v) => JSON.stringify(v.snapshot) === snapStr);
-    if (bozzaNonSalvata && !window.confirm("La bozza attuale non è salvata in nessuna versione e verrà svuotata. Continuare?")) return;
     setMenuVer(null);
     setRighe([]);
     setMeta((m) => ({ ...m, revisione: "", data: oggi() }));
