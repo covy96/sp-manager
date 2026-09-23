@@ -985,11 +985,27 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
 // tempo medio di accettazione (proxy: data_commessa − data_offerta, solo
 // accettate, perché non esiste una data di esito salvata) e viste per
 // mese e per cliente.
-function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
+function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa, T, anno, isMobile }) {
   const mono = { fontFamily: "'IBM Plex Mono', monospace" };
   const media = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
   const imp   = o => Number(o.importo_offerta_base) || 0;
   const gg    = " gg";
+
+  // Voci attive di un'offerta con prezzo normalizzato (annulla lo sconto se già
+  // applicato ai prezzi), come nella tab Offerte: serve per la conversione/valore
+  // per prestazione.
+  const normVoci = (o) => {
+    const sconto = Number(o.sconto) || 0;
+    const voci = Array.isArray(o.voci) && o.voci.length > 0
+      ? o.voci : [{ nome: o.nome_offerta || "Prestazione", prezzo: Number(o.importo_offerta_base) || 0, attiva: true }];
+    const attive = voci.filter(v => v.attiva !== false);
+    const lordi = attive.reduce((s, v) => s + Number(v.prezzo || 0), 0);
+    const alreadyDisc = sconto > 0 && Math.abs(lordi - Number(o.importo_offerta_base)) < 0.5;
+    return attive.map(v => ({
+      nome: (v.nome || "—").trim(),
+      prezzo: alreadyDisc ? Math.round(Number(v.prezzo || 0) / (1 - sconto / 100) * 100) / 100 : Number(v.prezzo || 0),
+    }));
+  };
 
   // data_commessa per id commessa: serve per il tempo di accettazione (proxy)
   const commessaDataById = useMemo(() => {
@@ -1078,6 +1094,57 @@ function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
       .sort((a, b) => b.valAcc - a.valAcc || b.n - a.n);
   }, [off]);
 
+  // Incassato sulle accettate: offerta accettata → commessa collegata → incassato
+  // (incrocia offerte, commesse e pagamenti già calcolati a monte).
+  const incassato = useMemo(() => {
+    const map = incassatoPerCommessa || {};
+    return accettate.reduce((s, o) => s + (o.commessa_id ? (Number(map[o.commessa_id]) || 0) : 0), 0);
+  }, [accettate, incassatoPerCommessa]);
+
+  // Conversione e valore per prestazione (voce del template): incrocia le voci
+  // dentro le offerte con lo stato. Ogni voce conta una volta per offerta.
+  const perVoce = useMemo(() => {
+    const map = {};
+    for (const t of (vociTemplate || [])) map[t.nome.trim().toLowerCase()] = { nome: t.nome, order: t.order ?? 0, n: 0, acc: 0, rif: 0, valAcc: 0 };
+    for (const o of off) {
+      const seen = new Set();
+      for (const v of normVoci(o)) {
+        const k = v.nome.toLowerCase();
+        if (!map[k]) continue; // solo voci del template (coerente con la tab Offerte)
+        if (!seen.has(k)) {
+          seen.add(k);
+          map[k].n++;
+          if (o.stato === "accettata") map[k].acc++;
+          else if (o.stato === "rifiutata") map[k].rif++;
+        }
+        if (o.stato === "accettata") map[k].valAcc += v.prezzo;
+      }
+    }
+    return Object.values(map)
+      .filter(e => e.n > 0)
+      .map(e => ({ ...e, tasso: e.acc + e.rif > 0 ? Math.round((e.acc / (e.acc + e.rif)) * 100) : null }))
+      .sort((a, b) => (b.tasso ?? -1) - (a.tasso ?? -1) || b.n - a.n);
+  }, [off, vociTemplate]);
+
+  // Conversione per fascia di importo: incrocia il valore con lo stato.
+  const perFascia = useMemo(() => {
+    const FASCE = [
+      { label: "< 5k",    min: 0,     max: 5000 },
+      { label: "5–15k",   min: 5000,  max: 15000 },
+      { label: "15–30k",  min: 15000, max: 30000 },
+      { label: "30–50k",  min: 30000, max: 50000 },
+      { label: "> 50k",   min: 50000, max: Infinity },
+    ];
+    return FASCE.map(f => {
+      const inF = off.filter(o => { const v = imp(o); return v >= f.min && v < f.max; });
+      const acc = inF.filter(o => o.stato === "accettata").length;
+      const rif = inF.filter(o => o.stato === "rifiutata").length;
+      return { label: f.label, n: inF.length, acc, tasso: acc + rif > 0 ? Math.round((acc / (acc + rif)) * 100) : null };
+    }).filter(f => f.n > 0);
+  }, [off]);
+
+  const pctIncassato = stats.valAcc > 0 ? Math.round((incassato / stats.valAcc) * 100) : null;
+
   const thSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "9px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 14px", borderBottom: `0.5px solid ${T.border}` };
 
@@ -1121,6 +1188,11 @@ function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
               <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600, color: col, minWidth: 110, textAlign: "right" }}>{currency(val)}</div>
             </div>
           ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, flex: 1 }}>Incassato sulle accettate</div>
+            {pctIncassato != null && <div style={{ ...mono, fontSize: 9, color: T.muted }}>{pctIncassato}%</div>}
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, color: T.green, minWidth: 110, textAlign: "right" }}>{currency(incassato)}</div>
+          </div>
         </Panel>
 
         <Panel title="Tempi e sconti" T={T}>
@@ -1153,7 +1225,7 @@ function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
                 <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} />
+                <Tooltip itemSorter={item => (item.dataKey === "offerte" ? 0 : 1)} contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} />
                 <Line type="monotone" dataKey="offerte" name="Emesse" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
                 <Line type="monotone" dataKey="accettate" name="Accettate" stroke={STATI.accettata.color} strokeWidth={2} dot={{ r: 3, fill: STATI.accettata.color, strokeWidth: 0 }} activeDot={{ r: 4 }} />
               </LineChart>
@@ -1165,6 +1237,63 @@ function TabStatistiche({ offerte, commesse, T, anno, isMobile }) {
           </div>
         </div>
       </Panel>
+
+      {/* Conversione per prestazione + per fascia di importo */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.5fr 1fr", gap: 16, alignItems: "start" }}>
+        <Panel title="Conversione per prestazione" T={T} style={{ overflowX: "auto" }}>
+          {perVoce.length === 0
+            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 28 }}>Nessuna voce nelle offerte</div>
+            : <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 380 }}>
+                <thead>
+                  <tr>
+                    <th style={thSt}>Prestazione</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Accett.</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Conv.</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Valore accett.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {perVoce.map(r => (
+                    <tr key={r.nome}>
+                      <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.nome}</td>
+                      <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
+                      <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
+                      <td style={{ ...tdSt, textAlign: "right", fontWeight: 600, color: r.tasso == null ? T.muted : r.tasso >= 50 ? STATI.accettata.color : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
+                      <td style={{ ...tdSt, textAlign: "right" }}>{currency(r.valAcc)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+          }
+        </Panel>
+
+        <Panel title="Conversione per fascia di importo" T={T} style={{ overflowX: "auto" }}>
+          {perFascia.length === 0
+            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 28 }}>Nessun dato</div>
+            : <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 260 }}>
+                <thead>
+                  <tr>
+                    <th style={thSt}>Fascia</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Offerte</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Accett.</th>
+                    <th style={{ ...thSt, textAlign: "right" }}>Conv.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {perFascia.map(r => (
+                    <tr key={r.label}>
+                      <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.label}</td>
+                      <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
+                      <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
+                      <td style={{ ...tdSt, textAlign: "right", fontWeight: 600, color: r.tasso == null ? T.muted : r.tasso >= 50 ? STATI.accettata.color : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+          }
+        </Panel>
+      </div>
 
       {/* Per cliente */}
       <Panel title="Per cliente" T={T} style={{ overflowX: "auto" }}>
@@ -1312,7 +1441,7 @@ export default function AnalisiHubPage() {
         <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "statistiche" && (
-        <TabStatistiche offerte={offerte} commesse={commesse} T={T} anno={annoOfferte} isMobile={isMobile} />
+        <TabStatistiche offerte={offerte} commesse={commesse} vociTemplate={vociTemplate} incassatoPerCommessa={incassatoPerCommessa} T={T} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} isMobile={isMobile} />
