@@ -6,13 +6,14 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 
 const DEFAULT_PREFS = {
-  task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true,
+  task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true, task_promemoria: true,
   nuovo_membro: true, proforma_in_scadenza: true, commessa_residuo_60gg: true,
   nota_condivisa: true, nota_aggiornata: true,
 };
 
 const NOTIF_ITEMS = [
   { key: "task_assegnata",        emoji: "🔔", label: "Task assegnata a me" },
+  { key: "task_promemoria",       emoji: "⏰", label: "Promemoria task all'ora impostata" },
   { key: "task_scadenza_oggi",    emoji: "📅", label: "Task con scadenza oggi" },
   { key: "task_scaduta",          emoji: "⚠️", label: "Task scaduta non completata" },
   { key: "nuovo_membro",          emoji: "👤", label: "Nuovo membro aggiunto allo studio" },

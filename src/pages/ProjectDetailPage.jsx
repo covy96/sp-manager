@@ -13,6 +13,7 @@ import ReportCantierePanel from '../components/ReportCantierePanel';
 import CapexPanel from '../components/CapexPanel';
 import CapitolatoPanel from '../components/CapitolatoPanel';
 import DocumentiPanel from '../components/DocumentiPanel';
+import ProjectNotes from '../components/ProjectNotes';
 import LinkedCommesseField from '../components/LinkedCommesseField';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
@@ -52,6 +53,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     categoria:        task.categoria ?? "",
     assigned_member:  task.assigned_member ?? "",
     data_pianificata: task.data_pianificata ?? "",
+    ora_pianificata:  task.ora_pianificata ?? "",
     note:             task.note ?? "",
     priority:         task.priority ?? "",
     is_recurring:     task.is_recurring ?? false,
@@ -72,7 +74,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const handleSave = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, note: form.note || null, priority: form.priority || null, is_recurring: form.is_recurring, recurrence_rule: form.is_recurring ? form.recurrence_rule : null, recurrence_end: form.is_recurring && form.recurrence_end ? form.recurrence_end : null };
+    const updates = { title: form.title.trim(), assigned_member: form.assigned_member || null, data_pianificata: form.data_pianificata || null, ora_pianificata: form.data_pianificata ? (form.ora_pianificata || null) : null, note: form.note || null, priority: form.priority || null, is_recurring: form.is_recurring, recurrence_rule: form.is_recurring ? form.recurrence_rule : null, recurrence_end: form.is_recurring && form.recurrence_end ? form.recurrence_end : null };
     if (!isSubtask) updates.categoria = form.categoria || null;
     await onSave(task, updates);
     setSaving(false); onClose();
@@ -113,9 +115,18 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
           {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email||"Membro"}</option>)}
         </select>
       </div>
-      <div>
-        <label style={labelSt}>Data pianificata</label>
-        <input type="date" value={form.data_pianificata} onChange={e=>setForm(p=>({...p,data_pianificata:e.target.value}))} style={inputSt}/>
+      <div style={{ display:'flex', gap:8 }}>
+        <div style={{ flex:1 }}>
+          <label style={labelSt}>Data pianificata</label>
+          <input type="date" value={form.data_pianificata} onChange={e=>setForm(p=>({...p,data_pianificata:e.target.value}))} style={inputSt}/>
+        </div>
+        <div style={{ width:100 }}>
+          <label style={labelSt}>Ora</label>
+          <input type="time" value={form.ora_pianificata} disabled={!form.data_pianificata}
+            onChange={e=>setForm(p=>({...p,ora_pianificata:e.target.value}))}
+            style={{...inputSt, opacity: form.data_pianificata ? 1 : 0.5}}
+            title={form.data_pianificata ? "Ti avviso a quest'ora" : "Imposta prima la data"}/>
+        </div>
       </div>
       {/* Priorità */}
       <div>
@@ -275,7 +286,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
             )}
             {task.data_pianificata && (
               <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, flexShrink: 0 }}>
-                {task.data_pianificata}
+                {task.data_pianificata}{task.ora_pianificata ? ` ⏰ ${String(task.ora_pianificata).slice(0,5)}` : ""}
               </span>
             )}
           </div>
@@ -374,6 +385,7 @@ export default function ProjectDetailPage() {
   const [newTaskInputs, setNewTaskInputs]   = useState({});
   const [newTaskAssignments, setNewTaskAssignments] = useState({});
   const [newTaskDates, setNewTaskDates]     = useState({});
+  const [newTaskTimes, setNewTaskTimes]     = useState({});
   const [subtaskInputs, setSubtaskInputs]   = useState({});
   const [subtaskAssignments, setSubtaskAssignments] = useState({});
   const [subtaskDates, setSubtaskDates]     = useState({});
@@ -535,7 +547,7 @@ export default function ProjectDetailPage() {
             project_id: task.project_id, title: task.title, categoria: task.categoria,
             status:"todo", assigned_member: task.assigned_member || null,
             assigned_to_name: task.assigned_to_name || null,
-            data_pianificata: nextDate, order: 0, studio: studioId,
+            data_pianificata: nextDate, ora_pianificata: task.ora_pianificata || null, order: 0, studio: studioId,
             is_recurring: true, recurrence_rule: task.recurrence_rule, recurrence_end: endDate || null,
           }).select("*").single();
           if (nextTask) setTasks(p => [...p, nextTask]);
@@ -689,14 +701,16 @@ export default function ProjectDetailPage() {
       : (teamMember?.id || null);
     const member = teamMembers.find(m => m.id === memberId);
     const plannedDate = newTaskDates[category] || null;
+    const plannedTime = plannedDate ? (newTaskTimes[category] || null) : null;
     const optimisticId = `tmp-${Date.now()}`;
     const dbCategoria = category === "__uncategorized__" ? null : category;
-    setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: dbCategoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, order: 0, created_at: new Date().toISOString() }]);
+    setTasks(p => [...p, { id: optimisticId, project_id: id, title, categoria: dbCategoria, status: "todo", assigned_member: memberId, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate, ora_pianificata: plannedTime, order: 0, created_at: new Date().toISOString() }]);
     // Reset: elimina la chiave così il prossimo task torna a defaultare al creatore
     setNewTaskInputs(p => ({ ...p, [category]: "" }));
     setNewTaskAssignments(p => { const n = {...p}; delete n[category]; return n; });
     setNewTaskDates(p => ({ ...p, [category]: "" }));
-    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: dbCategoria, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, order: 0, studio: studioId || null }).select("*").single();
+    setNewTaskTimes(p => ({ ...p, [category]: "" }));
+    const { data, error: iErr } = await supabase.from("tasks").insert({ project_id: projectId || null, title, categoria: dbCategoria, status: "todo", assigned_member: memberId || null, assigned_to_name: member?.user_name || member?.user_email || null, data_pianificata: plannedDate || null, ora_pianificata: plannedTime, order: 0, studio: studioId || null }).select("*").single();
     if (iErr) { setTasks(p => p.filter(t => t.id !== optimisticId)); setError(iErr.message); }
     else {
       setTasks(p => p.map(t => t.id === optimisticId ? { ...t, ...data } : t)); setError(""); inputRefs.current[category]?.focus();
@@ -908,6 +922,11 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
+      {/* Note di progetto — bacheca condivisa del team */}
+      {teamMember?.id && (
+        <ProjectNotes projectId={id} studioId={studioId} currentMemberId={teamMember.id} />
+      )}
+
       {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 12 }}>{error}</div>}
 
       {/* EDIT MODAL */}
@@ -1108,10 +1127,18 @@ export default function ProjectDetailPage() {
                         {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
                       </select>
                     </div>
-                    <div style={miniBtn}>
+                    <div style={{ ...miniBtn, borderColor: newTaskDates[group.category] ? T.navy : T.border }}
+                      title={newTaskDates[group.category] ? `Data: ${newTaskDates[group.category]}` : "Imposta data"}>
                       <span style={{ pointerEvents: 'none', fontSize: 12 }}>📅</span>
                       <input type="date" value={newTaskDates[group.category] ?? ""} onChange={e => setNewTaskDates(p => ({ ...p, [group.category]: e.target.value }))}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                    <div style={{ ...miniBtn, opacity: newTaskDates[group.category] ? 1 : 0.4, borderColor: newTaskTimes[group.category] ? T.navy : T.border }}
+                      title={!newTaskDates[group.category] ? "Imposta prima la data" : newTaskTimes[group.category] ? `Ora: ${newTaskTimes[group.category]} — ti avviso` : "Imposta ora (notifica puntuale)"}>
+                      <span style={{ pointerEvents: 'none', fontSize: 12 }}>⏰</span>
+                      <input type="time" value={newTaskTimes[group.category] ?? ""} disabled={!newTaskDates[group.category]}
+                        onChange={e => setNewTaskTimes(p => ({ ...p, [group.category]: e.target.value }))}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: newTaskDates[group.category] ? 'pointer' : 'not-allowed' }} />
                     </div>
                     <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
                       style={{ width: 32, height: 32, background: T.navy, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
