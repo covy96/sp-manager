@@ -262,15 +262,16 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
                     }}
                   />
 
-                  {/* Elimina riga */}
+                  {/* Elimina riga — sempre visibile */}
                   <button
                     type="button"
                     onClick={() => removeRow(i)}
                     className="pn-del"
-                    title="Elimina riga"
+                    title="Elimina questa riga"
                     style={{
                       flexShrink: 0, background: "none", border: "none", cursor: "pointer",
-                      color: T.muted, fontSize: 14, lineHeight: 1, padding: "0 2px", opacity: 0,
+                      color: T.muted, fontSize: 16, lineHeight: 1, padding: "2px 4px",
+                      opacity: 0.5, borderRadius: T.radiusSm,
                     }}
                   >
                     ×
@@ -299,7 +300,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
 
       <style>{`
         .pn-row:hover { background: ${isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"}; }
-        .pn-row:hover .pn-del { opacity: 0.7; }
+        .pn-del:hover { opacity: 1 !important; color: ${T.red} !important; }
       `}</style>
     </div>
   );
