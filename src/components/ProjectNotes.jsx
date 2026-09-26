@@ -70,8 +70,12 @@ function formatWhen(at) {
   return d.toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ProjectNotes({ projectId, studioId, currentMemberId, currentMemberName }) {
+export default function ProjectNotes({ projectId, studioId, currentMemberId, currentMemberName, teamMembers = [] }) {
   const { T, isDark } = useTheme();
+  const nameById = (id) => {
+    const m = teamMembers.find((x) => x.id === id);
+    return m ? (m.user_name || m.user_email || null) : null;
+  };
   const [note, setNote] = useState(null);
   const [rows, setRows] = useState([emptyRow()]);
   const [loading, setLoading] = useState(true);
@@ -85,9 +89,13 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
 
   const fallbackFor = (row) => ({
     authorId: row?.author_id ?? null,
-    authorName: null,          // nome non noto per il vecchio formato
+    authorName: nameById(row?.author_id) ?? null,  // risale al nome dall'autore della nota
     at: row?.updated_at ?? null,
   });
+
+  // Riempie il nome mancante risalendo dall'authorId (righe legacy o cambi nome)
+  const hydrate = (rowsIn) =>
+    rowsIn.map((r) => (!r.authorName && r.authorId ? { ...r, authorName: nameById(r.authorId) } : r));
 
   // ── Caricamento (get-or-create) ────────────────────────────────────────────
   const load = async () => {
@@ -99,7 +107,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
     if (!error && row) {
       setNote(row);
       noteIdRef.current = row.id;
-      if (!isTyping.current) setRows(parseContent(row.content, fallbackFor(row)));
+      if (!isTyping.current) setRows(hydrate(parseContent(row.content, fallbackFor(row))));
     }
     setLoading(false);
   };
@@ -119,7 +127,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
     const row = Array.isArray(data) ? data[0] : data;
     if (row && !isTyping.current) {
       setNote(row);
-      setRows(parseContent(row.content, fallbackFor(row)));
+      setRows(hydrate(parseContent(row.content, fallbackFor(row))));
     }
   };
   const reloadRef = useRef(reload);

@@ -924,7 +924,7 @@ export default function ProjectDetailPage() {
 
       {/* Note di progetto — bacheca condivisa del team */}
       {teamMember?.id && (
-        <ProjectNotes projectId={id} studioId={studioId} currentMemberId={teamMember.id} currentMemberName={teamMember.user_name || teamMember.user_email} />
+        <ProjectNotes projectId={id} studioId={studioId} currentMemberId={teamMember.id} currentMemberName={teamMember.user_name || teamMember.user_email} teamMembers={teamMembers} />
       )}
 
       {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 12 }}>{error}</div>}
