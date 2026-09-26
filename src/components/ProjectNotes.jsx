@@ -364,7 +364,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
 
       <style>{`
         .pn-row:hover { background: ${isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"}; }
-        .pn-row:hover .pn-meta { opacity: 1; }
+        .pn-row:hover .pn-meta { opacity: 1 !important; }
         .pn-del:hover { opacity: 1 !important; color: ${T.red} !important; }
       `}</style>
     </div>
