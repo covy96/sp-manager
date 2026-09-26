@@ -1133,13 +1133,14 @@ export default function ProjectDetailPage() {
                       <input type="date" value={newTaskDates[group.category] ?? ""} onChange={e => setNewTaskDates(p => ({ ...p, [group.category]: e.target.value }))}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
                     </div>
-                    <div style={{ ...miniBtn, opacity: newTaskDates[group.category] ? 1 : 0.4, borderColor: newTaskTimes[group.category] ? T.navy : T.border }}
-                      title={!newTaskDates[group.category] ? "Imposta prima la data" : newTaskTimes[group.category] ? `Ora: ${newTaskTimes[group.category]} — ti avviso` : "Imposta ora (notifica puntuale)"}>
-                      <span style={{ pointerEvents: 'none', fontSize: 12 }}>⏰</span>
-                      <input type="time" value={newTaskTimes[group.category] ?? ""} disabled={!newTaskDates[group.category]}
+                    {newTaskDates[group.category] && (
+                      <input type="time" value={newTaskTimes[group.category] ?? ""}
                         onChange={e => setNewTaskTimes(p => ({ ...p, [group.category]: e.target.value }))}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: newTaskDates[group.category] ? 'pointer' : 'not-allowed' }} />
-                    </div>
+                        title="Ora (facoltativa): ti avviso a quest'ora"
+                        style={{ width: 84, height: 32, flexShrink: 0, boxSizing: 'border-box', padding: '0 6px',
+                          border: `1px solid ${newTaskTimes[group.category] ? T.navy : T.border}`, borderRadius: T.radiusSm,
+                          background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none' }} />
+                    )}
                     <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
                       style={{ width: 32, height: 32, background: T.navy, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       +
