@@ -2,58 +2,104 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 
-// ── Serializzazione contenuto ────────────────────────────────────────────────
-// Ogni riga della casella è testo semplice OPPURE una voce spuntabile:
-//   "- [ ] fare X"  → checkbox non spuntata
-//   "- [x] fatto Y" → checkbox spuntata
-//   "testo libero"  → riga di testo normale
+// ── Modello righe ────────────────────────────────────────────────────────────
+// Il contenuto è salvato come JSON in notes.content:
+//   { "v": 1, "rows": [ { id, type:"text"|"check", done, text, authorId, authorName, at } ] }
+// Retro-compatibile col vecchio formato testo (righe "- [ ] ..." / testo libero):
+// se il parse JSON fallisce, si interpretano le righe come prima.
 const CHECK_RE = /^\s*-?\s*\[( |x|X)\]\s?(.*)$/;
 
-function parseRows(content) {
-  const lines = (content ?? "").split("\n");
-  // Se completamente vuota, parti con una riga di testo vuota
-  if (lines.length === 1 && lines[0] === "") {
-    return [{ type: "text", done: false, text: "" }];
+let _idc = 0;
+const genId = () => `r${Date.now().toString(36)}${(_idc++).toString(36)}`;
+
+function parseContent(content, fallback) {
+  const raw = content ?? "";
+  // Nuovo formato JSON
+  if (raw.trim().startsWith("{")) {
+    try {
+      const obj = JSON.parse(raw);
+      if (Array.isArray(obj.rows)) {
+        const rows = obj.rows.map((r) => ({
+          id: r.id || genId(),
+          type: r.type === "check" ? "check" : "text",
+          done: !!r.done,
+          text: r.text ?? "",
+          authorId: r.authorId ?? null,
+          authorName: r.authorName ?? null,
+          at: r.at ?? null,
+        }));
+        return rows.length ? rows : [emptyRow()];
+      }
+    } catch { /* fallback sotto */ }
   }
+  // Vecchio formato testo
+  const lines = raw.split("\n");
+  if (lines.length === 1 && lines[0] === "") return [emptyRow()];
   return lines.map((line) => {
     const m = line.match(CHECK_RE);
-    if (m) return { type: "check", done: m[1].toLowerCase() === "x", text: m[2] };
-    return { type: "text", done: false, text: line };
+    const base = m
+      ? { type: "check", done: m[1].toLowerCase() === "x", text: m[2] }
+      : { type: "text", done: false, text: line };
+    return {
+      id: genId(), ...base,
+      authorId: fallback?.authorId ?? null,
+      authorName: fallback?.authorName ?? null,
+      at: fallback?.at ?? null,
+    };
   });
 }
 
-function serializeRows(rows) {
-  return rows
-    .map((r) => (r.type === "check" ? `- [${r.done ? "x" : " "}] ${r.text}` : r.text))
-    .join("\n");
+function emptyRow() {
+  return { id: genId(), type: "text", done: false, text: "", authorId: null, authorName: null, at: null };
 }
 
-export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
+function serializeRows(rows) {
+  return JSON.stringify({
+    v: 1,
+    rows: rows.map((r) => ({
+      id: r.id, type: r.type, done: r.done, text: r.text,
+      authorId: r.authorId, authorName: r.authorName, at: r.at,
+    })),
+  });
+}
+
+function formatWhen(at) {
+  if (!at) return "";
+  const d = new Date(at);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+export default function ProjectNotes({ projectId, studioId, currentMemberId, currentMemberName }) {
   const { T, isDark } = useTheme();
-  const [note, setNote] = useState(null);          // riga notes (id, ...)
-  const [rows, setRows] = useState([{ type: "text", done: false, text: "" }]);
+  const [note, setNote] = useState(null);
+  const [rows, setRows] = useState([emptyRow()]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  const isTyping = useRef(false);       // true mentre l'utente digita (blocca i sync remoti)
+  const isTyping = useRef(false);
   const saveTimer = useRef(null);
-  const inputRefs = useRef({});         // { rowIndex: HTMLInputElement }
+  const inputRefs = useRef({});
   const noteIdRef = useRef(null);
+
+  const fallbackFor = (row) => ({
+    authorId: row?.author_id ?? null,
+    authorName: null,          // nome non noto per il vecchio formato
+    at: row?.updated_at ?? null,
+  });
 
   // ── Caricamento (get-or-create) ────────────────────────────────────────────
   const load = async () => {
     if (!projectId || !studioId || !currentMemberId) return;
     const { data, error } = await supabase.rpc("get_or_create_project_note", {
-      p_studio_id: studioId,
-      p_project_id: projectId,
-      p_member_id: currentMemberId,
+      p_studio_id: studioId, p_project_id: projectId, p_member_id: currentMemberId,
     });
     const row = Array.isArray(data) ? data[0] : data;
     if (!error && row) {
       setNote(row);
       noteIdRef.current = row.id;
-      if (!isTyping.current) setRows(parseRows(row.content));
+      if (!isTyping.current) setRows(parseContent(row.content, fallbackFor(row)));
     }
     setLoading(false);
   };
@@ -67,17 +113,13 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
   // ── Sync remoto (realtime + polling di fallback) ───────────────────────────
   const reload = async () => {
     if (isTyping.current || !noteIdRef.current) return;
-    // Via RPC SECURITY DEFINER: bypassa la RLS così anche i membri non-autori
-    // ricevono gli aggiornamenti della bacheca condivisa.
     const { data } = await supabase.rpc("get_or_create_project_note", {
-      p_studio_id: studioId,
-      p_project_id: projectId,
-      p_member_id: currentMemberId,
+      p_studio_id: studioId, p_project_id: projectId, p_member_id: currentMemberId,
     });
     const row = Array.isArray(data) ? data[0] : data;
     if (row && !isTyping.current) {
       setNote(row);
-      setRows(parseRows(row.content));
+      setRows(parseContent(row.content, fallbackFor(row)));
     }
   };
   const reloadRef = useRef(reload);
@@ -111,10 +153,8 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
     saveTimer.current = setTimeout(async () => {
       const updated_at = new Date().toISOString();
       await supabase.rpc("update_project_note_content", {
-        p_note_id: noteIdRef.current,
-        p_member_id: currentMemberId,
-        p_content: content,
-        p_updated_at: updated_at,
+        p_note_id: noteIdRef.current, p_member_id: currentMemberId,
+        p_content: content, p_updated_at: updated_at,
       });
       setNote((n) => (n ? { ...n, content, updated_at } : n));
       isTyping.current = false;
@@ -130,9 +170,12 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
     });
   };
 
+  // Marca la riga come scritta dall'utente corrente adesso
+  const stamp = (r) => ({ ...r, authorId: currentMemberId, authorName: currentMemberName || null, at: new Date().toISOString() });
+
   // ── Editing per riga ───────────────────────────────────────────────────────
   const setRowText = (i, text) =>
-    applyRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, text } : r)));
+    applyRows((prev) => prev.map((r, idx) => (idx === i ? stamp({ ...r, text }) : r)));
 
   const toggleDone = (i) =>
     applyRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, done: !r.done } : r)));
@@ -147,17 +190,13 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
   const removeRow = (i) =>
     applyRows((prev) => {
       const next = prev.filter((_, idx) => idx !== i);
-      return next.length ? next : [{ type: "text", done: false, text: "" }];
+      return next.length ? next : [emptyRow()];
     });
 
   const focusRow = (i) =>
     requestAnimationFrame(() => {
       const el = inputRefs.current[i];
-      if (el) {
-        el.focus();
-        const len = el.value.length;
-        el.setSelectionRange(len, len);
-      }
+      if (el) { el.focus(); const len = el.value.length; el.setSelectionRange(len, len); }
     });
 
   const onKeyDown = (e, i) => {
@@ -165,7 +204,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
       e.preventDefault();
       applyRows((prev) => {
         const cur = prev[i];
-        const newRow = { type: cur.type, done: false, text: "" };
+        const newRow = stamp({ ...emptyRow(), type: cur.type });
         return [...prev.slice(0, i + 1), newRow, ...prev.slice(i + 1)];
       });
       focusRow(i + 1);
@@ -176,7 +215,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
     }
   };
 
-  // ── Stile card (coerente con le note della scrivania) ──────────────────────
+  // ── Stile card ─────────────────────────────────────────────────────────────
   const accent = "#FFF9C4";
   const cardStyle = isDark
     ? { background: T.surface, border: `1px solid ${T.border}`, borderLeft: `3px solid ${accent}` }
@@ -221,10 +260,27 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
               {rows.map((row, i) => (
                 <div
-                  key={i}
+                  key={row.id}
                   className="pn-row"
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 4px", borderRadius: T.radiusSm }}
+                  style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, padding: "2px 4px", borderRadius: T.radiusSm }}
                 >
+                  {/* Nuvoletta autore/data (stile Google Docs) */}
+                  {(row.authorName || row.at) && (
+                    <div
+                      className="pn-meta"
+                      style={{
+                        position: "absolute", left: 24, top: -22, zIndex: 20,
+                        background: isDark ? "#1c1c1e" : "#0e0e0d", color: "#fff",
+                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.02em",
+                        padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.35)", pointerEvents: "none",
+                        opacity: 0, transition: "opacity 0.12s",
+                      }}
+                    >
+                      ✍ {row.authorName || "Sconosciuto"}{row.at ? ` · ${formatWhen(row.at)}` : ""}
+                    </div>
+                  )}
+
                   {/* Cerchio di spunta / conversione */}
                   <button
                     type="button"
@@ -283,7 +339,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
               <button
                 type="button"
                 onClick={() => {
-                  applyRows((prev) => [...prev, { type: "text", done: false, text: "" }]);
+                  applyRows((prev) => [...prev, stamp(emptyRow())]);
                   focusRow(rows.length);
                 }}
                 style={{
@@ -300,6 +356,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId }) {
 
       <style>{`
         .pn-row:hover { background: ${isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"}; }
+        .pn-row:hover .pn-meta { opacity: 1; }
         .pn-del:hover { opacity: 1 !important; color: ${T.red} !important; }
       `}</style>
     </div>
