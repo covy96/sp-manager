@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, IMPIANTI_ASSISTENZA, assistenzaBasi } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, parseMisura, IMPIANTI_ASSISTENZA, assistenzaBasi, assistenzaPerc } from "./capitolatoModel";
 import { urlToBase64, imageSize } from "./pdfCommon";
 
 const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
@@ -25,6 +25,8 @@ const dataIt = (iso) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 const numOrBlank = (v) => { const n = parseNum(v); return Number.isFinite(n) && n !== 0 ? n : null; };
+// I campi misura possono contenere espressioni ("=3,45+2,4"): valuta e mostra il numero.
+const misOrBlank = (v) => { const n = parseMisura(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 const nlines = (txt, cpl = 44) => {
   const s = String(txt || "");
   return Math.max(1, s.split("\n").reduce((n, p) => n + Math.max(1, Math.ceil((p.length || 1) / cpl)), 0));
@@ -101,8 +103,6 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
     if (it.assistenza) {
       const basi = assistenzaBasi(it.assistenza);
       const impNomi = basi.map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c).join(", ") || "impianti";
-      const percRaw = it.assistenza.perc;
-      const hasPerc = percRaw !== "" && percRaw != null;
       setRow([
         C(it._code || it.codice || "", { b: true, sz: 8, fill: TITLE, align: "center", border: topb }),
         C((it.titolo || "ASSISTENZE MURARIE").toUpperCase(), { b: true, sz: 9, fill: TITLE, wrap: true, border: topb }),
@@ -118,6 +118,8 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
       // Una riga per impianto: F = totale di QUEL foglio impianto, G = %, H = F×G.
       (basi.length ? basi : [null]).forEach((base) => {
         const nome = IMPIANTI_ASSISTENZA.find((x) => x.code === base)?.nome || "impianto";
+        const percRaw = base ? assistenzaPerc(it.assistenza, base) : "";
+        const hasPerc = percRaw !== "" && percRaw != null;
         const rr = r + 1;
         setRow([
           C("", { i: true, sz: 8, border: box }),
@@ -158,9 +160,9 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
     misure.forEach((m) => {
       setRow([
         C("", { border: box }), C(m.descrizione || "", { sz: 8, color: "FF595959", border: box }),
-        C(numOrBlank(m.lung), { sz: 8, align: "right", border: box, num: F_NUM }),
-        C(numOrBlank(m.larg), { sz: 8, align: "right", border: box, num: F_NUM }),
-        C(numOrBlank(m.hpeso), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(misOrBlank(m.lung), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(misOrBlank(m.larg), { sz: 8, align: "right", border: box, num: F_NUM }),
+        C(misOrBlank(m.hpeso), { sz: 8, align: "right", border: box, num: F_NUM }),
         C(qtaMisurazione(m) || null, { sz: 8, align: "right", border: box, num: F_NUM }),
         C("", { border: box }), C("", { border: box }),
       ], 13);

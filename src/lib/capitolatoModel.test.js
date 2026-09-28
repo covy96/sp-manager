@@ -8,8 +8,9 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("./supabase", () => ({ supabase: {} }));
 
 import {
-  fmtNum, parseNum, qtaMisurazione, totaleRiga, totaleRigaEff,
+  fmtNum, parseNum, parseMisura, qtaMisurazione, totaleRiga, totaleRigaEff,
   rigaFromVoce, defaultSommanoLabels, componiGruppi, ALFABETO_IT,
+  assistenzaPerc, assistenzaLabel,
 } from "./capitolatoModel";
 
 describe("fmtNum", () => {
@@ -42,6 +43,62 @@ describe("parseNum", () => {
     expect(parseNum("")).toBeNaN();
     expect(parseNum(null)).toBeNaN();
     expect(parseNum(undefined)).toBeNaN();
+  });
+});
+
+describe("parseMisura (espressioni nei campi misura)", () => {
+  it("valuta somme, con o senza '=' e con virgola o punto", () => {
+    expect(parseMisura("=3,45+2,4")).toBeCloseTo(5.85);
+    expect(parseMisura("3.45+2.4")).toBeCloseTo(5.85);
+    expect(parseMisura("=1+2+3+4")).toBe(10);
+  });
+  it("supporta -, *, / e le parentesi (precedenza corretta)", () => {
+    expect(parseMisura("10-2,5")).toBe(7.5);
+    expect(parseMisura("2+3*4")).toBe(14);
+    expect(parseMisura("(2+3)*4")).toBe(20);
+    expect(parseMisura("6/2")).toBe(3);
+  });
+  it("resta compatibile col numero singolo", () => {
+    expect(parseMisura("2,13")).toBe(2.13);
+    expect(parseMisura(5)).toBe(5);
+    expect(parseMisura("")).toBeNaN();
+  });
+  it("su input non valido non lancia (ricade su parseNum)", () => {
+    expect(parseMisura("ciao")).toBeNaN();
+    expect(parseMisura("2++")).toBeNaN();
+  });
+});
+
+describe("qtaMisurazione con espressioni", () => {
+  it("somma nella dimensione: =3,45+2,4 come Lung.", () => {
+    expect(qtaMisurazione({ lung: "=3,45+2,4" })).toBeCloseTo(5.85);
+  });
+  it("moltiplica dimensioni-espressione: (2+1) x 0,5", () => {
+    expect(qtaMisurazione({ lung: "2+1", larg: "0,5" })).toBe(1.5);
+  });
+  it("espressione nella quantità manuale", () => {
+    expect(qtaMisurazione({ qta: "=10+5" })).toBe(15);
+  });
+});
+
+describe("assistenzaPerc / assistenzaLabel (% per impianto)", () => {
+  it("legge la % del singolo impianto da percs", () => {
+    const a = { basi: ["F", "G"], percs: { F: 10, G: 5 } };
+    expect(assistenzaPerc(a, "F")).toBe(10);
+    expect(assistenzaPerc(a, "G")).toBe(5);
+  });
+  it("ricade sul vecchio perc unico (retrocompatibile)", () => {
+    const a = { basi: ["F", "G"], perc: 8 };
+    expect(assistenzaPerc(a, "F")).toBe(8);
+    expect(assistenzaPerc(a, "G")).toBe(8);
+  });
+  it("% vuota quando non impostata", () => {
+    expect(assistenzaPerc({ basi: ["F"], percs: {} }, "F")).toBe("");
+    expect(assistenzaPerc({ basi: ["F"], percs: { F: "" } }, "F")).toBe("");
+  });
+  it("l'etichetta mostra la % di ciascun impianto", () => {
+    const a = { basi: ["F", "G"], percs: { F: 10, G: 5 } };
+    expect(assistenzaLabel(a)).toBe("Assistenza muraria — Impianto elettrico 10%, Impianto meccanico 5%");
   });
 });
 

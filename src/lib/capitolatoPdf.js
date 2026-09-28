@@ -11,7 +11,7 @@ import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pd
 import {
   CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
-import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, IMPIANTI_ASSISTENZA, assistenzaBasi } from "./capitolatoModel";
+import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, parseMisura, IMPIANTI_ASSISTENZA, assistenzaBasi, assistenzaPerc } from "./capitolatoModel";
 
 registerGroteskaFonts();
 
@@ -244,16 +244,16 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
     g.items.forEach((r) => {
       const isAssist = !!r.assistenza;
       const misure = isAssist ? [] : (r.misurazioni || []).filter((m) => m.descrizione || m.lung || m.larg || m.hpeso || m.qta);
-      // Assistenza: una riga per impianto, con % a mano nella cella crema.
-      const aPerc = isAssist ? r.assistenza.perc : null;
-      const aHasPerc = isAssist && aPerc !== "" && aPerc != null;
+      // Assistenza: una riga per impianto, ognuna con la SUA % (a mano nella cella crema).
       const aBasi = isAssist ? assistenzaBasi(r.assistenza) : [];
-      const labels = isAssist
+      const sommanoRows = isAssist
         ? (aBasi.length ? aBasi : [null]).map((c) => {
             const nome = IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || "impianto";
-            return `Assistenza muraria — ${aHasPerc ? aPerc + "% " : "% "}su totale ${nome}`;
+            const p = c ? assistenzaPerc(r.assistenza, c) : "";
+            const hasP = p !== "" && p != null;
+            return { label: `Assistenza muraria — ${hasP ? p + "% " : "% "}su totale ${nome}`, perc: p, hasPerc: hasP };
           })
-        : ((r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()]);
+        : ((r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()]).map((lab) => ({ label: lab, perc: null, hasPerc: false }));
       const tot = isAssist ? "" : totaleRigaEff(r); // importo/quantità calcolati nell'Excel
 
       reg(7);
@@ -291,7 +291,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
         reg(7); pdf.setTextColor(90, 90, 90);
         pdf.text(String(m.descrizione || ""), X.desig + 3, y + 2.6);
         pdf.setTextColor(20, 20, 20);
-        const cell = (key, val) => { const n = parseNum(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.6, { align: "right" }); };
+        const cell = (key, val) => { const n = parseMisura(val); if (Number.isFinite(n)) pdf.text(fmtNum(n), RIGHT(key), y + 2.6, { align: "right" }); };
         cell("lung", m.lung); cell("larg", m.larg); cell("hpeso", m.hpeso);
         const q = qtaMisurazione(m);
         if (q) pdf.text(fmtNum(q), RIGHT("qta"), y + 2.6, { align: "right" });
@@ -304,14 +304,14 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       // SOMMANO — corsivo pulito; cella unitario crema.
       // Per l'assistenza: la cella crema ospita la % (scritta a mano dall'impresa,
       // col simbolo %) e la cella TOTALE resta vuota per l'importo.
-      labels.forEach((lab) => {
+      sommanoRows.forEach(({ label, perc, hasPerc }) => {
         ensure(4.6);
         pdf.setFillColor(255, 249, 214); pdf.rect(X.unit, y, COL.unit, 4.6, "F");
         ital(7); pdf.setTextColor(0, 0, 0);
-        pdf.text(lab, X.desig + 1.5, y + 3.1);
+        pdf.text(label, X.desig + 1.5, y + 3.1);
         if (isAssist) {
           reg(7); pdf.setTextColor(0, 0, 0);
-          pdf.text(aHasPerc ? `${String(aPerc).replace(".", ",")} %` : "%", RIGHT("unit"), y + 3.1, { align: "right" });
+          pdf.text(hasPerc ? `${String(perc).replace(".", ",")} %` : "%", RIGHT("unit"), y + 3.1, { align: "right" });
         } else {
           pdf.text(fmtNum(tot), RIGHT("qta"), y + 3.1, { align: "right" });
         }

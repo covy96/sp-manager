@@ -28,6 +28,56 @@ export function parseNum(x) {
   return Number(String(x).replace(",", "."));
 }
 
+// ── Espressioni nei campi misura ("=3,45+2,40" → 5,85) ────────────────────────
+// I campi delle misurazioni (Lung./Larg./H/Quantità) accettano piccole espressioni
+// aritmetiche in stile foglio di calcolo: si può scrivere "=3,45+2,4" o "3.45+2.4"
+// e ottenere la somma, oltre a "-", "*", "/" e le parentesi. Virgola o punto come
+// separatore decimale. Non è mai un eval: un parser dedicato consuma SOLO numeri e
+// operatori, e su input non valido ricade su parseNum (numero singolo).
+function evalExpr(src) {
+  const s = src;
+  let i = 0;
+  const skip = () => { while (i < s.length && (s[i] === " " || s[i] === "\t")) i++; };
+  function expr() {
+    let v = term(); skip();
+    while (s[i] === "+" || s[i] === "-") { const op = s[i++]; const rhs = term(); v = op === "+" ? v + rhs : v - rhs; skip(); }
+    return v;
+  }
+  function term() {
+    let v = factor(); skip();
+    while (s[i] === "*" || s[i] === "/") { const op = s[i++]; const rhs = factor(); v = op === "*" ? v * rhs : v / rhs; skip(); }
+    return v;
+  }
+  function factor() {
+    skip();
+    if (s[i] === "+") { i++; return factor(); }
+    if (s[i] === "-") { i++; return -factor(); }
+    if (s[i] === "(") { i++; const v = expr(); skip(); if (s[i] === ")") i++; else throw new Error("paren"); return v; }
+    const start = i;
+    while (i < s.length && ((s[i] >= "0" && s[i] <= "9") || s[i] === ".")) i++;
+    const num = s.slice(start, i);
+    if (num === "" || num === ".") throw new Error("num");
+    return Number(num);
+  }
+  const v = expr(); skip();
+  if (i < s.length) throw new Error("trailing"); // caratteri non consumati → input non valido
+  return v;
+}
+
+export function parseMisura(x) {
+  if (x === null || x === undefined || x === "") return NaN;
+  if (typeof x === "number") return x;
+  let s = String(x).trim();
+  if (s === "") return NaN;
+  if (s[0] === "=") s = s.slice(1);      // stile foglio di calcolo: "=..."
+  s = s.replace(/,/g, ".");              // virgola decimale → punto
+  if (!/^[0-9.+\-*/()\s]+$/.test(s)) return parseNum(x); // caratteri non ammessi → numero singolo
+  try {
+    const v = evalExpr(s);
+    return Number.isFinite(v) ? v : parseNum(x);
+  } catch { return parseNum(x); }
+}
+
 // ── Misurazioni ──────────────────────────────────────────────────────────────
 export function emptyMisurazione() {
   return { descrizione: "", lung: "", larg: "", hpeso: "", qta: "" };
@@ -38,10 +88,10 @@ export function emptyMisurazione() {
 // digitata a mano nel campo `qta`.
 export function qtaMisurazione(m) {
   const fattori = ["lung", "larg", "hpeso"]
-    .map((k) => parseNum(m?.[k]))
+    .map((k) => parseMisura(m?.[k]))
     .filter((n) => Number.isFinite(n));
   if (fattori.length > 0) return fattori.reduce((a, b) => a * b, 1);
-  const q = parseNum(m?.qta);
+  const q = parseMisura(m?.qta);
   return Number.isFinite(q) ? q : 0;
 }
 
@@ -127,12 +177,28 @@ export function assistenzaBasi(a) {
   if (Array.isArray(a.basi)) return a.basi.filter(Boolean);
   return a.base ? [a.base] : [];
 }
+// Percentuale di UN impianto. Ogni impianto può avere la sua % (a.percs[code]);
+// in mancanza ricade sul vecchio valore unico a.perc (retrocompatibile) e infine
+// su "" (vuota = la mette l'impresa nell'Excel).
+export function assistenzaPerc(a, code) {
+  if (!a) return "";
+  if (a.percs && Object.prototype.hasOwnProperty.call(a.percs, code)) {
+    const v = a.percs[code];
+    return v == null ? "" : v;
+  }
+  return a.perc == null ? "" : a.perc;
+}
 export function assistenzaLabel(a) {
   if (!a) return "";
-  const nomi = assistenzaBasi(a).map((c) => IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c);
-  const impTxt = nomi.length ? nomi.join(", ") : "impianti";
-  const p = (a.perc === "" || a.perc == null) ? "" : String(a.perc).replace(".", ",");
-  return `Assistenza muraria${p ? ` ${p}%` : ""} — ${impTxt}`;
+  const basi = assistenzaBasi(a);
+  if (!basi.length) return "Assistenza muraria — impianti";
+  const parts = basi.map((c) => {
+    const nome = IMPIANTI_ASSISTENZA.find((x) => x.code === c)?.nome || c;
+    const p = assistenzaPerc(a, c);
+    const ptxt = (p === "" || p == null) ? "" : ` ${String(p).replace(".", ",")}%`;
+    return `${nome}${ptxt}`;
+  });
+  return `Assistenza muraria — ${parts.join(", ")}`;
 }
 
 // ── I/O Supabase ───────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
-  defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi,
+  defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi, assistenzaPerc,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
@@ -48,7 +48,7 @@ const presetPatch = (r, key) => {
     // diventa assistenza a %: default = tutti gli impianti tranne la categoria
     // della voce (anti-circolare); percentuale vuota (la mette l'impresa).
     const basi = IMPIANTI_ASSISTENZA.map((x) => x.code).filter((c) => c !== r.categoria_code);
-    return { unita: "%", tipo: "assistenza", sommano_labels: [], assistenza: r.assistenza || { basi, perc: "" } };
+    return { unita: "%", tipo: "assistenza", sommano_labels: [], assistenza: r.assistenza || { basi, percs: {}, perc: "" } };
   }
   const unita = p.tipo === "fornitura_posa" ? (r.unita || "mq") : p.unita;
   return { unita, tipo: p.tipo, sommano_labels: defaultSommanoLabels(unita, p.tipo), assistenza: null };
@@ -569,7 +569,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                             <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0", fontSize: 12 }}>
                               <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
                               <span style={{ color: T.ink, flex: 1 }}>{r.titolo}</span>
-                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{r.assistenza ? `${r.assistenza.perc === "" || r.assistenza.perc == null ? "%" : r.assistenza.perc + "%"} ${assistenzaBasi(r.assistenza).join("+") || "—"}` : `${fmtNum(totaleRigaEff(r))} ${r.unita}`}</span>
+                              <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{r.assistenza ? (assistenzaBasi(r.assistenza).map((c) => { const p = assistenzaPerc(r.assistenza, c); return `${c}${p === "" || p == null ? "" : " " + p + "%"}`; }).join(" · ") || "—") : `${fmtNum(totaleRigaEff(r))} ${r.unita}`}</span>
                             </div>
                           ))}
                         </div>
@@ -903,47 +903,48 @@ function iconBtn(T) {
 // facoltativa, la percentuale (di norma la mette l'impresa nell'Excel). Nell'Excel
 // l'importo = % × somma dei TOTALI degli impianti scelti (formula viva).
 function AssistenzaEditor({ r, T, mono, onPatch }) {
-  const a = r.assistenza || { basi: [], perc: "" };
+  const a = r.assistenza || { basi: [], percs: {}, perc: "" };
   const basi = assistenzaBasi(a);
-  const set = (patch) => onPatch({ assistenza: { basi, perc: a.perc ?? "", ...patch } });
-  const toggle = (code) => set({ basi: basi.includes(code) ? basi.filter((c) => c !== code) : [...basi, code] });
+  const percs = a.percs || {};
+  const patchA = (patch) => onPatch({ assistenza: { ...a, basi, percs, ...patch } });
+  const toggle = (code) => patchA({ basi: basi.includes(code) ? basi.filter((c) => c !== code) : [...basi, code] });
+  const setPerc = (code, val) => patchA({ percs: { ...percs, [code]: val === "" ? "" : Number(val) } });
   const inSt = { padding: "5px 8px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: mono, outline: "none" };
   const lab = { fontFamily: mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, marginBottom: 3 };
   return (
     <div style={{ marginTop: 8, padding: "10px 12px", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: T.navyLight }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 10, alignItems: "start" }}>
-        <div>
-          <div style={lab}>Impianti base (% sul totale)</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {IMPIANTI_ASSISTENZA.map((imp) => {
-              const self = imp.code === r.categoria_code; // evita riferimento circolare
-              const on = basi.includes(imp.code);
-              return (
-                <label key={imp.code} title={self ? "Stessa categoria della voce: non selezionabile" : ""}
-                  style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: mono, fontSize: 11, color: self ? T.muted : T.ink, cursor: self ? "not-allowed" : "pointer", opacity: self ? 0.5 : 1 }}>
-                  <input type="checkbox" checked={on && !self} disabled={self} onChange={() => toggle(imp.code)} />
-                  <span style={{ color: on && !self ? T.navy : "inherit", fontWeight: on && !self ? 700 : 400 }}>{imp.code}) {imp.nome}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-        <div>
-          <div style={lab}>Percentuale</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <input type="number" min="0" step="0.5" value={a.perc ?? ""} placeholder="—"
-              onChange={(e) => set({ perc: e.target.value === "" ? "" : Number(e.target.value) })}
-              style={{ ...inSt, width: "100%", textAlign: "right" }} />
-            <span style={{ fontFamily: mono, fontSize: 12, color: T.navy }}>%</span>
-          </div>
-          <div style={{ fontFamily: mono, fontSize: 8, color: T.muted, marginTop: 3 }}>vuota = la mette l'impresa</div>
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center", marginBottom: 4 }}>
+        <div style={lab}>Impianti base (% sul totale)</div>
+        <div style={{ ...lab, textAlign: "right", marginBottom: 3 }}>Percentuale</div>
       </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {IMPIANTI_ASSISTENZA.map((imp) => {
+          const self = imp.code === r.categoria_code; // evita riferimento circolare
+          const on = basi.includes(imp.code) && !self;
+          const pv = assistenzaPerc(a, imp.code);
+          return (
+            <div key={imp.code} style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center" }}>
+              <label title={self ? "Stessa categoria della voce: non selezionabile" : ""}
+                style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: mono, fontSize: 11, color: self ? T.muted : T.ink, cursor: self ? "not-allowed" : "pointer", opacity: self ? 0.5 : 1, minWidth: 0 }}>
+                <input type="checkbox" checked={on} disabled={self} onChange={() => toggle(imp.code)} />
+                <span style={{ color: on ? T.navy : "inherit", fontWeight: on ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{imp.code}) {imp.nome}</span>
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", opacity: on ? 1 : 0.35 }}>
+                <input type="number" min="0" step="0.5" value={pv === "" || pv == null ? "" : pv} placeholder="—" disabled={!on}
+                  onChange={(e) => setPerc(imp.code, e.target.value)}
+                  style={{ ...inSt, width: 78, textAlign: "right", cursor: on ? "text" : "not-allowed" }} />
+                <span style={{ fontFamily: mono, fontSize: 12, color: T.navy }}>%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontFamily: mono, fontSize: 8, color: T.muted, marginTop: 5, textAlign: "right" }}>vuota = la mette l'impresa</div>
       <div style={{ marginTop: 8, fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 700 }}>{assistenzaLabel(a)}</div>
       <div style={{ marginTop: 2, fontFamily: mono, fontSize: 9, color: T.muted }}>
         {basi.length === 0
           ? "Seleziona almeno un impianto."
-          : `L'importo si calcola nell'Excel: ${a.perc === "" || a.perc == null ? "percentuale dell'impresa" : a.perc + "%"} × somma totali di ${basi.length} ${basi.length === 1 ? "impianto" : "impianti"} (si aggiorna quando l'impresa compila i prezzi).`}
+          : `L'importo si calcola nell'Excel: per ogni impianto, la sua % × il totale di quell'impianto (si aggiorna quando l'impresa compila i prezzi). Lascia la % vuota per farla mettere all'impresa.`}
       </div>
     </div>
   );
