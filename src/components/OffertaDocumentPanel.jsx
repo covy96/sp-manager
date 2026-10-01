@@ -58,7 +58,7 @@ function CampiTesto({ testo, valori, onChange, inputSt }) {
 export default function OffertaDocumentPanel({
   offerta, studio, onClose, onSaved,
   mode = "edit",
-  progetti = [], globalContacts = [], serviceTemplates = [], teamMembers = [],
+  progetti = [], globalContacts: globalContactsProp = [], serviceTemplates = [], teamMembers = [],
   onCreate, canManage = true,
 }) {
   const { T } = useTheme();
@@ -99,6 +99,16 @@ export default function OffertaDocumentPanel({
   // Nome e numero offerta modificabili in modifica (in creazione si usa `ana.*`).
   const [nomeEdit, setNomeEdit] = useState(() => offerta?.nome_offerta || "");
   const [numeroEdit, setNumeroEdit] = useState(() => offerta?.numero_offerta || "");
+  const [clienteEdit, setClienteEdit] = useState(() => offerta?.cliente || "");
+  const [clienteSugg, setClienteSugg] = useState([]);
+  // I genitori in modifica non passano i contatti: li carico qui se mancano.
+  const [contattiCaricati, setContattiCaricati] = useState([]);
+  useEffect(() => {
+    if (globalContactsProp.length > 0 || !offerta?.studio) return;
+    supabase.from("global_contacts").select("id,full_name").eq("studio", offerta.studio).is("deleted_at", null)
+      .then(({ data }) => setContattiCaricati(data || []));
+  }, [offerta?.studio, globalContactsProp.length]);
+  const globalContacts = globalContactsProp.length > 0 ? globalContactsProp : contattiCaricati;
 
   useEffect(() => {
     setNomeEdit(offerta?.nome_offerta || "");
@@ -153,7 +163,7 @@ export default function OffertaDocumentPanel({
   // Oggetto offerta minimo per i generatori (numero/nome) in modalità create.
   const offGen = isCreate
     ? { numero_offerta: ana.numero_offerta, nome_offerta: ana.nome_offerta, cliente: ana.cliente }
-    : { ...offerta, nome_offerta: nomeEdit.trim() || offerta?.nome_offerta, numero_offerta: numeroEdit.trim() || offerta?.numero_offerta };
+    : { ...offerta, nome_offerta: nomeEdit.trim() || offerta?.nome_offerta, numero_offerta: numeroEdit.trim() || offerta?.numero_offerta, cliente: clienteEdit.trim() || offerta?.cliente };
 
   // Cliente → committente: rispecchia il valore, ma non sovrascrive un
   // committente già modificato a mano.
@@ -239,6 +249,27 @@ export default function OffertaDocumentPanel({
     // Nome e numero offerta editati nel pannello (salvati solo se non svuotati).
     if (nomeEdit.trim() && nomeEdit.trim() !== offerta.nome_offerta) patch.nome_offerta = nomeEdit.trim();
     if (numeroEdit.trim() && numeroEdit.trim() !== offerta.numero_offerta) patch.numero_offerta = numeroEdit.trim();
+    // Cliente: se il nuovo nome non è un contatto esistente può essere una rinomina
+    // → propaga a Clienti e a progetti/commesse/offerte collegati per nome.
+    const oldCliente = (offerta.cliente || "").trim();
+    const newCliente = clienteEdit.trim();
+    if (newCliente && newCliente !== oldCliente) {
+      patch.cliente = newCliente;
+      const low = (x) => (x || "").trim().toLowerCase();
+      const esiste = globalContacts.some(c => low(c.full_name) === low(newCliente));
+      const daRinominare = globalContacts.some(c => low(c.full_name) === low(oldCliente));
+      if (!esiste && daRinominare && window.confirm(
+        `Rinominare il cliente "${oldCliente}" in "${newCliente}" anche nella sezione Clienti e in tutti i progetti, commesse e offerte collegati?\n\nOK = rinomina ovunque\nAnnulla = cambia solo questa offerta`)) {
+        const ops = await Promise.all([
+          supabase.from("global_contacts").update({ full_name: newCliente }).eq("studio", offerta.studio).ilike("full_name", oldCliente),
+          supabase.from("projects").update({ client: newCliente }).eq("studio", offerta.studio).ilike("client", oldCliente),
+          supabase.from("commesse").update({ cliente: newCliente }).eq("studio", offerta.studio).ilike("cliente", oldCliente),
+          supabase.from("offerte").update({ cliente: newCliente }).eq("studio", offerta.studio).ilike("cliente", oldCliente),
+        ]);
+        const failed = ops.find(r => r.error);
+        if (failed) { setSaving(false); showToast("Errore rinomina cliente: " + failed.error.message, "error"); return false; }
+      }
+    }
     if (tot.righe.length > 0) {
       patch.voci = tot.righe.map((r, i) => ({ id: `sez${i}_${stamp}`, nome: r.titolo, prezzo: r.importo, attiva: true }));
       patch.sconto = Number(doc.sconto) || 0;
@@ -574,8 +605,31 @@ export default function OffertaDocumentPanel({
                     placeholder="Es. Ristrutturazione appartamento" style={inputSt} />
                 </div>
               </div>
+              <div style={{ marginTop: 12, position: "relative" }}>
+                <div style={labelSt}>Cliente</div>
+                <input value={clienteEdit} autoComplete="off" style={inputSt}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setClienteEdit(val);
+                    const q = val.trim().toLowerCase();
+                    setClienteSugg(q.length >= 2
+                      ? globalContacts.filter(c => (c.full_name || "").toLowerCase().includes(q) && c.full_name !== val).slice(0, 8)
+                      : []);
+                  }}
+                  onBlur={() => setTimeout(() => setClienteSugg([]), 150)} />
+                {clienteSugg.length > 0 && (
+                  <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 20, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+                    {clienteSugg.map(c => (
+                      <button key={c.id} type="button" onMouseDown={() => { setClienteEdit(c.full_name); setClienteSugg([]); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 12px", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink }}>
+                        {c.full_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 6 }}>
-                Numero e nome vengono salvati premendo <b>Salva</b> e usati nel file Word/PDF.
+                Numero, nome e cliente vengono salvati premendo <b>Salva</b> e usati nel file Word/PDF.
               </div>
             </div>
           )}
