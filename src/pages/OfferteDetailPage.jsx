@@ -101,9 +101,34 @@ export default function OfferteDetailPage() {
     const lordo = (form.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
     const dopoPerc = sc > 0 ? lordo*(1-sc/100) : lordo;
     const totale = Math.max(0, Math.round((dopoPerc - scF)*100)/100);
+    // Cambio nome cliente: se non coincide con un contatto già esistente è una
+    // rinomina → propaga a Clienti (global_contacts) e a progetti/commesse/offerte
+    // collegati per nome. Se coincide, l'offerta viene solo riassegnata.
+    const oldCliente = (offerta?.cliente||'').trim();
+    const newCliente = (form.cliente||'').trim();
+    let rinomina = false;
+    if (oldCliente && newCliente && oldCliente !== newCliente) {
+      const { data: esistente } = await supabase.from("global_contacts").select("id")
+        .eq("studio", studioId).is("deleted_at", null).ilike("full_name", newCliente).limit(1);
+      const { data: daRinominare } = await supabase.from("global_contacts").select("id")
+        .eq("studio", studioId).is("deleted_at", null).ilike("full_name", oldCliente).limit(1);
+      if (!(esistente?.length) && daRinominare?.length) {
+        rinomina = confirm(`Rinominare il cliente "${oldCliente}" in "${newCliente}" anche nella sezione Clienti e in tutti i progetti, commesse e offerte collegati?\n\nOK = rinomina ovunque\nAnnulla = cambia solo questa offerta`);
+      }
+    }
+    if (rinomina) {
+      const ops = await Promise.all([
+        supabase.from("global_contacts").update({ full_name: newCliente }).eq("studio", studioId).ilike("full_name", oldCliente),
+        supabase.from("projects").update({ client: newCliente }).eq("studio", studioId).ilike("client", oldCliente),
+        supabase.from("commesse").update({ cliente: newCliente }).eq("studio", studioId).ilike("cliente", oldCliente),
+        supabase.from("offerte").update({ cliente: newCliente }).eq("studio", studioId).ilike("cliente", oldCliente),
+      ]);
+      const failed = ops.find(r => r.error);
+      if (failed) { setSaving(false); showToast("Errore rinomina cliente: " + failed.error.message); return; }
+    }
     const { error: saveErr } = await supabase.from("offerte").update({
       nome_offerta: form.nome_offerta,
-      cliente: form.cliente,
+      cliente: newCliente || form.cliente,
       project_id: form.project_id||null,
       project_name: proj?.name||null,
       data_offerta: form.data_offerta||null,
