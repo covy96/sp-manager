@@ -29,6 +29,28 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
+      // ── Caso 0: invitato dal Team (riga team_members creata dal titolare, non ancora collegata) ──
+      if (user.email) {
+        const { data: invited } = await supabase
+          .from("team_members")
+          .select("id, studio")
+          .ilike("user_email", user.email)
+          .is("user_account", null)
+          .not("studio", "is", null)
+          .limit(1)
+          .maybeSingle();
+        if (invited) {
+          const { error: linkErr } = await supabase
+            .from("team_members").update({ user_account: user.id }).eq("id", invited.id);
+          if (!linkErr) {
+            localStorage.setItem("asm-active-studio", invited.studio);
+            window.location.href = "/dashboard";
+            return;
+          }
+          console.error("Collegamento invito team fallito:", linkErr);
+        }
+      }
+
       // ── Caso 1: studio da creare (da /crea-studio) ──
       // Fallback ai metadati utente se localStorage è assente (browser diverso)
       let pendingStudio = null;

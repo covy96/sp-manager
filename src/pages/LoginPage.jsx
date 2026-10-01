@@ -11,6 +11,8 @@ export default function LoginPage({ session }) {
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const confirmed = searchParams.get("confirmed") === "1";
   const pendingStudio = searchParams.get("pending_studio") === "1";
@@ -146,6 +148,29 @@ export default function LoginPage({ session }) {
           >
             {loading ? "Accesso in corso..." : "Accedi"}
           </button>
+
+          <p className="text-center text-sm text-white/50">
+            {resetSent ? (
+              <span className="text-[#30d158]">✓ Se l'email esiste, ti abbiamo inviato il link per impostare la password.</span>
+            ) : (
+              <button
+                type="button"
+                disabled={resetLoading}
+                onClick={async () => {
+                  if (!email.trim()) { setError("Inserisci prima la tua email."); return; }
+                  setError(""); setResetLoading(true);
+                  const { error: rErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                    redirectTo: window.location.origin + "/reset-password",
+                  });
+                  setResetLoading(false);
+                  if (rErr) setError(rErr.message); else setResetSent(true);
+                }}
+                className="text-[#0a84ff] hover:underline disabled:opacity-50"
+              >
+                {resetLoading ? "Invio..." : "Password dimenticata o primo accesso?"}
+              </button>
+            )}
+          </p>
 
           <p className="text-center text-sm text-white/50">
             Non hai un account?{" "}

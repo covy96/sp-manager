@@ -117,6 +117,7 @@ const CommessaArchiviataRecapPage = lazyWithRetry(() => import("./pages/settings
 const AuthCallbackPage = lazyWithRetry(() => import("./pages/AuthCallbackPage"));
 const CreateStudioPage = lazyWithRetry(() => import("./pages/CreateStudioPage"));
 const JoinStudioPage = lazyWithRetry(() => import("./pages/JoinStudioPage"));
+const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"));
 const PrivacyPage = lazyWithRetry(() => import("./pages/PrivacyPage"));
 const TerminiPage = lazyWithRetry(() => import("./pages/TerminiPage"));
 const CookiePolicyPage = lazyWithRetry(() => import("./pages/CookiePolicyPage"));
@@ -262,6 +263,7 @@ export default function App({ session }) {
       <Route path="/register" element={<RegisterPage session={session} />} />
       <Route path="/crea-studio" element={<CreateStudioPage session={session} />} />
       <Route path="/unisciti" element={<JoinStudioPage session={session} />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route
         path="/onboarding"

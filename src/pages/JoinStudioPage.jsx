@@ -82,11 +82,66 @@ export default function JoinStudioPage({ session }) {
     // Salva in localStorage come fallback
     localStorage.setItem("asm-pending-join", JSON.stringify(pendingJoin));
 
+    const joinWithUser = async (user) => {
+      const { data: existing } = await supabase
+        .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
+
+      if (existing) {
+        const { error: updateErr } = await supabase
+          .from("team_members").update({ studio: pendingJoin.studioId }).eq("id", existing.id);
+        if (updateErr) { setError("Errore aggiornamento: " + updateErr.message); setLoading(false); return; }
+      } else {
+        // Se il titolare ti ha già aggiunto dal Team con questa email, collega quella riga
+        const { data: invited } = await supabase
+          .from("team_members").select("id")
+          .eq("studio", pendingJoin.studioId).ilike("user_email", user.email ?? "")
+          .is("user_account", null).limit(1).maybeSingle();
+        const { error: insertErr } = invited
+          ? await supabase.from("team_members").update({ user_account: user.id }).eq("id", invited.id)
+          : await supabase.from("team_members").insert({
+              user_account: user.id,
+              user_email: user.email,
+              user_name: pendingJoin.memberName,
+              studio: pendingJoin.studioId,
+              role_internal: "Collaboratore Interno",
+              active: true,
+            });
+        if (insertErr) { setError("Errore registrazione: " + insertErr.message); setLoading(false); return; }
+      }
+
+      await seedServiceTaskTemplates(pendingJoin.studioId);
+      localStorage.setItem("asm-active-studio", pendingJoin.studioId);
+      localStorage.removeItem("asm-pending-join");
+      window.location.href = "/dashboard";
+    };
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { full_name: `${nome.trim()} ${cognome.trim()}` } },
     });
+
+    // Utente già presente in auth (es. creato dal magic link di invito del Team):
+    // Supabase risponde con errore oppure con un utente senza identities.
+    const alreadyRegistered =
+      (signUpError && /already.*registered|already been registered/i.test(signUpError.message)) ||
+      (!signUpError && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+
+    if (alreadyRegistered) {
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInData?.user) { await joinWithUser(signInData.user); return; }
+      localStorage.removeItem("asm-pending-join");
+      setError(
+        signInErr?.message?.toLowerCase().includes("not confirmed")
+          ? "Questa email è già stata invitata ma non confermata. Apri il link che ti è stato inviato via email."
+          : "Questa email ha già un account con un'altra password. Vai al login e usa 'Password dimenticata o primo accesso?' per impostarne una, poi accedi."
+      );
+      setLoading(false);
+      return;
+    }
 
     if (signUpError) {
       localStorage.removeItem("asm-pending-join");
@@ -97,31 +152,7 @@ export default function JoinStudioPage({ session }) {
 
     // Se la conferma email è disabilitata, sessione immediata → unisciti ora
     if (data?.session?.user) {
-      const user = data.session.user;
-
-      const { data: existing } = await supabase
-        .from("team_members").select("*").eq("user_account", user.id).maybeSingle();
-
-      if (existing) {
-        const { error: updateErr } = await supabase
-          .from("team_members").update({ studio: pendingJoin.studioId }).eq("id", existing.id);
-        if (updateErr) { setError("Errore aggiornamento: " + updateErr.message); setLoading(false); return; }
-      } else {
-        const { error: insertErr } = await supabase.from("team_members").insert({
-          user_account: user.id,
-          user_email: user.email,
-          user_name: pendingJoin.memberName,
-          studio: pendingJoin.studioId,
-          role_internal: "Collaboratore Interno",
-          active: true,
-        });
-        if (insertErr) { setError("Errore registrazione: " + insertErr.message); setLoading(false); return; }
-      }
-
-      await seedServiceTaskTemplates(pendingJoin.studioId);
-      localStorage.setItem("asm-active-studio", pendingJoin.studioId);
-      localStorage.removeItem("asm-pending-join");
-      window.location.href = "/dashboard";
+      await joinWithUser(data.session.user);
       return;
     }
 
