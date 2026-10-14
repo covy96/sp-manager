@@ -205,6 +205,7 @@ export function assistenzaLabel(a) {
 // Libreria voci: template globale (studio null) + voci custom dello studio.
 // Una voce dello studio con stessa (categoria_code, codice) "oscura" quella globale
 // (pattern override: lo studio personalizza il testo base senza toccare il template).
+// Se l'override ha cambiato codice, override_of conserva la chiave della globale.
 export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   let q = supabase
     .from("capitolato_voci")
@@ -220,7 +221,7 @@ export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   const byKey = new Map();
   const conGlobale = new Set(); // chiavi che esistono nel template globale
   for (const v of data || []) {
-    const key = `${v.categoria_code}||${v.codice}`;
+    const key = v.override_of || `${v.categoria_code}||${v.codice}`;
     if (!v.studio) conGlobale.add(key);
     const ex = byKey.get(key);
     if (!ex || (v.studio && !ex.studio)) byKey.set(key, v); // la voce studio vince sulla globale
@@ -245,9 +246,31 @@ async function loadLayout(studioId) {
   return data || [];
 }
 
+// Ordine: sezione, poi codice in ordine naturale (G2 < G10), poi ordine salvato.
+const cmpCodice = (a, b) => String(a || "").localeCompare(String(b || ""), "it", { numeric: true, sensitivity: "base" });
 export function ordinaLibreria(voci) {
   return [...voci].sort((a, b) =>
-    a.categoria_code.localeCompare(b.categoria_code) || (a.ordine || 0) - (b.ordine || 0));
+    a.categoria_code.localeCompare(b.categoria_code) || cmpCodice(a.codice, b.codice) || (a.ordine || 0) - (b.ordine || 0));
+}
+
+// Primo codice libero di una sezione: <lettera><nn> dopo il numero più alto usato.
+export function prossimoCodice(voci, cat) {
+  const re = new RegExp(`^${cat}(\\d+)$`, "i");
+  const max = voci.filter((v) => v.categoria_code === cat)
+    .reduce((m, v) => { const x = re.exec(String(v.codice || "").trim()); return x ? Math.max(m, Number(x[1])) : m; }, 0);
+  return `${cat}${String(max + 1).padStart(2, "0")}`;
+}
+
+// Le frecce ↑↓ scambiano il codice con la voce vicina (l'ordine segue il codice).
+// Ritorna le due voci con il codice nuovo, o null se non c'è una vicina.
+export function scambiaCodici(voci, id, dir) {
+  const voce = voci.find((v) => v.id === id);
+  if (!voce) return null;
+  const sezione = ordinaLibreria(voci.filter((v) => v.categoria_code === voce.categoria_code));
+  const pos = sezione.findIndex((v) => v.id === id);
+  const altra = sezione[pos + dir];
+  if (!altra || cmpCodice(voce.codice, altra.codice) === 0) return null;
+  return [{ ...voce, codice: altra.codice }, { ...altra, codice: voce.codice }];
 }
 
 export function applicaLayout(voci, layout) {
@@ -266,25 +289,16 @@ export function applicaLayout(voci, layout) {
   }));
 }
 
-// Sposta una voce su/giù nella sua sezione (dir = -1 | 1) o in fondo a un'altra
-// sezione (cat = codice categoria). Ritorna la libreria aggiornata e le righe di
-// layout da salvare (tutta la sezione di destinazione, rinumerata 0..n-1), oppure
-// null se lo spostamento non è possibile.
-export function spostaVoce(voci, id, { dir, cat }) {
+// Sposta una voce in fondo a un'altra sezione (cat = codice categoria) dandole il
+// primo codice libero di quella sezione. Ritorna la libreria aggiornata, la voce
+// spostata (col codice nuovo, da salvare) e le righe di layout da salvare (tutta la
+// sezione di destinazione, rinumerata 0..n-1), oppure null se non è possibile.
+export function spostaVoce(voci, id, { cat }) {
   const voce = voci.find((v) => v.id === id);
-  if (!voce) return null;
-  const dest = cat || voce.categoria_code;
-  if (cat && cat === voce.categoria_code) return null;
-  let sezione = ordinaLibreria(voci.filter((v) => v.categoria_code === dest && v.id !== id));
-  if (cat) sezione.push(voce);
-  else {
-    const corrente = ordinaLibreria(voci.filter((v) => v.categoria_code === dest));
-    const pos = corrente.findIndex((v) => v.id === id);
-    const to = pos + dir;
-    if (to < 0 || to >= corrente.length) return null;
-    sezione = [...corrente];
-    [sezione[pos], sezione[to]] = [sezione[to], sezione[pos]];
-  }
+  if (!voce || !cat || cat === voce.categoria_code) return null;
+  const sezione = ordinaLibreria(voci.filter((v) => v.categoria_code === cat && v.id !== id));
+  sezione.push({ ...voce, codice: prossimoCodice(voci, cat) });
+  const dest = cat;
   const nome = CAPITOLATO_CATEGORIE.find((c) => c.code === dest)?.nome;
   const aggiornate = new Map(sezione.map((v, i) => [v.id, {
     ...v,
@@ -295,6 +309,7 @@ export function spostaVoce(voci, id, { dir, cat }) {
   }]));
   return {
     voci: ordinaLibreria(voci.map((v) => aggiornate.get(v.id) || v)),
+    voce: aggiornate.get(id),
     layout: sezione.map((v, i) => ({ voce_key: v._layoutKey, categoria_code: dest, ordine: i })),
   };
 }
@@ -330,8 +345,16 @@ export async function saveVoceLibreria(voce, studioId) {
     res = await supabase.from("capitolato_voci")
       .update(payload).eq("id", voce.id).select("*").single();
   } else {
+    // override di una globale: ricorda quale, così può cambiare codice senza
+    // far ricomparire l'originale
+    if (voce._layoutKey?.startsWith("k:")) payload.override_of = voce._layoutKey.slice(2);
     res = await supabase.from("capitolato_voci")
       .insert(payload).select("*").single();
+    // colonna override_of non ancora creata (migration mancante): reinserisci senza
+    if (res.error && payload.override_of && (res.error.code === "42703" || /override_of/i.test(res.error.message || ""))) {
+      const { override_of, ...senza } = payload; // eslint-disable-line no-unused-vars
+      res = await supabase.from("capitolato_voci").insert(senza).select("*").single();
+    }
   }
   if (res.error) throw res.error;
   const data = res.data;
