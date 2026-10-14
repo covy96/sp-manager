@@ -10,7 +10,7 @@ vi.mock("./supabase", () => ({ supabase: {} }));
 import {
   fmtNum, parseNum, parseMisura, qtaMisurazione, totaleRiga, totaleRigaEff,
   rigaFromVoce, defaultSommanoLabels, componiGruppi, ALFABETO_IT,
-  assistenzaPerc, assistenzaLabel, applicaLayout, spostaVoce, scambiaCodici, prossimoCodice, ordinaLibreria,
+  assistenzaPerc, assistenzaLabel, applicaLayout, spostaVoce, scambiaCodici, prossimoCodice, ordinaLibreria, componiLibreria, codiceDuplicato,
 } from "./capitolatoModel";
 
 describe("fmtNum", () => {
@@ -234,5 +234,42 @@ describe("disposizione libreria (riordino e spostamento tra sezioni)", () => {
   it("ignora lo spostamento nella stessa sezione o di voci inesistenti", () => {
     expect(spostaVoce(base, "A01", { cat: "A" })).toBeNull();
     expect(spostaVoce(base, "ZZ", { cat: "B" })).toBeNull();
+  });
+});
+
+describe("identità delle voci di libreria (niente voci che spariscono)", () => {
+  const g = (id, cat, codice) => ({ id, studio: null, categoria_code: cat, codice });
+  const st = (id, cat, codice, extra = {}) => ({ id, studio: "S", categoria_code: cat, codice, ...extra });
+  const codici = (l) => l.map((v) => `${v.id}:${v.codice}`);
+
+  it("una voce dello studio con lo stesso codice di una globale non la nasconde", () => {
+    const out = componiLibreria([g("g1", "C", "C02"), g("g2", "C", "C05"), st("s1", "C", "C02")]);
+    expect(codici(out)).toEqual(["g1:C02", "s1:C02", "g2:C05"]);
+    expect(out.find((v) => v.id === "s1")._layoutKey).toBe("id:s1");
+  });
+  it("l'override (override_of) sostituisce la sua globale anche se ha cambiato codice", () => {
+    const out = componiLibreria([g("g1", "C", "C02"), g("g2", "C", "C05"), st("o2", "C", "C02", { override_of: "C||C05" })]);
+    expect(codici(out)).toEqual(["g1:C02", "o2:C02"]);
+    expect(out.find((v) => v.id === "o2")._layoutKey).toBe("k:C||C05");
+  });
+  it("una globale spostata lascia libero il suo codice per una voce nuova", () => {
+    const out = componiLibreria([g("g5", "A", "A05"), st("o5", "A", "B03", { override_of: "A||A05" }), st("n1", "A", "A05")]);
+    expect(out.map((v) => v.id).sort()).toEqual(["n1", "o5"]);
+  });
+  it("con più override della stessa globale vince il più recente", () => {
+    const out = componiLibreria([g("g1", "A", "A01"),
+      st("vecchio", "A", "A01", { override_of: "A||A01", updated_at: "2026-10-14T08:00:00Z" }),
+      st("nuovo", "A", "A01", { override_of: "A||A01", updated_at: "2026-10-14T09:00:00Z" })]);
+    expect(out.map((v) => v.id)).toEqual(["nuovo"]);
+  });
+  it("override di una globale non più esistente resta come voce dello studio", () => {
+    const out = componiLibreria([st("o", "A", "A09", { override_of: "A||A99" })]);
+    expect(out[0]._layoutKey).toBe("id:o");
+  });
+  it("codiceDuplicato controlla la stessa sezione, esclusa la voce stessa", () => {
+    const voci = [{ id: "a", categoria_code: "G", codice: "G01" }, { id: "b", categoria_code: "G", codice: "G02" }];
+    expect(codiceDuplicato(voci, { id: "b", categoria_code: "G", codice: "g01 " })).toBe(true);
+    expect(codiceDuplicato(voci, { id: "a", categoria_code: "G", codice: "G01" })).toBe(false);
+    expect(codiceDuplicato(voci, { id: "x", categoria_code: "H", codice: "G01" })).toBe(false);
   });
 });

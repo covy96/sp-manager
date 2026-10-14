@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
-import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria } from "../../lib/capitolatoModel";
+import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria, codiceDuplicato } from "../../lib/capitolatoModel";
 
 const mono = "'IBM Plex Mono', monospace";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -43,10 +43,9 @@ export default function RegolazioneCapitolatoPage() {
     .filter((g) => g.items.length > 0), [risultati]);
 
   const onSaved = (row) => setVoci((prev) => {
-    // rimuovi eventuale globale oscurata e la stessa riga, poi reinserisci
-    const filtered = prev.filter((v) => v.id !== row.id &&
-      !(row._layoutKey && v._layoutKey === row._layoutKey) &&
-      !(v.categoria_code === row.categoria_code && v.codice === row.codice && v.studio == null && row.studio));
+    // rimuovi la stessa riga e l'eventuale globale che ora è oscurata (stessa
+    // _layoutKey), poi reinserisci. Mai per codice: due voci possono condividerlo.
+    const filtered = prev.filter((v) => v.id !== row.id && !(row._layoutKey && v._layoutKey === row._layoutKey));
     return ordinaLibreria([...filtered, row]); // resta al suo posto (ordine per codice)
   });
   const onDeleted = (id) => { ricarica(); };
@@ -76,6 +75,7 @@ export default function RegolazioneCapitolatoPage() {
     }
   };
   const codiceSuggerito = (cat) => prossimoCodice(voci, cat);
+  const codiceUsato = (v) => codiceDuplicato(voci, v);
 
   const inputSt = { padding: "7px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
 
@@ -98,7 +98,7 @@ export default function RegolazioneCapitolatoPage() {
       </div>
 
       {adding && (
-        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} codiceSuggerito={codiceSuggerito}
+        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} codiceSuggerito={codiceSuggerito} codiceUsato={codiceUsato}
           onSaved={() => { ricarica(); setAdding(false); showToast("Voce aggiunta", "success"); }}
           onCancel={() => setAdding(false)} />
       )}
@@ -111,7 +111,7 @@ export default function RegolazioneCapitolatoPage() {
         <div key={g.cat.code} style={{ marginBottom: 26 }}>
           <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
           {g.items.map((v, i) => (
-            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted}
+            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato}
               spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
           ))}
         </div>
@@ -130,13 +130,21 @@ function Chip({ T, active, children, ...rest }) {
 
 const CAT_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c]));
 
-function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito }) {
+function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito, codiceUsato }) {
   const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: codiceSuggerito?.("A") || "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
   const [d, setD] = useState(voce ? { ...voce } : blank);
   const [dirty, setDirty] = useState(!!nuova);
-  // la voce può cambiare da fuori (codice scambiato con ↑↓, spostamento): se non
-  // ci sono modifiche in corso, riallinea il form
-  useEffect(() => { if (voce && !dirty) setD({ ...voce }); }, [voce]); // eslint-disable-line
+  // la voce può cambiare da fuori (codice scambiato con ↑↓, spostamento): riallinea
+  // il form; con modifiche in corso aggiorna solo codice e identità, così un
+  // salvataggio successivo non rimette il codice vecchio
+  const prevVoce = useRef(voce);
+  useEffect(() => {
+    const prima = prevVoce.current; prevVoce.current = voce;
+    if (!voce) return;
+    if (!dirty) setD({ ...voce });
+    else if (prima && (prima.codice !== voce.codice || prima.id !== voce.id))
+      setD((p) => ({ ...p, codice: voce.codice, id: voce.id, studio: voce.studio }));
+  }, [voce]); // eslint-disable-line
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -150,6 +158,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
 
   const salva = async () => {
     if (!d.codice.trim() || !d.titolo.trim()) { showToast("Codice e titolo obbligatori", "error"); return; }
+    if (codiceUsato?.({ id: voce?.id, categoria_code: voce ? voce.categoria_code : d.categoria_code, codice: d.codice })) {
+      showToast(`Il codice ${d.codice.trim()} è già usato in questa sezione`, "error"); return;
+    }
     setSaving(true);
     try {
       const payload = voce
