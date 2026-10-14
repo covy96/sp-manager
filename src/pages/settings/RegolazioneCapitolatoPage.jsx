@@ -6,7 +6,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
 import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria, codiceDuplicato } from "../../lib/capitolatoModel";
 
-const mono = "'IBM Plex Mono', monospace";
+const mono = "var(--font-label)";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const UNITA = ["", "a corpo", "mq", "cad", "ml", "mc", "kg"];
 
@@ -77,20 +77,20 @@ export default function RegolazioneCapitolatoPage() {
   const codiceSuggerito = (cat) => prossimoCodice(voci, cat);
   const codiceUsato = (v) => codiceDuplicato(voci, v);
 
-  const inputSt = { padding: "7px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
+  const inputSt = { padding: "8px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "var(--font-ui)", outline: "none" };
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 20px 80px" }}>
-      <div style={{ marginBottom: 4, fontSize: 20, fontWeight: 700, color: T.ink }}>Regolazione capitolato</div>
+      <div style={{ marginBottom: 4, fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Regolazione capitolato</div>
       <div style={{ fontFamily: mono, fontSize: 11, color: T.muted, marginBottom: 20 }}>
         Libreria voci del computo metrico. Le voci del template sono condivise; modificandone il testo crei una versione dello studio. Le voci sono in ordine di codice: puoi aggiungerne di nuove, riordinarle con ↑↓ (scambiano il codice) e spostarle in un'altra sezione.
       </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <input placeholder="Cerca voci…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...inputSt, flex: 1, minWidth: 220 }} />
-        <button onClick={() => setAdding(true)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "9px 16px", cursor: "pointer" }}>+ Nuova voce</button>
+        <button onClick={() => setAdding(true)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "10px 16px", cursor: "pointer" }}>+ Nuova voce</button>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 20 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
         <Chip T={T} active={catFilter === ""} onClick={() => setCatFilter("")}>Tutte</Chip>
         {CAPITOLATO_CATEGORIE.map((c) => (
           <Chip key={c.code} T={T} active={catFilter === c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome}>{c.code}</Chip>
@@ -108,8 +108,8 @@ export default function RegolazioneCapitolatoPage() {
       ) : gruppi.length === 0 ? (
         <div style={{ color: T.muted, fontFamily: mono, fontSize: 12, padding: 40, textAlign: "center" }}>Nessuna voce trovata.</div>
       ) : gruppi.map((g) => (
-        <div key={g.cat.code} style={{ marginBottom: 26 }}>
-          <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
+        <div key={g.cat.code} style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.02em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
           {g.items.map((v, i) => (
             <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato}
               spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
@@ -122,7 +122,7 @@ export default function RegolazioneCapitolatoPage() {
 
 function Chip({ T, active, children, ...rest }) {
   return (
-    <button {...rest} style={{ fontFamily: mono, fontSize: 10, padding: "4px 9px", cursor: "pointer",
+    <button {...rest} style={{ fontFamily: mono, fontSize: 10, padding: "4px 10px", cursor: "pointer",
       border: `0.5px solid ${active ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
       background: active ? T.navy : "transparent", color: active ? T.bg : T.muted }}>{children}</button>
   );
@@ -184,8 +184,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
     finally { setBusy(false); }
   };
 
-  const inp = { padding: "6px 9px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
-  const lbl = { fontFamily: mono, fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
+  const inp = { padding: "6px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "var(--font-ui)", outline: "none" };
+  const lbl = { fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
 
   return (
     <div style={{ border: `1px solid ${dirty ? T.navy : T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 8, background: T.surface }}>
@@ -231,7 +231,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
           style={{ ...inp, width: "100%", resize: "vertical", lineHeight: 1.4 }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-        <div style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>
+        <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
           {nuova ? "nuova voce" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
           {" · SOMMANO: " + (d.sommano_labels && d.sommano_labels.length ? d.sommano_labels.join(" / ") : defaultSommanoLabels(d.unita, d.tipo).join(" / "))}
         </div>
@@ -250,9 +250,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
               </select>
             </>
           )}
-          {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "7px 14px", cursor: "pointer" }}>Annulla</button>}
-          {!nuova && !isGlobale && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "7px 12px", cursor: "pointer" }}>Elimina</button>}
-          <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "7px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
+          {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 16px", cursor: "pointer" }}>Annulla</button>}
+          {!nuova && !isGlobale && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Elimina</button>}
+          <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
         </div>
       </div>
     </div>

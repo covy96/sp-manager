@@ -20,7 +20,7 @@ export default function CookieBanner() {
     <div style={{
       position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999,
       background: "#1c1c1e", borderTop: "1px solid #48484a",
-      padding: "14px 20px",
+      padding: "16px 20px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
       flexWrap: "wrap", gap: 12,
     }}>
@@ -42,9 +42,9 @@ export default function CookieBanner() {
           onClick={() => accept("essential")}
           style={{
             background: "none", border: "1px solid rgba(255,255,255,0.25)", cursor: "pointer",
-            color: "rgba(255,255,255,0.6)", padding: "7px 16px",
-            fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-            letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
+            color: "rgba(255,255,255,0.6)", padding: "8px 16px",
+            fontFamily: "var(--font-label)", fontSize: 11,
+            letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap",
           }}
         >
           Solo essenziali
@@ -53,9 +53,9 @@ export default function CookieBanner() {
           onClick={() => accept("all")}
           style={{
             background: "#0a84ff", border: "none", cursor: "pointer",
-            color: "#fff", padding: "7px 18px",
-            fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-            letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
+            color: "#fff", padding: "8px 20px",
+            fontFamily: "var(--font-label)", fontSize: 11,
+            letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap",
           }}
         >
           Accetta tutti

@@ -15,7 +15,7 @@ function currency(v) {
 function BtnPrimary({ children, onClick, disabled, type="button" }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
       {children}
     </button>
   );
@@ -23,14 +23,14 @@ function BtnPrimary({ children, onClick, disabled, type="button" }) {
 function BtnGhost({ children, onClick, disabled, danger }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
+  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 
 export default function ClientiPage() {
@@ -115,10 +115,10 @@ export default function ClientiPage() {
     else { setContacts(p=>p.filter(c=>c.id!==id)); if (expandedId===id) setExpandedId(null); }
   };
 
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
 
   if (loading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
   const filtered = searchQuery.trim()
@@ -135,8 +135,8 @@ export default function ClientiPage() {
       <div style={{marginBottom:16}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:10}}>
           <div>
-            <div style={{fontSize:22,fontWeight:600,color:T.ink,letterSpacing:'-0.03em',marginBottom:3}}>Clienti</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>
+            <div style={{fontSize: 26,fontWeight: 700,color:T.ink,letterSpacing: '-0.025em',marginBottom:4}}>Clienti</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>
               {filtered.length !== contacts.length ? `${filtered.length} di ${contacts.length} clienti` : `${contacts.length} clienti`}
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function ClientiPage() {
           <input
             type="text" placeholder="Cerca cliente..."
             value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
-            style={{width:'100%',boxSizing:'border-box',padding:'7px 28px 7px 28px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:12,fontFamily:"'IBM Plex Mono', monospace",outline:'none'}}
+            style={{width:'100%',boxSizing:'border-box',padding:'8px 28px 8px 28px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:12,fontFamily:"var(--font-label)",outline:'none'}}
           />
           {searchQuery && (
             <button onClick={()=>setSearchQuery("")} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:15,lineHeight:1,padding:0}}>×</button>
@@ -158,17 +158,17 @@ export default function ClientiPage() {
         </div>
       </div>
 
-      {error && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red,marginBottom:14}}>{error}</div>}
+      {error && <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.red,marginBottom:16}}>{error}</div>}
 
       {contacts.length===0 ? (
         <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'48px 0',textAlign:'center'}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted,lineHeight:1.8}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.muted,lineHeight:1.8}}>
             Nessun cliente ancora.<br/>
             I clienti vengono salvati automaticamente quando crei un progetto o una commessa.
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'32px 0',textAlign:'center',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'32px 0',textAlign:'center',fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>
           Nessun cliente trovato per "{searchQuery}"
         </div>
       ) : (
@@ -195,7 +195,7 @@ export default function ClientiPage() {
                       <div style={{fontSize:13,fontWeight:600,color:T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                         {c.full_name}
                       </div>
-                      <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:3,display:'flex',gap:10,flexWrap:'wrap'}}>
+                      <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:4,display:'flex',gap:10,flexWrap:'wrap'}}>
                         {c.company && <span>{c.company}</span>}
                         <span>{projs.length} {projs.length===1?'progetto':'progetti'}</span>
                         <span>{comms.length} {comms.length===1?'commessa':'commesse'}</span>
@@ -207,23 +207,23 @@ export default function ClientiPage() {
 
                   {/* Elimina */}
                   <button onClick={()=>handleDelete(c.id)}
-                    style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,padding:'4px 10px',cursor:'pointer',fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
+                    style={{background:'none',border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm,padding:'4px 10px',cursor:'pointer',fontFamily:"var(--font-label)",fontSize:10,color:T.red,marginLeft:12,flexShrink:0}}>
                     Elimina
                   </button>
                 </div>
 
                 {/* Pannello espanso */}
                 {isOpen && (
-                  <div style={{borderTop:`0.5px solid ${T.border}`,padding:'14px 16px',background:T.bg}}>
+                  <div style={{borderTop:`0.5px solid ${T.border}`,padding:'16px 16px',background:T.bg}}>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
 
                       {/* Progetti */}
                       <div>
-                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
                           Progetti ({projs.length})
                         </div>
                         {projs.length===0 ? (
-                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessun progetto</div>
+                          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>Nessun progetto</div>
                         ) : (
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {projs.map(p=>(
@@ -233,7 +233,7 @@ export default function ClientiPage() {
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
                                 <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
-                                <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
+                                <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.02em'}}>{p.status||"—"}</div>
                               </button>
                             ))}
                           </div>
@@ -242,11 +242,11 @@ export default function ClientiPage() {
 
                       {/* Commesse */}
                       <div>
-                        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
                           Commesse ({comms.length})
                         </div>
                         {comms.length===0 ? (
-                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Nessuna commessa</div>
+                          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>Nessuna commessa</div>
                         ) : (
                           <div style={{display:'flex',flexDirection:'column',gap:4}}>
                             {comms.map(com=>(
@@ -257,10 +257,10 @@ export default function ClientiPage() {
                               >
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
                                   <div style={{fontSize:12,fontWeight:600,color:T.ink,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{com.nome_commessa}</div>
-                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,flexShrink:0,fontWeight:500}}>{currency(com.importo_offerta_base)}</div>
+                                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.navy,flexShrink:0,fontWeight:500}}>{currency(com.importo_offerta_base)}</div>
                                 </div>
                                 {com.numero_offerta && (
-                                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>{com.numero_offerta}</div>
+                                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>{com.numero_offerta}</div>
                                 )}
                               </button>
                             ))}
@@ -283,7 +283,7 @@ export default function ClientiPage() {
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
           <div style={{width:'100%',maxWidth:400,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,borderRadius: T.radius, boxShadow: T.shadowLg, padding:28}}>
             <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:4}}>Aggiungi Cliente</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginBottom:20}}>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginBottom:20}}>
               I clienti si aggiungono anche automaticamente dai progetti e commesse
             </div>
             <form onSubmit={handleAdd} style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -299,7 +299,7 @@ export default function ClientiPage() {
                   onChange={e=>setNewContact({...newContact,company:e.target.value})}
                   style={inputSt}/>
               </div>
-              {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
+              {formError && <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.red}}>{formError}</div>}
               <div style={{height:'0.5px',background:T.border,margin:'4px 0'}}/>
               <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
                 <BtnGhost onClick={()=>{ setAddModalOpen(false); setNewContact({full_name:"",company:""}); setFormError(""); }} disabled={saving}>Annulla</BtnGhost>

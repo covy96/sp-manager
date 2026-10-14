@@ -35,9 +35,9 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm,
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
-      padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
+      fontFamily: "var(--font-label)", fontSize: 11,
+      letterSpacing: '0.03em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+      padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
@@ -48,9 +48,9 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background: 'transparent', border: `1px solid ${danger ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink,
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
-      padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer',
+      fontFamily: "var(--font-label)", fontSize: 11,
+      letterSpacing: '0.03em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+      padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
   );
@@ -60,8 +60,8 @@ function FieldLabel({ children }) {
   const { T } = useTheme();
   return (
     <div style={{
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 9,
-      letterSpacing: '0.2em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 10,
+      letterSpacing: '0.06em', textTransform: 'uppercase',
       color: T.muted, marginBottom: 6,
     }}>{children}</div>
   );
@@ -79,7 +79,7 @@ function Input({ value, onChange, type = "text", placeholder, required, autoComp
         width: '100%', padding: '8px 12px', boxSizing: 'border-box',
         border: `1px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: T.surface, color: T.ink, fontSize: 13,
-        fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
+        fontFamily: "var(--font-ui)", outline: 'none',
       }}
     />
   );
@@ -99,10 +99,10 @@ function CheckRow({ checked, onChange, disabled, label, avatar, dim }) {
         <span style={{
           width: 22, height: 22, borderRadius: '50%', background: avatar.bg,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontWeight: 600, color: T.surface, flexShrink: 0,
+          fontSize: 10, fontWeight: 600, color: T.surface, flexShrink: 0,
         }}>{avatar.initials}</span>
       )}
-      <span style={{ fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>{label}</span>
+      <span style={{ fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)" }}>{label}</span>
     </label>
   );
 }
@@ -126,7 +126,7 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{title}</div>
-            {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: '0.05em' }}>{subtitle}</div>}
+            {subtitle && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: '0.02em' }}>{subtitle}</div>}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18, lineHeight: 1, padding: 0 }}>×</button>
         </div>
@@ -208,22 +208,22 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
             boxShadow: T.shadowMd,
           }}>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onEdit(project); }} style={{
-              display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
+              display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink,
-              letterSpacing: '0.05em',
+              fontFamily: "var(--font-label)", fontSize: 11, color: T.ink,
+              letterSpacing: '0.02em',
             }}>Modifica</button>
             <button onClick={e => { e.stopPropagation(); onArchive(project, e); }} style={{
-              display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
+              display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: '#b45309',
-              letterSpacing: '0.05em',
+              fontFamily: "var(--font-label)", fontSize: 11, color: '#b45309',
+              letterSpacing: '0.02em',
             }}>Archivia</button>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete(project); }} style={{
-              display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left',
+              display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red,
-              letterSpacing: '0.05em',
+              fontFamily: "var(--font-label)", fontSize: 11, color: T.red,
+              letterSpacing: '0.02em',
             }}>Elimina</button>
           </div>
         )}
@@ -237,24 +237,24 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
           <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', paddingRight: 24, marginBottom: 4 }}>
             {project.name || "Progetto senza nome"}
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.05em', marginBottom: 4 }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em', marginBottom: 4 }}>
             {project.client || "—"}
           </div>
           {project.address && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.02em' }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em' }}>
               {project.address}
             </div>
           )}
         </div>
 
         {/* Parte bassa: ore + task + barra + avatars (sempre in fondo) */}
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 16 }}>
           {/* Ore e task */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
               {formatOre(hours)} h
             </span>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
               Task {tasks.completed}/{tasks.total}
             </span>
           </div>
@@ -264,7 +264,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
             <div style={{ flex: 1, height: 2, background: T.border }}>
               <div style={{ height: 2, background: T.navy, width: `${progress}%`, transition: 'width 0.3s' }} />
             </div>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{progress}%</span>
+            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{progress}%</span>
           </div>
         </div>
 
@@ -277,7 +277,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
                 background: avatarColor(m), border: `1.5px solid ${T.surface}`,
                 marginLeft: i > 0 ? -8 : 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, fontWeight: 600, color: T.surface,
+                fontSize: 10, fontWeight: 600, color: T.surface,
               }}>{getInitials(m.user_name || m.user_email)}</div>
             ))}
             {assignedMembers.length > 5 && (
@@ -285,12 +285,12 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
                 width: 24, height: 24, borderRadius: '50%', background: T.muted,
                 border: `1.5px solid ${T.surface}`, marginLeft: -8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 9, color: T.surface,
+                fontSize: 10, color: T.surface,
               }}>+{assignedMembers.length - 5}</div>
             )}
           </div>
         ) : (
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
             Nessun membro assegnato
           </div>
         )}
@@ -304,7 +304,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
   const { T } = useTheme();
   const { isPro, isStudio } = usePlan();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <FieldLabel>Nome progetto *</FieldLabel>
         <Input value={data.name} onChange={onChange('name')} required />
@@ -321,7 +321,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
               <button key={c.id} onMouseDown={() => onSelectClient(c.full_name)} style={{
                 display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left',
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)",
               }}>{c.full_name}</button>
             ))}
           </div>
@@ -358,7 +358,7 @@ export function ProjectForm({ data, onChange, teamMembers, serviceTemplates, glo
             <input type="checkbox" id="gantt_enabled" checked={!!data.gantt_enabled}
               onChange={onGanttChange}
               style={{ accentColor: T.navy, width:14, height:14 }}/>
-            <label htmlFor="gantt_enabled" style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: T.ink, cursor:'pointer' }}>
+            <label htmlFor="gantt_enabled" style={{ fontFamily:"var(--font-label)", fontSize:11, color: T.ink, cursor:'pointer' }}>
               Abilita Gantt per questo progetto
             </label>
           </div>
@@ -799,7 +799,7 @@ export default function ProjectsPage() {
   };
 
   if (studioLoading || !studioId) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
       Caricamento...
     </div>
   );
@@ -812,27 +812,27 @@ export default function ProjectsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Panoramica dei progetti attivi</div>
+                <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Progetti</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>Panoramica dei progetti attivi</div>
               </div>
               <input type="text" placeholder="Cerca progetto o cliente..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                style={{ flex: '1 1 0', minWidth: 0, maxWidth: 200, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+                style={{ flex: '1 1 0', minWidth: 0, maxWidth: 200, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', opacity: searchQuery ? 0.4 : 1 }}>
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none', opacity: searchQuery ? 0.4 : 1 }}>
                 {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
               {clientiDisponibili.length > 0 && (
                 <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
-                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
                   <option value="">Tutti i clienti</option>
                   {clientiDisponibili.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
               <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
                 <option value="recenti">Più recenti</option>
                 <option value="nome">Nome A–Z</option>
                 <option value="completamento">% Completamento</option>
@@ -851,7 +851,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
@@ -864,26 +864,26 @@ export default function ProjectsPage() {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flexShrink: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Progetti</div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em' }}>Panoramica dei progetti attivi</div>
+              <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Progetti</div>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.02em' }}>Panoramica dei progetti attivi</div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
               <input type="text" placeholder="Cerca progetto o cliente..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                style={{ flex: '1 1 160px', minWidth: 0, maxWidth: 240, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
+                style={{ flex: '1 1 160px', minWidth: 0, maxWidth: 240, padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, outline: 'none', boxSizing: 'border-box' }}
               />
               <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none', appearance: 'auto', opacity: searchQuery ? 0.4 : 1 }}>
                 {anniDisponibili.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
               {clientiDisponibili.length > 0 && (
                 <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
-                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                  style={{ padding: '8px 10px', border: `1px solid ${clientFilter ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: clientFilter ? T.navy : T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
                   <option value="">Tutti i clienti</option>
                   {clientiDisponibili.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
               <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
+                style={{ padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, cursor: 'pointer', outline: 'none' }}>
                 <option value="recenti">Più recenti</option>
                 <option value="nome">Nome A–Z</option>
                 <option value="completamento">% Completamento</option>
@@ -902,7 +902,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
@@ -914,29 +914,29 @@ export default function ProjectsPage() {
           </div>
         )}
         {permissions.canCreateProjects && !canAddProject(projects.length) && (
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: T.red, marginTop:8 }}>
-            Limite {plan.maxProjects} progetti attivi raggiunto — archivia i completati o <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, textDecoration:'underline' }}>fai l'upgrade</button>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color: T.red, marginTop:8 }}>
+            Limite {plan.maxProjects} progetti attivi raggiunto — archivia i completati o <button onClick={() => navigate('/impostazioni/piano')} style={{ background:'none', border:'none', cursor:'pointer', color: T.navy, fontFamily:"var(--font-label)", fontSize:10, textDecoration:'underline' }}>fai l'upgrade</button>
           </div>
         )}
       </div>
 
       {/* Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 64, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+        <div style={{ textAlign: 'center', padding: 64, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : error ? (
         <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', color: T.red, fontSize: 13 }}>Errore: {error}</div>
       ) : filteredProjectsOrdered.length === 0 ? (
-        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
           {searchQuery ? `Nessun progetto trovato per "${searchQuery}".` : selectedUserIds.length > 0 ? "Nessun progetto per gli utenti selezionati." : "Nessun progetto disponibile."}
         </div>
       ) : (
         <>
           {sortBy === "recenti" && !isMobile && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>
               ↕ Trascina per riordinare
             </div>
           )}
-          <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+          <div className="asm-list asm-fade-in" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(272px, 1fr))', gap: 16 }}>
             {filteredProjectsOrdered.map(project => (
               <ProjectCard
                 key={project.id} project={project}
@@ -961,7 +961,7 @@ export default function ProjectsPage() {
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
           background: T.navy, color: T.bg, padding: '10px 20px',
-          fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.05em', zIndex: 100,
+          fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.02em', zIndex: 100,
         }}>✓ {toast}</div>
       )}
 
@@ -986,9 +986,9 @@ export default function ProjectsPage() {
 
           {modalStep === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 14px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 16px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg }}>
                 <input type="checkbox" checked={formData.createInlineCommessa} onChange={e => setFormData(p => ({ ...p, createInlineCommessa: e.target.checked }))} style={{ accentColor: T.navy, width: 14, height: 14 }} />
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>Crea anche la commessa per questo progetto</span>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.02em' }}>Crea anche la commessa per questo progetto</span>
               </label>
 
               {formData.createInlineCommessa && (
@@ -1006,7 +1006,7 @@ export default function ProjectsPage() {
             </div>
           )}
 
-          {formError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 12 }}>{formError}</div>}
+          {formError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red, marginTop: 12 }}>{formError}</div>}
 
           <Divider />
           <div style={{ display: 'flex', justifyContent: modalStep === 2 ? 'space-between' : 'flex-end', gap: 10 }}>
@@ -1033,7 +1033,7 @@ export default function ProjectsPage() {
             onGanttChange={e => setEditFormData(p => ({ ...p, gantt_enabled: e.target.checked }))}
             isEdit
           />
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 16 }}>
             <FieldLabel>Commesse collegate</FieldLabel>
             <LinkedCommesseField
               selectedIds={editFormData.selectedCommessaIds}
@@ -1051,7 +1051,7 @@ export default function ProjectsPage() {
 
       {/* MODAL: ARCHIVIA PROGETTO */}
       <Modal open={archiveModalOpen && !!projectToArchive} onClose={() => { if (!archiveLoading) setArchiveModalOpen(false); }} title="Archivia progetto?" width={420}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+        <p style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
           Il progetto <strong style={{ color: T.ink }}>{projectToArchive?.name}</strong> non sarà più visibile nella lista principale.
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
@@ -1065,10 +1065,10 @@ export default function ProjectsPage() {
         <Modal open={true} onClose={() => setCommessaArchiveModal(null)} title={commessaArchiveModal.canArchive ? "Archiviare anche la commessa?" : "Commessa con saldo in sospeso"} width={440}>
           {commessaArchiveModal.canArchive ? (
             <>
-              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 8 }}>
+              <p style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 8 }}>
                 La commessa collegata <strong style={{ color: T.ink }}>{commessaArchiveModal.commessa.nome_commessa}</strong> ha saldo a zero.
               </p>
-              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+              <p style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
                 Vuoi archiviarla insieme al progetto?
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
@@ -1079,13 +1079,13 @@ export default function ProjectsPage() {
           ) : (
             <>
               <div style={{ background: '#fefce8', border: '0.5px solid #fbbf24', padding: '12px 16px', marginBottom: 20 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: '#92400e', lineHeight: 1.7 }}>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: '#92400e', lineHeight: 1.7 }}>
                   La commessa <strong>{commessaArchiveModal.commessa.nome_commessa}</strong> ha ancora{' '}
                   <strong>{new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(Math.abs(commessaArchiveModal.residuo))}</strong>{' '}
                   di residuo non incassato e non verrà archiviata.
                 </div>
               </div>
-              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+              <p style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
                 Il progetto è stato archiviato. Puoi archiviare la commessa manualmente una volta saldato il pagamento.
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

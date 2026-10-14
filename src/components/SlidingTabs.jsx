@@ -43,7 +43,7 @@ export default function SlidingTabs({ tabs, active, onChange, style = {} }) {
         display: "inline-flex",
         background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
         borderRadius: 99,
-        padding: 3,
+        padding: 4,
         gap: 0,
         ...style,
       }}
@@ -80,14 +80,14 @@ export default function SlidingTabs({ tabs, active, onChange, style = {} }) {
           style={{
             position: "relative",
             zIndex: 1,
-            padding: "5px 14px",
+            padding: "6px 16px",
             border: "none",
             background: "transparent",
             cursor: "pointer",
             borderRadius: 99,
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-label)",
             fontSize: 10,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.03em",
             textTransform: "uppercase",
             color: active === tab.key
               ? (isDark ? "#fff" : T.ink)

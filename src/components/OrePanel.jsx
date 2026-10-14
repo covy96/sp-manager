@@ -107,7 +107,7 @@ function exportOrePDF(entries, memberMap, projectName) {
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Space Grotesk',sans-serif;font-size:12px;padding:24px 32px;color:#0E0E0D;background:#fff}
-    @page{size:A4 portrait;margin:14mm}
+    @page{size:A4 portrait;margin:16mm}
     @media print{body{padding:0};-webkit-print-color-adjust:exact;print-color-adjust:exact}
     table{width:100%;border-collapse:collapse}
     tr:hover{background:#f5f7fa}
@@ -130,7 +130,7 @@ function exportOrePDF(entries, memberMap, projectName) {
 
 export default function OrePanel({ projectId, studioId, projectName }) {
   const { T, isDark } = useTheme();
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const mono = { fontFamily: "var(--font-label)" };
 
   const [open, setOpen]           = useState(false);
   useBodyScrollLock(open);
@@ -217,7 +217,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
   const toggleExpand = (key) => setExpanded(p => ({ ...p, [key]: !p[key] }));
 
   const btnBase = {
-    ...mono, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase",
+    ...mono, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase",
     padding: "4px 10px", cursor: "pointer", border: `1px solid ${T.borderMd}`,
   };
 
@@ -228,9 +228,9 @@ export default function OrePanel({ projectId, studioId, projectName }) {
         onClick={() => { setOpen(true); loadEntries(); }}
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          padding: "7px 13px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm,
+          padding: "8px 12px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm,
           background: "transparent", color: T.ink, cursor: "pointer",
-          ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
+          ...mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase",
           whiteSpace: "nowrap",
         }}
       >
@@ -262,7 +262,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
             {/* Header modal */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "14px 20px", borderBottom: `0.5px solid ${T.border}`,
+              padding: "16px 20px", borderBottom: `0.5px solid ${T.border}`,
             }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: "-0.01em" }}>Ore lavorate</div>
@@ -279,7 +279,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
                 <button
                   onClick={() => exportOrePDF(entries, memberMap, projectName)}
                   title="Scarica PDF"
-                  style={{ background: "none", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "4px 10px", ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}
+                  style={{ background: "none", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "4px 10px", ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 6 }}
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -321,7 +321,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
                           <polyline points="9 18 15 12 9 6"/>
                         </svg>
                         <span style={{ ...mono, fontSize: 10, color: T.ink, fontWeight: 600, textTransform: "capitalize" }}>{g.label}</span>
-                        <span style={{ ...mono, fontSize: 9, color: T.muted }}>({memberRows.length} {memberRows.length === 1 ? "persona" : "persone"})</span>
+                        <span style={{ ...mono, fontSize: 10, color: T.muted }}>({memberRows.length} {memberRows.length === 1 ? "persona" : "persone"})</span>
                       </div>
                       <span style={{ ...mono, fontSize: 11, color: T.navy, fontWeight: 700 }}>{formatOre(g.total)} h</span>
                     </button>
@@ -330,7 +330,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
                     {isOpen && memberRows.map(([name, ore]) => (
                       <div key={name} style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "7px 12px", borderBottom: `0.5px solid ${T.border}`,
+                        padding: "8px 12px", borderBottom: `0.5px solid ${T.border}`,
                         background: T.surface,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

@@ -76,8 +76,8 @@ export default function ProgettoArchiviotoRecapPage() {
     load();
   }, [id, studioId]);
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
-  const labelSt = { ...mono, fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 };
+  const mono = { fontFamily:"var(--font-label)" };
+  const labelSt = { ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 };
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
   if (!project) return <div style={{ ...mono, fontSize:11, color:T.red }}>Progetto non trovato</div>;
@@ -116,17 +116,17 @@ export default function ProgettoArchiviotoRecapPage() {
   });
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14, maxWidth:720 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:720 }}>
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-        <button onClick={()=>navigate('/impostazioni/progetti-archiviati')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+        <button onClick={()=>navigate('/impostazioni/progetti-archiviati')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'6px 12px', ...mono, fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase' }}>
           ← Archiviati
         </button>
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{project.name}</div>
-            <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:'#854d0e', background:'#fefce8', padding:'3px 8px', borderRadius:2 }}>ARCHIVIATO</span>
+            <span style={{ ...mono, fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', color:'#854d0e', background:'#fefce8', padding:'4px 8px', borderRadius:2 }}>ARCHIVIATO</span>
           </div>
           {project.client && <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>{project.client}</div>}
         </div>
@@ -158,7 +158,7 @@ export default function ProgettoArchiviotoRecapPage() {
             ['Stato finale', project.status || '—'],
           ].map(([l,v]) => (
             <div key={l}>
-              <div style={{ ...mono, fontSize:9, color:T.muted, marginBottom:4 }}>{l}</div>
+              <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4 }}>{l}</div>
               <div style={{ fontSize:13, color:T.ink }}>{v}</div>
             </div>
           ))}
@@ -192,7 +192,7 @@ export default function ProgettoArchiviotoRecapPage() {
                         <div key={t.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 10px', background:t.status==='completed'?T.greenLight:T.surface2, border:`0.5px solid ${t.status==='completed'?T.green:T.border}` }}>
                           <span style={{ color:t.status==='completed'?T.green:T.muted, fontSize:12 }}>{t.status==='completed'?'✓':'○'}</span>
                           <span style={{ fontSize:12, color:T.ink }}>{t.title}</span>
-                          {t.assigned_to_name && <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft:'auto' }}>{t.assigned_to_name}</span>}
+                          {t.assigned_to_name && <span style={{ ...mono, fontSize:10, color:T.muted, marginLeft:'auto' }}>{t.assigned_to_name}</span>}
                         </div>
                       ))}
                     </div>
@@ -218,7 +218,7 @@ export default function ProgettoArchiviotoRecapPage() {
                     {(nome||'?').slice(0,2).toUpperCase()}
                   </div>
                   <div style={{ flex:1 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
                       <span style={{ fontSize:13, color:T.ink }}>{nome}</span>
                       <span style={{ ...mono, fontSize:11, color:T.navy, fontWeight:600 }}>{fmtOre(ore)}</span>
                     </div>
@@ -249,19 +249,19 @@ export default function ProgettoArchiviotoRecapPage() {
               return (
                 <button key={c.id}
                   onClick={()=> navigate(c.archived ? `/impostazioni/commesse-archiviate/${c.id}` : `/commesse/${c.id}`)}
-                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:T.surface2, border:`0.5px solid ${T.border}`, cursor:'pointer', textAlign:'left', width:'100%' }}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', background:T.surface2, border:`0.5px solid ${T.border}`, cursor:'pointer', textAlign:'left', width:'100%' }}
                   onMouseEnter={e=>e.currentTarget.style.borderColor=T.navy}
                   onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                 >
                   <div>
                     <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{c.nome_commessa}</div>
-                    <div style={{ ...mono, fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.08em' }}>
+                    <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.03em' }}>
                       {c.stato_pagamento||'—'} {c.archived ? '· archiviata' : ''}
                     </div>
                   </div>
                   <div style={{ textAlign:'right' }}>
                     <div style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(tot)}</div>
-                    <div style={{ ...mono, fontSize:9, color:T.green, marginTop:2 }}>{perc}% incassato →</div>
+                    <div style={{ ...mono, fontSize:10, color:T.green, marginTop:2 }}>{perc}% incassato →</div>
                   </div>
                 </button>
               );
@@ -276,7 +276,7 @@ export default function ProgettoArchiviotoRecapPage() {
           if(!confirm('Ripristinare questo progetto?')) return;
           await supabase.from('projects').update({ archived:false }).eq('id', id);
           navigate('/impostazioni/progetti-archiviati');
-        }} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+        }} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
           Ripristina progetto
         </button>
       </div>

@@ -21,8 +21,8 @@ function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   return (
     <button type={type} onClick={onClick} disabled={disabled} className="asm-btn" style={{
       background:T.navy,color:T.bg,border:'none',
-      fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
-      padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,borderRadius:T.radiusSm,...style,
+      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',
+      padding:'8px 20px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,borderRadius:T.radiusSm,...style,
     }}>{children}</button>
   );
 }
@@ -31,14 +31,14 @@ function BtnGhost({ children, onClick, disabled, danger, style={} }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background:'transparent',border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm,color:danger?T.red:T.ink,
-      fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
-      padding:'8px 18px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.5:1,...style,
+      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',
+      padding:'8px 20px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.5:1,...style,
     }}>{children}</button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6}}>{children}</div>;
+  return <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:6}}>{children}</div>;
 }
 function Input({ value, onChange, type="text", placeholder, required, style={} }) {
   const { T } = useTheme();
@@ -46,7 +46,7 @@ function Input({ value, onChange, type="text", placeholder, required, style={} }
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
       onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
-      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.border}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',borderRadius:T.radiusSm,...style}}/>
+      style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${focus?T.navy:T.border}`,background:T.surface,color:T.ink,fontSize:13,fontFamily:"var(--font-ui)",outline:'none',borderRadius:T.radiusSm,...style}}/>
   );
 }
 function Divider() {
@@ -60,9 +60,9 @@ function ScrollBox({ children, maxHeight=150 }) {
 function CheckRow({ checked, onChange, label }) {
   const { T } = useTheme();
   return (
-    <label style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',cursor:'pointer'}}>
+    <label style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',cursor:'pointer'}}>
       <input type="checkbox" checked={checked} onChange={onChange} style={{accentColor:T.navy,width:13,height:13}}/>
-      <span style={{fontSize:12,color:T.ink,fontFamily:"'Space Grotesk', sans-serif"}}>{label}</span>
+      <span style={{fontSize:12,color:T.ink,fontFamily:"var(--font-ui)"}}>{label}</span>
     </label>
   );
 }
@@ -83,26 +83,26 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
   },[]);
   return (
     <div onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
-      className="asm-card" style={{background:hover?T.surface2:T.surface,border:`1px solid ${T.border}`,padding:'18px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
+      className="asm-card" style={{background:hover?T.surface2:T.surface,border:`1px solid ${T.border}`,padding:'20px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div onClick={onClick} style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
           <div style={{fontSize:14,fontWeight:600,color:T.ink,letterSpacing:'-0.01em'}}>{commessa.nome_commessa||"Commessa senza nome"}</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
         </div>
         <div style={{display:'flex',alignItems:'flex-start',gap:8}}>
           <div onClick={onClick} style={{textAlign:'right',flexShrink:0}}>
             <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.03em'}}>{currency(base)}</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>offerta base</div>
           </div>
           <div ref={menuRef} style={{position:'relative',flexShrink:0}}>
             <button onClick={e=>{e.stopPropagation();setMenuOpen(p=>!p);}} style={{background:'none',border:`0.5px solid ${T.borderMd}`,cursor:'pointer',color:T.muted,width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,lineHeight:1}}>···</button>
             {menuOpen&&(
               <div style={{position:'absolute',right:0,top:'100%',zIndex:20,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`,minWidth:160,boxShadow:T.shadowMd,borderRadius:12}}>
-                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
+                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Archiviare questa commessa?'))return;await onArchive(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'8px 10px',background:'none',border:'none',cursor:'pointer',color:T.muted,fontFamily:"var(--font-ui)",fontSize:13,textAlign:'left'}}>
                   Archivia
                 </button>
-                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.'))return;await onDelete(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'7px 10px',background:'none',border:'none',cursor:'pointer',color:T.red,fontFamily:"'Space Grotesk',sans-serif",fontSize:13,textAlign:'left'}}>
+                <button onClick={async e=>{e.stopPropagation();setMenuOpen(false);if(!confirm('Eliminare questa commessa? Verrà spostata nel cestino.'))return;await onDelete(commessa.id);}} style={{display:'flex',alignItems:'center',width:'100%',padding:'8px 10px',background:'none',border:'none',cursor:'pointer',color:T.red,fontFamily:"var(--font-ui)",fontSize:13,textAlign:'left'}}>
                   Elimina
                 </button>
               </div>
@@ -120,8 +120,8 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
           {label:'Data',value:commessa.data_commessa?new Date(commessa.data_commessa).toLocaleDateString('it-IT'):'—',color:T.muted},
         ].map(({label,value,color})=>(
           <div key={label}>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,fontWeight:500,color}}>{value}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:11,fontWeight:500,color}}>{value}</div>
           </div>
         ))}
       </div>
@@ -326,15 +326,15 @@ export default function CommessePage() {
     setNewProjectData(p=>({...p,selectedMembers:p.selectedMembers.includes(id)?p.selectedMembers.filter(x=>x!==id):[...p.selectedMembers,id]}));
   };
 
-  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none'};
+  const selectSt={width:'100%',padding:'8px 12px',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"var(--font-ui)",outline:'none'};
   const radioBtnSt=(active)=>({
-    display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+    display:'flex',alignItems:'center',gap:10,padding:'10px 16px',
     border:`0.5px solid ${active?T.navy:T.border}`, borderRadius: T.radiusSm,
     background:active?T.navyLight:T.surface,cursor:'pointer',marginBottom:6,width:'100%',textAlign:'left',
   });
 
   if (studioLoading||!studioId) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:240,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:240,fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
   return (
@@ -364,8 +364,8 @@ export default function CommessePage() {
         return (<>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
         <div>
-          <div style={{fontSize:22,fontWeight:600,letterSpacing:'-0.03em',color:T.ink}}>Commesse</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>
+          <div style={{fontSize: 26,fontWeight: 700,letterSpacing: '-0.025em',color:T.ink}}>Commesse</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>
             {commesseFiltrate.length} commesse · {currency(commesseFiltrate.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
           </div>
         </div>
@@ -375,10 +375,10 @@ export default function CommessePage() {
             placeholder="Cerca commessa, cliente..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{padding:'8px 12px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,outline:'none',width:200}}
+            style={{padding:'8px 12px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"var(--font-label)",fontSize:11,outline:'none',width:200}}
           />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{padding:'8px 10px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
+            style={{padding:'8px 10px',border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontFamily:"var(--font-label)",fontSize:11,cursor:'pointer',outline:'none',appearance:'auto',opacity:searchQuery?0.4:1}}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
@@ -390,17 +390,17 @@ export default function CommessePage() {
 
       {/* Lista */}
       {loading ? (
-        <div style={{textAlign:'center',padding:64,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
+        <div style={{textAlign:'center',padding:64,fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>Caricamento...</div>
       ) : error ? (
         <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:32,color:T.red,fontSize:13}}>Errore: {error}</div>
       ) : commesseFiltrate.length===0 ? (
         <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:'56px 32px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
           <div style={{fontSize:32,opacity:0.25}}>📋</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
-          {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{marginTop:4,background:T.navy,color:T.bg,border:'none',borderRadius:T.radiusSm,fontFamily:"'IBM Plex Mono', monospace",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer'}}>+ Nuova commessa</button>}
+          <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
+          {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{marginTop:4,background:T.navy,color:T.bg,border:'none',borderRadius:T.radiusSm,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer'}}>+ Nuova commessa</button>}
         </div>
       ) : (
-        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap:10}}>
+        <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap: 16}}>
           {commesseFiltrate.map(c=>(
             <CommessaCard key={c.id} commessa={c} incassato={incassatoMap[c.id]||0} onClick={()=>navigate(`/commesse/${c.id}`)} onArchive={async(id)=>{ await supabase.from('commesse').update({archived:true}).eq('id',id); await loadData(); }} onDelete={(id)=>{ const c=commesseFiltrate.find(x=>x.id===id); setDeleteModal({ id, nome: c?.nome_commessa, numero_offerta: c?.numero_offerta, studio: c?.studio }); }}/>
           ))}
@@ -418,7 +418,7 @@ export default function CommessePage() {
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:20}}>
               <div>
                 <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>Nuova Commessa</div>
-                <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:4}}>
+                <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:4}}>
                   Step {step} di 2 — {step===1?"Dati commessa":"Progetto collegato"}
                 </div>
               </div>
@@ -427,7 +427,7 @@ export default function CommessePage() {
 
             {/* ── STEP 1: Dati commessa ── */}
             {step===1 && (
-              <form onSubmit={goStep2} style={{display:'flex',flexDirection:'column',gap:14}}>
+              <form onSubmit={goStep2} style={{display:'flex',flexDirection:'column',gap:16}}>
                 <div>
                   <FieldLabel>Numero offerta</FieldLabel>
                   <Input value={formData.numero_offerta} onChange={handleChange('numero_offerta')} placeholder="Es. 01/2026"/>
@@ -445,7 +445,7 @@ export default function CommessePage() {
                     <div style={{position:'absolute',left:0,right:0,top:'100%',background:T.surface,border:`0.5px solid ${T.borderMd}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, zIndex:40,maxHeight:160,overflowY:'auto'}}>
                       {clientSugg.map(c=>(
                         <button key={c.id} type="button" onMouseDown={()=>{setClientInput(c.full_name);setClientSugg([]);}}
-                          style={{display:'block',width:'100%',padding:'8px 12px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontSize:13,color:T.ink,fontFamily:"'Space Grotesk', sans-serif"}}
+                          style={{display:'block',width:'100%',padding:'8px 12px',textAlign:'left',background:'none',border:'none',cursor:'pointer',fontSize:13,color:T.ink,fontFamily:"var(--font-ui)"}}
                           onMouseEnter={e=>e.currentTarget.style.background=T.bg}
                           onMouseLeave={e=>e.currentTarget.style.background='transparent'}
                         >{c.full_name}</button>
@@ -465,10 +465,10 @@ export default function CommessePage() {
                 <div>
                   <FieldLabel>Note amministrative</FieldLabel>
                   <textarea value={formData.note_amministrative} onChange={handleChange('note_amministrative')} rows={3}
-                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"'Space Grotesk', sans-serif",outline:'none',resize:'vertical'}}/>
+                    style={{width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"var(--font-ui)",outline:'none',resize:'vertical'}}/>
                 </div>
 
-                {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
+                {formError && <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.red}}>{formError}</div>}
                 <Divider/>
                 <div style={{display:'flex',justifyContent:'flex-end',gap:10}}>
                   <BtnGhost onClick={resetModal} disabled={saving}>Annulla</BtnGhost>
@@ -479,13 +479,13 @@ export default function CommessePage() {
 
             {/* ── STEP 2: Progetto ── */}
             {step===2 && (
-              <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:14}}>
+              <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:16}}>
 
                 {/* Riepilogo commessa */}
-                <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'10px 14px'}}>
-                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.15em',marginBottom:4}}>COMMESSA</div>
+                <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'10px 16px'}}>
+                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.05em',marginBottom:4}}>COMMESSA</div>
                   <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{formData.nome_commessa}</div>
-                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{clientInput} · {currency(Number(formData.importo_offerta_base)||0)}</div>
+                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{clientInput} · {currency(Number(formData.importo_offerta_base)||0)}</div>
                 </div>
 
                 {/* Scelta modalità progetto */}
@@ -503,7 +503,7 @@ export default function CommessePage() {
                         </div>
                         <div>
                           <div style={{fontSize:13,fontWeight:600,color:projectMode===opt.val?T.navy:T.ink}}>{opt.label}</div>
-                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>{opt.desc}</div>
+                          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>{opt.desc}</div>
                         </div>
                       </button>
                     ))}
@@ -515,7 +515,7 @@ export default function CommessePage() {
                   <div>
                     <FieldLabel>Seleziona progetto</FieldLabel>
                     {freeProjects.length===0 ? (
-                      <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,padding:'8px 0'}}>
+                      <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,padding:'8px 0'}}>
                         Nessun progetto disponibile — tutti i progetti hanno già una commessa.
                       </div>
                     ) : (
@@ -531,8 +531,8 @@ export default function CommessePage() {
 
                 {/* Crea nuovo progetto */}
                 {projectMode==="new" && (
-                  <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
-                    <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
+                  <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'16px 16px',display:'flex',flexDirection:'column',gap:12}}>
+                    <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
                     <div>
                       <FieldLabel>Nome progetto *</FieldLabel>
                       <Input value={newProjectData.name} onChange={e=>setNewProjectData(p=>({...p,name:e.target.value}))} placeholder={formData.nome_commessa||"Nome progetto"}/>
@@ -554,7 +554,7 @@ export default function CommessePage() {
                           ))}
                         </ScrollBox>
                         {newProjectData.selectedServices.length>0 && (
-                          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:6}}>
+                          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:6}}>
                             {newProjectData.selectedServices.reduce((tot,sn)=>{const s=serviceTemplates.find(x=>x.service_name===sn);return tot+(s?.task_templates?.length||0);},0)} task predefinite verranno create
                           </div>
                         )}
@@ -580,7 +580,7 @@ export default function CommessePage() {
                   </div>
                 )}
 
-                {formError && <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.red}}>{formError}</div>}
+                {formError && <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.red}}>{formError}</div>}
                 <Divider/>
                 <div style={{display:'flex',justifyContent:'space-between',gap:10}}>
                   <BtnGhost onClick={()=>{setStep(1);setFormError("");}}>← Indietro</BtnGhost>
@@ -603,16 +603,16 @@ export default function CommessePage() {
           <div onClick={e=>e.stopPropagation()} style={{ background:T.surface, border:`1px solid ${T.border}`, width:'100%', maxWidth:420, padding:28, display:'flex', flexDirection:'column', gap:16 }}>
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:13, fontWeight:600, color:T.ink }}>Elimina commessa</div>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:13, fontWeight:600, color:T.ink }}>Elimina commessa</div>
               <button onClick={()=>setDeleteModal(null)} disabled={deletingSaving} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
             </div>
-            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink, lineHeight:1.6 }}>
+            <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.ink, lineHeight:1.6 }}>
               Sei sicuro di voler eliminare la commessa <strong>{deleteModal.nome}</strong>?
             </div>
             {deleteModal.numero_offerta && (
-              <div style={{ background:T.surface2, border:`1px solid ${T.border}`, padding:'12px 14px' }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Offerta collegata — N° {deleteModal.numero_offerta}</div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
+              <div style={{ background:T.surface2, border:`1px solid ${T.border}`, padding:'12px 16px' }}>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:4 }}>Offerta collegata — N° {deleteModal.numero_offerta}</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
               </div>
             )}
             {deleteModal.numero_offerta ? (
@@ -627,7 +627,7 @@ export default function CommessePage() {
                       await supabase.from('offerte').update({deleted_at:new Date().toISOString()}).eq('studio',deleteModal.studio).eq('numero_offerta',deleteModal.numero_offerta).is('deleted_at',null);
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
-                    style={{ flex:1, padding:'9px 10px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                    style={{ flex:1, padding:'10px 10px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                   >{deletingSaving?'...':'Sì, elimina entrambe'}</button>
                   <button
                     disabled={deletingSaving}
@@ -637,7 +637,7 @@ export default function CommessePage() {
                       if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
-                    style={{ flex:1, padding:'9px 10px', background:'transparent', color:T.ink, border:`1px solid ${T.borderMd}`, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                    style={{ flex:1, padding:'10px 10px', background:'transparent', color:T.ink, border:`1px solid ${T.borderMd}`, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                   >{deletingSaving?'...':'No, solo la commessa'}</button>
                 </div>
                 <div style={{ display:'flex', justifyContent:'flex-end' }}>
@@ -655,7 +655,7 @@ export default function CommessePage() {
                     if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                     setDeleteModal(null);setDeletingSaving(false);await loadData();
                   }}
-                  style={{ padding:'8px 18px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                  style={{ padding:'8px 20px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                 >{deletingSaving?'Eliminazione...':'Elimina'}</button>
               </div>
             )}

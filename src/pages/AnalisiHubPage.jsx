@@ -74,7 +74,7 @@ function KpiCard({ label, value, color, T, active, onClick }) {
         border: `1px solid ${active ? T.navy : T.border}`,
         borderRadius: T.radius,
         boxShadow: active ? T.shadowMd : T.shadow,
-        padding: "16px 18px",
+        padding: "16px 20px",
         cursor: onClick ? "pointer" : "default",
         transition: "background 180ms, box-shadow 180ms, transform 150ms",
         transform: active ? "translateY(-1px)" : "none",
@@ -82,8 +82,8 @@ function KpiCard({ label, value, color, T, active, onClick }) {
       onMouseEnter={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadowMd; }}
       onMouseLeave={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadow; }}
     >
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: active ? "rgba(255,255,255,0.65)" : T.muted, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: active ? "#fff" : (color || T.ink), lineHeight: 1 }}>{value}</div>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: active ? "rgba(255,255,255,0.65)" : T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-ui)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: active ? "#fff" : (color || T.ink), lineHeight: 1 }}>{value}</div>
     </div>
   );
 }
@@ -92,8 +92,8 @@ function Panel({ title, children, T, style = {} }) {
   return (
     <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, overflow: "hidden", ...style }}>
       {title && (
-        <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}` }}>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600, color: T.ink }}>{title}</div>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600, color: T.ink }}>{title}</div>
         </div>
       )}
       {children}
@@ -115,8 +115,8 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
     else { setSortBy(col); setSortDir("desc"); }
   };
   const SortBtn = ({ col, label, align = "left" }) => (
-    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4, width: "100%", justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
-      {label} <span style={{ fontSize: 9 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4, width: "100%", justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
+      {label} <span style={{ fontSize: 10 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
   );
 
@@ -182,8 +182,8 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
   const nCorso = offerteTutte.filter(o => o.stato === "offerta").length;
   const totVal = offerteFiltrate.reduce((s, o) => s + (Number(o.importo_offerta_base) || 0), 0);
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `1px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
-  const tdSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}` };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `1px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const tdSt = { fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}` };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -202,7 +202,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: 16, alignItems: "start" }}>
         <Panel title="Voci offerta" T={T}>
           {righeVoci.length === 0
-            ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: 28, textAlign: "center" }}>Nessuna voce configurata</div>
+            ? <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, padding: 28, textAlign: "center" }}>Nessuna voce configurata</div>
             : <>
                 {righeVoci.map((r, i) => {
                   const idx = pieData.findIndex(p => p.name === r.nome);
@@ -213,19 +213,19 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                     <div key={r.nome}
                       onMouseEnter={() => setHoveredVoce(r.nome)} onMouseLeave={() => setHoveredVoce(null)}
                       onClick={() => hasVal && setVoceModal({ nome: r.nome, color: colore, offerte: voceOfferteMap[k] || [] })}
-                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 18px", borderBottom: i < righeVoci.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === r.nome && hasVal ? T.glassSheen : "transparent", transition: "background 150ms", cursor: hasVal ? "pointer" : "default" }}>
+                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: i < righeVoci.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === r.nome && hasVal ? T.glassSheen : "transparent", transition: "background 150ms", cursor: hasVal ? "pointer" : "default" }}>
                       <div style={{ width: 9, height: 9, borderRadius: "50%", background: hasVal ? colore : T.border, flexShrink: 0 }} />
-                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: hasVal ? T.ink : T.muted, flex: 1 }}>{r.nome}</div>
-                      {hasVal && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{pct(r.totale, totalTemplate)}%</div>}
-                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: hasVal ? 600 : 400, color: hasVal ? T.ink : T.muted, minWidth: 100, textAlign: "right" }}>{hasVal ? currency(r.totale) : "—"}</div>
-                      {hasVal && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, opacity: hoveredVoce === r.nome ? 1 : 0, transition: "opacity 150ms" }}>↗</div>}
+                      <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: hasVal ? T.ink : T.muted, flex: 1 }}>{r.nome}</div>
+                      {hasVal && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{pct(r.totale, totalTemplate)}%</div>}
+                      <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: hasVal ? 600 : 400, color: hasVal ? T.ink : T.muted, minWidth: 100, textAlign: "right" }}>{hasVal ? currency(r.totale) : "—"}</div>
+                      {hasVal && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, opacity: hoveredVoce === r.nome ? 1 : 0, transition: "opacity 150ms" }}>↗</div>}
                     </div>
                   );
                 })}
                 {totalTemplate > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em", flex: 1 }}>Totale</div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
+                  <div style={{ display: "flex", alignItems: "center", padding: "12px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }}>Totale</div>
+                    <div style={{ fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
                   </div>
                 )}
               </>
@@ -237,13 +237,13 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
           style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, overflow: "hidden", cursor: pieData.length > 0 ? "pointer" : "default", transition: "box-shadow 200ms, transform 200ms" }}
           onMouseEnter={e => { if (pieData.length > 0) { e.currentTarget.style.boxShadow = T.shadowMd; e.currentTarget.style.transform = "translateY(-1px)"; }}}
           onMouseLeave={e => { e.currentTarget.style.boxShadow = T.shadow; e.currentTarget.style.transform = "none"; }}>
-          <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600, color: T.ink }}>Distribuzione voci</div>
-            {pieData.length > 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>↗ espandi</div>}
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600, color: T.ink }}>Distribuzione voci</div>
+            {pieData.length > 0 && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>↗ espandi</div>}
           </div>
           <div style={{ padding: "12px 16px" }}>
             {pieData.length === 0
-              ? <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun dato</div>
+              ? <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 200, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Nessun dato</div>
               : <>
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
@@ -251,7 +251,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                         onMouseEnter={(_, i) => setHoveredVoce(pieData[i]?.name ?? null)} onMouseLeave={() => setHoveredVoce(null)}>
                         {pieData.map(e => <Cell key={e.name} fill={e.color} stroke="none" opacity={hoveredVoce === null || hoveredVoce === e.name ? 1 : 0.2} />)}
                       </Pie>
-                      <Tooltip contentStyle={{ background: T.glassBg, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={(v, n) => [currency(v), n]} />
+                      <Tooltip contentStyle={{ background: T.glassBg, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11 }} formatter={(v, n) => [currency(v), n]} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
@@ -259,8 +259,8 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                       <div key={d.name} onMouseEnter={() => setHoveredVoce(d.name)} onMouseLeave={() => setHoveredVoce(null)}
                         style={{ display: "flex", alignItems: "center", gap: 8, opacity: hoveredVoce === null || hoveredVoce === d.name ? 1 : 0.3, transition: "opacity 150ms" }}>
                         <div style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
-                        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 11, color: T.ink, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{pct(d.value, totalTemplate)}%</div>
+                        <div style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: T.ink, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
+                        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{pct(d.value, totalTemplate)}%</div>
                       </div>
                     ))}
                   </div>
@@ -273,7 +273,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
       {/* Tabella offerte */}
       <Panel title={`Offerte${ofTab !== "tutte" ? ` — ${OFFERTA_TABS.find(t => t.key === ofTab)?.label}` : ""}`} T={T}>
         {offerteFiltrate.length === 0
-          ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, textAlign: "center", padding: "40px 0" }}>Nessuna offerta</div>
+          ? <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, textAlign: "center", padding: "40px 0" }}>Nessuna offerta</div>
           : <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
@@ -306,12 +306,12 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                         onMouseEnter={e => e.currentTarget.style.background = T.glassSheen}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         <td style={{ ...tdSt, color: T.muted }}>{o.numero_offerta || "—"}</td>
-                        <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13 }}>{o.nome_offerta || "—"}</td>
+                        <td style={{ ...tdSt, fontFamily: "var(--font-ui)", fontSize: 13 }}>{o.nome_offerta || "—"}</td>
                         <td style={{ ...tdSt, color: T.muted }}>{o.cliente || "—"}</td>
                         <td style={{ ...tdSt, color: T.muted }}>{o.data_offerta ? new Date(o.data_offerta).toLocaleDateString("it-IT") : "—"}</td>
                         <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(o.importo_offerta_base)}</td>
                         <td style={tdSt}>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "3px 9px", borderRadius: 99, display: "inline-block" }}>{stato.label}</span>
+                          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, display: "inline-block" }}>{stato.label}</span>
                         </td>
                         <td style={{ ...tdSt, textAlign: "right", fontWeight: valComm ? 600 : 400, color: valComm ? T.ink : T.muted }}>{valComm ? currency(valComm) : "—"}</td>
                       </tr>
@@ -330,37 +330,37 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
           <div onClick={e => e.stopPropagation()}
             style={{ background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, boxShadow: T.shadowLg, width: "100%", maxWidth: 680, maxHeight: "80vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {/* header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "18px 24px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 24px", borderBottom: `1px solid ${T.border}` }}>
               <div style={{ width: 11, height: 11, borderRadius: "50%", background: voceModal.color, flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: T.ink }}>{voceModal.nome}</div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{voceModal.offerte.length} offert{voceModal.offerte.length === 1 ? "a" : "e"}</div>
+                <div style={{ fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 600, color: T.ink }}>{voceModal.nome}</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>{voceModal.offerte.length} offert{voceModal.offerte.length === 1 ? "a" : "e"}</div>
               </div>
               <button onClick={() => setVoceModal(null)} style={{ background: "rgba(128,128,128,0.12)", border: "none", cursor: "pointer", color: T.muted, width: 28, height: 28, borderRadius: "50%", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
             </div>
             {/* lista offerte */}
             <div style={{ overflowY: "auto", flex: 1 }}>
               {voceModal.offerte.length === 0
-                ? <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessuna offerta trovata</div>
+                ? <div style={{ padding: "40px 0", textAlign: "center", fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Nessuna offerta trovata</div>
                 : voceModal.offerte.map(({ offerta: o, prezzoVoce }, i) => {
                     const stato = STATI[o.stato] ?? { label: o.stato, color: T.muted, bg: "transparent" };
                     return (
                       <div key={o.id} onClick={() => { setVoceModal(null); navigate(`/offerte/${o.id}`); }}
-                        style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 24px", borderBottom: i < voceModal.offerte.length - 1 ? `0.5px solid ${T.border}` : "none", cursor: "pointer", transition: "background 120ms" }}
+                        style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 24px", borderBottom: i < voceModal.offerte.length - 1 ? `0.5px solid ${T.border}` : "none", cursor: "pointer", transition: "background 120ms" }}
                         onMouseEnter={e => e.currentTarget.style.background = T.glassSheen}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         {/* numero */}
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, minWidth: 60 }}>{o.numero_offerta || "—"}</div>
+                        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, minWidth: 60 }}>{o.numero_offerta || "—"}</div>
                         {/* nome + cliente */}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.nome_offerta || "—"}</div>
-                          {o.cliente && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{o.cliente}</div>}
+                          <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.nome_offerta || "—"}</div>
+                          {o.cliente && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>{o.cliente}</div>}
                         </div>
                         {/* stato */}
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "3px 9px", borderRadius: 99, flexShrink: 0 }}>{stato.label}</span>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{stato.label}</span>
                         {/* importo voce */}
-                        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600, color: T.ink, minWidth: 90, textAlign: "right" }}>{currency(prezzoVoce)}</div>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>→</div>
+                        <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: T.ink, minWidth: 90, textAlign: "right" }}>{currency(prezzoVoce)}</div>
+                        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>→</div>
                       </div>
                     );
                   })
@@ -369,8 +369,8 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
             {/* footer totale */}
             {voceModal.offerte.length > 0 && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em" }}>Totale voce</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(voceModal.offerte.reduce((s, x) => s + x.prezzoVoce, 0))}</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Totale voce</div>
+                <div style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(voceModal.offerte.reduce((s, x) => s + x.prezzoVoce, 0))}</div>
               </div>
             )}
           </div>
@@ -383,8 +383,8 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
           style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div onClick={e => e.stopPropagation()}
             style={{ background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, boxShadow: T.shadowLg, width: "100%", maxWidth: 800, maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 26px", borderBottom: `1px solid ${T.border}` }}>
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: T.ink }}>Distribuzione voci offerta</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 600, color: T.ink }}>Distribuzione voci offerta</div>
               <button onClick={() => setPieModal(false)} style={{ background: "rgba(128,128,128,0.12)", border: "none", cursor: "pointer", color: T.muted, width: 28, height: 28, borderRadius: "50%", fontSize: 16 }}>×</button>
             </div>
             <div style={{ display: "flex", overflow: "hidden", flex: 1 }}>
@@ -395,23 +395,23 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                       onMouseEnter={(_, i) => setHoveredVoce(pieData[i]?.name ?? null)} onMouseLeave={() => setHoveredVoce(null)}>
                       {pieData.map(e => <Cell key={e.name} fill={e.color} stroke="none" opacity={hoveredVoce === null || hoveredVoce === e.name ? 1 : 0.2} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: T.glassBg, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={(v, n) => [currency(v), n]} />
+                    <Tooltip contentStyle={{ background: T.glassBg, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11 }} formatter={(v, n) => [currency(v), n]} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
                 {pieData.map((d, i) => (
                   <div key={d.name} onMouseEnter={() => setHoveredVoce(d.name)} onMouseLeave={() => setHoveredVoce(null)}
-                    style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 26px", borderBottom: i < pieData.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === d.name ? T.glassSheen : "transparent", opacity: hoveredVoce === null || hoveredVoce === d.name ? 1 : 0.35, transition: "all 120ms" }}>
+                    style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 28px", borderBottom: i < pieData.length - 1 ? `0.5px solid ${T.border}` : "none", background: hoveredVoce === d.name ? T.glassSheen : "transparent", opacity: hoveredVoce === null || hoveredVoce === d.name ? 1 : 0.35, transition: "all 120ms" }}>
                     <div style={{ width: 11, height: 11, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: T.ink, flex: 1 }}>{d.name}</div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{pct(d.value, totalTemplate)}%</div>
-                    <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, color: T.ink, minWidth: 110, textAlign: "right" }}>{currency(d.value)}</div>
+                    <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: T.ink, flex: 1 }}>{d.name}</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{pct(d.value, totalTemplate)}%</div>
+                    <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 700, color: T.ink, minWidth: 110, textAlign: "right" }}>{currency(d.value)}</div>
                   </div>
                 ))}
-                <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 26px", borderTop: `1px solid ${T.border}`, background: T.surface2, position: "sticky", bottom: 0 }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em", flex: 1 }}>Totale</div>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 28px", borderTop: `1px solid ${T.border}`, background: T.surface2, position: "sticky", bottom: 0 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }}>Totale</div>
+                  <div style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
                 </div>
               </div>
             </div>
@@ -487,14 +487,14 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
 
   const handleSort = col => { if (sortBy === col) setSortDir(p => p === "asc" ? "desc" : "asc"); else { setSortBy(col); setSortDir("asc"); } };
   const SortBtn = ({ col, label }) => (
-    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4 }}>
-      {label} <span style={{ fontSize: 9 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4 }}>
+      {label} <span style={{ fontSize: 10 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
   );
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
-  const tdSt = { padding: "10px 14px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: "middle" };
-  const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const tdSt = { padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)", verticalAlign: "middle" };
+  const monoSt = { fontFamily: "var(--font-label)", fontSize: 11 };
   const daIncassare = totals.val - totals.inc;
 
   return (
@@ -512,9 +512,9 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear || "tutti gli anni"}</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear || "tutti gli anni"}</div>
             <select value={selectedYear ?? "all"} onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
-              style={{ padding: "5px 10px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", outline: "none", cursor: "pointer" }}>
+              style={{ padding: "6px 10px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "var(--font-label)", outline: "none", cursor: "pointer" }}>
               <option value="all">Tutti gli anni</option>
               {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
@@ -523,9 +523,9 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
-                <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${Math.round(v / 1000)}k`} />
-                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={v => currency(v, 2)} />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={false} tickLine={false} tickFormatter={v => `${Math.round(v / 1000)}k`} />
+                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "var(--font-label)", fontSize: 11 }} formatter={v => currency(v, 2)} />
                 <Line type="monotone" dataKey="valore" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -577,10 +577,10 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
 
 // ── TAB 3: Analisi Economica ─────────────────────────────────────
 function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel, isMobile }) {
-  const mono  = { fontFamily: "'IBM Plex Mono', monospace" };
-  const lbl   = { ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
-  const thSt  = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
-  const tdSt  = { padding: "10px 14px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink };
+  const mono  = { fontFamily: "var(--font-label)" };
+  const lbl   = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted };
+  const thSt  = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const tdSt  = { padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink };
 
   const [members, setMembers]           = useState([]);
   const [timesheet, setTimesheet]       = useState([]);
@@ -694,14 +694,14 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
     if (!stat) return null;
     const c = stat.commessa;
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => setSelectedCommessa(null)} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "5px 12px", ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Analisi</button>
+          <button onClick={() => setSelectedCommessa(null)} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "6px 12px", ...mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase" }}>← Analisi</button>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: "-0.02em" }}>{c.nome_commessa}</div>
-              {c.numero_offerta && <span style={{ ...mono, fontSize: 9, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "2px 6px" }}>{c.numero_offerta}</span>}
-              {c.archived && <span style={{ ...mono, fontSize: 9, color: "#854d0e", background: "#fefce8", padding: "2px 8px", borderRadius: 2 }}>ARCHIVIATA</span>}
+              {c.numero_offerta && <span style={{ ...mono, fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "2px 6px" }}>{c.numero_offerta}</span>}
+              {c.archived && <span style={{ ...mono, fontSize: 10, color: "#854d0e", background: "#fefce8", padding: "2px 8px", borderRadius: 2 }}>ARCHIVIATA</span>}
             </div>
             <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 2 }}>{c.cliente || "—"}</div>
           </div>
@@ -717,7 +717,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
             <div key={k.l} style={{ background: T.surface, border: `1px solid ${T.border}`, padding: "16px 20px", borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
               <div style={{ ...lbl, marginBottom: 8 }}>{k.l}</div>
               <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.03em", color: k.color }}>{currency(k.v, 2)}</div>
-              {k.sub && <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 4 }}>{k.sub}</div>}
+              {k.sub && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>{k.sub}</div>}
             </div>
           ))}
         </div>
@@ -731,14 +731,14 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
             <div key={k.l} style={{ background: T.surface, border: `1px solid ${T.border}`, padding: "16px 20px", borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
               <div style={{ ...lbl, marginBottom: 8 }}>{k.l}</div>
               <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.03em", color: k.color }}>{currency(k.v, 2)}</div>
-              {k.sub && <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 4 }}>{k.sub}</div>}
+              {k.sub && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>{k.sub}</div>}
             </div>
           ))}
         </div>
 
         {/* Costo ore interne */}
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
-          <div style={{ padding: "14px 20px", borderBottom: `0.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `0.5px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Costo ore interne</div>
             <div style={{ ...mono, fontSize: 10, color: T.muted }}>{fmtOre(stat.oreTotali)} ore totali{!c.project_id && <span style={{ marginLeft: 8 }}>(nessun progetto collegato)</span>}</div>
           </div>
@@ -753,7 +753,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
                     <tr key={m.id}>
                       <td style={tdSt}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 24, height: 24, borderRadius: "50%", background: m.color || T.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{(m.user_name || "?").slice(0, 2).toUpperCase()}</div>
+                          <div style={{ width: 24, height: 24, borderRadius: "50%", background: m.color || T.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{(m.user_name || "?").slice(0, 2).toUpperCase()}</div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{m.user_name || m.user_email}</div>
                         </div>
                       </td>
@@ -786,7 +786,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
           const coRows = collab.filter(x => x.commessa_id === c.id);
           return (
             <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
-              <div style={{ padding: "14px 20px", borderBottom: `0.5px solid ${T.border}` }}><div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Costi esterni</div></div>
+              <div style={{ padding: "16px 20px", borderBottom: `0.5px solid ${T.border}` }}><div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Costi esterni</div></div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead><tr>{["Tipo","Importo"].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
                 <tbody>
@@ -802,7 +802,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
         {/* Costi interni */}
         {costiInterni.filter(x => x.commessa_id === c.id).length > 0 && (
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
-            <div style={{ padding: "14px 20px", borderBottom: `0.5px solid ${T.border}` }}><div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Costi interni</div></div>
+            <div style={{ padding: "16px 20px", borderBottom: `0.5px solid ${T.border}` }}><div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Costi interni</div></div>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>{["Membro","Descrizione","Data","Importo"].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
               <tbody>
@@ -866,12 +866,12 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
   const totMargine   = totValore - totCosto;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* Search su mobile */}
       {isMobile && (
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca commessa…"
-          style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "8px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: "100%" }} />
+          style={{ fontFamily: "var(--font-label)", fontSize: 11, padding: "8px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: "100%" }} />
       )}
 
       {/* KPI totali */}
@@ -900,7 +900,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
               {[["nome","Commessa"],["oreTotali","Ore totali"],["costoOre","Costo ore"],["costoEsterni","Costi esterni"],["costoInterno","Costi interni"],["costoTotale","Costo totale"],["valoreBase","Valore offerta"],["incassato","Incassato"],["margine","Margine"],["marginePerc","Margine %"]].map(([col, label]) => (
                 <th key={col} style={{ ...thSt, cursor: "pointer", userSelect: "none" }} onClick={() => handleSortCol(col)}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: sortCol === col ? T.navy : T.muted }}>
-                    {label} <span style={{ fontSize: 9, opacity: sortCol === col ? 1 : 0.3 }}>{sortCol === col ? (sortAsc ? "↑" : "↓") : "↕"}</span>
+                    {label} <span style={{ fontSize: 10, opacity: sortCol === col ? 1 : 0.3 }}>{sortCol === col ? (sortAsc ? "↑" : "↓") : "↕"}</span>
                   </span>
                 </th>
               ))}
@@ -916,7 +916,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     <td style={tdSt}>
                       <div style={{ fontWeight: 600, color: T.ink }}>{c.nome_commessa || "—"}</div>
-                      <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 2 }}>
+                      <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
                         {c.cliente || "—"}
                         {c.numero_offerta && <span style={{ marginLeft: 6 }}>{c.numero_offerta}</span>}
                         {c.archived && <span style={{ marginLeft: 6, color: "#854d0e" }}>archiviata</span>}
@@ -952,11 +952,11 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
               {members.map(m => (
-                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: T.surface2, border: `1px solid ${T.border}` }}>
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: T.surface2, border: `1px solid ${T.border}` }}>
                   <div style={{ width: 32, height: 32, borderRadius: "50%", background: m.color || T.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{(m.user_name || "?").slice(0, 2).toUpperCase()}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{m.user_name || m.user_email}</div>
-                    <div style={{ ...mono, fontSize: 9, color: T.muted }}>{m.user_email}</div>
+                    <div style={{ ...mono, fontSize: 10, color: T.muted }}>{m.user_email}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ ...mono, fontSize: 11, color: T.muted }}>€</span>
@@ -967,9 +967,9 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
-              <button onClick={() => setCostiPanel(false)} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 18px", cursor: "pointer" }}>Annulla</button>
-              <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background: T.navy, border: "none", color: T.bg, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 20px", cursor: savingCosti ? "not-allowed" : "pointer", opacity: savingCosti ? 0.6 : 1, borderRadius: T.radiusSm }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
+              <button onClick={() => setCostiPanel(false)} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 20px", cursor: "pointer" }}>Annulla</button>
+              <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background: T.navy, border: "none", color: T.bg, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 20px", cursor: savingCosti ? "not-allowed" : "pointer", opacity: savingCosti ? 0.6 : 1, borderRadius: T.radiusSm }}>
                 {savingCosti ? "Salvataggio..." : "Salva costi"}
               </button>
             </div>
@@ -986,7 +986,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
 // accettate, perché non esiste una data di esito salvata) e viste per
 // mese e per cliente.
 function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa, studioId, isOwner, T, anno, isMobile }) {
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const mono = { fontFamily: "var(--font-label)" };
   const media = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
   const imp   = o => Number(o.importo_offerta_base) || 0;
   const gg    = " gg";
@@ -1262,8 +1262,8 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     })).sort((a, b) => b.anno - a.anno);
   }, [offerte, commessaDataById, commessaValById]);
 
-  const thSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "9px 14px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
-  const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 14px", borderBottom: `0.5px solid ${T.border}` };
+  const thSt = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}` };
 
   if (off.length === 0) return (
     <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 48 }}>
@@ -1293,9 +1293,9 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       {isOwner && (
         <Panel title="Margine sulle offerte accettate" T={T}>
           {eco == null
-            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 22 }}>Carico i costi…</div>
+            ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 24 }}>Carico i costi…</div>
             : !margineStats || margineStats.n === 0
-              ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 22 }}>Nessuna commessa con costi collegata alle accettate.</div>
+              ? <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: 24 }}>Nessuna commessa con costi collegata alle accettate.</div>
               : (
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 1, background: T.border }}>
                   {[
@@ -1304,14 +1304,14 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
                     ["Valore accettato (con costi)", currency(margineStats.valoreTot), T.ink],
                     ["Commesse valutate", String(margineStats.n), T.ink],
                   ].map(([lab, val, col]) => (
-                    <div key={lab} style={{ background: T.surface, padding: "16px 18px" }}>
-                      <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{lab}</div>
-                      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: col, lineHeight: 1 }}>{val}</div>
+                    <div key={lab} style={{ background: T.surface, padding: "16px 20px" }}>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{lab}</div>
+                      <div style={{ fontFamily: "var(--font-ui)", fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: col, lineHeight: 1 }}>{val}</div>
                     </div>
                   ))}
                 </div>
               )}
-          <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+          <div style={{ ...mono, fontSize: 10, color: T.muted, padding: "10px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
             Margine = valore contratto − (ore × costo orario + costi esterni + costi interni). Stessa base della tab Economica.
           </div>
         </Panel>
@@ -1326,17 +1326,17 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             ["Perso (rifiutate)", stats.valRif, stats.nRif, STATI.rifiutata.color],
             ["In corso",         stats.valCorso, stats.nCorso, STATI.offerta.color],
           ].map(([lab, val, n, col], i) => (
-            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
+            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
               <div style={{ width: 9, height: 9, borderRadius: "50%", background: col, flexShrink: 0 }} />
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
-              <div style={{ ...mono, fontSize: 9, color: T.muted }}>{n} off.</div>
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600, color: col, minWidth: 110, textAlign: "right" }}>{currency(val)}</div>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
+              <div style={{ ...mono, fontSize: 10, color: T.muted }}>{n} off.</div>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: col, minWidth: 110, textAlign: "right" }}>{currency(val)}</div>
             </div>
           ))}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, flex: 1 }}>Incassato sulle accettate</div>
-            {pctIncassato != null && <div style={{ ...mono, fontSize: 9, color: T.muted }}>{pctIncassato}%</div>}
-            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, color: T.green, minWidth: 110, textAlign: "right" }}>{currency(incassato)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, flex: 1 }}>Incassato sulle accettate</div>
+            {pctIncassato != null && <div style={{ ...mono, fontSize: 10, color: T.muted }}>{pctIncassato}%</div>}
+            <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 700, color: T.green, minWidth: 110, textAlign: "right" }}>{currency(incassato)}</div>
           </div>
         </Panel>
 
@@ -1347,12 +1347,12 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             ["Sconto medio (accettate)", `${stats.scontoAcc.toFixed(1)}%`],
             ["Sconto medio (rifiutate)", `${stats.scontoRif.toFixed(1)}%`],
           ].map(([lab, val], i) => (
-            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
-              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
+            <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: 13, color: T.ink, flex: 1 }}>{lab}</div>
               <div style={{ ...mono, fontSize: 13, fontWeight: 600, color: T.ink }}>{val}</div>
             </div>
           ))}
-          <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 18px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+          <div style={{ ...mono, fontSize: 10, color: T.muted, padding: "10px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
             Tempo su {stats.nConTempo} offert{stats.nConTempo === 1 ? "a" : "e"} accettat{stats.nConTempo === 1 ? "a" : "e"} con data disponibile.
           </div>
         </Panel>
@@ -1361,22 +1361,22 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       {/* Andamento */}
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
-          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
             Offerte emesse e accettate — {anno === 0 ? "tutti gli anni" : anno}
           </div>
           <div style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend}>
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
-                <Tooltip itemSorter={item => (item.dataKey === "offerte" ? 0 : 1)} contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={false} tickLine={false} />
+                <Tooltip itemSorter={item => (item.dataKey === "offerte" ? 0 : 1)} contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "var(--font-label)", fontSize: 11 }} />
                 <Line type="monotone" dataKey="offerte" name="Emesse" stroke={T.navy} strokeWidth={2} dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
                 <Line type="monotone" dataKey="accettate" name="Accettate" stroke={STATI.accettata.color} strokeWidth={2} dot={{ r: 3, fill: STATI.accettata.color, strokeWidth: 0 }} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
             <span style={{ ...mono, fontSize: 10, color: T.muted, display: "inline-flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: T.navy, display: "inline-block" }} /> Emesse</span>
             <span style={{ ...mono, fontSize: 10, color: T.muted, display: "inline-flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 2, background: STATI.accettata.color, display: "inline-block" }} /> Accettate</span>
           </div>
@@ -1386,21 +1386,21 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       {/* Stagionalità: tasso di conversione nel tempo */}
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
-          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
             Tasso di conversione — {anno === 0 ? "per anno" : `per mese, ${anno}`}
           </div>
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stagionalita}>
                 <CartesianGrid stroke={T.border} strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={{ stroke: T.border }} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fill: T.muted, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }} formatter={v => [`${v}%`, "Conversione"]} />
+                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={{ stroke: T.border }} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fill: T.muted, fontSize: 10, fontFamily: "var(--font-label)" }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
+                <Tooltip contentStyle={{ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: 0, fontFamily: "var(--font-label)", fontSize: 11 }} formatter={v => [`${v}%`, "Conversione"]} />
                 <Line type="monotone" dataKey="conv" name="Conversione" stroke={T.navy} strokeWidth={2} connectNulls dot={{ r: 3, fill: T.navy, strokeWidth: 0 }} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 8 }}>Conversione = accettate / offerte totali del periodo (incluse quelle in corso). I periodi senza offerte non compaiono.</div>
+          <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 8 }}>Conversione = accettate / offerte totali del periodo (incluse quelle in corso). I periodi senza offerte non compaiono.</div>
         </div>
       </Panel>
 
@@ -1422,7 +1422,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             <tbody>
               {perAnno.map(r => (
                 <tr key={r.anno}>
-                  <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 700 }}>{r.anno}</td>
+                  <td style={{ ...tdSt, fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 700 }}>{r.anno}</td>
                   <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
                   <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
                   <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{r.conversione == null ? "—" : `${r.conversione}%`}</td>
@@ -1457,14 +1457,14 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
                   const delta = r.acc > 0 && r.mediaOff > 0 ? Math.round((r.mediaAcc / r.mediaOff - 1) * 100) : null;
                   return (
                     <tr key={r.nome}>
-                      <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.nome}</td>
+                      <td style={{ ...tdSt, fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600 }}>{r.nome}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
                       <td style={{ ...tdSt, textAlign: "right", fontWeight: 600, color: r.tasso == null ? T.muted : r.tasso >= 50 ? STATI.accettata.color : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
                       <td style={{ ...tdSt, textAlign: "right" }}>{r.n > 0 ? currency(r.mediaOff) : "—"}</td>
                       <td style={{ ...tdSt, textAlign: "right" }}>
                         {r.acc > 0 ? currency(r.mediaAcc) : "—"}
-                        {delta != null && delta !== 0 && <span style={{ ...mono, fontSize: 9, marginLeft: 6, color: delta > 0 ? STATI.accettata.color : STATI.rifiutata.color }}>{delta > 0 ? "+" : ""}{delta}%</span>}
+                        {delta != null && delta !== 0 && <span style={{ ...mono, fontSize: 10, marginLeft: 6, color: delta > 0 ? STATI.accettata.color : STATI.rifiutata.color }}>{delta > 0 ? "+" : ""}{delta}%</span>}
                       </td>
                       <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(r.valAcc)}</td>
                     </tr>
@@ -1473,7 +1473,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
               </tbody>
             </table>
         }
-        <div style={{ ...mono, fontSize: 9, color: T.muted, padding: "10px 14px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
+        <div style={{ ...mono, fontSize: 10, color: T.muted, padding: "10px 16px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
           Val. medio offerta = media della prestazione su tutte le offerte che la contengono · Val. medio accett. = media sulle sole accettate (con scostamento % rispetto all'offerta).
         </div>
       </Panel>
@@ -1495,7 +1495,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
                 <tbody>
                   {perFascia.map(r => (
                     <tr key={r.label}>
-                      <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.label}</td>
+                      <td style={{ ...tdSt, fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600 }}>{r.label}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
                       <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
                       <td style={{ ...tdSt, textAlign: "right", fontWeight: 600, color: r.tasso == null ? T.muted : r.tasso >= 50 ? STATI.accettata.color : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
@@ -1520,7 +1520,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             <tbody>
               {perCliente.slice(0, 12).map(r => (
                 <tr key={r.cliente}>
-                  <td style={{ ...tdSt, fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, fontWeight: 600 }}>{r.cliente}</td>
+                  <td style={{ ...tdSt, fontFamily: "var(--font-ui)", fontSize: 13, fontWeight: 600 }}>{r.cliente}</td>
                   <td style={{ ...tdSt, textAlign: "right", color: T.muted }}>{r.n}</td>
                   <td style={{ ...tdSt, textAlign: "right", color: STATI.accettata.color }}>{r.acc}</td>
                   <td style={{ ...tdSt, textAlign: "right", color: r.tasso == null ? T.muted : T.ink }}>{r.tasso == null ? "—" : `${r.tasso}%`}</td>
@@ -1600,20 +1600,20 @@ export default function AnalisiHubPage() {
 
   // ── guards ───────────────────────────────────────────────────────
   if (!permissions.isProjectManager) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
       Sezione riservata al project manager.
     </div>
   );
   if (plan.id !== "pro") return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, gap: 16 }}>
       <div style={{ fontSize: 32 }}>🔒</div>
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 600, color: T.ink }}>Funzionalità Pro</div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, textAlign: "center", maxWidth: 360 }}>Disponibile solo per il piano Pro.</div>
-      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
+      <div style={{ fontFamily: "var(--font-ui)", fontSize: 18, fontWeight: 600, color: T.ink }}>Funzionalità Pro</div>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, textAlign: "center", maxWidth: 360 }}>Disponibile solo per il piano Pro.</div>
+      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
     </div>
   );
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
   );
 
   return (
@@ -1624,7 +1624,7 @@ export default function AnalisiHubPage() {
         <SlidingTabs tabs={permissions.isOwner ? HUB_TABS : HUB_TABS.filter(t => t.key !== "economica")} active={activeTab} onChange={setActiveTab} />
         {(activeTab === "offerte" || activeTab === "statistiche") && (
           <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
-            style={{ marginLeft: isMobile ? 0 : "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+            style={{ marginLeft: isMobile ? 0 : "auto", fontFamily: "var(--font-label)", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
             <option value={0}>Tutti gli anni</option>
             {anniOfferte.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -1633,14 +1633,14 @@ export default function AnalisiHubPage() {
           <div style={{ marginLeft: isMobile ? 0 : "auto", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {!isMobile && (
               <input value={searchEco} onChange={e => setSearchEco(e.target.value)} placeholder="Cerca commessa…"
-                style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
+                style={{ fontFamily: "var(--font-label)", fontSize: 11, padding: "6px 12px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, outline: "none", borderRadius: T.radiusSm, width: 180 }} />
             )}
             <select value={annoEco} onChange={e => setAnnoEco(Number(e.target.value))}
-              style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
+              style={{ fontFamily: "var(--font-label)", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
               {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
             </select>
             <button onClick={() => setCostiEcoPanel(true)}
-              style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "7px 14px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
+              style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
               ⚙ Costi orari
             </button>
           </div>

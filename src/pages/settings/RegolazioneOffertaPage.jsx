@@ -9,7 +9,7 @@ import {
   RATE_C_DEFAULT, DEFAULTS_BASE,
 } from "../../lib/offertaTemplate";
 
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono = { fontFamily: "var(--font-label)" };
 const pulisci = (t) => String(t).replace(/\*\*/g, "");
 
 export default function RegolazioneOffertaPage() {
@@ -79,9 +79,9 @@ export default function RegolazioneOffertaPage() {
   };
 
   // ── stili ────────────────────────────────────────────────────────────────
-  const inputSt = { width: "100%", padding: "7px 10px", boxSizing: "border-box", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
-  const labelSt = { ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
-  const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, marginBottom: 14, overflow: "hidden" };
+  const inputSt = { width: "100%", padding: "8px 10px", boxSizing: "border-box", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "var(--font-ui)", outline: "none" };
+  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
+  const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, marginBottom: 16, overflow: "hidden" };
 
   const Check = ({ checked, onChange }) => (
     <input type="checkbox" checked={!!checked} onChange={onChange} style={{ accentColor: T.navy, width: 14, height: 14, flexShrink: 0, cursor: "pointer" }} />
@@ -163,7 +163,7 @@ export default function RegolazioneOffertaPage() {
 
   const Header = ({ id, titolo, sub }) => (
     <div onClick={() => setOpen(o => ({ ...o, [id]: !o[id] }))}
-      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", cursor: "pointer", borderBottom: open[id] ? `0.5px solid ${T.border}` : "none" }}>
+      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", cursor: "pointer", borderBottom: open[id] ? `0.5px solid ${T.border}` : "none" }}>
       <div>
         <div style={{ fontSize: 13.5, fontWeight: 600, color: T.ink }}>{titolo}</div>
         {sub && <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 2 }}>{sub}</div>}
@@ -175,7 +175,7 @@ export default function RegolazioneOffertaPage() {
   return (
     <div style={{ maxWidth: 760, paddingBottom: 80 }}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: "-0.02em", marginBottom: 4 }}>Regolazione offerta</div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: T.ink, letterSpacing: '-0.025em', marginBottom: 4 }}>Regolazione offerta</div>
         <div style={{ ...mono, fontSize: 10, color: T.muted, lineHeight: 1.6 }}>
           Personalizza il documento d'offerta per il tuo studio: testi fissi, flag di default, prezzi
           precompilati e voci. Le modifiche valgono per le nuove offerte. Nei testi: <b>«…»</b> = campo
@@ -185,16 +185,16 @@ export default function RegolazioneOffertaPage() {
 
       {/* ── Logo copertina ─────────────────────────────────────────────────── */}
       <div style={cardSt}>
-        <div style={{ padding: "14px 18px" }}>
+        <div style={{ padding: "16px 20px" }}>
           <div style={{ ...labelSt, marginBottom: 8 }}>Logo copertina</div>
           <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
             Immagine mostrata in copertina del documento d'offerta (PDF/Word). Se vuoto, si usa il logo dei report. PNG con sfondo trasparente consigliato.
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             {coverLogoUrl
               ? <img src={coverLogoUrl} alt="logo copertina" style={{ height: 48, maxWidth: 240, objectFit: "contain", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 6, background: "#fff" }} />
               : <div style={{ ...mono, fontSize: 10, color: T.muted, height: 48, display: "flex", alignItems: "center" }}>Nessun logo copertina</div>}
-            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, color: T.navy, padding: "8px 14px", cursor: uploadingLogo ? "default" : "pointer", background: "transparent" }}>
+            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, color: T.navy, padding: "8px 16px", cursor: uploadingLogo ? "default" : "pointer", background: "transparent" }}>
               {uploadingLogo ? "Carico…" : (coverLogoUrl ? "Cambia" : "Carica logo")}
               <input type="file" accept="image/*" onChange={handleCoverLogoUpload} disabled={uploadingLogo} style={{ display: "none" }} />
             </label>
@@ -207,24 +207,24 @@ export default function RegolazioneOffertaPage() {
       <div style={cardSt}>
         <Header id="flag" titolo="Flag di default" sub="Cosa è attivo quando crei una nuova offerta" />
         {open.flag && (
-          <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
+          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
                 <Check checked={getDefault("copertina")} onChange={() => setDefault("copertina", !getDefault("copertina"))} /> Pagina di copertina
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
                 <Check checked={getDefault("firma")} onChange={() => setDefault("firma", !getDefault("firma"))} /> Includi firma
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11.5, color: T.ink }}>
                 <Check checked={getDefault("inquadramentoAttivo")} onChange={() => setDefault("inquadramentoAttivo", !getDefault("inquadramentoAttivo"))} /> Inquadramento progetto
               </label>
             </div>
 
             <div>
               <div style={labelSt}>Prestazioni attive di default</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
                 {SEZIONI.map(s => (
-                  <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                  <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                     <Check checked={(getDefault("sezioniAttive") || []).includes(s.id)} onChange={() => toggleInArray("sezioniAttive", s.id)} /> {s.titolo}
                   </label>
                 ))}
@@ -233,9 +233,9 @@ export default function RegolazioneOffertaPage() {
 
             <div>
               <div style={labelSt}>Testi fissi attivi di default</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
                 {BLOCCHI_FISSI.map(b => (
-                  <label key={b.id} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                  <label key={b.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                     <Check checked={(getDefault("blocchiAttivi") || []).includes(b.id)} onChange={() => toggleInArray("blocchiAttivi", b.id)} /> {b.titolo}
                   </label>
                 ))}
@@ -244,9 +244,9 @@ export default function RegolazioneOffertaPage() {
 
             <div>
               <div style={labelSt}>Opzioni di pagamento attive di default</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
                 {MODALITA_PAGAMENTO.map(o => (
-                  <label key={o.id} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                  <label key={o.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                     <Check checked={(getDefault("opzioniPagamento") || []).includes(o.id)} onChange={() => toggleInArray("opzioniPagamento", o.id)} /> Opzione {o.id}
                   </label>
                 ))}
@@ -265,7 +265,7 @@ export default function RegolazioneOffertaPage() {
                   </div>
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <button onClick={() => setRateC([...rateC, { percentuale: 0, descrizione: "" }])} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "5px 12px", cursor: "pointer" }}>+ Aggiungi rata</button>
+                  <button onClick={() => setRateC([...rateC, { percentuale: 0, descrizione: "" }])} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer" }}>+ Aggiungi rata</button>
                   {(() => { const t = rateC.reduce((s, r) => s + (Number(r.percentuale) || 0), 0); return <span style={{ ...mono, fontSize: 10, color: t === 100 ? T.green : T.red }}>Totale {t}%</span>; })()}
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default function RegolazioneOffertaPage() {
       <div style={cardSt}>
         <Header id="voci" titolo="Sezioni e voci" sub="Riordina (▲▼), testi, prezzo fisso o a cadauno, aggiungi/nascondi voci" />
         {open.voci && (
-          <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             {SEZIONI.map(sez => {
               const so = getSez(sez.id);
               const isOpen = sezOpen[sez.id];
@@ -288,7 +288,7 @@ export default function RegolazioneOffertaPage() {
                     style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", cursor: "pointer" }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{sez.titolo}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ ...mono, fontSize: 9, color: T.muted }}>{sez.modoPrezzo === "voci" ? "prezzo per voce" : "forfait"}</span>
+                      <span style={{ ...mono, fontSize: 10, color: T.muted }}>{sez.modoPrezzo === "voci" ? "prezzo per voce" : "forfait"}</span>
                       <span style={{ color: T.muted, fontSize: 11 }}>{isOpen ? "▲" : "▼"}</span>
                     </div>
                   </div>
@@ -315,8 +315,8 @@ export default function RegolazioneOffertaPage() {
                           const isExtra = id in extraIdxMap;
                           const arrows = (
                             <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0, paddingTop: 2 }}>
-                              <button onClick={() => moveVoce(sez.id, ord, pos, -1)} disabled={pos === 0} style={{ background: "none", border: "none", cursor: pos === 0 ? "default" : "pointer", color: pos === 0 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 3px" }}>▲</button>
-                              <button onClick={() => moveVoce(sez.id, ord, pos, 1)} disabled={pos === ord.length - 1} style={{ background: "none", border: "none", cursor: pos === ord.length - 1 ? "default" : "pointer", color: pos === ord.length - 1 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 3px" }}>▼</button>
+                              <button onClick={() => moveVoce(sez.id, ord, pos, -1)} disabled={pos === 0} style={{ background: "none", border: "none", cursor: pos === 0 ? "default" : "pointer", color: pos === 0 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 4px" }}>▲</button>
+                              <button onClick={() => moveVoce(sez.id, ord, pos, 1)} disabled={pos === ord.length - 1} style={{ background: "none", border: "none", cursor: pos === ord.length - 1 ? "default" : "pointer", color: pos === ord.length - 1 ? T.border : T.muted, fontSize: 11, lineHeight: 1, padding: "1px 4px" }}>▼</button>
                             </div>
                           );
                           if (isExtra) {
@@ -326,15 +326,15 @@ export default function RegolazioneOffertaPage() {
                             return (
                               <div key={id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, background: T.surface2 }}>
                                 {arrows}
-                                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-                                  <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy }}>VOCE AGGIUNTA</div>
+                                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+                                  <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy }}>VOCE AGGIUNTA</div>
                                   <textarea value={v.testo} onChange={e => setVoceExtra(sez.id, idx, { testo: e.target.value })} rows={2} placeholder="Testo della voce…" style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
-                                    <input value={v.nomeApp || ""} onChange={e => setVoceExtra(sez.id, idx, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "3px 8px" }} />
+                                    <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                    <input value={v.nomeApp || ""} onChange={e => setVoceExtra(sez.id, idx, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "4px 8px" }} />
                                   </div>
                                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
                                       <Check checked={v.prezzo !== false} onChange={() => setVoceExtra(sez.id, idx, { prezzo: v.prezzo === false })} /> Con prezzo
                                     </label>
                                     {v.prezzo !== false && (
@@ -343,8 +343,8 @@ export default function RegolazioneOffertaPage() {
                                         <option value="cad">A numero (Cad. €)</option>
                                       </select>
                                     )}
-                                    {v.prezzo !== false && isCad && <span style={{ ...mono, fontSize: 9, color: T.muted }}>usa «_» nel testo per il numero</span>}
-                                    <button onClick={() => removeVoceExtra(sez.id, idx)} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.red, cursor: "pointer", padding: 0 }}>rimuovi</button>
+                                    {v.prezzo !== false && isCad && <span style={{ ...mono, fontSize: 10, color: T.muted }}>usa «_» nel testo per il numero</span>}
+                                    <button onClick={() => removeVoceExtra(sez.id, idx)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: T.red, cursor: "pointer", padding: 0 }}>rimuovi</button>
                                   </div>
                                 </div>
                                 {v.prezzo !== false && (
@@ -363,14 +363,14 @@ export default function RegolazioneOffertaPage() {
                           return (
                             <div key={id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, opacity: nascosta ? 0.5 : 1 }}>
                               {arrows}
-                              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+                              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
                                 <textarea value={testo} onChange={e => setVoceOv(sez.id, v.id, { testo: e.target.value })} rows={2} style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
-                                  <input value={vo.nomeApp || ""} onChange={e => setVoceOv(sez.id, v.id, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "3px 8px" }} />
+                                  <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                  <input value={vo.nomeApp || ""} onChange={e => setVoceOv(sez.id, v.id, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "4px 8px" }} />
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                                  <label style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
+                                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", ...mono, fontSize: 10, color: T.muted }}>
                                     <Check checked={nascosta} onChange={() => setVoceOv(sez.id, v.id, { nascosta: !nascosta })} /> Nascondi
                                   </label>
                                   {hasPrezzo && (
@@ -379,9 +379,9 @@ export default function RegolazioneOffertaPage() {
                                       <option value="cad">A numero (Cad. €)</option>
                                     </select>
                                   )}
-                                  {hasPrezzo && isCad && <span style={{ ...mono, fontSize: 9, color: T.muted }}>usa «_» nel testo per il numero</span>}
+                                  {hasPrezzo && isCad && <span style={{ ...mono, fontSize: 10, color: T.muted }}>usa «_» nel testo per il numero</span>}
                                   {vo.testo != null && vo.testo !== v.testo && (
-                                    <button onClick={() => setVoceOv(sez.id, v.id, { testo: undefined })} style={{ ...mono, fontSize: 9, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>ripristina testo</button>
+                                    <button onClick={() => setVoceOv(sez.id, v.id, { testo: undefined })} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>ripristina testo</button>
                                   )}
                                 </div>
                               </div>
@@ -406,7 +406,7 @@ export default function RegolazioneOffertaPage() {
       <div style={cardSt}>
         <Header id="testi" titolo="Testi fissi" sub="Titolo, paragrafi ed elenchi dei blocchi finali" />
         {open.testi && (
-          <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
             {BLOCCHI_FISSI.map(b => {
               const isOpen = sezOpen["b_" + b.id];
               const paragrafi = getBloc(b.id, "paragrafi", b.paragrafi);
@@ -433,7 +433,7 @@ export default function RegolazioneOffertaPage() {
                               <button onClick={() => setBloc(b.id, { paragrafi: paragrafi.filter((_, j) => j !== i) })} style={{ background: "none", border: "none", cursor: "pointer", color: T.red, fontSize: 15, padding: "0 4px", flexShrink: 0 }}>×</button>
                             </div>
                           ))}
-                          <button onClick={() => setBloc(b.id, { paragrafi: [...paragrafi, ""] })} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "5px 12px", cursor: "pointer", alignSelf: "flex-start" }}>+ Paragrafo</button>
+                          <button onClick={() => setBloc(b.id, { paragrafi: [...paragrafi, ""] })} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer", alignSelf: "flex-start" }}>+ Paragrafo</button>
                         </div>
                       </div>
                       <div>
@@ -445,7 +445,7 @@ export default function RegolazioneOffertaPage() {
                               <button onClick={() => setBloc(b.id, { elenco: elenco.filter((_, j) => j !== i) })} style={{ background: "none", border: "none", cursor: "pointer", color: T.red, fontSize: 15, padding: "0 4px", flexShrink: 0 }}>×</button>
                             </div>
                           ))}
-                          <button onClick={() => setBloc(b.id, { elenco: [...elenco, ""] })} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "5px 12px", cursor: "pointer", alignSelf: "flex-start" }}>+ Voce elenco</button>
+                          <button onClick={() => setBloc(b.id, { elenco: [...elenco, ""] })} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer", alignSelf: "flex-start" }}>+ Voce elenco</button>
                         </div>
                       </div>
                     </div>
@@ -467,14 +467,14 @@ export default function RegolazioneOffertaPage() {
       <div style={cardSt}>
         <Header id="preset" titolo="Preset voci rapide" sub="Voci pronte per il form di inserimento rapido offerta" />
         {open.preset && (
-          <div style={{ padding: "14px 18px" }}>
+          <div style={{ padding: "16px 20px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
               {preset.length === 0 && <div style={{ ...mono, fontSize: 10, color: T.muted }}>Nessun preset. Aggiungine uno qui sotto.</div>}
               {preset.map(v => (
                 <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm }}>
                   <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.nome}</div>
                   <div style={{ ...mono, fontSize: 11.5, color: T.navy, fontWeight: 600 }}>{Number(v.prezzo_default) > 0 ? Number(v.prezzo_default).toLocaleString("it-IT", { minimumFractionDigits: 2 }) + " €" : "—"}</div>
-                  <button onClick={() => delPreset(v.id)} style={{ background: "none", border: `0.5px solid ${T.red}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, color: T.red, padding: "4px 9px", cursor: "pointer" }}>×</button>
+                  <button onClick={() => delPreset(v.id)} style={{ background: "none", border: `0.5px solid ${T.red}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, color: T.red, padding: "4px 10px", cursor: "pointer" }}>×</button>
                 </div>
               ))}
             </div>
@@ -487,7 +487,7 @@ export default function RegolazioneOffertaPage() {
                 <div style={labelSt}>Prezzo default</div>
                 <input type="number" value={newPrezzo} onChange={e => setNewPrezzo(e.target.value)} placeholder="0" style={inputSt} />
               </div>
-              <button type="submit" style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "9px 18px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Aggiungi</button>
+              <button type="submit" style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 20px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Aggiungi</button>
             </form>
           </div>
         )}
@@ -495,9 +495,9 @@ export default function RegolazioneOffertaPage() {
 
       {/* ── Barra salvataggio ──────────────────────────────────────────────── */}
       <div style={{ position: "sticky", bottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "12px 0", background: T.bg }}>
-        <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "9px 16px", cursor: "pointer" }}>Ripristina default</button>
+        <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", cursor: "pointer" }}>Ripristina default</button>
         {dirty && !saving && <span style={{ ...mono, fontSize: 10, color: T.red, marginLeft: "auto" }}>Modifiche non salvate</span>}
-        <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 26px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 28px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Salvo…" : "Salva regolazione"}
         </button>
       </div>

@@ -69,7 +69,7 @@ export default function CestinoPage() {
   const [restoring, setRestoring]   = useState(null);
   const [collapsed, setCollapsed]   = useState({});
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
 
   const loadAll = async () => {
     setLoading(true);
@@ -124,7 +124,7 @@ export default function CestinoPage() {
   return (
     <div style={{ maxWidth: 700 }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Cestino</div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: T.ink, letterSpacing: '-0.025em', marginBottom: 4 }}>Cestino</div>
         <div style={{ ...mono, fontSize: 10, color: T.muted }}>Elementi eliminati di recente — puoi ripristinarli entro 30 giorni</div>
       </div>
 
@@ -149,7 +149,7 @@ export default function CestinoPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 16 }}>{cat.icon}</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{cat.label}</span>
-                    <span style={{ ...mono, fontSize: 9, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '2px 7px' }}>
+                    <span style={{ ...mono, fontSize: 10, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '2px 8px' }}>
                       {items.length}
                     </span>
                   </div>
@@ -163,19 +163,19 @@ export default function CestinoPage() {
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{item._nome}</div>
                           {item._context && (
-                            <div style={{ ...mono, fontSize: 9, color: T.ink60, marginBottom: 2, letterSpacing: '0.04em' }}>{item._context}</div>
+                            <div style={{ ...mono, fontSize: 10, color: T.ink60, marginBottom: 2, letterSpacing: '0.04em' }}>{item._context}</div>
                           )}
-                          <div style={{ ...mono, fontSize: 9, color: T.muted }}>
+                          <div style={{ ...mono, fontSize: 10, color: T.muted }}>
                             Eliminato il {new Date(item.deleted_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                           <button onClick={() => handleRestore(item)} disabled={restoring === item.id}
-                            style={{ border: `1px solid ${T.green}`, borderRadius: T.radiusSm, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.green}`, borderRadius: T.radiusSm, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Ripristina
                           </button>
                           <button onClick={() => handleDeleteForever(item)} disabled={restoring === item.id}
-                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 14px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Elimina
                           </button>
                         </div>

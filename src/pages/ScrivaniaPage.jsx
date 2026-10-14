@@ -72,13 +72,13 @@ function TaskRow({ task, projectName, onToggle, updating, done }) {
           <div style={{ fontSize:12, fontWeight:600, color: done ? T.muted : T.ink, textDecoration: done ? 'line-through' : 'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {task.title || "Task senza titolo"}
           </div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
             {done ? `${projectName} · ${task.categoria||'—'}` : (task.categoria||'Senza categoria')}
           </div>
         </div>
       </div>
 
-      <div style={{ flexShrink:0, marginLeft:8, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: done ? T.green : overdue ? T.red : T.muted }}>
+      <div style={{ flexShrink:0, marginLeft:8, fontFamily:"var(--font-label)", fontSize:10, color: done ? T.green : overdue ? T.red : T.muted }}>
         {done ? '✓' : task.data_pianificata ? formatDate(task.data_pianificata) : ''}
       </div>
     </div>
@@ -189,8 +189,8 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
   return (
     <div style={cardStyle}>
       {/* Toolbar */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', borderBottom:`0.5px solid ${T.border}`, flexWrap:'wrap', gap:4 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', borderBottom:`0.5px solid ${T.border}`, flexWrap:'wrap', gap:4 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
           {NOTE_COLORS.map(c => (
             <button key={c} onClick={() => isOwn && handleColorChange(c)} style={{
               width:13, height:13, borderRadius:'50%', background:c,
@@ -202,31 +202,31 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
             <button onClick={handlePrivacyToggle} style={{
               background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`, borderRadius: T.radiusSm,
               padding:'1px 6px', cursor:'pointer', marginLeft:4,
-              fontFamily:"'IBM Plex Mono', monospace", fontSize:8,
-              color: isPrivate ? T.muted : T.navy, letterSpacing:'0.05em',
+              fontFamily:"var(--font-label)", fontSize:10,
+              color: isPrivate ? T.muted : T.navy, letterSpacing:'0.02em',
             }}>
               {isPrivate ? '🔒' : '👥'}
             </button>
           )}
           {!isOwn && (
-            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>
+            <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
               {authorName}
             </span>
           )}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          {saving && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>•</span>}
+          {saving && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>•</span>}
           {isOwn && (
             <div style={{ position:'relative' }}>
               <button onClick={() => setShowMenu(!showMenu)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:14, lineHeight:1, padding:'0 2px' }}>···</button>
               {showMenu && (
                 <div style={{ position:'absolute', right:0, top:'100%', background: T.surface, border:`0.5px solid ${T.borderMd}`, width:160, zIndex:30, marginTop:2 }}>
                   <button onClick={() => { setShowShare(!showShare); setShowMenu(false); }}
-                    style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink }}>
+                    style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.ink }}>
                     Condivisione
                   </button>
                   <button onClick={() => { onDelete(note.id); setShowMenu(false); }}
-                    style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red }}>
+                    style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.red }}>
                     Elimina
                   </button>
                 </div>
@@ -239,9 +239,9 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
       {/* Titolo nota condivisa */}
       {sharedWith.length > 0 && (
         <div style={{
-          padding:'5px 12px', borderBottom:`0.5px solid ${T.border}`,
-          fontFamily:"'IBM Plex Mono', monospace", fontSize:9,
-          letterSpacing:'0.18em', textTransform:'uppercase',
+          padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`,
+          fontFamily:"var(--font-label)", fontSize:10,
+          letterSpacing:'0.06em', textTransform:'uppercase',
           color: isDark ? T.navy : '#1a3a5c',
           background: isDark ? 'transparent' : 'rgba(0,0,0,0.04)',
         }}>
@@ -255,9 +255,9 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
       {/* Pannello condivisione */}
       {showShare && isOwn && (
         <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background: isDark ? T.surface2 : 'rgba(255,255,255,0.4)' }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginBottom:6, letterSpacing:'0.1em', textTransform:'uppercase' }}>Condividi con:</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6, letterSpacing:'0.04em', textTransform:'uppercase' }}>Condividi con:</div>
           {teamMembers.filter(m => m.id !== currentMemberId).map(m => (
-            <label key={m.id} style={{ display:'flex', alignItems:'center', gap:7, cursor:'pointer', padding:'2px 0' }}>
+            <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'2px 0' }}>
               <input type="checkbox" checked={sharedWith.includes(m.id)} onChange={() => handleSharedWith(m.id)} style={{ accentColor:T.navy, width:12, height:12 }}/>
               <span style={{ fontSize:12, color:T.ink }}>{m.user_name || m.user_email}</span>
             </label>
@@ -278,9 +278,9 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
           flex:1, width:'100%',
           minHeight: single ? 200 : 120,
           maxHeight: single ? 'none' : undefined,
-          padding:'12px 14px', boxSizing:'border-box',
+          padding:'12px 16px', boxSizing:'border-box',
           background:'transparent', border:'none', outline:'none',
-          fontSize:13, fontFamily:"'Space Grotesk', sans-serif",
+          fontSize:13, fontFamily:"var(--font-ui)",
           color:T.ink, lineHeight:1.7,
           resize: single ? 'vertical' : 'none',
           cursor: canEdit ? 'text' : 'default',
@@ -289,7 +289,7 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
       />
 
       {/* Footer data */}
-      <div style={{ padding:'4px 10px 6px', fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, borderTop:`0.5px solid ${T.border}` }}>
+      <div style={{ padding:'4px 10px 6px', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, borderTop:`0.5px solid ${T.border}` }}>
         {new Date(note.updated_at || note.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short' })}
         {sharedWith.length > 0 && ` · condivisa con ${sharedWith.length}`}
       </div>
@@ -302,17 +302,17 @@ function NoteCardPreview({ note, onClick }) {
   const { T, isDark } = useTheme();
   const color = note.color || '#FFF9C4';
   const cardStyle = isDark
-    ? { background: T.surface, border:`1px solid ${T.border}`, borderLeft:`3px solid ${color}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 14px', overflow:'hidden' }
-    : { background: color, border:`1px solid ${T.border}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 14px', overflow:'hidden' };
+    ? { background: T.surface, border:`1px solid ${T.border}`, borderLeft:`3px solid ${color}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 16px', overflow:'hidden' }
+    : { background: color, border:`1px solid ${T.border}`, borderRadius:T.radius, boxShadow:T.shadow, cursor:'pointer', padding:'10px 16px', overflow:'hidden' };
 
   const preview = (note.content || '').split('\n').slice(0, 4).join('\n');
 
   return (
     <div style={cardStyle} onClick={onClick}>
-      <div style={{ fontSize:12, fontFamily:"'Space Grotesk', sans-serif", color:T.ink, lineHeight:1.6, whiteSpace:'pre-wrap', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:4, WebkitBoxOrient:'vertical' }}>
+      <div style={{ fontSize:12, fontFamily:"var(--font-ui)", color:T.ink, lineHeight:1.6, whiteSpace:'pre-wrap', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:4, WebkitBoxOrient:'vertical' }}>
         {preview || <span style={{ color:T.muted, fontStyle:'italic' }}>Nota vuota</span>}
       </div>
-      <div style={{ marginTop:6, fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>
+      <div style={{ marginTop:6, fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
         {new Date(note.updated_at || note.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short' })}
       </div>
     </div>
@@ -332,7 +332,7 @@ function NoteModal({ note, currentMemberId, teamMembers, studioId, onDelete, onU
           onDelete={(id) => { onDelete(id); onClose(); }} onUpdate={onUpdate} onRefresh={onRefresh}
           single={true}
         />
-        <button onClick={onClose} style={{ marginTop:10, alignSelf:'flex-end', background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 14px', cursor:'pointer' }}>
+        <button onClick={onClose} style={{ marginTop:10, alignSelf:'flex-end', background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'6px 16px', cursor:'pointer' }}>
           Chiudi
         </button>
       </div>
@@ -517,34 +517,34 @@ export default function ScrivaniaPage() {
   };
 
   const tabSt = (active) => ({
-    padding:'6px 14px', border:'none', background:'transparent', cursor:'pointer',
-    fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
+    padding:'6px 16px', border:'none', background:'transparent', cursor:'pointer',
+    fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase',
     color: active ? T.navy : T.muted,
     borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`,
     marginBottom:-0.5,
   });
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
       Caricamento scrivania...
     </div>
   );
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap: isMobile ? 14 : 20 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap: isMobile ? 16 : 20 }}>
 
       {/* Header */}
       <div style={{ display:'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div>
-          <div style={{ fontSize: isMobile ? 18 : 22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>Scrivania</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>
+          <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, letterSpacing: '-0.025em', color:T.ink }}>Scrivania</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
             {activeTasks.length} task attive · {notes.length} note
           </div>
         </div>
         <button onClick={handleCreateNote} disabled={creatingNote} style={{
           background:T.navy, color:T.bg, border:'none',
-          fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
-          padding: isMobile ? '7px 14px' : '8px 18px', cursor: creatingNote ? 'not-allowed' : 'pointer', opacity: creatingNote ? 0.6 : 1,
+          fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase',
+          padding: isMobile ? '8px 16px' : '8px 20px', cursor: creatingNote ? 'not-allowed' : 'pointer', opacity: creatingNote ? 0.6 : 1,
           flexShrink: 0,
         }}>
           {creatingNote ? '...' : '+ Nuova nota'}
@@ -552,14 +552,14 @@ export default function ScrivaniaPage() {
       </div>
 
       {/* Layout 50/50 — colonna singola su mobile */}
-      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 14 : 20, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, alignItems:'start' }}>
 
         {/* ── COLONNA TASK ── */}
-        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '14px 12px' : '16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, minWidth:0 }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
+        <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px 12px' : '16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, minWidth:0 }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>
-          <div style={{ marginBottom:14 }}>
+          <div style={{ marginBottom:16 }}>
             <SlidingTabs
               tabs={[
                 { key: "active",    label: `Attive (${activeTasks.length})` },
@@ -572,7 +572,7 @@ export default function ScrivaniaPage() {
 
           {taskTab === "active" && (
             Object.keys(groupedActive).length === 0 ? (
-              <div style={{ textAlign:'center', padding:'32px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+              <div style={{ textAlign:'center', padding:'32px 0', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
                 Nessuna task attiva assegnata.
               </div>
             ) : Object.entries(groupedActive).map(([pid, tasks]) => {
@@ -591,14 +591,14 @@ export default function ScrivaniaPage() {
                     padding:'4px 0', marginBottom: isCollapsed ? 0 : 6,
                   }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
                         {projectsById[pid] || "Senza progetto"}
                       </span>
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 5px' }}>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>
                         {tasks.length}
                       </span>
                     </div>
-                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1 }}>
+                    <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, lineHeight:1 }}>
                       {isCollapsed ? '▸' : '▾'}
                     </span>
                   </button>
@@ -618,7 +618,7 @@ export default function ScrivaniaPage() {
 
           {taskTab === "completed" && (
             completedToday.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'32px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+              <div style={{ textAlign:'center', padding:'32px 0', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
                 Nessuna task completata oggi.
               </div>
             ) : (
@@ -635,7 +635,7 @@ export default function ScrivaniaPage() {
         {/* ── COLONNA NOTE ── */}
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {notes.length === 0 ? (
-            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+            <div style={{ background: T.surface, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
               Nessuna nota. Clicca "+ Nuova nota" per iniziare.
             </div>
           ) : notes.length === 1 ? (
@@ -671,7 +671,7 @@ export default function ScrivaniaPage() {
 
       </div>
 
-      {error && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red }}>{error}</div>}
+      {error && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red }}>{error}</div>}
     </div>
   );
 }

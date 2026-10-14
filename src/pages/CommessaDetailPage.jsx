@@ -20,8 +20,8 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none',
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-      padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+      padding: '8px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
 }
@@ -31,14 +31,14 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background: 'transparent', border: `1px solid ${danger ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink,
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-      padding: '7px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+      padding: '8px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, required, style = {} }) {
   const { T } = useTheme();
@@ -46,7 +46,7 @@ function Input({ value, onChange, type = "text", placeholder, required, style = 
   return (
     <input type={type} value={value ?? ""} onChange={onChange} placeholder={placeholder} required={required}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '7px 10px', boxSizing: 'border-box', border: `1px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', ...style }} />
+      style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `1px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', ...style }} />
   );
 }
 function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
@@ -58,7 +58,7 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{title}</div>
-            {subtitle && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 4 }}>{subtitle}</div>}
+            {subtitle && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4 }}>{subtitle}</div>}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
         </div>
@@ -69,11 +69,11 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
 }
 function Divider() {
   const { T } = useTheme();
-  return <div style={{ height: '0.5px', background: T.border, margin: '14px 0' }} />;
+  return <div style={{ height: '0.5px', background: T.border, margin: '16px 0' }} />;
 }
 function Panel({ children, style = {} }) {
   const { T } = useTheme();
-  return <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: '16px 18px', boxShadow: T.shadow, ...style }}>{children}</div>;
+  return <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: '16px 20px', boxShadow: T.shadow, ...style }}>{children}</div>;
 }
 const TIPI_COSTO = ['Diritti', 'Trasferte', 'Marche da bollo', 'Altro'];
 const oggiISO = () => new Date().toISOString().slice(0, 10);
@@ -82,10 +82,10 @@ function DatoCommessa({ label, value, mono, strong, color, onClick }) {
   const { T } = useTheme();
   return (
     <div onClick={onClick} style={{ minWidth: 0, cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 4 }}>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 4 }}>
         {label}{onClick && <span style={{ opacity: 0.6 }}> ↗</span>}
       </div>
-      <div style={{ fontSize: strong ? 17 : 14, fontWeight: strong ? 600 : 500, color: color || T.ink, fontFamily: mono ? "'IBM Plex Mono', monospace" : "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
+      <div style={{ fontSize: strong ? 17 : 14, fontWeight: strong ? 600 : 500, color: color || T.ink, fontFamily: mono ? "var(--font-label)" : "var(--font-ui)", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
     </div>
   );
 }
@@ -95,16 +95,16 @@ function MonitorSection({ title, summary, badge, badgeColor, action, footer, ope
   const { T } = useTheme();
   return (
     <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, minWidth: 0 }}>
-      <div onClick={onToggle} style={{ padding: '12px 14px', cursor: 'pointer' }}>
+      <div onClick={onToggle} style={{ padding: '12px 16px', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => action && e.stopPropagation()}>
             {action}
-            {badge != null && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: badgeColor || T.muted }}>{badge}</span>}
+            {badge != null && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: badgeColor || T.muted }}>{badge}</span>}
             <span onClick={action ? onToggle : undefined} style={{ fontSize: 10, color: T.muted, cursor: 'pointer' }}>{open ? '▴' : '▾'}</span>
           </div>
         </div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginTop: 4, fontFamily: "'IBM Plex Mono', monospace" }}>{summary}</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginTop: 4, fontFamily: "var(--font-label)" }}>{summary}</div>
         {footer}
       </div>
       {open && <div style={{ borderTop: `0.5px solid ${T.border}` }}>{children}</div>}
@@ -153,7 +153,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
     <div ref={menuRef} style={{ position: 'fixed', top: pos.top, right: pos.right, width: 150, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, zIndex: 9999, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
       {items.map(item => (
         <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
-          style={{ display: 'block', width: '100%', padding: '11px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
+          style={{ display: 'block', width: '100%', padding: '12px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.02em' }}>
           {item.label}
         </button>
       ))}
@@ -718,7 +718,7 @@ export default function CommessaDetailPage() {
 
   // ── RENDER ────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento commessa...</div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento commessa...</div>
   );
   if (error || !commessa) return (
     <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>{error || "Commessa non trovata."}</div>
@@ -726,13 +726,13 @@ export default function CommessaDetailPage() {
 
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0, width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0, width: '100%' }}>
 
       {/* HEADER — dati commessa */}
-      <Panel style={{ padding: isMobile ? '14px 16px' : '18px 22px' }}>
+      <Panel style={{ padding: isMobile ? '16px 16px' : '20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ minWidth: 0, flex: '1 1 320px' }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.25em', textTransform: 'uppercase', marginBottom: 6 }}>{commessa.numero_offerta || "—"}</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>{commessa.numero_offerta || "—"}</div>
             <div style={{ fontSize: 22, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{commessa.nome_commessa || "Commessa senza nome"}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -742,9 +742,9 @@ export default function CommessaDetailPage() {
               <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 190, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
-                  <button onClick={() => { setMenuOpen(false); if (offertaCollegataId) navigate(`/offerte/${offertaCollegataId}`, { state: { openDoc: true } }); else openEdit(); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
-                  <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; setMenuOpen(false); await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Archivia commessa</button>
-                  <button onClick={()=>{ setMenuOpen(false); setDeleteCommessaModal(true); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>Elimina commessa</button>
+                  <button onClick={() => { setMenuOpen(false); if (offertaCollegataId) navigate(`/offerte/${offertaCollegataId}`, { state: { openDoc: true } }); else openEdit(); }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>Modifica</button>
+                  <button onClick={async()=>{ if(!confirm('Archiviare questa commessa? Sarà visibile in Impostazioni → Commesse archiviate.')) return; setMenuOpen(false); await supabase.from('commesse').update({archived:true}).eq('id',commessaId); navigate('/commesse'); }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Archivia commessa</button>
+                  <button onClick={()=>{ setMenuOpen(false); setDeleteCommessaModal(true); }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>Elimina commessa</button>
                 </div>
               )}
             </div>
@@ -752,7 +752,7 @@ export default function CommessaDetailPage() {
         </div>
 
         {/* Dati principali in evidenza */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))', gap: isMobile ? 12 : 18, marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))', gap: 16, marginTop: 16, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
           <DatoCommessa label="Cliente" value={commessa.cliente || "—"} />
           <DatoCommessa label="Data" value={commessa.data_commessa ? new Date(commessa.data_commessa).toLocaleDateString('it-IT') : "—"} mono />
           <DatoCommessa label="Importo base" value={currency(importoBase)} mono strong
@@ -760,7 +760,7 @@ export default function CommessaDetailPage() {
           <DatoCommessa label="Totale con extra" value={currency(importoBase + totCostiExtra)} mono strong color={T.navy} />
         </div>
         {commessa.note_amministrative && (
-          <div style={{ marginTop: 12, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{commessa.note_amministrative}</div>
+          <div style={{ marginTop: 12, fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{commessa.note_amministrative}</div>
         )}
       </Panel>
 
@@ -769,10 +769,10 @@ export default function CommessaDetailPage() {
         <div onClick={() => setShowVociPopup(false)}
           style={{ position:'fixed', inset:0, zIndex:80, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: T.bg, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', padding:'20px 22px', width:'100%', maxWidth:420 }}>
+            style={{ background: T.bg, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', padding:'20px 24px', width:'100%', maxWidth:420 }}>
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted }}>
                 Dettaglio importo base
               </div>
               <button onClick={() => setShowVociPopup(false)}
@@ -791,12 +791,12 @@ export default function CommessaDetailPage() {
                     {vociAttive.map((v, i, arr) => {
                       const perc = lordo > 0 ? Math.round(Number(v.prezzo||0) / lordo * 1000) / 10 : 0;
                       return (
-                        <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.surface }}>
+                        <div key={v.id || i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom: i < arr.length-1 ? `0.5px solid ${T.border}` : 'none', background: i % 2 === 0 ? 'transparent' : T.surface }}>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ fontSize:12, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.nome}</div>
-                            <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:8, color:T.muted, marginTop:2 }}>{perc}% del lordo</div>
+                            <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{perc}% del lordo</div>
                           </div>
-                          <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.navy, flexShrink:0, marginLeft:12 }}>{currency(v.prezzo)}</div>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:12, fontWeight:600, color:T.navy, flexShrink:0, marginLeft:12 }}>{currency(v.prezzo)}</div>
                         </div>
                       );
                     })}
@@ -804,18 +804,18 @@ export default function CommessaDetailPage() {
                   <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                     {hasSconti && (
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted }}>
+                        <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
                           {Number(vociOfferta.sconto) > 0 && `Sconto ${vociOfferta.sconto}%`}
                           {Number(vociOfferta.sconto) > 0 && Number(vociOfferta.sconto_fisso) > 0 && ' + '}
                           {Number(vociOfferta.sconto_fisso) > 0 && `−${currency(vociOfferta.sconto_fisso)}`}
                           {!Number(vociOfferta.sconto) && !Number(vociOfferta.sconto_fisso) && 'Sconto applicato'}
                         </span>
-                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.red }}>−{currency(scontoTotale)}</span>
+                        <span style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red }}>−{currency(scontoTotale)}</span>
                       </div>
                     )}
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop: hasSconti ? 8 : 0, borderTop: hasSconti ? `0.5px solid ${T.border}` : 'none' }}>
-                      <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
-                      <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
                     </div>
                   </div>
                 </>
@@ -826,26 +826,26 @@ export default function CommessaDetailPage() {
       )}
 
       {/* ── CORPO: colonna monitoraggio (sinistra, più ampia) + costi extra (destra). Su mobile i costi extra vengono prima. ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.6fr) minmax(340px, 1fr)', gap: 14, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.6fr) minmax(340px, 1fr)', gap: 16, alignItems: 'start' }}>
 
         {/* COSTI EXTRA — inserimento rapido sempre visibile */}
-        <Panel style={{ padding: isMobile ? '14px 14px' : '18px 20px', order: isMobile ? 1 : 2 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+        <Panel style={{ padding: isMobile ? '16px 16px' : '20px 20px', order: isMobile ? 1 : 2 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em' }}>Costi extra</div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>
                 {costiExtra.length} {costiExtra.length === 1 ? 'voce' : 'voci'} · {currency(totCostiExtra)}
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleQuickCosto} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, background: T.navyLight, borderRadius: T.radiusSm, marginBottom: 14 }}>
+          <form onSubmit={handleQuickCosto} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, background: T.navyLight, borderRadius: T.radiusSm, marginBottom: 16 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {TIPI_COSTO.map(t => {
                 const sel = (quickCosto.tipo_costo || 'Altro') === t;
                 return (
                   <button key={t} type="button" onClick={() => setQuickCosto(p => ({ ...p, tipo_costo: t }))}
-                    style={{ padding: '5px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.04em',
+                    style={{ padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em',
                       border: `1px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navy : T.surface, color: sel ? T.bg : T.ink }}>
                     {t}
                   </button>
@@ -861,11 +861,11 @@ export default function CommessaDetailPage() {
                 {quickSaving ? '...' : '+ Aggiungi'}
               </BtnPrimary>
             </div>
-            {quickError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{quickError}</div>}
+            {quickError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{quickError}</div>}
           </form>
 
           {costiExtra.length === 0
-            ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '18px 0', textAlign: 'center' }}>Nessun costo extra</div>
+            ? <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessun costo extra</div>
             : <div>
                 {[...costiExtra].reverse().map(c => (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', borderBottom: `0.5px solid ${T.border}` }}>
@@ -874,19 +874,19 @@ export default function CommessaDetailPage() {
                         <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{c.tipo_costo || 'Altro'}</span>
                         {c.description && <span style={{ fontSize: 12, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.description}</span>}
                       </div>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>
+                      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>
                         {c.data_costo ? new Date(c.data_costo).toLocaleDateString('it-IT') : '—'}
                         {proformaPerCosto[c.id] && <span style={{ color: T.navy }}> · pf {proformaPerCosto[c.id].numero_proforma}</span>}
                         {c.pagato ? <span style={{ color: T.green }}> · ✓ pagato</span> : <span> · in attesa</span>}
                       </div>
                     </div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: 'nowrap' }}>{currency(c.importo)}</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: 'nowrap' }}>{currency(c.importo)}</div>
                     <RowMenu open={openMenuId === `costo-${c.id}`} onOpen={() => setOpenMenuId(`costo-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCosto(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCosto(c.id) }]} />
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 4px 0' }}>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: T.ink }}>{currency(totCostiExtra)}</span>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted }}>Totale</span>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 13, fontWeight: 600, color: T.ink }}>{currency(totCostiExtra)}</span>
                 </div>
               </div>
           }
@@ -907,24 +907,24 @@ export default function CommessaDetailPage() {
             }>
             {!hasAnyRates && (
               <div onClick={() => { setRataStep("config"); setRataModal(true); }}
-                style={{ margin: '10px 14px', padding: '10px 12px', cursor: 'pointer', background: T.redLight, border: `0.5px solid ${T.red}`, borderRadius: T.radiusSm }}>
+                style={{ margin: '10px 16px', padding: '10px 12px', cursor: 'pointer', background: T.redLight, border: `0.5px solid ${T.red}`, borderRadius: T.radiusSm }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Suddivisione pagamenti mancante</div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Senza rate non puoi emettere {isFattura ? "fatture" : "proforma"}. Tocca per crearla →</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>Senza rate non puoi emettere {isFattura ? "fatture" : "proforma"}. Tocca per crearla →</div>
               </div>
             )}
             {suddivisione.map((r, i) => {
               const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
               const pf = proformaPerRata[r.id];
               return (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `0.5px solid ${T.border}` }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: r.pagato ? T.green : pf ? T.navy : T.borderMd }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? <span style={{ fontWeight: 400, color: T.muted }}> · {pct(r.percentuale)}</span> : null}</div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: r.pagato ? T.green : T.muted }}>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: r.pagato ? T.green : T.muted }}>
                       {r.pagato ? `pagata${r.data_pagamento ? ' ' + new Date(r.data_pagamento).toLocaleDateString('it-IT') : ''}` : pf ? <span style={{ color: T.navy }}>pf {pf.numero_proforma}</span> : 'in attesa'}
                     </div>
                   </div>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(imp)}</span>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(imp)}</span>
                   {r.pagato
                     ? <span style={{ width: 28 }} />
                     : <RowMenu open={openMenuId === `rata-${r.id}`} onOpen={() => setOpenMenuId(`rata-${r.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditRata(r) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteRata(r.id) }]} />}
@@ -932,7 +932,7 @@ export default function CommessaDetailPage() {
               );
             })}
             {hasAnyRates && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
                 <span>Residuo</span><span style={{ color: residuo > 0 ? T.navy : T.muted, fontWeight: 600 }}>{currency(residuo)}</span>
               </div>
             )}
@@ -945,23 +945,23 @@ export default function CommessaDetailPage() {
               : <span style={{ color: T.muted, fontWeight: 400 }}>{proforma.length === 0 ? (isFattura ? 'Nessuna fattura' : 'Nessuna proforma') : 'Tutte incassate'}</span>}
             badge={proforma.length > 0 ? `${proforma.length}` : null}
             action={hasAnyRates
-              ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }} style={{ fontSize: 10, padding: '7px 14px', borderRadius: T.radiusSm }}>{isFattura ? "+ Nuova fattura" : "+ Nuova proforma"}</BtnPrimary>
+              ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }} style={{ fontSize: 10, padding: '8px 16px', borderRadius: T.radiusSm }}>{isFattura ? "+ Nuova fattura" : "+ Nuova proforma"}</BtnPrimary>
               : null}>
-            {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 14px', textAlign: 'center' }}>{hasAnyRates ? (isFattura ? "Nessuna fattura" : "Nessuna proforma") : "Crea prima la suddivisione pagamenti"}</div>}
+            {proforma.length === 0 && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, padding: '12px 16px', textAlign: 'center' }}>{hasAnyRates ? (isFattura ? "Nessuna fattura" : "Nessuna proforma") : "Crea prima la suddivisione pagamenti"}</div>}
             {[...proformaDaPagare, ...proforma.filter(p => p.pagato)].map(p => (
-              <div key={p.id} onClick={() => setPreviewProforma(p)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer' }}>
+              <div key={p.id} onClick={() => setPreviewProforma(p)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: T.ink }}>{p.numero_proforma}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: p.pagato ? T.green : T.muted }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 12, color: T.ink }}>{p.numero_proforma}</div>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: p.pagato ? T.green : T.muted }}>
                     {p.pagato
                       ? `✓ pagata${p.data_pagamento ? ' ' + new Date(p.data_pagamento).toLocaleDateString('it-IT') : ''}${p.numero_fattura ? ' · ft ' + p.numero_fattura : ''}`
                       : (p.data_scadenza ? `scade ${new Date(p.data_scadenza).toLocaleDateString('it-IT')}` : 'da pagare')}
                   </div>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: p.pagato ? T.green : T.ink }}>{currency(p.importo_totale)}</span>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: p.pagato ? T.green : T.ink }}>{currency(p.importo_totale)}</span>
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {!p.pagato && <button onClick={() => openPagamentoProforma(p)} title="Segna pagata"
-                    style={{ background: 'none', border: `0.5px solid ${T.green}`, borderRadius: T.radiusSm, color: T.green, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, padding: '3px 7px' }}>✓ pagata</button>}
+                    style={{ background: 'none', border: `0.5px solid ${T.green}`, borderRadius: T.radiusSm, color: T.green, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, padding: '4px 8px' }}>✓ pagata</button>}
                   <RowMenu open={openMenuId === `pf-${p.id}`} onOpen={() => setOpenMenuId(`pf-${p.id}`)} onClose={() => setOpenMenuId(null)}
                     items={[
                       { label: 'Modifica', onClick: () => openEditProforma(p) },
@@ -977,23 +977,23 @@ export default function CommessaDetailPage() {
           <MonitorSection title="Collaboratori esterni" open={showCollaboratori} onToggle={() => setShowCollaboratori(p => !p)}
             summary={currency(totCollaboratori)} badge={`${collaboratori.length}`}>
             {collaboratori.map(c => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `0.5px solid ${T.border}` }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{c.nome_cognome}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{c.ruolo || '—'}</div>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{c.ruolo || '—'}</div>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</span>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</span>
                 <RowMenu open={openMenuId === `collab-${c.id}`} onOpen={() => setOpenMenuId(`collab-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCollab(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCollab(c.id) }]} />
               </div>
             ))}
-            <form onSubmit={handleAddCollab} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 14px' }}>
+            <form onSubmit={handleAddCollab} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 <Input value={newCollab.ruolo} onChange={e => setNewCollab(p => ({ ...p, ruolo: e.target.value }))} placeholder="Ruolo" />
                 <Input value={newCollab.nome_cognome} onChange={e => setNewCollab(p => ({ ...p, nome_cognome: e.target.value }))} placeholder="Nome e cognome" required />
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <Input type="number" value={newCollab.importo} onChange={e => setNewCollab(p => ({ ...p, importo: e.target.value }))} placeholder="Importo €" style={{ flex: 1, minWidth: 0 }} />
-                <BtnPrimary type="submit" disabled={savingCollab} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '7px 12px' }}>+</BtnPrimary>
+                <BtnPrimary type="submit" disabled={savingCollab} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '8px 12px' }}>+</BtnPrimary>
               </div>
             </form>
           </MonitorSection>
@@ -1002,22 +1002,22 @@ export default function CommessaDetailPage() {
           <MonitorSection title="Costi interni · solo analisi" open={showCostiInterni} onToggle={() => setShowCostiInterni(p => !p)}
             summary={currency(totCostiInterni)} badge={`${costiInterni.length}`}>
             {costiInterni.map(c => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `0.5px solid ${T.border}` }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: T.ink, fontWeight: 500 }}>{c.descrizione}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
                     {c.nome_membro && <span>{c.nome_membro} · </span>}
                     {c.data && new Date(c.data).toLocaleDateString('it-IT')}
                   </div>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.red }}>{currency(c.importo)}</span>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: T.red }}>{currency(c.importo)}</span>
                 <button onClick={() => handleDeleteCostoInterno(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16 }}>×</button>
               </div>
             ))}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 <select value={newCostoInterno.team_member_id} onChange={e => setNewCostoInterno(p => ({ ...p, team_member_id: e.target.value }))}
-                  style={{ padding: '7px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", outline: 'none', minWidth: 0 }}>
+                  style={{ padding: '8px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 11, fontFamily: "var(--font-label)", outline: 'none', minWidth: 0 }}>
                   <option value=''>— Membro —</option>
                   {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
                 </select>
@@ -1027,12 +1027,12 @@ export default function CommessaDetailPage() {
                 <input type='text' value={newCostoInterno.descrizione} onChange={e => setNewCostoInterno(p => ({ ...p, descrizione: e.target.value }))}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddCostoInterno(); }}
                   placeholder='Descrizione spesa...'
-                  style={{ flex: '2 1 0', minWidth: 0, padding: '7px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", outline: 'none' }} />
+                  style={{ flex: '2 1 0', minWidth: 0, padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none' }} />
                 <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e => setNewCostoInterno(p => ({ ...p, importo: e.target.value }))}
                   onKeyDown={e => { if (e.key === 'Enter') handleAddCostoInterno(); }}
                   placeholder='€'
-                  style={{ flex: '1 1 0', minWidth: 0, padding: '7px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace", outline: 'none' }} />
-                <BtnPrimary onClick={handleAddCostoInterno} disabled={savingCostoInt || !newCostoInterno.descrizione.trim() || !newCostoInterno.importo} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '7px 12px' }}>+</BtnPrimary>
+                  style={{ flex: '1 1 0', minWidth: 0, padding: '8px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none' }} />
+                <BtnPrimary onClick={handleAddCostoInterno} disabled={savingCostoInt || !newCostoInterno.descrizione.trim() || !newCostoInterno.importo} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '8px 12px' }}>+</BtnPrimary>
               </div>
             </div>
           </MonitorSection>
@@ -1048,7 +1048,7 @@ export default function CommessaDetailPage() {
           ))}
           <div><FieldLabel>Note amministrative</FieldLabel>
             <textarea value={editForm.note_amministrative ?? ""} onChange={e => setEditForm(p => ({ ...p, note_amministrative: e.target.value }))} rows={3}
-              style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', resize: 'vertical' }} />
+              style={{ width: '100%', padding: '8px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', resize: 'vertical' }} />
           </div>
           {hasPaidPercentRates && (Number(editForm.importo_offerta_base) || 0) !== importoBase && (
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surfaceAlt ?? T.surface, cursor: 'pointer' }}>
@@ -1059,7 +1059,7 @@ export default function CommessaDetailPage() {
               </span>
             </label>
           )}
-          {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
+          {editError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{editError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditOpen(false)} disabled={editSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editSaving}>{editSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
@@ -1068,14 +1068,14 @@ export default function CommessaDetailPage() {
         <form onSubmit={handleSaveCosto} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><FieldLabel>Tipo</FieldLabel>
             <select value={costoForm.tipo_costo ?? "Altro"} onChange={e => setCostoForm(p => ({ ...p, tipo_costo: e.target.value }))}
-              style={{ width: '100%', padding: '7px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+              style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none' }}>
               {['Diritti','Trasferte','Marche da bollo','Altro'].map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           <div><FieldLabel>Descrizione</FieldLabel><Input value={costoForm.description ?? ""} onChange={e => setCostoForm(p => ({ ...p, description: e.target.value }))} /></div>
           <div><FieldLabel>Importo *</FieldLabel><Input type="number" value={costoForm.importo ?? ""} onChange={e => setCostoForm(p => ({ ...p, importo: e.target.value }))} required /></div>
           <div><FieldLabel>Data</FieldLabel><Input type="date" value={costoForm.data_costo ?? new Date().toISOString().slice(0,10)} onChange={e => setCostoForm(p => ({ ...p, data_costo: e.target.value }))} /></div>
-          {costoError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{costoError}</div>}
+          {costoError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{costoError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setCostoModal(false)} disabled={costoSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={costoSaving}>{costoSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
@@ -1109,10 +1109,10 @@ export default function CommessaDetailPage() {
             onClick={e => { if (e.target === e.currentTarget) setPreviewProforma(null); }}>
             <div style={{ background: T.surface, border: `1px solid ${T.borderMd}`, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
               {/* header modale */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: `0.5px solid ${T.border}` }}>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 600, color: T.ink }}>{p.numero_proforma}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>
                     {p.data_creazione ? new Date(p.data_creazione).toLocaleDateString('it-IT') : ''}
                     {p.pagato && <span style={{ marginLeft: 8, color: T.green }}>· Pagata</span>}
                   </div>
@@ -1125,25 +1125,25 @@ export default function CommessaDetailPage() {
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* Rate */}
                 <div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
                     Rate incluse {tutteLeRate.length > 0 && `(${tutteLeRate.length})`}
                   </div>
                   {tutteLeRate.length === 0 ? (
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessuna rata</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Nessuna rata</div>
                   ) : tutteLeRate.map(r => (
-                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: T.bg, border: `1px solid ${T.border}`, marginBottom: 4 }}>
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: T.bg, border: `1px solid ${T.border}`, marginBottom: 4 }}>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>
                           Rata {r.numero_rata}{r.descrizione ? ` — ${r.descrizione}` : ''}
                         </div>
                         {r._commessaNome && (
-                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{r._commessaNome}</div>
+                          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 1 }}>{r._commessaNome}</div>
                         )}
                         {r.percentuale != null && (
-                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{r.percentuale}%</div>
+                          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 1 }}>{r.percentuale}%</div>
                         )}
                       </div>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>
+                      <div style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: T.ink }}>
                         {currency(r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100))}
                       </div>
                     </div>
@@ -1151,31 +1151,31 @@ export default function CommessaDetailPage() {
                 </div>
                 {/* Costi */}
                 <div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
                     Costi extra inclusi {costiInclusi.length > 0 && `(${costiInclusi.length})`}
                   </div>
                   {costiInclusi.length === 0 ? (
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun costo extra</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Nessun costo extra</div>
                   ) : costiInclusi.map(c => (
-                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: T.bg, border: `1px solid ${T.border}`, marginBottom: 4 }}>
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: T.bg, border: `1px solid ${T.border}`, marginBottom: 4 }}>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{c.tipo_costo}</div>
-                        {c.description && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1 }}>{c.description}</div>}
+                        {c.description && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 1 }}>{c.description}</div>}
                       </div>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</div>
+                      <div style={{ fontFamily: "var(--font-label)", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</div>
                     </div>
                   ))}
                 </div>
                 {/* Note */}
                 {p.note && (
                   <div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
                     <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.6 }}>{p.note}</div>
                   </div>
                 )}
                 {/* Totale */}
-                <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Totale proforma</span>
+                <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Totale proforma</span>
                   <span style={{ fontSize: 18, fontWeight: 700, color: T.ink }}>{currency(p.importo_totale)}</span>
                 </div>
               </div>
@@ -1198,10 +1198,10 @@ export default function CommessaDetailPage() {
                   const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
                   const used = rateGiaUsate.has(r.id);
                   return (
-                    <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
+                    <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaRateIds.includes(r.id)} disabled={used} onChange={() => setProformaRateIds(p => p.includes(r.id) ? p.filter(x => x !== r.id) : [...p, r.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
                       <span style={{ fontSize: 12, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? ` — ${pct(r.percentuale)}` : ''}</span>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(imp)}</span>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(imp)}</span>
                     </label>
                   );
                 })}
@@ -1214,10 +1214,10 @@ export default function CommessaDetailPage() {
                 {costiExtra.map(c => {
                   const used = costiGiaUsati.has(c.id);
                   return (
-                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
+                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaCostiIds.includes(c.id)} disabled={used} onChange={() => setProformaCostiIds(p => p.includes(c.id) ? p.filter(x => x !== c.id) : [...p, c.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
                       <span style={{ fontSize: 12, color: T.ink }}>{c.tipo_costo || '—'}{c.description ? ` — ${c.description}` : ''}</span>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(c.importo)}</span>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(c.importo)}</span>
                     </label>
                   );
                 })}
@@ -1229,7 +1229,7 @@ export default function CommessaDetailPage() {
             if (acData.suddivisione.length === 0 && acData.costiExtra.length === 0) return null;
             return (
               <div key={ac.id} style={{ marginTop: 16 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
                   {ac.nome_commessa}
                 </div>
                 {acData.suddivisione.map(r => {
@@ -1240,7 +1240,7 @@ export default function CommessaDetailPage() {
                       <input type="checkbox" checked={checked} disabled={used}
                         onChange={e => setProformaRateIds(p => e.target.checked ? [...p, r.id] : p.filter(x => x !== r.id))}
                         style={{ accentColor: T.navy }} />
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
                         {r.label || (r.numero_rata != null ? `Rata ${r.numero_rata}` : '—')} — {r.importo_fisso ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(r.importo_fisso) : `${r.percentuale ?? '?'}%`}
                       </span>
                     </label>
@@ -1254,7 +1254,7 @@ export default function CommessaDetailPage() {
                       <input type="checkbox" checked={checked} disabled={used}
                         onChange={e => setProformaCostiIds(p => e.target.checked ? [...p, ce.id] : p.filter(x => x !== ce.id))}
                         style={{ accentColor: T.navy }} />
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
                         {ce.descrizione} — {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(ce.importo)}
                       </span>
                     </label>
@@ -1264,7 +1264,7 @@ export default function CommessaDetailPage() {
             );
           })}
           <div><FieldLabel>Note</FieldLabel><Input value={proformaForm.note} onChange={e => setProformaForm(p => ({ ...p, note: e.target.value }))} /></div>
-          {proformaError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{proformaError}</div>}
+          {proformaError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{proformaError}</div>}
           <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setProformaModal(false)} disabled={proformaSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={proformaSaving}>{proformaSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
         </form>
       </Modal>
@@ -1278,7 +1278,7 @@ export default function CommessaDetailPage() {
       </Modal>
 
       <Modal open={rimuoviModal} onClose={() => setRimuoviModal(false)} title="Annulla pagamento?" width={380}>
-        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
+        <p style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7, marginBottom: 20 }}>
           La proforma <strong style={{ color: T.ink }}>{selectedProforma?.numero_proforma}</strong> tornerà allo stato "Da pagare".
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setRimuoviModal(false)} disabled={rimuoviSaving}>Annulla</BtnGhost><BtnGhost danger onClick={handleRimuoviPagamento} disabled={rimuoviSaving}>{rimuoviSaving ? "..." : "Conferma"}</BtnGhost></div>
@@ -1286,11 +1286,11 @@ export default function CommessaDetailPage() {
 
       <Modal open={rataModal} onClose={() => { setRataModal(false); setRataStep("config"); }} title="Genera Rate" subtitle={rataStep === "config" ? "Configura la suddivisione" : "Modifica le rate"} width={500}>
         {rataStep === "config" ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div><FieldLabel>Modalità</FieldLabel>
               <div style={{ display: 'flex', gap: 16 }}>
                 {[['percentuale','Percentuale'],['importo','Importo fisso']].map(([v,l]) => (
-                  <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+                  <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
                     <input type="radio" checked={rataMode === v} onChange={() => setRataMode(v)} style={{ accentColor: T.navy }} />{l}
                   </label>
                 ))}
@@ -1303,12 +1303,12 @@ export default function CommessaDetailPage() {
           <form onSubmit={handleSaveRate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, marginBottom: 4 }}>
               {['Rata', rataMode === 'percentuale' ? '%' : '€'].map(h => (
-                <div key={h} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>{h}</div>
+                <div key={h} style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>{h}</div>
               ))}
             </div>
             {rateRows.map((r, i) => (
               <div key={i} style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:8 }}>
-                <div style={{ padding:'8px 12px', border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface2, fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, display:'flex', alignItems:'center' }}>
+                <div style={{ padding:'8px 12px', border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface2, fontFamily:"var(--font-label)", fontSize:12, color:T.muted, display:'flex', alignItems:'center' }}>
                   {r.label}
                 </div>
                 <Input
@@ -1326,15 +1326,15 @@ export default function CommessaDetailPage() {
               const ok = Math.abs(somma - totale) < 0.1;
               return (
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderTop:`0.5px solid ${T.border}` }}>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>Totale</span>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:12, fontWeight:600, color: ok ? T.green : T.red }}>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>Totale</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:12, fontWeight:600, color: ok ? T.green : T.red }}>
                     {rataMode === "percentuale" ? `${somma.toFixed(1)}%` : currency(somma)}
                     {!ok && ` ≠ ${rataMode === "percentuale" ? "100%" : currency(totale)}`}
                   </span>
                 </div>
               );
             })()}
-            {rataError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{rataError}</div>}
+            {rataError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{rataError}</div>}
             <Divider />
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
               <BtnGhost onClick={() => { setRataStep("config"); setRataError(""); }}>← Indietro</BtnGhost>
@@ -1347,7 +1347,7 @@ export default function CommessaDetailPage() {
       <Modal open={editRataModal} onClose={() => setEditRataModal(false)} title="Modifica Rata" width={420}>
         {editRataData?.pagato ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '12px 14px', lineHeight: 1.7 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '12px 16px', lineHeight: 1.7 }}>
               Questa rata è già stata pagata e non può essere modificata.<br />
               Per apportare modifiche, annulla prima il pagamento dalla proforma associata.
             </div>
@@ -1358,7 +1358,7 @@ export default function CommessaDetailPage() {
             <div><FieldLabel>Percentuale</FieldLabel><Input type="number" value={editRataForm.percentuale ?? ""} onChange={e => setEditRataForm(p => ({ ...p, percentuale: e.target.value }))} /></div>
             <div><FieldLabel>Importo fisso</FieldLabel><Input type="number" value={editRataForm.importo_fisso ?? ""} onChange={e => setEditRataForm(p => ({ ...p, importo_fisso: e.target.value }))} /></div>
             <div><FieldLabel>Data pagamento</FieldLabel><Input type="date" value={editRataForm.data_pagamento ?? ""} onChange={e => setEditRataForm(p => ({ ...p, data_pagamento: e.target.value }))} /></div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
               <input type="checkbox" checked={editRataForm.pagato ?? false} onChange={e => setEditRataForm(p => ({ ...p, pagato: e.target.checked }))} style={{ accentColor: T.navy }} />Segna come pagata
             </label>
             <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setEditRataModal(false)} disabled={editRataSaving}>Annulla</BtnGhost><BtnPrimary type="submit" disabled={editRataSaving}>{editRataSaving ? "Salvataggio..." : "Salva"}</BtnPrimary></div>
@@ -1406,14 +1406,14 @@ export default function CommessaDetailPage() {
       {/* ── MODAL ELIMINA COMMESSA ───────────────────────────────── */}
       <Modal open={deleteCommessaModal} onClose={() => !deletingSaving && setDeleteCommessaModal(false)} title="Elimina commessa" width={420}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, lineHeight: 1.6 }}>
             Sei sicuro di voler eliminare la commessa <strong>{commessa?.nome_commessa}</strong>?
           </div>
           {commessa?.numero_offerta ? (
             <>
-              <div style={{ background: T.surface2, border: `1px solid ${T.border}`, padding: '12px 14px' }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Offerta collegata — N° {commessa.numero_offerta}</div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
+              <div style={{ background: T.surface2, border: `1px solid ${T.border}`, padding: '12px 16px' }}>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Offerta collegata — N° {commessa.numero_offerta}</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
@@ -1435,7 +1435,7 @@ export default function CommessaDetailPage() {
                     }
                     navigate('/commesse');
                   }}
-                  style={{ flex: 1, padding: '9px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                  style={{ flex: 1, padding: '10px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
                 >
                   {deletingSaving ? '...' : 'Sì, elimina entrambe'}
                 </button>
@@ -1447,7 +1447,7 @@ export default function CommessaDetailPage() {
                     if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                     navigate('/commesse');
                   }}
-                  style={{ flex: 1, padding: '9px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                  style={{ flex: 1, padding: '10px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
                 >
                   {deletingSaving ? '...' : 'No, solo la commessa'}
                 </button>
@@ -1467,7 +1467,7 @@ export default function CommessaDetailPage() {
                   if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                   navigate('/commesse');
                 }}
-                style={{ padding: '8px 18px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                style={{ padding: '8px 20px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
               >
                 {deletingSaving ? 'Eliminazione...' : 'Elimina'}
               </button>

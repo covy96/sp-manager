@@ -66,7 +66,7 @@ function TaskPill({ task, today, onClick }) {
   const { bg, color } = getTaskBg(task, today, T);
   return (
     <div onClick={e=>{e.stopPropagation();onClick&&onClick(task);}} style={{
-      background:bg, color, fontFamily:"'IBM Plex Mono', monospace", fontSize:9,
+      background:bg, color, fontFamily:"var(--font-label)", fontSize:10,
       padding:'2px 6px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
       letterSpacing:'0.02em', cursor:'pointer', marginBottom:2,
     }}>
@@ -81,26 +81,26 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
 
   const content = (
     <>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:4 }}>Task del giorno</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
             {date ? fmtDay(new Date(date)) : "Seleziona un giorno"}
           </div>
         </div>
-        <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:12, color:T.muted, padding:'3px 10px', lineHeight:1 }}>×</button>
+        <button onClick={onClose} style={{ background:'none', border:`0.5px solid ${T.ink20}`, borderRadius: T.radiusSm, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:12, color:T.muted, padding:'4px 10px', lineHeight:1 }}>×</button>
       </div>
-      {tasks.length===0 && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
+      {tasks.length===0 && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, padding:'20px 0', textAlign:'center' }}>Nessun task pianificato</div>}
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {tasks.map(task=>{
           const {bg,color}=getTaskBg(task,today,T);
           return (
             <div key={task.id} style={{ background:bg, border:`0.5px solid ${color}22`, padding:'10px 12px' }}>
               <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:6 }}>
-                <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0, marginTop:3 }}/>
+                <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0, marginTop:4 }}/>
                 <div style={{ fontSize:12, fontWeight:600, color:T.ink, lineHeight:1.3 }}>{task.title||"Task"}</div>
               </div>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, paddingLeft:16, display:'flex', flexDirection:'column', gap:2 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, paddingLeft:16, display:'flex', flexDirection:'column', gap:2 }}>
                 <div>Categoria: <span style={{color:T.ink}}>{task.categoria||"—"}</span></div>
                 <div>Progetto: <span style={{color:T.ink}}>{projectsById[task.project_id]||"—"}</span></div>
                 <div>Membro: <span style={{color:T.ink}}>{membersById[task.assigned_member]||"—"}</span></div>
@@ -121,12 +121,12 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
         <div style={{
           position:'fixed', bottom:64, left:0, right:0, zIndex:49,
           background:T.surface, borderRadius:'16px 16px 0 0',
-          padding:'16px 18px 24px',
+          padding:'16px 20px 24px',
           maxHeight:'55vh', overflowY:'auto',
           boxShadow:'0 -4px 24px rgba(0,0,0,0.18)',
         }}>
           {/* Handle */}
-          <div style={{ width:36, height:4, borderRadius:2, background:T.ink20, margin:'0 auto 14px' }}/>
+          <div style={{ width:36, height:4, borderRadius:2, background:T.ink20, margin:'0 auto 16px' }}/>
           {content}
         </div>
       </>
@@ -134,7 +134,7 @@ function TaskSidebar({ tasks, date, projectsById, membersById, onClose, today, i
   }
 
   return (
-    <div style={{ background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowMd, borderRadius:T.radius, padding:'16px 18px', minWidth:280 }}>
+    <div style={{ background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowMd, borderRadius:T.radius, padding:'16px 20px', minWidth:280 }}>
       {content}
     </div>
   );
@@ -275,7 +275,7 @@ export default function CalendarioPage() {
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
-              <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
+              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.04em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
             ))}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
@@ -300,7 +300,7 @@ export default function CalendarioPage() {
                   display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'space-between',
                   border:'none', borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
                 }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.ink20, fontWeight:isToday?700:400 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.ink20, fontWeight:isToday?700:400 }}>
                     {day.date.getDate()}
                   </div>
                   {dots.length>0 && (
@@ -324,7 +324,7 @@ export default function CalendarioPage() {
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth:560, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
-              <div key={d} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
+              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
             ))}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
@@ -337,7 +337,7 @@ export default function CalendarioPage() {
               return (
                 <button key={day.iso} onClick={()=>setSelectedDay(isSel?null:day.iso)} style={{
                   minHeight:90,
-                  padding:'5px 6px', textAlign:'left', cursor:'pointer',
+                  padding:'6px 6px', textAlign:'left', cursor:'pointer',
                   background:isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg,
                   outline:isToday?`1.5px solid ${T.navy}`:'none', outlineOffset:-1,
                   border:'none', borderBottom:`0.5px solid ${T.ink10}`, borderRight:`0.5px solid ${T.ink10}`,
@@ -345,11 +345,11 @@ export default function CalendarioPage() {
                   onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background=T.bg;}}
                   onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:day.isCurrentMonth?T.surface:T.bg;}}
                 >
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.muted, fontWeight:isToday?600:400, marginBottom:3 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:day.isCurrentMonth?(isToday?T.navy:T.ink):T.muted, fontWeight:isToday?600:400, marginBottom:4 }}>
                     {day.date.getDate()}
                   </div>
                   {visible.map(t=><TaskPill key={t.id} task={t} today={todayISO}/>)}
-                  {hidden>0&&<div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>+{hidden}</div>}
+                  {hidden>0&&<div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>+{hidden}</div>}
                 </button>
               );
             })}
@@ -374,13 +374,13 @@ export default function CalendarioPage() {
               const isToday=iso===todayISO;
               return (
                 <div key={i} style={{ padding: isMobile ? '8px 4px' : '10px 8px', textAlign:'center', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none' }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 7 : 8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, marginBottom:3 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 7 : 8, letterSpacing:'0.04em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     {WEEKDAYS[(i + (count===7 ? 0 : new Date(startDate).getDay() === 0 ? 6 : new Date(startDate).getDay() - 1)) % 7]}
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 20 : 18, fontWeight:600, color:isToday?T.navy:T.ink, width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 20 : 18, fontWeight:600, color:isToday?T.navy:T.ink, width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
                     {fmtDayNum(d)}
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize: isMobile ? 8 : 8, color:T.muted, marginTop:2 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 8 : 8, color:T.muted, marginTop:2 }}>
                     {d.toLocaleDateString('it-IT',{month:'short'})}
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export default function CalendarioPage() {
                   onMouseLeave={e=>{e.currentTarget.style.background=isSel?T.navyLight:isToday?T.surface2:T.surface;}}
                 >
                   {dayTasks.length===0 ? (
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.ink10, padding:'8px 0', textAlign:'center' }}>—</div>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.ink10, padding:'8px 0', textAlign:'center' }}>—</div>
                   ) : dayTasks.map(t=>(
                     <TaskPill key={t.id} task={t} today={todayISO} onClick={()=>setSelectedDay(iso)}/>
                   ))}
@@ -423,11 +423,11 @@ export default function CalendarioPage() {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px' : '20px 24px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
+        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
           {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>
         {dayTasks.length===0 ? (
-          <div style={{ textAlign:'center', padding:'48px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+          <div style={{ textAlign:'center', padding:'48px 0', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
             Nessun task pianificato per oggi.
           </div>
         ) : (
@@ -439,13 +439,13 @@ export default function CalendarioPage() {
                   <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0, marginTop:4 }}/>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:T.ink, marginBottom:4 }}>{task.title||"Task"}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, display:'flex', flexWrap:'wrap', gap: isMobile ? 6 : 12 }}>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, display:'flex', flexWrap:'wrap', gap: isMobile ? 6 : 12 }}>
                       <span>Progetto: <span style={{color:T.ink}}>{projectsById[task.project_id]||"—"}</span></span>
                       <span>Membro: <span style={{color:T.ink}}>{membersById[task.assigned_member]||"—"}</span></span>
                       {task.categoria&&<span>Cat: <span style={{color:T.ink}}>{task.categoria}</span></span>}
                     </div>
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.06em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>
                     {task.status==="completed"?"Fatto":task.data_pianificata<todayISO?"Scaduta":"In attesa"}
                   </div>
                 </div>
@@ -458,7 +458,7 @@ export default function CalendarioPage() {
   };
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
       Caricamento calendario...
     </div>
   );
@@ -483,7 +483,7 @@ export default function CalendarioPage() {
   const showSidebar = viewMode==="month" || viewMode==="week" || viewMode==="3days";
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* ── TOOLBAR — riga unica ── */}
       <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
@@ -499,12 +499,12 @@ export default function CalendarioPage() {
         {/* Navigazione periodo */}
         {viewMode!=="today" && (
           <div style={{ display:'flex', alignItems:'center', gap:6, flex:1, justifyContent:'center', minWidth:0 }}>
-            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:13, flexShrink:0 }}>←</button>
-            <div style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize: isMobile ? 12 : 13, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0 }}>
+            <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"var(--font-label)", fontSize:13, flexShrink:0 }}>←</button>
+            <div style={{ fontFamily:"var(--font-ui)", fontSize: isMobile ? 12 : 13, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0 }}>
               {periodLabel}
             </div>
-            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:13, flexShrink:0 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'4px 8px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', whiteSpace:'nowrap', flexShrink:0 }}>Oggi</button>
+            <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"var(--font-label)", fontSize:13, flexShrink:0 }}>→</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'4px 8px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', whiteSpace:'nowrap', flexShrink:0 }}>Oggi</button>
           </div>
         )}
 
@@ -515,9 +515,9 @@ export default function CalendarioPage() {
             border:`0.5px solid ${selectedMembers.length>0 ? T.navy : T.borderMd}`,
             borderRadius: T.radiusSm,
             background: selectedMembers.length>0 ? T.navyLight : 'transparent',
-            padding:'7px 14px', cursor:'pointer',
-            fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
-            letterSpacing:'0.08em', textTransform:'uppercase',
+            padding:'8px 16px', cursor:'pointer',
+            fontFamily:"var(--font-label)", fontSize:11,
+            letterSpacing:'0.03em', textTransform:'uppercase',
             color: selectedMembers.length>0 ? T.navy : T.ink,
           }}>
             {selectedMembers.length>0 ? `Utenti (${selectedMembers.length})` : `Utenti`}
@@ -527,9 +527,9 @@ export default function CalendarioPage() {
             <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, width:220, background:T.surface, border:`1px solid ${T.borderMd}`, zIndex:30 }}>
               <div style={{ padding:8, maxHeight:240, overflowY:'auto' }}>
                 {teamMembers.map(m=>(
-                  <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', cursor:'pointer' }}>
+                  <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0', cursor:'pointer' }}>
                     <input type="checkbox" checked={selectedMembers.includes(m.id)} onChange={()=>toggleMember(m.id)} style={{ accentColor:T.navy, width:13, height:13 }}/>
-                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:600,color:'#fff',flexShrink:0 }}>
+                    <div style={{ width:22,height:22,borderRadius:'50%',background:m.color||avatarColor(m.user_name||m.user_email||""),display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:600,color:'#fff',flexShrink:0 }}>
                       {getInitials(m.user_name||m.user_email)}
                     </div>
                     <span style={{ fontSize:12, color:T.ink }}>{m.user_name||m.user_email}</span>
@@ -538,7 +538,7 @@ export default function CalendarioPage() {
               </div>
               {selectedMembers.length>0 && (
                 <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.border}` }}>
-                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
+                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.red, letterSpacing:'0.02em' }}>
                     Rimuovi filtri
                   </button>
                 </div>

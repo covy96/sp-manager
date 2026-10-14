@@ -67,7 +67,7 @@ export default function EsportaDatiPage() {
   const [loading, setLoading]   = useState(false);
   const [progress, setProgress] = useState('');
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
 
   const toggle = (id) => {
     setSelected(prev => {
@@ -283,16 +283,16 @@ export default function EsportaDatiPage() {
   return (
     <div style={{ maxWidth:560 }}>
       <div style={{ marginBottom:24 }}>
-        <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', marginBottom:4 }}>Esporta dati</div>
+        <div style={{ fontSize: 26, fontWeight: 700, color:T.ink, letterSpacing: '-0.025em', marginBottom:4 }}>Esporta dati</div>
         <div style={{ ...mono, fontSize:10, color:T.muted }}>Scarica tutti i dati del tuo studio in un file Excel</div>
       </div>
 
       {/* Selezione sezioni */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 22px', marginBottom:14 }}>
-        <div style={{ ...mono, fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Seleziona cosa esportare</div>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', marginBottom:16 }}>
+        <div style={{ ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Seleziona cosa esportare</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {SEZIONI.map(s => (
-            <label key={s.id} style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', padding:'10px 14px', background: selected.has(s.id) ? T.navyLight : T.surface2, border:`0.5px solid ${selected.has(s.id) ? T.navy : T.border}`, transition:'all 0.1s' }}>
+            <label key={s.id} style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', padding:'10px 16px', background: selected.has(s.id) ? T.navyLight : T.surface2, border:`0.5px solid ${selected.has(s.id) ? T.navy : T.border}`, transition:'all 0.1s' }}>
               <input type="checkbox" checked={selected.has(s.id)} onChange={()=>toggle(s.id)} style={{ accentColor:T.navy, width:15, height:15, flexShrink:0 }}/>
               <span style={{ fontSize:18, flexShrink:0 }}>{s.emoji}</span>
               <div style={{ flex:1 }}>
@@ -303,7 +303,7 @@ export default function EsportaDatiPage() {
           ))}
         </div>
 
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:16, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:16, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
           <button onClick={()=>setSelected(new Set(SEZIONI.map(s=>s.id)))} style={{ ...mono, fontSize:10, color:T.navy, background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>
             Seleziona tutto
           </button>
@@ -314,8 +314,8 @@ export default function EsportaDatiPage() {
       </div>
 
       {/* Info formato */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'14px 18px', marginBottom:14 }}>
-        <div style={{ ...mono, fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Formato</div>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px', marginBottom:16 }}>
+        <div style={{ ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Formato</div>
         <div style={{ display:'flex', gap:20 }}>
           {[
             ['📊 File', 'Excel (.xls)'],
@@ -323,7 +323,7 @@ export default function EsportaDatiPage() {
             ['🔤 Encoding', 'UTF-8 con BOM'],
           ].map(([icon,val])=>(
             <div key={icon}>
-              <div style={{ ...mono, fontSize:9, color:T.muted }}>{icon}</div>
+              <div style={{ ...mono, fontSize:10, color:T.muted }}>{icon}</div>
               <div style={{ fontSize:12, fontWeight:600, color:T.ink, marginTop:2 }}>{val}</div>
             </div>
           ))}
@@ -332,7 +332,7 @@ export default function EsportaDatiPage() {
 
       {/* Bottone export */}
       <button onClick={handleExport} disabled={loading || selected.size === 0}
-        style={{ width:'100%', padding:'14px 0', background: selected.size===0 ? T.borderMd : T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor: selected.size===0||loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition:'all 0.1s' }}>
+        style={{ width:'100%', padding:'16px 0', background: selected.size===0 ? T.borderMd : T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:12, letterSpacing:'0.04em', textTransform:'uppercase', cursor: selected.size===0||loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition:'all 0.1s' }}>
         {loading ? '⏳ Esportazione in corso...' : '⬇ Scarica Excel'}
       </button>
 

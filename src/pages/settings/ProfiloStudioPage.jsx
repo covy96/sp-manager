@@ -28,7 +28,7 @@ function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
     <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radiusSm, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'16px 20px' }}>
-      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
+      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink }}>{value}</div>
     </div>
   );
@@ -37,9 +37,9 @@ function KpiCard({ label, value, color }) {
 function Panel({ title, subtitle, children }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 22px', marginBottom:14 }}>
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 24px', marginBottom:16 }}>
       <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom: subtitle?4:16 }}>{title}</div>
-      {subtitle && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:18 }}>{subtitle}</div>}
+      {subtitle && <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:20 }}>{subtitle}</div>}
       {children}
     </div>
   );
@@ -47,8 +47,8 @@ function Panel({ title, subtitle, children }) {
 
 export default function ProfiloStudioPage() {
   const { T } = useTheme();
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
-  const labelSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
+  const labelSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
   const permissions = usePermissions();
@@ -156,7 +156,7 @@ export default function ProfiloStudioPage() {
   };
 
   if (loading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:T.muted}}>Caricamento...</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>Caricamento...</div>
   );
 
   const tipoAttuale = TIPO_OPTIONS.find(t=>t.id===(studioData?.tipo_fatturazione||'proforma'));
@@ -165,22 +165,22 @@ export default function ProfiloStudioPage() {
   return (
     <div style={{maxWidth:680}}>
       <div style={{marginBottom:24}}>
-        <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.02em',marginBottom:4}}>Profilo Studio</div>
-        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>Gestisci le informazioni e le impostazioni del tuo studio</div>
+        <div style={{fontSize: 26, fontWeight: 700,color:T.ink,letterSpacing: '-0.025em',marginBottom:4}}>Profilo Studio</div>
+        <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>Gestisci le informazioni e le impostazioni del tuo studio</div>
       </div>
 
       {!canEdit && (
-        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,background:T.bg,border:`0.5px solid ${T.border}`,borderRadius:T.radiusSm,padding:'10px 14px',marginBottom:14,lineHeight:1.6}}>
+        <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,background:T.bg,border:`0.5px solid ${T.border}`,borderRadius:T.radiusSm,padding:'10px 16px',marginBottom:16,lineHeight:1.6}}>
           🔒 Sola lettura — solo il Titolare e i Partner possono modificare il profilo studio.
         </div>
       )}
 
       {message && (
-        <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,color:message.includes('Errore')?T.red:T.green,marginBottom:14}}>{message}</div>
+        <div style={{fontFamily:"var(--font-label)",fontSize:11,color:message.includes('Errore')?T.red:T.green,marginBottom:16}}>{message}</div>
       )}
 
       {/* KPI */}
-      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)',gap:10,marginBottom:14}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)',gap:10,marginBottom:16}}>
         <KpiCard label="Iscritto il" value={iscritto} color={T.muted}/>
         <KpiCard label="Progetti attivi" value={stats.progetti} color={T.navy}/>
         <KpiCard label="Commesse" value={stats.commesse} color={T.green}/>
@@ -189,9 +189,9 @@ export default function ProfiloStudioPage() {
 
       {/* Dati studio */}
       <Panel title="Dati dello studio" subtitle="Informazioni anagrafiche dello studio">
-        <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:14}}>
+        <form onSubmit={handleSave} style={{display:'flex',flexDirection:'column',gap:16}}>
           <fieldset disabled={!canEdit} style={{border:'none',padding:0,margin:0,minWidth:0}}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
             <div style={{gridColumn:'span 2'}}>
               <label style={labelSt}>Nome studio *</label>
               <input type="text" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} required style={inputSt}/>
@@ -220,7 +220,7 @@ export default function ProfiloStudioPage() {
           </fieldset>
           {canEdit && (
             <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+              <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
                 {saving?'Salvataggio...':'Salva'}
               </button>
             </div>
@@ -236,20 +236,20 @@ export default function ProfiloStudioPage() {
               <span style={{fontSize:20}}>{tipoAttuale?.emoji}</span>
               <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{tipoAttuale?.titolo}</div>
             </div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,marginBottom:4}}>{tipoAttuale?.flusso}</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted}}>{tipoAttuale?.desc}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.navy,marginBottom:4}}>{tipoAttuale?.flusso}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{tipoAttuale?.desc}</div>
           </div>
           {canEdit && (
             <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
-              style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'7px 16px',cursor:'pointer',flexShrink:0}}>
+              style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer',flexShrink:0}}>
               Modifica
             </button>
           )}
         </div>
 
         {/* Avviso cambio tipo */}
-        <div style={{marginTop:14,padding:'10px 14px',background:T.yellowLight,border:`0.5px solid ${T.yellow}22`}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.yellow,lineHeight:1.6}}>
+        <div style={{marginTop:16,padding:'10px 16px',background:T.yellowLight,border:`0.5px solid ${T.yellow}22`}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.yellow,lineHeight:1.6}}>
             ⚠️ Cambiare il tipo di fatturazione influenza il flusso in CommessaDetail — da Proforma a Fattura diretta o viceversa. Le commesse e proforma già create non vengono modificate.
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function ProfiloStudioPage() {
       {tipoModal && (
         <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.5)',padding:16}}>
           <div style={{width:'100%',maxWidth:500,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm,boxShadow:T.shadowLg,padding:28}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
               <div style={{fontSize:16,fontWeight:600,color:T.ink}}>Cambia tipo fatturazione</div>
               <button onClick={()=>setTipoModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:T.muted,fontSize:20}}>×</button>
             </div>
@@ -267,7 +267,7 @@ export default function ProfiloStudioPage() {
             <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
               {TIPO_OPTIONS.map(t=>(
                 <button key={t.id} onClick={()=>setNuovoTipo(t.id)} style={{
-                  display:'flex',flexDirection:'column',gap:6,padding:'14px 16px',textAlign:'left',
+                  display:'flex',flexDirection:'column',gap:6,padding:'16px 16px',textAlign:'left',
                   border:`0.5px solid ${nuovoTipo===t.id?T.navy:T.border}`, borderRadius: T.radiusSm,
                   background:nuovoTipo===t.id?T.navyLight:T.surface,cursor:'pointer',
                 }}>
@@ -276,15 +276,15 @@ export default function ProfiloStudioPage() {
                     <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{t.titolo}</div>
                     {nuovoTipo===t.id&&<span style={{marginLeft:'auto',color:T.navy,fontSize:12}}>✓</span>}
                   </div>
-                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.navy,marginLeft:26}}>{t.flusso}</div>
-                  <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginLeft:26}}>{t.desc}</div>
+                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.navy,marginLeft:28}}>{t.flusso}</div>
+                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginLeft:28}}>{t.desc}</div>
                 </button>
               ))}
             </div>
 
-            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
-              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer'}}>Annulla</button>
-              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:`0.5px solid ${T.border}`}}>
+              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer'}}>Annulla</button>
+              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
                 {saving?'Salvataggio...':'Conferma cambio'}
               </button>
             </div>
@@ -294,11 +294,11 @@ export default function ProfiloStudioPage() {
 
       {/* Codice invito */}
       <Panel title="Codice invito studio">
-        <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:24,letterSpacing:'0.3em',color:T.navy,fontWeight:600,background:T.bg,padding:'10px 20px',border:`0.5px solid ${T.border}`}}>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:24,letterSpacing:'0.08em',color:T.navy,fontWeight:600,background:T.bg,padding:'10px 20px',border:`0.5px solid ${T.border}`}}>
             {studioData?.invite_code||'——'}
           </div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,lineHeight:1.6}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,lineHeight:1.6}}>
             Condividi questo codice con i tuoi collaboratori<br/>per invitarli allo studio.
           </div>
         </div>
@@ -306,16 +306,16 @@ export default function ProfiloStudioPage() {
 
       {/* Zona pericolosa — solo Owner */}
       {permissions?.isOwner && (
-        <div style={{ background:T.surface, border:`1px solid ${T.red}55`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 22px', marginBottom:14 }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.red}55`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'20px 24px', marginBottom:16 }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.red, marginBottom:4 }}>Zona pericolosa</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:18 }}>Azioni irreversibili sullo studio</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:20 }}>Azioni irreversibili sullo studio</div>
           <div style={{ display:'flex', alignItems:isMobile?'flex-start':'center', justifyContent:'space-between', gap:16, flexDirection:isMobile?'column':'row' }}>
-            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, lineHeight:1.7 }}>
+            <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, lineHeight:1.7 }}>
               Cancellare lo studio rimuove l'accesso a tutti i membri, annulla l'abbonamento Stripe<br/>
               ed elimina tutti i dati. I dati restano recuperabili per 30 giorni, poi vengono cancellati definitivamente.
             </div>
             <button onClick={()=>{ setDeleteConfirm(""); setDeleteError(""); setDeleteModal(true); }}
-              style={{ background:T.red, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer', flexShrink:0, whiteSpace:'nowrap' }}>
+              style={{ background:T.red, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', flexShrink:0, whiteSpace:'nowrap' }}>
               Cancella studio
             </button>
           </div>
@@ -326,16 +326,16 @@ export default function ProfiloStudioPage() {
       {deleteModal && (
         <div style={{position:'fixed',inset:0,zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(14,14,13,0.6)',padding:16}}>
           <div style={{width:'100%',maxWidth:480,background:T.glassBg,backdropFilter:T.blur,WebkitBackdropFilter:T.blur,border:`1px solid ${T.red}55`, borderRadius: T.radiusSm,boxShadow:T.shadowLg,padding:28}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
               <div style={{fontSize:16,fontWeight:600,color:T.red}}>Cancella studio</div>
               <button onClick={()=>!deleting&&setDeleteModal(false)} style={{background:'none',border:'none',cursor:deleting?'not-allowed':'pointer',color:T.muted,fontSize:20}}>×</button>
             </div>
 
-            <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, marginBottom:14 }}>
+            <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, marginBottom:16 }}>
               Sei sicuro di voler cancellare <strong>{studioData?.name}</strong>?
             </div>
-            <div style={{ background:T.redLight, border:`0.5px solid ${T.red}33`, borderRadius:T.radiusSm, padding:'12px 14px', marginBottom:18 }}>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.red, lineHeight:1.7 }}>
+            <div style={{ background:T.redLight, border:`0.5px solid ${T.red}33`, borderRadius:T.radiusSm, padding:'12px 16px', marginBottom:20 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.red, lineHeight:1.7 }}>
                 ⚠️ Tutti i membri verranno disconnessi dallo studio.<br/>
                 ⚠️ L'abbonamento Stripe verrà annullato.<br/>
                 ⚠️ I dati resteranno recuperabili per 30 giorni, poi eliminati definitivamente.
@@ -350,15 +350,15 @@ export default function ProfiloStudioPage() {
               placeholder={CONFIRM_PHRASE}
               autoFocus
               disabled={deleting}
-              style={{...inputSt, marginBottom: deleteError?8:18}}
+              style={{...inputSt, marginBottom: deleteError?8:20}}
             />
             {deleteError && (
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.red, marginBottom:14 }}>{deleteError}</div>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.red, marginBottom:16 }}>{deleteError}</div>
             )}
 
-            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:14,borderTop:`0.5px solid ${T.border}`}}>
-              <button onClick={()=>setDeleteModal(false)} disabled={deleting} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',cursor:deleting?'not-allowed':'pointer',opacity:deleting?0.6:1}}>Annulla</button>
-              <button onClick={handleDeleteStudio} disabled={deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE} style={{background:T.red,border:'none',color:'#fff',fontFamily:"'IBM Plex Mono', monospace",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 18px',borderRadius:T.radiusSm,cursor:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?'not-allowed':'pointer',opacity:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?0.5:1}}>
+            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:`0.5px solid ${T.border}`}}>
+              <button onClick={()=>setDeleteModal(false)} disabled={deleting} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:deleting?'not-allowed':'pointer',opacity:deleting?0.6:1}}>Annulla</button>
+              <button onClick={handleDeleteStudio} disabled={deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE} style={{background:T.red,border:'none',color:'#fff',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',borderRadius:T.radiusSm,cursor:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?'not-allowed':'pointer',opacity:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?0.5:1}}>
                 {deleting?'Cancellazione...':'Cancella definitivamente'}
               </button>
             </div>

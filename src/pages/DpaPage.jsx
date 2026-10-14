@@ -1,33 +1,33 @@
 import { useNavigate } from "react-router-dom";
 
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono = { fontFamily: "var(--font-label)" };
 
 const s = {
   page: { minHeight: "100vh", background: "#1c1c1e", padding: "40px 20px" },
   wrap: { maxWidth: 800, margin: "0 auto" },
   backBtn: {
     background: "none", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
-    color: "rgba(255,255,255,0.6)", padding: "7px 16px", marginBottom: 32,
-    ...mono, fontSize: 12, letterSpacing: "0.05em",
+    color: "rgba(255,255,255,0.6)", padding: "8px 16px", marginBottom: 32,
+    ...mono, fontSize: 12, letterSpacing: "0.02em",
     display: "inline-flex", alignItems: "center", gap: 6,
   },
   h1: { fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 8 },
   meta: { ...mono, fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 40 },
   body: { color: "rgba(255,255,255,0.75)", lineHeight: 1.9, fontSize: 14 },
-  h2: { fontSize: 17, fontWeight: 700, color: "#fff", marginTop: 36, marginBottom: 10 },
+  h2: { fontSize: 17, fontWeight: 700, color: "#fff", marginTop: 40, marginBottom: 10 },
   h3: { fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginTop: 20, marginBottom: 6 },
-  p: { marginBottom: 14 },
-  ul: { paddingLeft: 20, marginBottom: 14 },
+  p: { marginBottom: 16 },
+  ul: { paddingLeft: 20, marginBottom: 16 },
   li: { marginBottom: 6 },
   box: {
     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 8, padding: "16px 20px", marginBottom: 10,
   },
-  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6, display: "block" },
+  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" },
   link: { color: "#4f8ef7", textDecoration: "none" },
   em: { color: "rgba(255,255,255,0.9)" },
   table: { width: "100%", borderCollapse: "collapse", marginBottom: 20, fontSize: 13 },
-  th: { textAlign: "left", padding: "8px 12px", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)" },
+  th: { textAlign: "left", padding: "8px 12px", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)" },
   td: { padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "top" },
 };
 
@@ -291,7 +291,7 @@ export default function DpaPage() {
         </div>
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em" }}>
+          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.04em" }}>
             © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
           </p>
         </div>

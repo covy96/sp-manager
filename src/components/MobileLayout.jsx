@@ -87,7 +87,7 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, info) { this.setState({ error }); Sentry.captureException(error, { extra: info }); }
   render() {
     if (this.state.error) return (
-      <div style={{ padding:20, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#f87171' }}>
+      <div style={{ padding:20, fontFamily:"var(--font-label)", fontSize:11, color:'#f87171' }}>
         Errore: {this.state.error.message}
       </div>
     );
@@ -171,10 +171,10 @@ export default function MobileLayout({ session, children }) {
   const memberColor    = teamMember?.color || T.navy;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", transition:'background 0.2s, color 0.2s' }}>
+    <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"var(--font-ui)", transition:'background 0.2s, color 0.2s' }}>
 
       {/* ── HEADER — altezza 52px + safe-area-inset-top per notch iOS ── */}
-      <header style={{ position:'sticky', top:0, zIndex:40, display:'flex', alignItems:'flex-end', justifyContent:'space-between', minHeight:52, paddingTop:'max(12px, env(safe-area-inset-top))', paddingBottom:10, paddingLeft:16, paddingRight:16, background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
+      <header style={{ position:'sticky', top:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:52, paddingTop:'max(12px, env(safe-area-inset-top))', paddingBottom:10, paddingLeft:16, paddingRight:16, background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
         <button onClick={()=>navigate('/dashboard')} style={{ background:'none', border:'none', cursor:'pointer', padding:0 }}>
           <div style={{ fontSize:15, fontWeight:700, letterSpacing:'-0.02em', color:'#EEF1F6' }}>{studioName||'SP Manager'}</div>
         </button>
@@ -195,27 +195,27 @@ export default function MobileLayout({ session, children }) {
                 <div onClick={()=>setSettingsOpen(false)} style={{ position:'fixed', inset:0, zIndex:49 }}/>
               <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 58px)', right:8, left:8, maxWidth:360, margin:'0 auto', background:isDark?'#1c1c1e':'#ffffff', border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.6':'0.2'})`, borderRadius:14, maxHeight:'80vh', overflowY:'auto' }}>
                 {/* User info */}
-                <div style={{ padding:'14px 16px', borderBottom:`0.5px solid ${T.border}` }}>
+                <div style={{ padding:'16px 16px', borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                     <div style={{ width:36, height:36, borderRadius:'50%', background:memberColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'#fff', flexShrink:0 }}>
                       {avatarInitials}
                     </div>
                     <div>
                       <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>{teamMember?.user_name||'Utente'}</div>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:1 }}>{session?.user?.email}</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:1 }}>{session?.user?.email}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Account */}
                 <div style={{ padding:'6px 0' }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Account</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Account</div>
                   {[
                     ...(['Owner','Partner'].includes(teamMember?.role_internal) ? [{ label:'Piano', icon:'piano', path:'/impostazioni/piano' }] : []),
                     { label:'Profilo', icon:'profilo', path:'/impostazioni/profilo' },
                   ].map(item=>(
                     <button key={item.path} onClick={()=>{ navigate(item.path); setSettingsOpen(false); }}
-                      style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
+                      style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"var(--font-ui)", textAlign:'left' }}>
                       <Icon d={ICONS[item.icon]} size={16}/>
                       {item.label}
                     </button>
@@ -224,7 +224,7 @@ export default function MobileLayout({ session, children }) {
 
                 {/* Studio */}
                 <div style={{ padding:'6px 0', borderTop:`0.5px solid ${T.border}` }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Studio</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Studio</div>
                   {[
                     { label:'Profilo Studio', icon:'settings', path:'/impostazioni/profilo-studio' },
                     { label:'Aspetto',        icon:'aspetto',  path:'/impostazioni/aspetto'        },
@@ -237,7 +237,7 @@ export default function MobileLayout({ session, children }) {
                     { label:'Cestino',        icon:'cestino',  path:'/impostazioni/cestino'        },
                   ].map(item=>(
                     <button key={item.path} onClick={()=>{ navigate(item.path); setSettingsOpen(false); }}
-                      style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
+                      style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"var(--font-ui)", textAlign:'left' }}>
                       <Icon d={ICONS[item.icon]} size={16}/>
                       {item.label}
                     </button>
@@ -247,12 +247,12 @@ export default function MobileLayout({ session, children }) {
                 {/* Azioni */}
                 <div style={{ padding:'6px 0', borderTop:`0.5px solid ${T.border}` }}>
                   <button onClick={()=>{ setSettingsOpen(false); navigate('/onboarding'); }}
-                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
+                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.ink, fontFamily:"var(--font-ui)", textAlign:'left' }}>
                     <Icon d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" size={16}/>
                     Cambia studio
                   </button>
                   <button onClick={handleLogout}
-                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.red, fontFamily:"'Space Grotesk', sans-serif", textAlign:'left' }}>
+                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', background:'none', border:'none', cursor:'pointer', fontSize:14, color:T.red, fontFamily:"var(--font-ui)", textAlign:'left' }}>
                     <Icon d={ICONS.logout} size={16}/>
                     Esci
                   </button>
@@ -271,31 +271,31 @@ export default function MobileLayout({ session, children }) {
             <div style={{ flex:1, display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.08)', borderRadius:10, padding:'0 12px' }}>
               <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={18}/>
               <input ref={searchRef} autoFocus type="text" placeholder="Cerca progetti, task, commesse..." value={query} onChange={e=>setQuery(e.target.value)}
-                style={{ flex:1, padding:'10px 0', background:'none', border:'none', color:'#EEF1F6', fontSize:15, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }}/>
+                style={{ flex:1, padding:'10px 0', background:'none', border:'none', color:'#EEF1F6', fontSize:15, fontFamily:"var(--font-ui)", outline:'none' }}/>
               {query && <button onClick={()=>setQuery('')} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(238,241,246,0.5)', padding:4 }}>✕</button>}
             </div>
-            <button onClick={()=>{ clear(); setSearchOpen(false); }} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(238,241,246,0.8)', fontSize:14, fontFamily:"'Space Grotesk', sans-serif", padding:'8px 4px', whiteSpace:'nowrap' }}>Chiudi</button>
+            <button onClick={()=>{ clear(); setSearchOpen(false); }} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(238,241,246,0.8)', fontSize:14, fontFamily:"var(--font-ui)", padding:'8px 4px', whiteSpace:'nowrap' }}>Chiudi</button>
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:16 }}>
             {query.length < 3 ? (
-              <div style={{ textAlign:'center', marginTop:60 }}>
+              <div style={{ textAlign:'center', marginTop:64 }}>
                 <div style={{ fontSize:32, marginBottom:12 }}>🔍</div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'rgba(255,255,255,0.4)' }}>Scrivi almeno 3 lettere per cercare</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:'rgba(255,255,255,0.4)' }}>Scrivi almeno 3 lettere per cercare</div>
               </div>
             ) : searchLoading ? (
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'rgba(255,255,255,0.4)', textAlign:'center', marginTop:40 }}>Ricerca in corso...</div>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:'rgba(255,255,255,0.4)', textAlign:'center', marginTop:40 }}>Ricerca in corso...</div>
             ) : results.length === 0 ? (
-              <div style={{ textAlign:'center', marginTop:60 }}>
+              <div style={{ textAlign:'center', marginTop:64 }}>
                 <div style={{ fontSize:32, marginBottom:12 }}>😶</div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'rgba(255,255,255,0.4)' }}>Nessun risultato trovato</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:'rgba(255,255,255,0.4)' }}>Nessun risultato trovato</div>
               </div>
             ) : results.map(item=>(
               <button key={item.id} onClick={()=>handleResultClick(item)}
-                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'14px 0', textAlign:'left', background:'none', border:'none', borderBottom:`0.5px solid rgba(255,255,255,0.08)`, cursor:'pointer' }}>
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.1em', width:64, flexShrink:0, background:'rgba(255,255,255,0.06)', borderRadius:4, padding:'3px 6px', textAlign:'center' }}>{item.type}</span>
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'16px 0', textAlign:'left', background:'none', border:'none', borderBottom:`0.5px solid rgba(255,255,255,0.08)`, cursor:'pointer' }}>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.04em', width:64, flexShrink:0, background:'rgba(255,255,255,0.06)', borderRadius:4, padding:'4px 6px', textAlign:'center' }}>{item.type}</span>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:600, color:'#EEF1F6', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.label}</div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
                 </div>
                 <Icon d="M9 5l7 7-7 7" size={16}/>
               </button>
@@ -312,7 +312,7 @@ export default function MobileLayout({ session, children }) {
             {/* Handle */}
             <div style={{ position:'sticky', top:0, background:isDark?'#1c1c1e':'#ffffff', paddingTop:12, paddingBottom:4, zIndex:1, borderRadius:'14px 14px 0 0' }}>
               <div style={{ width:40, height:4, borderRadius:2, background:T.border, margin:'0 auto 8px' }}/>
-              <div style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:T.muted, padding:'0 20px 10px', fontFamily:"'IBM Plex Mono', monospace" }}>Menu</div>
+              <div style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', color:T.muted, padding:'0 20px 10px', fontFamily:"var(--font-label)" }}>Menu</div>
             </div>
 
             {MENU_SECTIONS.map(section => {
@@ -320,14 +320,14 @@ export default function MobileLayout({ session, children }) {
               if (sectionItems.length === 0) return null;
               return (
                 <div key={section.title} style={{ marginBottom:4 }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 20px 4px' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 20px 4px' }}>
                     {section.title}
                   </div>
                   {sectionItems.map(item => {
                     const isActive = loc.pathname.startsWith(item.path);
                     return (
                       <button key={item.path} onClick={()=>{ navigate(item.path); setMenuOpen(false); }}
-                        style={{ display:'flex', alignItems:'center', gap:14, width:'100%', padding:'13px 20px', background: isActive ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,54,93,0.06)') : 'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color: isActive ? T.navy : T.ink, fontFamily:"'Space Grotesk', sans-serif", fontWeight: isActive ? 600 : 400, minHeight:48 }}>
+                        style={{ display:'flex', alignItems:'center', gap:16, width:'100%', padding:'12px 20px', background: isActive ? (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,54,93,0.06)') : 'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color: isActive ? T.navy : T.ink, fontFamily:"var(--font-ui)", fontWeight: isActive ? 600 : 400, minHeight:48 }}>
                         <span style={{ color: isActive ? T.navy : T.muted, flexShrink:0 }}>
                           <Icon d={ICONS[item.icon] || ICONS.settings} size={20}/>
                         </span>
@@ -343,12 +343,12 @@ export default function MobileLayout({ session, children }) {
             {/* Divider + Info + Logout */}
             <div style={{ height:0.5, background:T.border, margin:'8px 20px' }}/>
             <button onClick={() => { setMenuOpen(false); navigate('/info'); }}
-              style={{ display:'flex', alignItems:'center', gap:14, width:'100%', padding:'13px 20px 8px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.muted, fontFamily:"'Space Grotesk', sans-serif", minHeight:48 }}>
-              <span style={{ width:20, height:20, borderRadius:5, background:T.surface2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:700, fontFamily:"'Space Grotesk', sans-serif", color:T.ink }}>A</span>
+              style={{ display:'flex', alignItems:'center', gap:16, width:'100%', padding:'12px 20px 8px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.muted, fontFamily:"var(--font-ui)", minHeight:48 }}>
+              <span style={{ width:20, height:20, borderRadius:5, background:T.surface2, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:700, fontFamily:"var(--font-brand)", color:T.ink }}>A</span>
               Info su SP Manager
             </button>
             <button onClick={handleLogout}
-              style={{ display:'flex', alignItems:'center', gap:14, width:'100%', padding:'13px 20px 20px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.red, fontFamily:"'Space Grotesk', sans-serif", minHeight:48 }}>
+              style={{ display:'flex', alignItems:'center', gap:16, width:'100%', padding:'12px 20px 20px', background:'none', border:'none', cursor:'pointer', textAlign:'left', fontSize:15, color:T.red, fontFamily:"var(--font-ui)", minHeight:48 }}>
               <Icon d={ICONS.logout} size={20}/>
               Esci
             </button>
@@ -371,13 +371,13 @@ export default function MobileLayout({ session, children }) {
             <button key={item.label} onClick={()=>{
               if (item.path===null) { setMenuOpen(!menuOpen); }
               else { navigate(item.path); setMenuOpen(false); }
-            }} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', color:isActive ? T.navy : T.muted, transition:'color 0.15s', position:'relative', minHeight:44 }}>
+            }} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:4, background:'none', border:'none', cursor:'pointer', color:isActive ? T.navy : T.muted, transition:'color 0.15s', position:'relative', minHeight:44 }}>
               {/* Active indicator */}
               {isActive && (
                 <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:28, height:2.5, background:T.navy, borderRadius:'0 0 2px 2px' }}/>
               )}
               <Icon d={ICONS[item.icon]} size={22}/>
-              <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.04em', textTransform:'uppercase', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+              <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
             </button>
           );
         })}

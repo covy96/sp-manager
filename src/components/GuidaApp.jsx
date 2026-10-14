@@ -8,7 +8,7 @@ import SlidingTabs from "./SlidingTabs";
 
 const PLAN_ORDER = { free: 0, studio: 1, pro: 2 };
 
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono = { fontFamily: "var(--font-label)" };
 
 // Palette accenti (coerente con i mock della landing)
 const BLUE = "#1d4ed8", PURPLE = "#7c3aed", AMBER = "#b45309";
@@ -26,14 +26,14 @@ function Card({ T, children, style = {} }) {
 
 function Stat({ T, label, value, color, bg }) {
   return (
-    <div style={{ background: bg || T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "7px 11px", boxShadow: T.shadow }}>
-      <div style={{ ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
+    <div style={{ background: bg || T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "8px 12px", boxShadow: T.shadow }}>
+      <div style={{ ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color: color || T.ink, letterSpacing: "-0.02em" }}>{value}</div>
     </div>
   );
 }
 
-function lbl(T) { return { ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }; }
+function lbl(T) { return { ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }; }
 function track(T) { return { height: 5, background: `${T.muted}26`, borderRadius: 3 }; }
 
 function Mock({ type, T }) {
@@ -43,12 +43,12 @@ function Mock({ type, T }) {
     case "welcome":
       return (
         <Card T={T} style={{ overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 10px", borderBottom: `0.5px solid ${T.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderBottom: `0.5px solid ${T.border}` }}>
             {["#ff5f57", "#febc2e", "#28c840"].map((c) => <span key={c} style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />)}
-            <span style={{ ...mono, fontSize: 8, color: T.muted, marginLeft: 6 }}>SP Manager</span>
+            <span style={{ ...mono, fontSize: 10, color: T.muted, marginLeft: 6 }}>SP Manager</span>
           </div>
           <div style={{ display: "flex" }}>
-            <div style={{ width: 74, flexShrink: 0, borderRight: `0.5px solid ${T.border}`, padding: "9px 8px", display: "flex", flexDirection: "column", gap: 7 }}>
+            <div style={{ width: 74, flexShrink: 0, borderRight: `0.5px solid ${T.border}`, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 8 }}>
               {[1, 0, 0, 0, 0].map((on, k) => <div key={k} style={{ height: 6, borderRadius: 3, background: on ? navy : `${T.muted}40`, width: on ? "100%" : `${80 - k * 8}%` }} />)}
             </div>
             <div style={{ flex: 1, padding: 10 }}>
@@ -73,8 +73,8 @@ function Mock({ type, T }) {
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {steps.map((s, k) => (
             <div key={k} style={{ display: "contents" }}>
-              <Card T={T} style={{ flex: 1, padding: "9px 8px" }}>
-                <div style={{ ...mono, fontSize: 7, letterSpacing: "0.1em", color: s.col, fontWeight: 700, marginBottom: 6 }}>{s.tag}</div>
+              <Card T={T} style={{ flex: 1, padding: "10px 8px" }}>
+                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.04em", color: s.col, fontWeight: 700, marginBottom: 6 }}>{s.tag}</div>
                 <div style={{ height: 5, width: "70%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 4 }} />
                 <div style={{ height: 5, width: "50%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 8 }} />
                 <div style={{ fontSize: 12, fontWeight: 700, color: s.col }}>{s.val}</div>
@@ -97,13 +97,13 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={lbl(T)}>Anagrafica clienti</div>
           {rows.map((r, k) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "5px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
-              <div style={{ width: 24, height: 24, borderRadius: "50%", background: r.c, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 8, fontWeight: 700, flexShrink: 0 }}>{r.i}</div>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: r.c, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{r.i}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r.n}</div>
-                <div style={{ ...mono, fontSize: 8, color: T.muted }}>{r.e}</div>
+                <div style={{ ...mono, fontSize: 10, color: T.muted }}>{r.e}</div>
               </div>
-              <div style={{ ...mono, fontSize: 8, color: T.muted, background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 10, padding: "2px 8px", flexShrink: 0 }}>{2 + k} lavori</div>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 10, padding: "2px 8px", flexShrink: 0 }}>{2 + k} lavori</div>
             </div>
           ))}
         </Card>
@@ -115,11 +115,11 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>🧩 Progettazione architettonica</div>
-            <div style={{ ...mono, fontSize: 8, color: T.muted }}>4 task</div>
+            <div style={{ ...mono, fontSize: 10, color: T.muted }}>4 task</div>
           </div>
           {["Rilievo e analisi stato di fatto", "Progetto preliminare", "Progetto definitivo", "Progetto esecutivo"].map((t, k) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "5px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 9, color: "#fff" }}>✓</span>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, color: "#fff" }}>✓</span>
               <div style={{ fontSize: 10, color: T.ink }}>{t}</div>
             </div>
           ))}
@@ -132,7 +132,7 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={lbl(T)}>Voci offerta — listino</div>
           {items.map(([n, v, on], k) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: k < items.length - 1 ? `0.5px solid ${T.border}` : "none", opacity: on ? 1 : 0.5 }}>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: k < items.length - 1 ? `0.5px solid ${T.border}` : "none", opacity: on ? 1 : 0.5 }}>
               <div style={{ flex: 1, fontSize: 10, fontWeight: 600, color: T.ink }}>{n}</div>
               <div style={{ ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{v}</div>
               <div style={{ width: 26, height: 14, borderRadius: 7, background: on ? green : `${T.muted}55`, position: "relative", flexShrink: 0 }}>
@@ -149,7 +149,7 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>Offerta 2026/014</div>
-            <div style={{ ...mono, fontSize: 8, color: T.muted }}>Villa Lario</div>
+            <div style={{ ...mono, fontSize: 10, color: T.muted }}>Villa Lario</div>
           </div>
           {[["Progettazione architettonica", "€8.000"], ["Pratica edilizia", "€1.500"], ["Direzione lavori", "€6.000"]].map(([n, v], k) => (
             <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `0.5px solid ${T.border}` }}>
@@ -157,8 +157,8 @@ function Mock({ type, T }) {
               <div style={{ ...mono, fontSize: 9.5, color: T.muted }}>{v}</div>
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "7px 10px" }}>
-            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>TOTALE</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "8px 10px" }}>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.04em", color: navy, fontWeight: 700 }}>TOTALE</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: navy }}>€15.500</div>
           </div>
         </Card>
@@ -166,7 +166,7 @@ function Mock({ type, T }) {
 
     case "commesse":
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
             <Stat T={T} label="Contratto" value="€52.000" color={T.ink} />
             <Stat T={T} label="Incassato" value="€21.000" color={green} />
@@ -175,9 +175,9 @@ function Mock({ type, T }) {
           <Card T={T} style={{ padding: "10px 12px" }}>
             <div style={lbl(T)}>Rate — Torre Uffici Centro</div>
             {[["Acconto", "30%", "€15.600", "✓ Pagato", green], ["SAL 1", "40%", "€20.800", "In attesa", T.muted], ["Saldo", "30%", "€15.600", "In attesa", T.muted]].map(([r, p, v, s, sc]) => (
-              <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `0.5px solid ${T.border}` }}>
+              <div key={r} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `0.5px solid ${T.border}` }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: T.ink, flex: 1 }}>{r}</div>
-                <div style={{ ...mono, fontSize: 8, color: T.muted, width: 34 }}>{p}</div>
+                <div style={{ ...mono, fontSize: 10, color: T.muted, width: 34 }}>{p}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: navy, width: 56, textAlign: "right" }}>{v}</div>
                 <div style={{ ...mono, fontSize: 8.5, color: sc, width: 60, textAlign: "right", fontWeight: sc === green ? 600 : 400 }}>{s}</div>
               </div>
@@ -188,7 +188,7 @@ function Mock({ type, T }) {
 
     case "invoice":
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
             <Stat T={T} label="Emesse" value="€73.400" color={T.ink} />
             <Stat T={T} label="Pagate" value="€42.200" color={green} />
@@ -196,9 +196,9 @@ function Mock({ type, T }) {
           </div>
           <Card T={T} style={{ padding: "10px 12px" }}>
             {[["FT 2026/001", "Blocco A — Milano", "€15.600", "PAGATA", green], ["FT 2026/002", "Villa Lario", "€20.800", "PAGATA", green], ["FT 2026/003", "Showroom Navigli", "€11.800", "IN ATTESA", T.muted]].map(([n, p, v, s, sc]) => (
-              <div key={n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `0.5px solid ${T.border}` }}>
-                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{n}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{p}</div></div>
-                <div style={{ textAlign: "right" }}><div style={{ ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{v}</div><div style={{ ...mono, fontSize: 8, color: sc, fontWeight: sc === green ? 600 : 400 }}>{s}</div></div>
+              <div key={n} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `0.5px solid ${T.border}` }}>
+                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{n}</div><div style={{ ...mono, fontSize: 10, color: T.muted }}>{p}</div></div>
+                <div style={{ textAlign: "right" }}><div style={{ ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{v}</div><div style={{ ...mono, fontSize: 10, color: sc, fontWeight: sc === green ? 600 : 400 }}>{s}</div></div>
               </div>
             ))}
           </Card>
@@ -208,7 +208,7 @@ function Mock({ type, T }) {
     case "scrivania": {
       const tasks = [["Consegna tavole esecutive", "Blocco A — Milano", "Oggi", red], ["Verifica strutturale", "Villa Lario", "Domani", navy], ["Invio preventivo", "Showroom Navigli", "Ven 20", T.muted]];
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
             <Stat T={T} label="Progetti" value="8" color={navy} />
             <Stat T={T} label="Task oggi" value="5" color={red} />
@@ -217,8 +217,8 @@ function Mock({ type, T }) {
           <Card T={T} style={{ padding: "10px 12px" }}>
             <div style={lbl(T)}>Prossime scadenze</div>
             {tasks.map((r, k) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: k < tasks.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
-                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{r[1]}</div></div>
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: k < tasks.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+                <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 10, color: T.muted }}>{r[1]}</div></div>
                 <div style={{ ...mono, fontSize: 8.5, color: r[3], flexShrink: 0, marginLeft: 8, fontWeight: r[3] !== T.muted ? 600 : 400 }}>{r[2]}</div>
               </div>
             ))}
@@ -233,24 +233,24 @@ function Mock({ type, T }) {
       return (
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={lbl(T)}>Settimana 22 — Blocco A Milano</div>
-          <div style={{ display: "flex", marginBottom: 5 }}>
+          <div style={{ display: "flex", marginBottom: 6 }}>
             <div style={{ width: 30, flexShrink: 0 }} />
             {days.map((d) => <div key={d} style={{ flex: 1, textAlign: "center", ...mono, fontSize: 7.5, color: T.muted }}>{d}</div>)}
             <div style={{ width: 26, ...mono, fontSize: 7.5, color: T.muted, textAlign: "right" }}>Tot</div>
           </div>
           {rows.map((r) => (
-            <div key={r.i} style={{ display: "flex", alignItems: "center", marginBottom: 5, paddingBottom: 5, borderBottom: `0.5px solid ${T.border}` }}>
+            <div key={r.i} style={{ display: "flex", alignItems: "center", marginBottom: 6, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
               <div style={{ width: 30, flexShrink: 0 }}>
                 <div style={{ width: 20, height: 20, borderRadius: "50%", background: r.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7.5, fontWeight: 700, color: "#fff" }}>{r.i}</div>
               </div>
               {r.days.map((h, k) => (
                 <div key={k} style={{ flex: 1, display: "flex", justifyContent: "center" }}>
                   {h > 0
-                    ? <span style={{ display: "inline-flex", width: 22, height: 18, background: `${r.c}26`, borderRadius: 4, ...mono, fontSize: 8, color: r.c, fontWeight: 700, alignItems: "center", justifyContent: "center" }}>{h}h</span>
-                    : <span style={{ ...mono, fontSize: 9, color: `${T.muted}66` }}>—</span>}
+                    ? <span style={{ display: "inline-flex", width: 22, height: 18, background: `${r.c}26`, borderRadius: 4, ...mono, fontSize: 10, color: r.c, fontWeight: 700, alignItems: "center", justifyContent: "center" }}>{h}h</span>
+                    : <span style={{ ...mono, fontSize: 10, color: `${T.muted}66` }}>—</span>}
                 </div>
               ))}
-              <div style={{ width: 26, textAlign: "right", ...mono, fontSize: 9, fontWeight: 700, color: navy }}>{r.days.reduce((s, v) => s + v, 0)}h</div>
+              <div style={{ width: 26, textAlign: "right", ...mono, fontSize: 10, fontWeight: 700, color: navy }}>{r.days.reduce((s, v) => s + v, 0)}h</div>
             </div>
           ))}
         </Card>
@@ -264,8 +264,8 @@ function Mock({ type, T }) {
           <div style={lbl(T)}>Pratiche edilizie</div>
           {rows.map((r, k) => (
             <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
-              <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 8, color: T.muted }}>{r[1]}</div></div>
-              <div style={{ ...mono, fontSize: 8, color: r[3], background: `${r[3]}1f`, border: `0.5px solid ${r[3]}44`, borderRadius: 10, padding: "2px 8px", fontWeight: 600, flexShrink: 0 }}>{r[2]}</div>
+              <div><div style={{ fontSize: 10, fontWeight: 600, color: T.ink }}>{r[0]}</div><div style={{ ...mono, fontSize: 10, color: T.muted }}>{r[1]}</div></div>
+              <div style={{ ...mono, fontSize: 10, color: r[3], background: `${r[3]}1f`, border: `0.5px solid ${r[3]}44`, borderRadius: 10, padding: "2px 8px", fontWeight: 600, flexShrink: 0 }}>{r[2]}</div>
             </div>
           ))}
         </Card>
@@ -277,7 +277,7 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.ink }}>📐 Report cantiere #3</div>
-            <div style={{ ...mono, fontSize: 8, color: T.muted }}>14 Giu 2026</div>
+            <div style={{ ...mono, fontSize: 10, color: T.muted }}>14 Giu 2026</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
             {[[navy, green], [PURPLE, BLUE], [AMBER, navy]].map((g, k) => (
@@ -286,7 +286,7 @@ function Mock({ type, T }) {
               </div>
             ))}
           </div>
-          {[100, 75].map((w, k) => <div key={k} style={{ height: 5, borderRadius: 3, background: `${T.muted}33`, width: `${w}%`, marginBottom: 5 }} />)}
+          {[100, 75].map((w, k) => <div key={k} style={{ height: 5, borderRadius: 3, background: `${T.muted}33`, width: `${w}%`, marginBottom: 6 }} />)}
         </Card>
       );
 
@@ -302,11 +302,11 @@ function Mock({ type, T }) {
             </div>
           </div>
           {bars.map((b) => (
-            <div key={b.l} style={{ display: "flex", alignItems: "center", marginBottom: 5 }}>
-              <div style={{ width: 92, flexShrink: 0, fontSize: 8, fontWeight: 500, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>{b.l}</div>
+            <div key={b.l} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+              <div style={{ width: 92, flexShrink: 0, fontSize: 10, fontWeight: 500, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 6 }}>{b.l}</div>
               <div style={{ flex: 1, height: 16, position: "relative" }}>
                 <div style={{ position: "absolute", left: `${b.x}%`, width: `${b.w}%`, height: "100%", background: b.c, borderRadius: 4, display: "flex", alignItems: "center", paddingLeft: 6 }}>
-                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 7, fontWeight: 600, color: "rgba(255,255,255,0.92)", whiteSpace: "nowrap", overflow: "hidden" }}>{b.l}</span>
+                  <span style={{ fontFamily: "var(--font-ui)", fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.92)", whiteSpace: "nowrap", overflow: "hidden" }}>{b.l}</span>
                 </div>
               </div>
             </div>
@@ -322,7 +322,7 @@ function Mock({ type, T }) {
           <div style={lbl(T)}>Team studio · 4 membri</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {m.map((x) => (
-              <div key={x[0]} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 8px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm }}>
+              <div key={x[0]} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm }}>
                 <div style={{ width: 26, height: 26, borderRadius: "50%", background: x[3], color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", ...mono, fontSize: 8.5, fontWeight: 700, flexShrink: 0 }}>{x[0]}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 10, fontWeight: 600, color: T.ink, whiteSpace: "nowrap" }}>{x[1]}</div>
@@ -338,7 +338,7 @@ function Mock({ type, T }) {
     case "analytics": {
       const items = [["Blocco A — Milano", 52000, 21000], ["Villa Lario", 38000, 38000], ["Showroom Navigli", 29500, 12000], ["Residenza Privata", 44000, 0]];
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
             <Stat T={T} label="Contratti" value="€163k" color={T.ink} />
             <Stat T={T} label="Incassato" value="€71k" color={green} />
@@ -349,9 +349,9 @@ function Mock({ type, T }) {
               const pct = Math.round((inc / v) * 100), done = pct === 100;
               return (
                 <div key={k} style={{ marginBottom: k < items.length - 1 ? 8 : 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                     <div style={{ fontSize: 9.5, fontWeight: 600, color: T.ink }}>{n}</div>
-                    <div style={{ ...mono, fontSize: 8, color: done ? green : AMBER }}>{done ? "✓ Saldato" : `res. €${((v - inc) / 1000).toFixed(0)}k`}</div>
+                    <div style={{ ...mono, fontSize: 10, color: done ? green : AMBER }}>{done ? "✓ Saldato" : `res. €${((v - inc) / 1000).toFixed(0)}k`}</div>
                   </div>
                   <div style={track(T)}><div style={{ height: 5, width: `${pct}%`, background: done ? green : navy, borderRadius: 3 }} /></div>
                 </div>
@@ -367,8 +367,8 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "12px" }}>
           <div style={lbl(T)}>Per iniziare</div>
           {[["Completa il Profilo Studio", true], ["Configura Servizi e Voci offerta", true], ["Invita il tuo team", false], ["Crea la prima offerta", false]].map(([t, done], k) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
-              <span style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? green : T.muted}`, background: done ? green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 9, color: "#fff" }}>{done ? "✓" : ""}</span>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: k < 3 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${done ? green : T.muted}`, background: done ? green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, color: "#fff" }}>{done ? "✓" : ""}</span>
               <div style={{ fontSize: 10.5, color: T.ink, fontWeight: done ? 400 : 600, textDecoration: done ? "line-through" : "none", opacity: done ? 0.6 : 1 }}>{t}</div>
             </div>
           ))}
@@ -381,15 +381,15 @@ function Mock({ type, T }) {
         <Card T={T} style={{ padding: "10px 12px" }}>
           <div style={lbl(T)}>CAPEX — preventivi cantiere</div>
           {rows.map(([cat, forn, val, acc], k) => (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
-              <span style={{ ...mono, fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", color: navy, border: `0.5px solid ${navy}55`, borderRadius: 4, padding: "1px 5px", flexShrink: 0 }}>{cat}</span>
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
+              <span style={{ ...mono, fontSize: 9, letterSpacing: "0.03em", textTransform: "uppercase", color: navy, border: `0.5px solid ${navy}55`, borderRadius: 4, padding: "1px 6px", flexShrink: 0 }}>{cat}</span>
               <div style={{ flex: 1, fontSize: 9.5, color: T.ink }}>{forn}</div>
               <div style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.ink }}>{val}</div>
-              <span style={{ ...mono, fontSize: 8, color: acc ? green : T.muted, fontWeight: acc ? 600 : 400, width: 62, textAlign: "right" }}>{acc ? "✓ Accettato" : "—"}</span>
+              <span style={{ ...mono, fontSize: 10, color: acc ? green : T.muted, fontWeight: acc ? 600 : 400, width: 62, textAlign: "right" }}>{acc ? "✓ Accettato" : "—"}</span>
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "6px 10px" }}>
-            <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>ACCETTATO</span>
+            <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: navy, fontWeight: 700 }}>ACCETTATO</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: navy }}>€98.500</span>
           </div>
         </Card>
@@ -405,7 +405,7 @@ function Mock({ type, T }) {
               <div key={k} style={{ flex: 1, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding: "10px 6px", textAlign: "center", background: T.surface2 }}>
                 <div style={{ fontSize: 17, marginBottom: 4 }}>{ic}</div>
                 <div style={{ fontSize: 8.5, fontWeight: 700, color: T.ink }}>{app}</div>
-                <div style={{ ...mono, fontSize: 7, color: T.muted, marginTop: 2 }}>{act}</div>
+                <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 2 }}>{act}</div>
               </div>
             ))}
           </div>
@@ -436,7 +436,7 @@ function ProjectDemo({ T }) {
     <div>
       {/* Header progetto */}
       <Card T={T} style={{ padding: "10px 12px", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 9 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.ink, letterSpacing: "-0.02em" }}>Villa Lario</div>
             <div style={{ ...mono, fontSize: 7.5, color: T.muted }}>Progetto · Como</div>
@@ -448,10 +448,10 @@ function ProjectDemo({ T }) {
             const on = p.key === active;
             return (
               <button key={p.key} onClick={() => setActive(p.key)} style={{
-                ...mono, fontSize: 7.5, fontWeight: 600, letterSpacing: "0.1em",
+                ...mono, fontSize: 7.5, fontWeight: 600, letterSpacing: "0.04em",
                 border: `0.5px solid ${on ? navy : T.border}`, borderRadius: 6,
                 background: on ? `${navy}14` : T.surface, color: on ? navy : T.muted,
-                padding: "5px 9px", cursor: "pointer",
+                padding: "6px 10px", cursor: "pointer",
               }}>{p.label}</button>
             );
           })}
@@ -459,7 +459,7 @@ function ProjectDemo({ T }) {
       </Card>
 
       {/* Anteprima dello strumento selezionato */}
-      <div style={{ ...mono, fontSize: 7.5, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: 6, textAlign: "center" }}>
+      <div style={{ ...mono, fontSize: 7.5, letterSpacing: "0.04em", textTransform: "uppercase", color: T.muted, marginBottom: 6, textAlign: "center" }}>
         Anteprima · {cur.label} — tocca le pill sopra
       </div>
       <Mock type={cur.mock} T={T} />
@@ -591,20 +591,20 @@ export default function GuidaApp({ open, onClose }) {
   const spotlight = !!rect;
 
   const planBadge = s.plan && (
-    <span style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
+    <span style={{ ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
       Piano {s.plan}
     </span>
   );
 
   const btn = (label, onClick, primary, disabled) => (
-    <button onClick={onClick} disabled={disabled} style={{ border: primary ? "none" : `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: primary ? T.navy : "transparent", color: primary ? "#EEF1F6" : T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: primary ? "9px 22px" : "9px 18px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}>{label}</button>
+    <button onClick={onClick} disabled={disabled} style={{ border: primary ? "none" : `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: primary ? T.navy : "transparent", color: primary ? "#EEF1F6" : T.ink, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: primary ? "10px 24px" : "10px 20px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}>{label}</button>
   );
 
   // Corpo condiviso (compact = modalità spotlight, senza mock grande)
   const Body = ({ compact }) => (
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: compact ? 12 : 16 }}>
-        <span style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>
           Guida · {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
         <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
@@ -620,7 +620,7 @@ export default function GuidaApp({ open, onClose }) {
       </div>
 
       {!compact && (
-        <div style={{ background: `${T.muted}10`, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 18 }}>
+        <div style={{ background: `${T.muted}10`, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 20 }}>
           {s.demo === "project" ? <ProjectDemo T={T} /> : <Mock type={s.mock} T={T} />}
         </div>
       )}
@@ -646,13 +646,13 @@ export default function GuidaApp({ open, onClose }) {
 
       {/* Pulsante "Vai alla sezione" */}
       {s.goto && (
-        <button onClick={() => goTo(s.goto)} style={{ marginTop: 14, width: "100%", border: `1px solid ${T.navy}55`, borderRadius: T.radiusSm, background: `${T.navy}10`, color: T.navy, ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "10px 0", cursor: "pointer", fontWeight: 600 }}>
+        <button onClick={() => goTo(s.goto)} style={{ marginTop: 16, width: "100%", border: `1px solid ${T.navy}55`, borderRadius: T.radiusSm, background: `${T.navy}10`, color: T.navy, ...mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "10px 0", cursor: "pointer", fontWeight: 600 }}>
           {s.cta || "Vai a questa sezione →"}
         </button>
       )}
 
       {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, margin: "18px 0 14px" }}>
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 6, margin: "20px 0 16px" }}>
         {slides.map((_, idx) => (
           <button key={idx} onClick={() => setI(idx)} aria-label={`Slide ${idx + 1}`}
             style={{ width: idx === i ? 18 : 7, height: 7, borderRadius: 4, border: "none", padding: 0, cursor: "pointer", background: idx === i ? T.navy : T.borderMd, transition: "all 0.2s" }} />
@@ -688,7 +688,7 @@ export default function GuidaApp({ open, onClose }) {
         {/* anello + dimming via box-shadow */}
         <div style={{ position: "fixed", top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2, borderRadius: 12, border: `2px solid ${T.brass || "#D9C98A"}`, boxShadow: "0 0 0 9999px rgba(14,14,13,0.62)", zIndex: 81, pointerEvents: "none", transition: "all 0.25s ease" }} />
         {/* tooltip */}
-        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: ttMaxH, overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 22px", zIndex: 82 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: ttTop, left: ttLeft, width: ttWidth, maxHeight: ttMaxH, overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: "20px 24px", zIndex: 82 }}>
           <Body compact />
         </div>
       </>
@@ -698,7 +698,7 @@ export default function GuidaApp({ open, onClose }) {
   // ── Modalità CENTRATA: card con mockup ──────────────────────────
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(14,14,13,0.6)", padding: 16 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 18px" : "26px 30px" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radius, boxShadow: T.shadowLg, padding: isMobile ? "20px 20px" : "28px 32px" }}>
         <Body compact={false} />
       </div>
     </div>

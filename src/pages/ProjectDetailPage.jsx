@@ -88,9 +88,9 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   const inputSt = {
     width: '100%', padding: '6px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm,
     background: T.surface, color: T.ink, fontSize: 12,
-    fontFamily: "'Space Grotesk', sans-serif", outline: 'none', boxSizing: 'border-box',
+    fontFamily: "var(--font-ui)", outline: 'none', boxSizing: 'border-box',
   };
-  const labelSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
+  const labelSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
 
   // Form condiviso tra mobile e desktop
   const formContent = (
@@ -134,7 +134,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         <div style={{ display:'flex', gap:6 }}>
           {[{id:"", label:"Normale", color:"#6b7280"},{id:"bassa", label:"Bassa", color:"#2563eb"},{id:"media", label:"Media", color:"#d97706"},{id:"alta", label:"Alta", color:"#dc2626"}].map(p => (
             <button key={p.id} type="button" onClick={()=>setForm(f=>({...f,priority:p.id}))}
-              style={{ flex:1, padding:'5px 0', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.05em',
+              style={{ flex:1, padding:'6px 0', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em',
                 border:`0.5px solid ${form.priority===p.id ? p.color : T.border}`,
                 borderRadius:T.radiusSm, cursor:'pointer',
                 background: form.priority===p.id ? p.color+"22" : "transparent",
@@ -174,8 +174,8 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         </div>
       )}
       <div style={{ display:'flex', gap:8, paddingTop:4 }}>
-        <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'7px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace", letterSpacing:'0.08em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
-        <button onClick={handleDelete} disabled={deleting} style={{ padding:'7px 12px', background:T.red, color:T.surface, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>{deleting?"...":"Elimina"}</button>
+        <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"var(--font-label)", letterSpacing:'0.03em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
+        <button onClick={handleDelete} disabled={deleting} style={{ padding:'8px 12px', background:T.red, color:T.surface, border:'none', cursor:'pointer', fontSize:11, fontFamily:"var(--font-label)" }}>{deleting?"...":"Elimina"}</button>
       </div>
     </div>
   );
@@ -194,7 +194,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     <div ref={ref} onClick={e=>e.stopPropagation()} style={{
       position:'absolute', left:0, top:'100%', zIndex:50, marginTop:4,
       width:280, background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,
-      padding:14, boxShadow:`0 4px 16px ${T.border}`,
+      padding:16, boxShadow:`0 4px 16px ${T.border}`,
     }}>
       {formContent}
     </div>
@@ -210,7 +210,7 @@ function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onD
     <div style={{
       position: 'relative', marginLeft: 20,
       display: 'flex', alignItems: 'flex-start', gap: 8,
-      padding: '5px 8px', background: T.bg,
+      padding: '6px 8px', background: T.bg,
       border: `1px solid ${T.border}`,
       opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
     }}>
@@ -224,7 +224,7 @@ function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onD
         flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
         fontSize: 11, color: done ? T.muted : T.ink,
         textDecoration: done ? 'line-through' : 'none',
-        fontFamily: "'Space Grotesk', sans-serif",
+        fontFamily: "var(--font-ui)",
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{task.title ?? task.name ?? "Subtask"}</button>
       {popupOpen && <TaskEditPopup task={task} teamMembers={teamMembers} categories={categories} onSave={onUpdateTask} onDelete={onDeleteTask} onClose={() => setPopupOpen(false)} isSubtask />}
@@ -242,7 +242,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 
   const inputSt = {
     padding: '6px 10px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface,
-    color: T.ink, fontSize: 11, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
+    color: T.ink, fontSize: 11, fontFamily: "var(--font-ui)", outline: 'none',
   };
   const miniBtn = {
     width: 28, height: 28, flexShrink: 0, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
@@ -273,19 +273,19 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
               flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 12, color: done ? T.muted : T.ink,
               textDecoration: done ? 'line-through' : 'none',
-              fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600,
+              fontFamily: "var(--font-ui)", fontWeight: 600,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{task.title ?? task.name ?? "Task"}</button>
             {task.is_recurring && (
-              <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:'1px 5px', flexShrink:0, opacity:0.7 }}>↻</span>
+              <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:'1px 6px', flexShrink:0, opacity:0.7 }}>↻</span>
             )}
             {assignedName && (
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.05em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
                 {assignedName}
               </span>
             )}
             {task.data_pianificata && (
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, flexShrink: 0 }}>
                 {task.data_pianificata}{task.ora_pianificata ? ` ⏰ ${String(task.ora_pianificata).slice(0,5)}` : ""}
               </span>
             )}
@@ -750,8 +750,8 @@ export default function ProjectDetailPage() {
   };
 
   const inputSt = {
-    padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface,
-    color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', flex: 1, minWidth: 0,
+    padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface,
+    color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', flex: 1, minWidth: 0,
   };
   const miniBtn = {
     width: 32, height: 32, flexShrink: 0, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface,
@@ -759,24 +759,24 @@ export default function ProjectDetailPage() {
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
       Caricamento progetto...
     </div>
   );
   if (error && !project) return <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>Errore: {error}</div>;
-  if (!project) return <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Progetto non trovato.</div>;
+  if (!project) return <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Progetto non trovato.</div>;
 
   return (
     <div>
       {/* PROJECT HEADER */}
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '18px 22px', marginBottom: 16 }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '20px 24px', marginBottom: 16 }}>
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           {/* Titolo + filtro */}
-          <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
             <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.02em', color:T.ink }}>{project.name ?? "Progetto"}</div>
             <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
               onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
-              style={{ padding:'5px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.bg, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono', monospace", outline:'none', cursor:'pointer' }}>
+              style={{ padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.bg, color:T.ink, fontSize:11, fontFamily:"var(--font-label)", outline:'none', cursor:'pointer' }}>
               <option value="show-all">Tutte le task</option>
               <option value="hide-completed">Nascondi completate</option>
             </select>
@@ -792,18 +792,18 @@ export default function ProjectDetailPage() {
                     background: p.color || avatarColor(p.name||"?"),
                     border:`2px solid ${T.surface}`,
                     display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:"'Space Grotesk', sans-serif", fontSize:10, fontWeight:700,
+                    fontFamily:"var(--font-ui)", fontSize:10, fontWeight:700,
                     color:'#fff', flexShrink:0, cursor:'default',
                   }}>
                     {getInitials(p.name||"?")}
                   </div>
                 ))}
                 {othersPresent.length > 5 && (
-                  <div style={{ width:28, height:28, borderRadius:'50%', background:T.borderMd, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+                  <div style={{ width:28, height:28, borderRadius:'50%', background:T.borderMd, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
                     +{othersPresent.length - 5}
                   </div>
                 )}
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginLeft:2 }}>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginLeft:2 }}>
                   {othersPresent.length === 1 ? `${othersPresent[0].name?.split(" ")[0]} sta guardando` : `${othersPresent.length} persone qui`}
                 </span>
               </div>
@@ -830,10 +830,10 @@ export default function ProjectDetailPage() {
               }}>···</button>
               {menuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
-                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
+                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.02em' }}>
                     Modifica
                   </button>
-                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, letterSpacing: '0.05em' }}>
+                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, letterSpacing: '0.02em' }}>
                     {archiving ? "Archiviazione..." : "Archivia progetto"}
                   </button>
                   <button onClick={async () => {
@@ -842,7 +842,7 @@ export default function ProjectDetailPage() {
                     const { error: dErr } = await supabase.rpc('elimina_progetto', { p_project_id: id });
                     if (dErr) { showToast('Errore: ' + dErr.message); return; }
                     navigate('/progetti');
-                  }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
+                  }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>
                     Elimina progetto
                   </button>
                 </div>
@@ -853,10 +853,10 @@ export default function ProjectDetailPage() {
 
         {/* Meta */}
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
             <span style={{ marginRight: 6 }}>Cliente:</span>{project.client ?? "N/D"}
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
             <span style={{ marginRight: 6 }}>Indirizzo:</span>{project.address ?? "N/D"}
           </div>
         </div>
@@ -870,13 +870,13 @@ export default function ProjectDetailPage() {
           return (
             <div style={{ marginTop: 10 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Ore</span>
-                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color: over ? '#dc2626' : T.ink, fontWeight:600 }}>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.04em', textTransform:'uppercase' }}>Ore</span>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: over ? '#dc2626' : T.ink, fontWeight:600 }}>
                   {totaleOreProgetto.toFixed(1)}h{budget > 0 ? ` / ${budget}h` : ""}
                 </span>
-                {over && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:'#dc2626', border:'0.5px solid #dc2626', borderRadius:2, padding:'1px 4px' }}>SFORATO</span>}
+                {over && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#dc2626', border:'0.5px solid #dc2626', borderRadius:2, padding:'1px 4px' }}>SFORATO</span>}
                 <button onClick={() => { setBudgetInput(String(budget||"")); setBudgetEditOpen(v=>!v); }}
-                  style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, textDecoration:'underline', marginLeft:'auto' }}>
+                  style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textDecoration:'underline', marginLeft:'auto' }}>
                   {budget > 0 ? "modifica budget" : "imposta budget"}
                 </button>
               </div>
@@ -889,11 +889,11 @@ export default function ProjectDetailPage() {
                 <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center' }}>
                   <input type="number" min="0" value={budgetInput} onChange={e=>setBudgetInput(e.target.value)}
                     placeholder="Es. 120" autoFocus
-                    style={{ width:80, padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none' }}
+                    style={{ width:80, padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, outline:'none' }}
                     onKeyDown={e=>{ if(e.key==='Enter') handleSaveBudgetOre(); if(e.key==='Escape') setBudgetEditOpen(false); }}/>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>ore</span>
-                  <button onClick={handleSaveBudgetOre} style={{ padding:'4px 10px', background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, cursor:'pointer' }}>Salva</button>
-                  <button onClick={()=>setBudgetEditOpen(false)} style={{ padding:'4px 8px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9 }}>×</button>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>ore</span>
+                  <button onClick={handleSaveBudgetOre} style={{ padding:'4px 10px', background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, cursor:'pointer' }}>Salva</button>
+                  <button onClick={()=>setBudgetEditOpen(false)} style={{ padding:'4px 8px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10 }}>×</button>
                 </div>
               )}
             </div>
@@ -903,7 +903,7 @@ export default function ProjectDetailPage() {
         {/* Team avatars */}
         {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.15em' }}>TEAM</span>
+            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em' }}>TEAM</span>
             {project.assigned_users.map((uid, i) => {
               const m = teamMembers.find(tm => tm.id === uid);
               if (!m) return null;
@@ -914,7 +914,7 @@ export default function ProjectDetailPage() {
                   width: 26, height: 26, borderRadius: '50%',
                   background: avatarColor(name), border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontWeight: 600, color: T.surface,
+                  fontSize: 10, fontWeight: 600, color: T.surface,
                 }}>{initials}</span>
               );
             })}
@@ -927,7 +927,7 @@ export default function ProjectDetailPage() {
         <ProjectNotes projectId={id} studioId={studioId} currentMemberId={teamMember.id} currentMemberName={teamMember.user_name || teamMember.user_email} teamMembers={teamMembers} />
       )}
 
-      {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red, marginBottom: 12 }}>{error}</div>}
 
       {/* EDIT MODAL */}
       {editOpen && (
@@ -937,7 +937,7 @@ export default function ProjectDetailPage() {
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Modifica Progetto</div>
               <button onClick={() => setEditOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>×</button>
             </div>
-            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <ProjectForm
                 data={{ ...editForm, selectedServices: editForm.selectedServices, selectedMembers: editForm.selectedMembers }}
                 onChange={field => e => setEditForm(p => ({ ...p, [field]: e.target.value }))}
@@ -953,38 +953,38 @@ export default function ProjectDetailPage() {
                 onGanttChange={e => setEditForm(p => ({ ...p, gantt_enabled: e.target.checked }))}
               />
               {selectedServices.filter(s => completedCategories[s]).length > 0 && (
-                <div style={{ marginTop: 14 }}>
-                  <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 }}>Servizi completati</label>
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 }}>Servizi completati</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {selectedServices.filter(s => completedCategories[s]).map(cat => (
                       <button key={cat} type="button" onClick={() => handleToggleCategory(cat)}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 12px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: 'transparent', cursor: 'pointer' }}
                         onMouseEnter={e => e.currentTarget.style.background = T.border}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: T.muted, textDecoration: 'line-through' }}>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 12, color: T.muted, textDecoration: 'line-through' }}>
                           {cat === "__uncategorized__" ? "Generali" : cat}
                         </span>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Riattiva</span>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, letterSpacing: '0.03em', textTransform: 'uppercase' }}>Riattiva</span>
                       </button>
                     ))}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 6 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 6 }}>
                     Nascosti dalla board. Clicca per riattivarli.
                   </div>
                 </div>
               )}
-              <div style={{ marginTop: 14 }}>
-                <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commesse collegate</label>
+              <div style={{ marginTop: 16 }}>
+                <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commesse collegate</label>
                 <LinkedCommesseField
                   selectedIds={editForm.selectedCommessaIds}
                   commesseList={commesseList}
                   onChange={ids => setEditForm(p => ({ ...p, selectedCommessaIds: ids }))}
                 />
               </div>
-              {editError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{editError}</div>}
+              {editError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{editError}</div>}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.border}` }}>
-                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
-                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: T.bg, padding: '8px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
+                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', cursor: 'pointer' }}>Annulla</button>
+                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: T.bg, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
               </div>
             </form>
           </div>
@@ -993,7 +993,7 @@ export default function ProjectDetailPage() {
 
       {/* KANBAN COLUMNS */}
       {selectedServices.filter(s => !completedCategories[s]).length === 0 ? (
-        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
           {selectedServices.length === 0
             ? "Nessun servizio selezionato per questo progetto."
             : "Tutti i servizi sono completati. Riattivali da “Modifica progetto”."}
@@ -1103,10 +1103,10 @@ export default function ProjectDetailPage() {
                     </span>
                     <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
                       style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.02em', flex: 1 }}>
                       {group.category === "__uncategorized__" ? "Generali" : group.category}
                     </span>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
                       {group.completedCount}/{group.totalCount}
                     </span>
                     {catDone && <span style={{ fontSize: 11, color: T.navy, fontWeight: 600 }}>✓</span>}
@@ -1139,7 +1139,7 @@ export default function ProjectDetailPage() {
                         title="Ora (facoltativa): ti avviso a quest'ora"
                         style={{ width: 84, height: 32, flexShrink: 0, boxSizing: 'border-box', padding: '0 6px',
                           border: `1px solid ${newTaskTimes[group.category] ? T.navy : T.border}`, borderRadius: T.radiusSm,
-                          background: T.surface, color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, outline: 'none' }} />
+                          background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, outline: 'none' }} />
                     )}
                     <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
                       style={{ width: 32, height: 32, background: T.navy, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1193,10 +1193,10 @@ export default function ProjectDetailPage() {
               <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 13, color: T.muted }}>📥</span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, color: T.muted, letterSpacing: '0.05em', flex: 1 }}>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.muted, letterSpacing: '0.02em', flex: 1 }}>
                     Backlog
                   </span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
                     {backlogTasks.filter(t=>t.status!=="completed").length} senza data
                   </span>
                 </div>
@@ -1239,21 +1239,21 @@ export default function ProjectDetailPage() {
               display: 'flex', flexDirection: 'column',
               background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
               height: isMobile ? 'auto' : 'fit-content',
-              padding: 14, gap: 8, alignSelf: 'flex-start',
+              padding: 16, gap: 8, alignSelf: 'flex-start',
             }}>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Nome nuova colonna</span>
+              <span style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Nome nuova colonna</span>
               <input autoFocus type="text" value={addColInput}
                 onChange={e => setAddColInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddColumn(); } if (e.key === 'Escape') { setAddColOpen(false); setAddColInput(""); } }}
                 placeholder="es. In revisione"
-                style={{ padding:'7px 10px', border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }} />
+                style={{ padding:'8px 10px', border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg, color:T.ink, fontSize:12, fontFamily:"var(--font-ui)", outline:'none' }} />
               <div style={{ display:'flex', gap:6 }}>
                 <button onClick={handleAddColumn}
-                  style={{ flex:1, padding:'7px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  style={{ flex:1, padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:'pointer', fontSize:11, fontFamily:"var(--font-label)" }}>
                   Crea
                 </button>
                 <button onClick={() => { setAddColOpen(false); setAddColInput(""); }}
-                  style={{ flex:1, padding:'7px 0', background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, cursor:'pointer', fontSize:11, fontFamily:"'IBM Plex Mono',monospace" }}>
+                  style={{ flex:1, padding:'8px 0', background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, cursor:'pointer', fontSize:11, fontFamily:"var(--font-label)" }}>
                   Annulla
                 </button>
               </div>
@@ -1270,7 +1270,7 @@ export default function ProjectDetailPage() {
               alignSelf: 'flex-start', minHeight: 80,
             }}>
               <span style={{ fontSize: 22, color: T.muted, lineHeight: 1 }}>+</span>
-              <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
+              <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
             </div>
           )}
         </div>
