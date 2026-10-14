@@ -4,7 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
-import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout } from "../../lib/capitolatoModel";
+import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria } from "../../lib/capitolatoModel";
 
 const mono = "'IBM Plex Mono', monospace";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -47,23 +47,35 @@ export default function RegolazioneCapitolatoPage() {
     const filtered = prev.filter((v) => v.id !== row.id &&
       !(row._layoutKey && v._layoutKey === row._layoutKey) &&
       !(v.categoria_code === row.categoria_code && v.codice === row.codice && v.studio == null && row.studio));
-    return [...filtered, row];
+    return ordinaLibreria([...filtered, row]); // resta al suo posto (ordine per codice)
   });
   const onDeleted = (id) => { ricarica(); };
 
-  // Riordino e spostamento tra sezioni: aggiornamento ottimistico + salvataggio
-  // della disposizione dello studio. Durante una ricerca testuale è disattivato
-  // (le voci vicine potrebbero essere nascoste).
+  // Riordino e spostamento tra sezioni. L'ordine segue il codice: ↑↓ scambiano il
+  // codice con la voce vicina, "Sposta in…" dà il primo codice libero della sezione
+  // di destinazione. Durante una ricerca testuale è disattivato (le voci vicine
+  // potrebbero essere nascoste).
   const puoSpostare = !!studioId && !query.trim();
-  const sposta = async (id, mossa) => {
-    const res = spostaVoce(voci, id, mossa);
-    if (!res) return;
+  const sposta = async (id, { dir, cat }) => {
     const prima = voci;
-    setVoci(res.voci);
-    try { await saveLayout(studioId, res.layout); }
-    catch (e) { console.error(e); setVoci(prima); showToast("Errore nello spostamento: " + (e.message || ""), "error"); }
+    try {
+      if (cat) {
+        const res = spostaVoce(voci, id, { cat });
+        if (!res) return;
+        setVoci(res.voci);
+        await saveLayout(studioId, res.layout);
+        onSaved(await saveVoceLibreria(res.voce, studioId));
+      } else {
+        const coppia = scambiaCodici(voci, id, dir);
+        if (!coppia) return;
+        for (const v of coppia) onSaved(await saveVoceLibreria(v, studioId));
+      }
+    } catch (e) {
+      console.error(e); showToast("Errore nello spostamento: " + (e.message || ""), "error");
+      setVoci(prima); ricarica();
+    }
   };
-  const prossimoOrdine = (code) => Math.max(-1, ...voci.filter((v) => v.categoria_code === code).map((v) => v.ordine || 0)) + 1;
+  const codiceSuggerito = (cat) => prossimoCodice(voci, cat);
 
   const inputSt = { padding: "7px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
 
@@ -71,7 +83,7 @@ export default function RegolazioneCapitolatoPage() {
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 20px 80px" }}>
       <div style={{ marginBottom: 4, fontSize: 20, fontWeight: 700, color: T.ink }}>Regolazione capitolato</div>
       <div style={{ fontFamily: mono, fontSize: 11, color: T.muted, marginBottom: 20 }}>
-        Libreria voci del computo metrico. Le voci del template sono condivise; modificandone il testo crei una versione dello studio. Puoi aggiungere voci nuove, riordinarle con ↑↓ e spostarle in un'altra sezione.
+        Libreria voci del computo metrico. Le voci del template sono condivise; modificandone il testo crei una versione dello studio. Le voci sono in ordine di codice: puoi aggiungerne di nuove, riordinarle con ↑↓ (scambiano il codice) e spostarle in un'altra sezione.
       </div>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
@@ -86,7 +98,7 @@ export default function RegolazioneCapitolatoPage() {
       </div>
 
       {adding && (
-        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} prossimoOrdine={prossimoOrdine}
+        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} codiceSuggerito={codiceSuggerito}
           onSaved={() => { ricarica(); setAdding(false); showToast("Voce aggiunta", "success"); }}
           onCancel={() => setAdding(false)} />
       )}
@@ -118,10 +130,13 @@ function Chip({ T, active, children, ...rest }) {
 
 const CAT_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c]));
 
-function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, prossimoOrdine }) {
-  const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
+function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito }) {
+  const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: codiceSuggerito?.("A") || "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
   const [d, setD] = useState(voce ? { ...voce } : blank);
   const [dirty, setDirty] = useState(!!nuova);
+  // la voce può cambiare da fuori (codice scambiato con ↑↓, spostamento): se non
+  // ci sono modifiche in corso, riallinea il form
+  useEffect(() => { if (voce && !dirty) setD({ ...voce }); }, [voce]); // eslint-disable-line
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -140,7 +155,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       const payload = voce
         // sezione/ordine/identità dalla voce corrente (può essere stata spostata dopo il mount)
         ? { ...d, categoria_code: voce.categoria_code, categoria_nome: voce.categoria_nome, ordine: voce.ordine, _orig: voce._orig, _layoutKey: voce._layoutKey }
-        : { ...d, categoria_nome: CAT_BY_CODE[d.categoria_code]?.nome || d.categoria_nome || "", ordine: prossimoOrdine?.(d.categoria_code) ?? 0 };
+        : { ...d, categoria_nome: CAT_BY_CODE[d.categoria_code]?.nome || d.categoria_nome || "", ordine: 0 };
       if (!payload.sommano_labels || !payload.sommano_labels.length) payload.sommano_labels = defaultSommanoLabels(payload.unita, payload.tipo);
       const row = await saveVoceLibreria(payload, studioId);
       setD({ ...row }); setDirty(false); onSaved?.(row);
@@ -167,7 +182,12 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
         {nuova && (
           <div>
             <div style={lbl}>Cat.</div>
-            <select value={d.categoria_code} onChange={(e) => set({ categoria_code: e.target.value })} style={{ ...inp, width: "100%" }}>
+            <select value={d.categoria_code} onChange={(e) => {
+              const cat = e.target.value;
+              // codice ancora quello suggerito (o vuoto) → suggerisci quello della nuova sezione
+              const auto = !d.codice || d.codice === codiceSuggerito?.(d.categoria_code);
+              set({ categoria_code: cat, ...(auto ? { codice: codiceSuggerito?.(cat) || "" } : {}) });
+            }} style={{ ...inp, width: "100%" }}>
               {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
             </select>
           </div>
