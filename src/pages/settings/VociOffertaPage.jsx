@@ -103,7 +103,7 @@ export default function VociOffertaPage() {
               <>
                 <input value={editNome} onChange={e=>setEditNome(e.target.value)} style={{...inputSt, flex:1}} autoFocus/>
                 <input type="number" value={editPrezzo} onChange={e=>setEditPrezzo(e.target.value)} placeholder="Prezzo €" style={{...inputSt, width:120}} />
-                <button onClick={handleSaveEdit} disabled={saving} style={{ background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:"0.02em", padding:"8px 16px", cursor:"pointer" }}>Salva</button>
+                <button onClick={handleSaveEdit} disabled={saving} style={{ background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:"0.06em", padding:"8px 16px", cursor:"pointer" }}>Salva</button>
                 <button onClick={() => setEditId(null)} style={{ background:"none", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, color:T.muted, padding:"8px 10px", cursor:"pointer" }}>✕</button>
               </>
             ) : (
@@ -124,7 +124,7 @@ export default function VociOffertaPage() {
 
       {/* Aggiungi nuova voce */}
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:"16px 20px" }}>
-        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", color:T.muted, marginBottom:12 }}>Aggiungi voce</div>
+        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:12 }}>Aggiungi voce</div>
         <form onSubmit={handleAdd} style={{ display:"flex", gap:10, alignItems:"flex-end", flexWrap:"wrap" }}>
           <div style={{ flex:"1 1 200px", minWidth:0 }}>
             <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6 }}>Nome voce *</div>
@@ -134,7 +134,7 @@ export default function VociOffertaPage() {
             <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6 }}>Prezzo default (€)</div>
             <input type="number" value={newPrezzo} onChange={e=>setNewPrezzo(e.target.value)} placeholder="0" style={inputSt}/>
           </div>
-          <button type="submit" disabled={saving||!newNome.trim()} style={{ background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"10px 20px", cursor:saving?"not-allowed":"pointer", opacity:saving||!newNome.trim()?0.6:1, whiteSpace:"nowrap" }}>
+          <button type="submit" disabled={saving||!newNome.trim()} style={{ background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"10px 20px", cursor:saving?"not-allowed":"pointer", opacity:saving||!newNome.trim()?0.6:1, whiteSpace:"nowrap" }}>
             + Aggiungi
           </button>
         </form>

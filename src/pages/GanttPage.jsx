@@ -531,19 +531,19 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
       {/* Toolbar */}
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase' }}>← Gantt</button>
+          <button onClick={onBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>← Gantt</button>
           <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:'-0.02em' }}>{project.name}</div>
           {project.client && <div style={{ ...mono, fontSize:10, color:T.muted }}>{project.client}</div>}
         </div>
         <div style={{ display:'flex', gap:8 }}>
           {versions.length > 0 && (
             <button onClick={handleCopyLast} disabled={creating}
-              style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 14px', ...mono, fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
+              style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 14px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
               ⎘ Copia ultima
             </button>
           )}
           <button onClick={handleNewVersion} disabled={creating}
-            style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'6px 16px', ...mono, fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
+            style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'6px 16px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity: creating ? 0.5 : 1 }}>
             + Nuova versione
           </button>
         </div>
@@ -595,7 +595,7 @@ function GanttVersionsList({ project, studioId, onSelectVersion, onBack }) {
                         ) : (
                           <span style={{ fontSize:14, fontWeight:600, color:T.ink }}>{v.name}</span>
                         )}
-                        {isLatest && <span style={{ ...mono, fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>Ultima</span>}
+                        {isLatest && <span style={{ ...mono, fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>Ultima</span>}
                       </div>
                       <div style={{ ...mono, fontSize:10, color:T.muted }}>
                         {new Date(v.created_at).toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})}
@@ -1036,7 +1036,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             const label=new Date(Number(year),Number(month),1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
             return (
               <div key={i} style={{width:m.width,flexShrink:0,padding:'0 8px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
-                <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.04em',textTransform:'uppercase',color:T.ink,whiteSpace:'nowrap'}}>{label}</span>
+                <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.1em',textTransform:'uppercase',color:T.ink,whiteSpace:'nowrap'}}>{label}</span>
               </div>
             );
           })}
@@ -1175,8 +1175,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   // ══════════════════════════════════════════════════════════════════
   if (isMobile) {
     const NAME_W = 116;
-    const mBtn = {background:'none',border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,cursor:'pointer',color:T.muted,padding:'7px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.02em',textTransform:'uppercase',minHeight:36,whiteSpace:'nowrap'};
-    const mLabel = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.04em',textTransform:'uppercase',color:T.muted,marginBottom:4,display:'block'};
+    const mBtn = {background:'none',border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,cursor:'pointer',color:T.muted,padding:'7px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',minHeight:36,whiteSpace:'nowrap'};
+    const mLabel = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted,marginBottom:4,display:'block'};
     const mInput = {width:'100%',boxSizing:'border-box',padding:'9px 10px',border:`1px solid ${T.border}`,borderRadius:8,background:T.surface2,color:T.ink,fontSize:13,fontFamily:"var(--font-label)",outline:'none'};
     const impresaOptions = Object.keys(impresaColorMap);
 
@@ -1215,7 +1215,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             {/* Colonna nomi (sincronizzata) */}
             <div ref={leftRef} style={{width:NAME_W,flexShrink:0,overflowY:'hidden',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
               <div style={{height:52,position:'sticky',top:0,zIndex:11,background:T.bg,borderBottom:`0.5px solid ${T.border}`,display:'flex',alignItems:'flex-end',padding:'0 8px 6px',boxSizing:'border-box'}}>
-                <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.04em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
+                <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
               </div>
               {lavorazioni.map((lav,i)=>{
                 const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
@@ -1369,7 +1369,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                 </div>
               </div>
               <button onClick={handleSaveNew} disabled={savingNew||!newRow.descrizione.trim()}
-                style={{background:T.navy,border:'none',cursor:'pointer',color:T.bg,padding:'11px',borderRadius:8,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>
+                style={{background:T.navy,border:'none',cursor:'pointer',color:T.bg,padding:'11px',borderRadius:8,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>
                 + Aggiungi lavorazione
               </button>
             </div>
@@ -1385,21 +1385,21 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       {/* Toolbar */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
         <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase'}}>← Versioni</button>
+          <button onClick={onBack} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>← Versioni</button>
           <div style={{fontSize:16,fontWeight:600,color:T.ink,letterSpacing:'-0.02em'}}>{project.name}</div>
           {version&&<div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.navy,border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm,padding:'2px 8px'}}>{version.name}</div>}
           {project.client&&<div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{project.client}</div>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           {/* Export */}
-          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase'}}>
+          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
-          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:onlyChart?T.bg:T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase'}}>
+          <button onClick={()=>setOnlyChart(p=>!p)} style={{background:onlyChart?T.navy:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:onlyChart?T.bg:T.muted,padding:'6px 14px',cursor:'pointer',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             {onlyChart ? '⊞ Tabella' : '▦ Solo grafico'}
           </button>
           {/* Vista */}
@@ -1420,7 +1420,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           {/* Header colonne */}
           <div style={{height:52,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
             {['','Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
-              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,borderRight:i<7?`0.5px solid ${T.border}`:'none'}}>{h}</div>
+              <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<7?`0.5px solid ${T.border}`:'none'}}>{h}</div>
             ))}
           </div>
           {/* Righe */}
@@ -1695,9 +1695,9 @@ export default function GanttPage() {
               <div style={{fontSize:15,fontWeight:600,color:T.ink,marginBottom:6}}>{p.name}</div>
               <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,display:'flex',gap:10}}>
                 {p.client&&<span>{p.client}</span>}
-                {p.status&&<span style={{textTransform:'uppercase',letterSpacing:'0.03em'}}>{p.status}</span>}
+                {p.status&&<span style={{textTransform:'uppercase',letterSpacing:'0.08em'}}>{p.status}</span>}
               </div>
-              <div style={{marginTop:14,fontFamily:"var(--font-label)",fontSize:10,color:T.navy,letterSpacing:'0.03em',textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}>
+              <div style={{marginTop:14,fontFamily:"var(--font-label)",fontSize:10,color:T.navy,letterSpacing:'0.08em',textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}>
                 <span>Apri Gantt</span><span>→</span>
               </div>
             </button>

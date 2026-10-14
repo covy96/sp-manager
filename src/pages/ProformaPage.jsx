@@ -30,7 +30,7 @@ function KpiCard({ label, value, note, color }) {
   const { T } = useTheme();
   return (
     <div style={{ background: T.surface, border: `1px solid ${T.border}`, padding: '20px 20px', borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
-      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "var(--font-ui)", marginBottom: 4 }}>{value}</div>
       {note && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{note}</div>}
     </div>
@@ -43,7 +43,7 @@ function SortBtn({ field, label, sortField, sortDesc, onSort }) {
   return (
     <button onClick={() => onSort(field)} style={{
       background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-      fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
       color: active ? T.navy : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4,
     }}>
       {label} {active && <span style={{ fontSize: 10 }}>{sortDesc ? '↓' : '↑'}</span>}
@@ -139,7 +139,7 @@ export default function ProformaPage() {
     setSortField(field); setSortDesc(true);
   };
 
-  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
   const tdSt = { padding: '10px 12px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)", verticalAlign: 'middle' };
   const monoSt = { fontFamily: "var(--font-label)", fontSize: 11 };
 
@@ -214,7 +214,7 @@ export default function ProformaPage() {
                     <td style={{ ...tdSt, ...monoSt }}>{formatDate(p.data_creazione)}</td>
                     <td style={{ ...tdSt, ...monoSt, color: scaduta ? T.red : T.muted }}>{formatDate(p.data_scadenza)}</td>
                     <td style={tdSt}>
-                      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', color: stato.color, border: `1px solid ${stato.color}`, padding: '2px 8px', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `1px solid ${stato.color}`, padding: '2px 8px', whiteSpace: 'nowrap', display: 'inline-block' }}>
                         {stato.label}
                       </span>
                     </td>

@@ -84,7 +84,7 @@ function fmtDate(d) {
 // ── FIELD LABEL ───────────────────────────────────────────────────
 function FieldLabel({ children, required, T }) {
   return (
-    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", color:T.muted, marginBottom:6 }}>
+    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:6 }}>
       {children}{required && <span style={{ color:T.red, marginLeft:2 }}>*</span>}
     </div>
   );
@@ -163,16 +163,16 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:16, borderTop:`0.5px solid ${T.border}`, gap:8 }}>
           {pratica.data_fine_lavori ? (
-            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.02em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
               Rimuovi
             </button>
           ) : <div/>}
           <div style={{ display:"flex", gap:8 }}>
-            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
               Annulla
             </button>
             <button onClick={handleSave} disabled={saving || !data}
-              style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!data ? "not-allowed" : "pointer", opacity: saving||!data ? 0.6 : 1 }}>
+              style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!data ? "not-allowed" : "pointer", opacity: saving||!data ? 0.6 : 1 }}>
               {saving ? "Salvataggio..." : "Salva"}
             </button>
           </div>
@@ -262,7 +262,7 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
 
         {/* Form nuova variante */}
         <div style={{ padding:16, background:T.bg, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, marginBottom:16 }}>
-          <div style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", color:T.muted, marginBottom:10 }}>Nuova variante</div>
+          <div style={{ ...mono, fontSize:10, letterSpacing:"0.18em", textTransform:"uppercase", color:T.muted, marginBottom:10 }}>Nuova variante</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             <div style={{ gridColumn:"span 2" }}>
               <FieldLabel T={T} required>Tipo variante</FieldLabel>
@@ -285,17 +285,17 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
             </div>
           </div>
           <div style={{ display:"flex", justifyContent:"flex-end", marginTop:10 }}>
-            <button onClick={addVariante} disabled={!newV.tipo} style={{ ...mono, fontSize:10, letterSpacing:"0.03em", textTransform:"uppercase", padding:"6px 16px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:newV.tipo?"pointer":"not-allowed", opacity:newV.tipo?1:0.5 }}>
+            <button onClick={addVariante} disabled={!newV.tipo} style={{ ...mono, fontSize:10, letterSpacing:"0.08em", textTransform:"uppercase", padding:"6px 16px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:newV.tipo?"pointer":"not-allowed", opacity:newV.tipo?1:0.5 }}>
               + Aggiungi
             </button>
           </div>
         </div>
 
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
             Annulla
           </button>
-          <button onClick={saveAll} disabled={saving} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:saving?"not-allowed":"pointer", opacity:saving?0.6:1 }}>
+          <button onClick={saveAll} disabled={saving} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:saving?"not-allowed":"pointer", opacity:saving?0.6:1 }}>
             {saving ? "Salvataggio..." : "Salva varianti"}
           </button>
         </div>
@@ -426,16 +426,16 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
 
         <div style={{ display:"flex", justifyContent:"space-between", gap:8, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
           {existing ? (
-            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.02em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
               Rimuovi
             </button>
           ) : (
-            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
               Salta
             </button>
           )}
           <button onClick={handleSave} disabled={saving || !dataCalcolata}
-            style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 24px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
+            style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 24px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
             {saving ? "Salvataggio..." : "Imposta scadenza"}
           </button>
         </div>
@@ -658,7 +658,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
         background: totale > 0 ? (T.navyLight||"rgba(19,49,92,0.07)") : "transparent",
         height:34, padding:"0 12px", cursor:"pointer",
       }}>
-        <span style={{ ...mono, fontSize:10, letterSpacing:"0.05em", textTransform:"uppercase", color:T.navy, fontWeight:600 }}>
+        <span style={{ ...mono, fontSize:10, letterSpacing:"0.15em", textTransform:"uppercase", color:T.navy, fontWeight:600 }}>
           Pratiche
         </span>
         {totale > 0
@@ -694,7 +694,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                   if (!items.length) return null;
                   return (
                     <div key={cat.id}>
-                      <div style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", color:T.muted, marginBottom:6, marginTop:4 }}>
+                      <div style={{ ...mono, fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:6, marginTop:4 }}>
                         {cat.icon} {cat.label}
                       </div>
                       {items.map(p => {
@@ -770,10 +770,10 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
 
             {/* Footer lista */}
             <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <button onClick={() => setListOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+              <button onClick={() => setListOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Chiudi
               </button>
-              <button onClick={openNew} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:"pointer" }}>
+              <button onClick={openNew} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:"pointer" }}>
                 + Aggiungi pratica
               </button>
             </div>
@@ -804,7 +804,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                       setForm(p => ({ ...p, categoria:cat.id, tipo_pratica:defaultTipo }));
                     }}
                     style={{
-                      ...mono, fontSize:10, letterSpacing:"0.02em", padding:"6px 12px",
+                      ...mono, fontSize:10, letterSpacing:"0.06em", padding:"6px 12px",
                       border:`0.5px solid ${form.categoria===cat.id ? T.navy : T.border}`,
                       borderRadius:T.radiusSm,
                       background: form.categoria===cat.id ? (T.navyLight||"rgba(19,49,92,0.07)") : T.surface,
@@ -980,7 +980,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                 <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                   {STATI_PRATICA.map(s => (
                     <button key={s.id} onClick={() => setField("stato", s.id)}
-                      style={{ ...mono, fontSize:10, letterSpacing:"0.02em", padding:"6px 12px",
+                      style={{ ...mono, fontSize:10, letterSpacing:"0.06em", padding:"6px 12px",
                         border:`0.5px solid ${form.stato===s.id ? s.color : T.border}`,
                         borderRadius:T.radiusSm,
                         background: form.stato===s.id ? s.color+"22" : "transparent",
@@ -995,11 +995,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
 
             {/* Footer form */}
             <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:24, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={() => setFormOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+              <button onClick={() => setFormOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Annulla
               </button>
               <button onClick={handleSave} disabled={saving || !form.tipo_pratica}
-                style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!form.tipo_pratica ? "not-allowed" : "pointer", opacity: saving||!form.tipo_pratica ? 0.6 : 1 }}>
+                style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!form.tipo_pratica ? "not-allowed" : "pointer", opacity: saving||!form.tipo_pratica ? 0.6 : 1 }}>
                 {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Salva pratica"}
               </button>
             </div>
@@ -1060,11 +1060,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             )}
 
             <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={() => setDirittiPrompt(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+              <button onClick={() => setDirittiPrompt(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Non ora
               </button>
               <button onClick={goToDiritti} disabled={commesse.length > 1 && !chosenCommessaId}
-                style={{ ...mono, fontSize:11, letterSpacing:"0.03em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:(commesse.length > 1 && !chosenCommessaId)?"not-allowed":"pointer", opacity:(commesse.length > 1 && !chosenCommessaId)?0.6:1 }}>
+                style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:(commesse.length > 1 && !chosenCommessaId)?"not-allowed":"pointer", opacity:(commesse.length > 1 && !chosenCommessaId)?0.6:1 }}>
                 Sì, inserisci
               </button>
             </div>

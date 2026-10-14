@@ -15,7 +15,7 @@ function currency(v) {
 function BtnPrimary({ children, onClick, disabled, type="button" }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1 }}>
       {children}
     </button>
   );
@@ -23,14 +23,14 @@ function BtnPrimary({ children, onClick, disabled, type="button" }) {
 function BtnGhost({ children, onClick, disabled, danger }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1 }}>
       {children}
     </button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
+  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 
 export default function ClientiPage() {
@@ -219,7 +219,7 @@ export default function ClientiPage() {
 
                       {/* Progetti */}
                       <div>
-                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
                           Progetti ({projs.length})
                         </div>
                         {projs.length===0 ? (
@@ -233,7 +233,7 @@ export default function ClientiPage() {
                                 onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
                               >
                                 <div style={{fontSize:12,fontWeight:600,color:T.ink}}>{p.name}</div>
-                                <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.02em'}}>{p.status||"—"}</div>
+                                <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2,textTransform:'uppercase',letterSpacing:'0.05em'}}>{p.status||"—"}</div>
                               </button>
                             ))}
                           </div>
@@ -242,7 +242,7 @@ export default function ClientiPage() {
 
                       {/* Commesse */}
                       <div>
-                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
+                        <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>
                           Commesse ({comms.length})
                         </div>
                         {comms.length===0 ? (

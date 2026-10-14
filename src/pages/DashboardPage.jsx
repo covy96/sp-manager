@@ -7,6 +7,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
+import SlidingTabs from "../components/SlidingTabs";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function currency(value) {
@@ -118,7 +119,7 @@ function EmptyState({ label }) {
     <div style={{
       padding: '40px 0', textAlign: 'center',
       fontFamily: "var(--font-label)",
-      fontSize: 11, color: T.muted, letterSpacing: '0.02em',
+      fontSize: 11, color: T.muted, letterSpacing: '0.05em',
     }}>{label}</div>
   );
 }
@@ -395,7 +396,7 @@ export default function DashboardPage() {
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         height: 240, fontFamily: "var(--font-label)",
-        fontSize: 11, color: T.muted, letterSpacing: '0.04em',
+        fontSize: 11, color: T.muted, letterSpacing: '0.1em',
       }}>
         Caricamento dashboard...
       </div>
@@ -416,7 +417,7 @@ export default function DashboardPage() {
           </h1>
           <p style={{
             fontFamily: "var(--font-label)",
-            fontSize: 10, color: T.muted, letterSpacing: '0.04em', textTransform: 'uppercase',
+            fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
             {formatDateIt(new Date())}
           </p>
@@ -424,18 +425,12 @@ export default function DashboardPage() {
 
         {/* Toggle scope — solo per owner con team */}
         {permissions.isOwner && (
-          <div style={{ display: 'flex', gap: 2, padding: 2, borderRadius: T.radiusSm, background: T.borderMd, alignSelf: 'flex-start', marginTop: 4 }}>
-            {[["mine", "Solo miei"], ["all", "Tutto lo studio"]].map(([s, label]) => (
-              <button key={s} onClick={() => setScope(s)} style={{
-                padding: '6px 16px', border: 'none', cursor: 'pointer',
-                background: scope === s ? T.navy : 'transparent',
-                color: scope === s ? '#fff' : T.ink60,
-                fontFamily: "var(--font-label)", fontSize: 10,
-                letterSpacing: '0.03em', textTransform: 'uppercase',
-                transition: 'background 0.15s',
-              }}>{label}</button>
-            ))}
-          </div>
+          <SlidingTabs
+            tabs={[{ key: "mine", label: "Solo miei" }, { key: "all", label: "Tutto lo studio" }]}
+            active={scope}
+            onChange={setScope}
+            style={{ alignSelf: 'flex-start', marginTop: 4 }}
+          />
         )}
       </div>
 
@@ -475,7 +470,7 @@ export default function DashboardPage() {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
                 fontFamily: "var(--font-label)",
-                fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.red,
+                fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.red,
               }}>
                 Task scadute
                 <span style={{

@@ -209,7 +209,7 @@ export default function MobileLayout({ session, children }) {
 
                 {/* Account */}
                 <div style={{ padding:'6px 0' }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Account</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Account</div>
                   {[
                     ...(['Owner','Partner'].includes(teamMember?.role_internal) ? [{ label:'Piano', icon:'piano', path:'/impostazioni/piano' }] : []),
                     { label:'Profilo', icon:'profilo', path:'/impostazioni/profilo' },
@@ -224,7 +224,7 @@ export default function MobileLayout({ session, children }) {
 
                 {/* Studio */}
                 <div style={{ padding:'6px 0', borderTop:`0.5px solid ${T.border}` }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Studio</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 16px 6px' }}>Studio</div>
                   {[
                     { label:'Profilo Studio', icon:'settings', path:'/impostazioni/profilo-studio' },
                     { label:'Aspetto',        icon:'aspetto',  path:'/impostazioni/aspetto'        },
@@ -292,7 +292,7 @@ export default function MobileLayout({ session, children }) {
             ) : results.map(item=>(
               <button key={item.id} onClick={()=>handleResultClick(item)}
                 style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'16px 0', textAlign:'left', background:'none', border:'none', borderBottom:`0.5px solid rgba(255,255,255,0.08)`, cursor:'pointer' }}>
-                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.04em', width:64, flexShrink:0, background:'rgba(255,255,255,0.06)', borderRadius:4, padding:'4px 6px', textAlign:'center' }}>{item.type}</span>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'0.1em', width:64, flexShrink:0, background:'rgba(255,255,255,0.06)', borderRadius:4, padding:'4px 6px', textAlign:'center' }}>{item.type}</span>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:600, color:'#EEF1F6', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.label}</div>
                   <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
@@ -312,7 +312,7 @@ export default function MobileLayout({ session, children }) {
             {/* Handle */}
             <div style={{ position:'sticky', top:0, background:isDark?'#1c1c1e':'#ffffff', paddingTop:12, paddingBottom:4, zIndex:1, borderRadius:'14px 14px 0 0' }}>
               <div style={{ width:40, height:4, borderRadius:2, background:T.border, margin:'0 auto 8px' }}/>
-              <div style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', color:T.muted, padding:'0 20px 10px', fontFamily:"var(--font-label)" }}>Menu</div>
+              <div style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', color:T.muted, padding:'0 20px 10px', fontFamily:"var(--font-label)" }}>Menu</div>
             </div>
 
             {MENU_SECTIONS.map(section => {
@@ -320,7 +320,7 @@ export default function MobileLayout({ session, children }) {
               if (sectionItems.length === 0) return null;
               return (
                 <div key={section.title} style={{ marginBottom:4 }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 20px 4px' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 20px 4px' }}>
                     {section.title}
                   </div>
                   {sectionItems.map(item => {

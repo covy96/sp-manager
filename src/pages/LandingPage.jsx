@@ -10,7 +10,7 @@ const C = {
   muted: '#8a847b',
 };
 const mono    = { fontFamily: "var(--font-label)" };
-const eyebrow = { ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase' };
+const eyebrow = { ...mono, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase' };
 
 /* ─── Replica esatta del design system dell'app ─────────────────
    bg:      #e8eaf0
@@ -145,7 +145,7 @@ function Card({ children, style = {} }) {
 function Stat({ label, value, color = APP.navy, bg }) {
   return (
     <div style={{ background: bg || APP.surface, border: `1px solid ${APP.border}`, borderRadius: APP.radiusSm, padding: '8px 12px', boxShadow: APP.shadow }}>
-      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color, letterSpacing: '-0.02em' }}>{value}</div>
     </div>
   );
@@ -167,7 +167,7 @@ function MockScrivania() {
         <Stat label="Ore sett." value="32h" color={APP.green}/>
       </div>
       <Card style={{ padding: '10px 12px' }}>
-        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Prossime scadenze</div>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Prossime scadenze</div>
         {tasks.map((r, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < tasks.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div>
@@ -225,7 +225,7 @@ function MockCommessa() {
         <Stat label="Residuo"     value="€31.000" color="#b45309"/>
       </div>
       <Card style={{ padding: '10px 12px' }}>
-        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Rate — Torre Uffici Centro</div>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Rate — Torre Uffici Centro</div>
         {[
           ['Acconto', '30%', '€15.600', '✓ Pagato', APP.green],
           ['SAL 1',   '40%', '€20.800', 'In attesa', APP.muted],
@@ -254,7 +254,7 @@ function MockTimesheet() {
   const days = ['Lun','Mar','Mer','Gio','Ven'];
   return (
     <Card style={{ padding: '10px 12px' }}>
-      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Settimana 22 — Blocco A Milano</div>
+      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Settimana 22 — Blocco A Milano</div>
       <div style={{ display: 'flex', marginBottom: 6 }}>
         <div style={{ width: 32, flexShrink: 0 }}/>
         {days.map(d => <div key={d} style={{ flex: 1, textAlign: 'center', ...mono, fontSize: 7.5, color: APP.muted }}>{d}</div>)}
@@ -339,7 +339,7 @@ function MockReport() {
         <Stat label="Ore anno"     value="487h"  color={APP.ink}/>
       </div>
       <Card style={{ padding: '10px 12px' }}>
-        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Distribuzione — Maggio 2026</div>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Distribuzione — Maggio 2026</div>
         {rows.map(r => (
           <div key={r.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <div style={{ ...mono, fontSize: 8.5, color: APP.muted, width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
@@ -369,7 +369,7 @@ function MockAnalisiHub() {
         <Stat label="Conversione"   value="68%"     color={APP.green}/>
       </div>
       <Card style={{ padding: '10px 12px' }}>
-        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Offerte recenti</div>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Offerte recenti</div>
         {offerte.map((o, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < offerte.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{o.n}</div>
@@ -399,7 +399,7 @@ function MockPreventivo() {
         <Stat label="Totale Capex" value="€41.800" color="#b45309"/>
       </div>
       <Card style={{ padding: '10px 12px' }}>
-        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>Voci preventivo — Residenza Privata</div>
+        <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Voci preventivo — Residenza Privata</div>
         {voci.map((v, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < voci.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div>
@@ -536,8 +536,8 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         <AsmSeal size={isMobile ? 'xs' : 'sm'} showBorder={false} showBottom={false} showTop={!isMobile} theme={activeSection === 0 ? 'dark' : 'light'}/>
         {isMobile ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={onLogin} style={{ background: 'transparent', border: `1px solid ${activeSection===0?'rgba(238,241,246,0.45)':'rgba(14,14,13,0.25)'}`, color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
-            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Registrati</button>
+            <button onClick={onLogin} style={{ background: 'transparent', border: `1px solid ${activeSection===0?'rgba(238,241,246,0.45)':'rgba(14,14,13,0.25)'}`, color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
+            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Registrati</button>
             <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, padding: 4 }}>
               {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 1.5, background: activeSection===0?'#EEF1F6':C.ink, borderRadius: 1 }}/>)}
             </button>
@@ -546,13 +546,13 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
           <>
             <div style={{ display: 'flex', gap: 28 }}>
               {[['Funzionalità',1],['Pricing',10],['FAQ',11]].map(([label,idx]) => (
-                <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: activeSection===0?'rgba(238,241,246,0.75)':C.muted }}>{label}</button>
+                <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: activeSection===0?'rgba(238,241,246,0.75)':C.muted }}>{label}</button>
               ))}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={onLogin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.4)':'rgba(14,14,13,0.25)'}`, background: 'transparent', color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
-              <button onClick={onJoin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.3)':'rgba(14,14,13,0.2)'}`, background: 'transparent', color: activeSection===0?'rgba(238,241,246,0.8)':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer' }}>Entra</button>
-              <button onClick={onRegister} style={{ border: 'none', background: C.brass, color: C.ink, padding: '8px 24px', ...mono, fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Crea Studio →</button>
+              <button onClick={onLogin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.4)':'rgba(14,14,13,0.25)'}`, background: 'transparent', color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
+              <button onClick={onJoin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.3)':'rgba(14,14,13,0.2)'}`, background: 'transparent', color: activeSection===0?'rgba(238,241,246,0.8)':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Entra</button>
+              <button onClick={onRegister} style={{ border: 'none', background: C.brass, color: C.ink, padding: '8px 24px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Crea Studio →</button>
             </div>
           </>
         )}
@@ -562,11 +562,11 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
       {isMobile && menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(238,241,246,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
           {[['Funzionalità',1],['Pricing',10],['FAQ',11]].map(([label,idx]) => (
-            <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 14, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: C.ink }}>{label}</button>
+            <button key={label} onClick={() => scrollTo(idx)} style={{ ...mono, fontSize: 14, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer', color: C.ink }}>{label}</button>
           ))}
           <div style={{ width: 40, height: '0.5px', background: 'rgba(14,14,13,0.15)' }}/>
-          <button onClick={() => { setMenuOpen(false); onLogin(); }} style={{ ...mono, fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', background: 'none', border: `0.5px solid ${C.ink}`, color: C.ink, padding: '10px 28px', cursor: 'pointer' }}>Accedi</button>
-          <button onClick={() => { setMenuOpen(false); onJoin(); }} style={{ ...mono, fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase', background: 'none', border: `0.5px solid ${C.ink}`, color: C.ink, padding: '10px 28px', cursor: 'pointer' }}>Entra in uno studio</button>
+          <button onClick={() => { setMenuOpen(false); onLogin(); }} style={{ ...mono, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: `0.5px solid ${C.ink}`, color: C.ink, padding: '10px 28px', cursor: 'pointer' }}>Accedi</button>
+          <button onClick={() => { setMenuOpen(false); onJoin(); }} style={{ ...mono, fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: `0.5px solid ${C.ink}`, color: C.ink, padding: '10px 28px', cursor: 'pointer' }}>Entra in uno studio</button>
           <button onClick={() => setMenuOpen(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: C.muted }}>×</button>
         </div>
       )}
@@ -597,18 +597,18 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               Progetti, Gantt, commesse, timesheet e analisi.<br/>Fatto per architetti — non per contabili.<br/><span style={{ color: 'rgba(217,201,138,0.55)' }}>1 mese gratuito su tutti i piani a pagamento.</span>
             </p>
             <div style={{ display: 'flex', flexDirection: isMobile?'column':'row', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
-              {isMobile && <button onClick={onLogin} style={{ background: '#EEF1F6', border: 'none', color: C.ink, padding: '12px 28px', ...mono, fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: '100%' }}>Accedi all'app →</button>}
-              <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 40px', ...mono, fontSize: isMobile?11:12, letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
+              {isMobile && <button onClick={onLogin} style={{ background: '#EEF1F6', border: 'none', color: C.ink, padding: '12px 28px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: '100%' }}>Accedi all'app →</button>}
+              <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 40px', ...mono, fontSize: isMobile?11:12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
                 {isMobile ? 'Crea un nuovo studio →' : 'Crea il tuo studio →'}
               </button>
-              {!isMobile && <button onClick={() => scrollTo(1)} style={{ background: 'transparent', border: '0.5px solid rgba(238,241,246,0.25)', color: 'rgba(238,241,246,0.65)', padding: '16px 40px', ...mono, fontSize: 12, letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer' }}>Scopri di più ↓</button>}
+              {!isMobile && <button onClick={() => scrollTo(1)} style={{ background: 'transparent', border: '0.5px solid rgba(238,241,246,0.25)', color: 'rgba(238,241,246,0.65)', padding: '16px 40px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>Scopri di più ↓</button>}
             </div>
             <div style={{ marginTop: 16 }}>
-              <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
+              <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
             </div>
           </div>
           {!isMobile && (
-            <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(238,241,246,0.22)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(238,241,246,0.22)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <span>Scorri</span><div style={{ width: 1, height: 30, background: 'rgba(238,241,246,0.15)' }}/>
             </div>
           )}
@@ -697,9 +697,9 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile?'1fr':'repeat(3,1fr)', gap: isMobile?12:0, flex: 1, borderTop: isMobile?'none':'0.5px solid rgba(14,14,13,0.1)', padding: isMobile?'0 20px 40px':0 }}>
             {PLANS.map((plan, i) => (
               <div key={plan.id} style={{ padding: isMobile?'24px 20px':'40px 32px', display: 'flex', flexDirection: 'column', borderRight: (!isMobile&&i<2)?'0.5px solid rgba(14,14,13,0.1)':'none', border: isMobile?`0.5px solid ${plan.highlight?C.navy:'rgba(14,14,13,0.1)'}`:undefined, background: plan.highlight ? C.navy : '#fff', position: 'relative' }}>
-                {plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', background: C.brass, color: C.ink, padding: '4px 8px' }}>Consigliato</div>}
-                {plan.trial && !plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', background: 'rgba(26,107,60,0.12)', color: '#1a6b3c', padding: '4px 8px', border: '0.5px solid rgba(26,107,60,0.25)' }}>30 giorni gratis</div>}
-                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: plan.highlight?C.brass:C.muted, marginBottom: 4 }}>{plan.name}</div>
+                {plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', background: C.brass, color: C.ink, padding: '4px 8px' }}>Consigliato</div>}
+                {plan.trial && !plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(26,107,60,0.12)', color: '#1a6b3c', padding: '4px 8px', border: '0.5px solid rgba(26,107,60,0.25)' }}>30 giorni gratis</div>}
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: plan.highlight?C.brass:C.muted, marginBottom: 4 }}>{plan.name}</div>
                 <div style={{ ...mono, fontSize: 10, color: plan.highlight?'rgba(238,241,246,0.45)':C.muted, marginBottom: 16 }}>{plan.desc}</div>
                 <div style={{ marginBottom: plan.trial ? 6 : 20 }}>
                   <span style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', color: plan.highlight?'#EEF1F6':C.ink }}>{plan.price}</span>
@@ -718,7 +718,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
                     </div>
                   ))}
                 </div>
-                <button onClick={onRegister} style={{ border: plan.highlight?'none':'0.5px solid rgba(14,14,13,0.25)', background: plan.highlight?C.brass:'transparent', color: C.ink, padding: '10px 0', width: '100%', ...mono, fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: plan.highlight?600:400 }}>{plan.cta} →</button>
+                <button onClick={onRegister} style={{ border: plan.highlight?'none':'0.5px solid rgba(14,14,13,0.25)', background: plan.highlight?C.brass:'transparent', color: C.ink, padding: '10px 0', width: '100%', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: plan.highlight?600:400 }}>{plan.cta} →</button>
               </div>
             ))}
           </div>
@@ -750,16 +750,16 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               Il tuo studio merita<br/><span style={{ color: C.brass }}>uno strumento su misura.</span>
             </h2>
             <p style={{ ...mono, fontSize: 12, lineHeight: 1.85, color: 'rgba(238,241,246,0.4)', maxWidth: 420, margin: '0 auto 40px' }}>1 mese di prova gratuita su Studio e Pro. Inserisci i dati su Stripe — nessun addebito per 30 giorni. Disdici quando vuoi.</p>
-            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 48px', ...mono, fontSize: isMobile?11:13, letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
+            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 48px', ...mono, fontSize: isMobile?11:13, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
               Inizia il mese gratuito →
             </button>
             <div style={{ marginTop: 16 }}>
-              <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
+              <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
             </div>
           </div>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile?'16px 20px':'20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '0.5px solid rgba(238,241,246,0.06)', flexWrap: 'wrap', gap: 8 }}>
             <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark"/>
-            <span style={{ ...mono, fontSize: 10, letterSpacing: '0.05em', color: 'rgba(238,241,246,0.2)', textTransform: 'uppercase' }}>© 2026 ASM</span>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', color: 'rgba(238,241,246,0.2)', textTransform: 'uppercase' }}>© 2026 ASM</span>
           </div>
         </section>
 

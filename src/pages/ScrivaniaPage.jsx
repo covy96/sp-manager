@@ -203,7 +203,7 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
               background:'none', border:`0.5px solid ${isPrivate ? T.muted : T.navy}`, borderRadius: T.radiusSm,
               padding:'1px 6px', cursor:'pointer', marginLeft:4,
               fontFamily:"var(--font-label)", fontSize:10,
-              color: isPrivate ? T.muted : T.navy, letterSpacing:'0.02em',
+              color: isPrivate ? T.muted : T.navy, letterSpacing:'0.05em',
             }}>
               {isPrivate ? '🔒' : '👥'}
             </button>
@@ -241,7 +241,7 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
         <div style={{
           padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`,
           fontFamily:"var(--font-label)", fontSize:10,
-          letterSpacing:'0.06em', textTransform:'uppercase',
+          letterSpacing:'0.18em', textTransform:'uppercase',
           color: isDark ? T.navy : '#1a3a5c',
           background: isDark ? 'transparent' : 'rgba(0,0,0,0.04)',
         }}>
@@ -255,7 +255,7 @@ function NoteCard({ note, currentMemberId, teamMembers, studioId, onDelete, onUp
       {/* Pannello condivisione */}
       {showShare && isOwn && (
         <div style={{ padding:'8px 12px', borderBottom:`0.5px solid ${T.border}`, background: isDark ? T.surface2 : 'rgba(255,255,255,0.4)' }}>
-          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6, letterSpacing:'0.04em', textTransform:'uppercase' }}>Condividi con:</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6, letterSpacing:'0.1em', textTransform:'uppercase' }}>Condividi con:</div>
           {teamMembers.filter(m => m.id !== currentMemberId).map(m => (
             <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'2px 0' }}>
               <input type="checkbox" checked={sharedWith.includes(m.id)} onChange={() => handleSharedWith(m.id)} style={{ accentColor:T.navy, width:12, height:12 }}/>
@@ -332,7 +332,7 @@ function NoteModal({ note, currentMemberId, teamMembers, studioId, onDelete, onU
           onDelete={(id) => { onDelete(id); onClose(); }} onUpdate={onUpdate} onRefresh={onRefresh}
           single={true}
         />
-        <button onClick={onClose} style={{ marginTop:10, alignSelf:'flex-end', background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'6px 16px', cursor:'pointer' }}>
+        <button onClick={onClose} style={{ marginTop:10, alignSelf:'flex-end', background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 16px', cursor:'pointer' }}>
           Chiudi
         </button>
       </div>
@@ -518,7 +518,7 @@ export default function ScrivaniaPage() {
 
   const tabSt = (active) => ({
     padding:'6px 16px', border:'none', background:'transparent', cursor:'pointer',
-    fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase',
+    fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
     color: active ? T.navy : T.muted,
     borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`,
     marginBottom:-0.5,
@@ -543,7 +543,7 @@ export default function ScrivaniaPage() {
         </div>
         <button onClick={handleCreateNote} disabled={creatingNote} style={{
           background:T.navy, color:T.bg, border:'none',
-          fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase',
+          fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase',
           padding: isMobile ? '8px 16px' : '8px 20px', cursor: creatingNote ? 'not-allowed' : 'pointer', opacity: creatingNote ? 0.6 : 1,
           flexShrink: 0,
         }}>
@@ -556,7 +556,7 @@ export default function ScrivaniaPage() {
 
         {/* ── COLONNA TASK ── */}
         <div style={{ background: T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px 12px' : '16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, minWidth:0 }}>
-          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:12 }}>
             Le mie task
           </div>
           <div style={{ marginBottom:16 }}>
@@ -591,7 +591,7 @@ export default function ScrivaniaPage() {
                     padding:'4px 0', marginBottom: isCollapsed ? 0 : 6,
                   }}>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.navy, fontWeight:600 }}>
                         {projectsById[pid] || "Senza progetto"}
                       </span>
                       <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>

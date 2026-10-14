@@ -25,7 +25,7 @@ function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
     <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'16px 20px', minWidth:0, overflow:'hidden'}}>
-      <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
+      <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.25em',textTransform:'uppercase',color:T.muted,marginBottom:8}}>{label}</div>
       <div style={{fontSize:20,fontWeight:600,letterSpacing:'-0.03em',color:color||T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{value}</div>
       {sub&&<div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:4}}>{sub}</div>}
     </div>
@@ -241,10 +241,10 @@ export default function FatturePage() {
     setForm(p=>({...p,data_scadenza:d.toISOString().slice(0,10)}));
   };
 
-  const thSt = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,padding:'8px 16px',borderBottom:`0.5px solid ${T.border}`,textAlign:'left'};
+  const thSt = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,padding:'8px 16px',borderBottom:`0.5px solid ${T.border}`,textAlign:'left'};
   const tdSt = {padding:'10px 16px',borderBottom:`0.5px solid ${T.border}`,fontSize:12,color:T.ink};
   const inputSt = {width:'100%',padding:'8px 12px',boxSizing:'border-box',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:T.surface,color:T.ink,fontSize:13,fontFamily:"var(--font-ui)",outline:'none'};
-  const lbSt = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:6,display:'block'};
+  const lbSt = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6,display:'block'};
 
   if (!permissions.canViewFinancials) return (
     <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
@@ -275,7 +275,7 @@ export default function FatturePage() {
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
           {tipoFatturazione === 'fattura' && !isFatturaSRL && (
-            <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'10px 20px',cursor:'pointer'}}>
+            <button onClick={openNew} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'10px 20px',cursor:'pointer'}}>
               + Nuova fattura
             </button>
           )}
@@ -298,7 +298,7 @@ export default function FatturePage() {
         /* ── MODALITÀ SRL: mostra tutte le fatture (tabella proforma) ── */
         <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`}}>
-            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted}}>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
               {visibiliSRL.length} fatture
             </div>
             <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
@@ -349,11 +349,11 @@ export default function FatturePage() {
                       <td style={tdSt}>
                         {p.pagato ? (
                           <div>
-                            <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.green,letterSpacing:'0.02em'}}>✓ PAGATA</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.green,letterSpacing:'0.05em'}}>✓ PAGATA</span>
                             <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{fmtDate(p.data_pagamento)}</div>
                           </div>
                         ) : (
-                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:overdue?T.red:T.muted,letterSpacing:'0.02em'}}>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:overdue?T.red:T.muted,letterSpacing:'0.05em'}}>
                             {overdue?'⚠ SCADUTA':'IN ATTESA'}
                           </span>
                         )}
@@ -367,7 +367,7 @@ export default function FatturePage() {
         </div>
       ) : tipoFatturazione === 'proforma' ? (
         <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
-          <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted}}>
+          <div style={{padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
             {proformePagate.length} proforma pagate
           </div>
           <div style={{overflowX:'auto'}}>
@@ -418,7 +418,7 @@ export default function FatturePage() {
       ) : (
         <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',borderBottom:`0.5px solid ${T.border}`}}>
-            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted}}>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>
               {visibili.length} fatture
             </div>
             <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
@@ -473,11 +473,11 @@ export default function FatturePage() {
                       <td style={tdSt}>
                         {f.pagato ? (
                           <div>
-                            <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.green,letterSpacing:'0.02em'}}>✓ PAGATA</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.green,letterSpacing:'0.05em'}}>✓ PAGATA</span>
                             <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{fmtDate(f.data_pagamento)}</div>
                           </div>
                         ) : (
-                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:overdue?T.red:T.muted,letterSpacing:'0.02em'}}>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:overdue?T.red:T.muted,letterSpacing:'0.05em'}}>
                             {overdue?'⚠ SCADUTA':'IN ATTESA'}
                           </span>
                         )}
@@ -485,7 +485,7 @@ export default function FatturePage() {
                       <td style={{...tdSt,whiteSpace:'nowrap'}} onClick={e=>e.stopPropagation()}>
                         <div style={{display:'flex',gap:6}}>
                           {!f.pagato && (
-                            <button onClick={()=>handleSRLPagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.02em',padding:'4px 10px',cursor:'pointer'}}>
+                            <button onClick={()=>handleSRLPagata(f)} style={{background:T.green,border:'none',color:T.surface,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.05em',padding:'4px 10px',cursor:'pointer'}}>
                               Segna pagata
                             </button>
                           )}
@@ -558,8 +558,8 @@ export default function FatturePage() {
               {formError && <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.red}}>{formError}</div>}
 
               <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:`0.5px solid ${T.border}`}}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer'}}>Annulla</button>
-                <button type="submit" disabled={saving} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer'}}>Annulla</button>
+                <button type="submit" disabled={saving} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
                   {saving?'Salvataggio...':editFattura?'Aggiorna':'Crea fattura'}
                 </button>
               </div>

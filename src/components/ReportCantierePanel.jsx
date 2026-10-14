@@ -8,6 +8,7 @@ import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { handleListKeyDown } from "../lib/listKeyDown";
 import { useStudio } from "../hooks/useStudio";
+import SlidingTabs from "./SlidingTabs";
 
 // Registra i font Groteska globalmente (una volta sola)
 registerGroteskaFonts();
@@ -16,7 +17,7 @@ registerGroteskaFonts();
 const FL = ({ children, required }) => {
   const { T } = useTheme();
   return (
-    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>
+    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>
       {children}{required && <span style={{ color:'#ef4444', marginLeft:2 }}>*</span>}
     </div>
   );
@@ -34,7 +35,7 @@ const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
     <button onClick={onClick} disabled={disabled} style={{
       background:'transparent', border:`0.5px solid ${danger ? '#ef4444' : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? '#ef4444' : T.ink,
-      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em',
+      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em',
       textTransform:'uppercase', padding:'8px 20px', cursor:disabled?'not-allowed':'pointer',
       opacity:disabled?0.5:1, ...style,
     }}>{children}</button>
@@ -42,7 +43,7 @@ const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
   return (
     <button onClick={onClick} disabled={disabled} style={{
       background:T.navy, color:T.bg, border:'none',
-      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase',
+      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase',
       padding:'8px 20px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style,
     }}>{children}</button>
   );
@@ -828,7 +829,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       background: reports.length > 0 ? T.navyLight : 'transparent',
       padding:'6px 12px', cursor:'pointer',
     }}>
-      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
+      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
       {reports.length > 0
         ? <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>{reports.length}</span>
         : <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>+ Crea</span>}
@@ -925,12 +926,12 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                                   const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",r.id).order("ordine",{ascending:true});
                                   generatePdf({report:r,project,studio,fotos:rf||[]});
                                 }}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', padding:'4px 10px', cursor:'pointer' }}>
+                                  style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
                                 {canManage && (
                                   <button onClick={()=>openEdit(r)}
-                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', padding:'4px 10px', cursor:'pointer' }}>
+                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                     Modifica
                                   </button>
                                 )}
@@ -968,7 +969,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     )}
                     <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display:'none' }}/>
                     <button onClick={()=>fileRef.current?.click()} disabled={uploadingLogo}
-                      style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
+                      style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
                       {uploadingLogo ? "..." : headerForm.report_logo_url ? "Cambia" : "Carica logo"}
                     </button>
                     {headerForm.report_logo_url && (
@@ -979,13 +980,12 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     )}
                   </div>
                   {headerForm.report_logo_url && (
-                    <div style={{ display:'flex', gap:4, marginTop:8 }}>
-                      {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl])=>(
-                        <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_logo_size:val}))}
-                          style={{ width:28, height:28, border:`0.5px solid ${headerForm.report_logo_size===val?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:headerForm.report_logo_size===val?T.navyLight:'transparent', color:headerForm.report_logo_size===val?T.navy:T.muted, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, fontWeight:600 }}>
-                          {lbl}
-                        </button>
-                      ))}
+                    <div style={{ display:'flex', gap:8, marginTop:8, alignItems:"center" }}>
+                      <SlidingTabs
+                        tabs={[{ key:"small", label:"S" }, { key:"medium", label:"M" }, { key:"large", label:"L" }]}
+                        active={headerForm.report_logo_size || "medium"}
+                        onChange={val=>setHeaderForm(h=>({...h,report_logo_size:val}))}
+                      />
                       <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, alignSelf:'center', marginLeft:4 }}>dimensione logo</span>
                     </div>
                   )}
@@ -1015,7 +1015,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     </div>
                     {/* Groteska gruppo */}
                     <div>
-                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.04em' }}>GROTESKA</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.1em' }}>GROTESKA</div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                         {GROTESKA_VARIANTS.map(g=>{
                           const sel = headerForm.report_footer_font === g.key;
@@ -1067,7 +1067,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
               {/* Anteprima intestazione */}
               <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px' }}>
-                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:14, fontWeight:700, color:T.navy, minHeight:20 }}>{headerForm.report_header_name||""}</div>
@@ -1078,13 +1078,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   )}
                 </div>
                 <div style={{ borderTop:`0.5px solid ${T.navy}`, marginTop:10, paddingTop:8 }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.navy, textAlign:'center', textTransform:'uppercase', letterSpacing:'0.02em' }}>Titolo del report PDF</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.navy, textAlign:'center', textTransform:'uppercase', letterSpacing:'0.05em' }}>Titolo del report PDF</div>
                 </div>
               </div>
 
               {/* ── Sezione Footer ── */}
               <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
-                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Piè di pagina (footer)</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Piè di pagina (footer)</div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
                   {[["report_footer_left","Sinistra"],["report_footer_center","Centro"],["report_footer_right","Destra"]].map(([field,label])=>(
                     <div key={field}>
@@ -1100,7 +1100,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                 </div>
                 {/* Anteprima footer */}
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
                   <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 16px' }}>
                     <div style={{ height:1, background:'rgba(150,150,150,0.4)', marginBottom:8 }}/>
                     <div style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:10, color:T.muted,
@@ -1182,7 +1182,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   ["Luogo", previewReport.luogo || "—"],
                 ].map(([k,v])=>(
                   <div key={k} style={{ padding:'10px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
-                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>{k}</div>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>{k}</div>
                     <div style={{ fontSize:13, color:T.ink }}>{v}</div>
                   </div>
                 ))}
@@ -1191,13 +1191,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Presenti */}
               {Array.isArray(previewReport.presenti) && previewReport.presenti.length > 0 && (
                 <div>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Presenti</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Presenti</div>
                   <div style={{ overflowX:'auto' }}>
                     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                       <thead>
                         <tr>
                           {["Figura","Azienda","Referente","Email","Telefono"].map(h=>(
-                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'4px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}` }}>{h}</th>
+                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}` }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1218,7 +1218,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Contenuto */}
               {previewReport.contenuto?.trim() && (
                 <div>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Report</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Report</div>
                   <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, whiteSpace:'pre-wrap', padding:'16px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
                     {previewReport.contenuto}
                   </div>
@@ -1228,7 +1228,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Foto */}
               {previewFotos.length > 0 && (
                 <div>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(100px, 1fr))', gap:8 }}>
                     {previewFotos.map(f=>(
                       <img key={f.id} src={f.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', border:`0.5px solid ${T.border}` }}/>
@@ -1300,7 +1300,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             // salva posizione per dropdown fixed
                             e.currentTarget._rect = r;
                           }}
-                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
+                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
                           + Dal team
                         </button>
                         {teamDropOpen && (() => {
@@ -1319,7 +1319,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         })()}
                       </div>
                     )}
-                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
+                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
                       + Aggiungi riga
                     </button>
                   </div>
@@ -1334,7 +1334,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                       <thead>
                         <tr style={{ background:T.bg }}>
                           {["Figura","Azienda","Referente","Email","Telefono",""].map(h=>(
-                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
+                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1380,7 +1380,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                       <>
                         <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoUpload} style={{ display:'none' }}/>
                         <button onClick={()=>fotoInputRef.current?.click()} disabled={uploadingFoto}
-                          style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
+                          style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
                           {uploadingFoto ? "Caricamento..." : "+ Aggiungi foto"}
                         </button>
                       </>

@@ -8,7 +8,7 @@ const s = {
   backBtn: {
     background: "none", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
     color: "rgba(255,255,255,0.6)", padding: "8px 16px", marginBottom: 32,
-    ...mono, fontSize: 12, letterSpacing: "0.02em",
+    ...mono, fontSize: 12, letterSpacing: "0.05em",
     display: "inline-flex", alignItems: "center", gap: 6,
   },
   h1: { fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 8 },
@@ -23,16 +23,16 @@ const s = {
     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 8, padding: "16px 20px", marginBottom: 10,
   },
-  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" },
+  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6, display: "block" },
   link: { color: "#4f8ef7", textDecoration: "none" },
   em: { color: "rgba(255,255,255,0.9)" },
   badge: {
-    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase",
+    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
     padding: "2px 8px", borderRadius: 3, background: "rgba(34,197,94,0.12)", color: "#4ade80",
     border: "1px solid rgba(34,197,94,0.2)", marginLeft: 8,
   },
   badgeNo: {
-    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase",
+    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
     padding: "2px 8px", borderRadius: 3, background: "rgba(100,100,100,0.12)", color: "rgba(255,255,255,0.35)",
     border: "1px solid rgba(255,255,255,0.1)", marginLeft: 8,
   },
@@ -192,7 +192,7 @@ export default function CookiePolicyPage() {
         </div>
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.04em" }}>
+          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em" }}>
             © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
           </p>
         </div>

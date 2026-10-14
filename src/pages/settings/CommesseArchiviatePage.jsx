@@ -35,7 +35,7 @@ function CommessaArchiviataCard({ commessa, incassato, onClick }) {
       }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>
             {commessa.numero_offerta||"—"}
           </div>
           <div style={{fontSize:14,fontWeight:600,color:T.ink,letterSpacing:'-0.01em'}}>{commessa.nome_commessa||"Commessa senza nome"}</div>
@@ -56,7 +56,7 @@ function CommessaArchiviataCard({ commessa, incassato, onClick }) {
           {label:'Data',    value:commessa.data_commessa?new Date(commessa.data_commessa).toLocaleDateString('it-IT'):'—', color:T.muted},
         ].map(({label,value,color})=>(
           <div key={label}>
-            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
             <div style={{fontFamily:"var(--font-label)",fontSize:11,fontWeight:500,color}}>{value}</div>
           </div>
         ))}
@@ -134,7 +134,7 @@ export default function CommesseArchiviatePage() {
       {commesse.length === 0 ? (
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'48px 0', textAlign:'center' }}>
           <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, marginBottom:16 }}>Nessuna commessa archiviata.</div>
-          <button onClick={()=>navigate("/commesse")} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
+          <button onClick={()=>navigate("/commesse")} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
             Vai alle Commesse
           </button>
         </div>

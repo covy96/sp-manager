@@ -58,7 +58,7 @@ function getMondayISODate() {
 // ── UI ATOMS ─────────────────────────────────────────────────────
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
+  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", required, placeholder }) {
   const { T } = useTheme();
@@ -72,7 +72,7 @@ function Input({ value, onChange, type = "text", required, placeholder }) {
 function BtnPrimary({ children, onClick, disabled, type = "button" }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.6 : 1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
@@ -80,7 +80,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button" }) {
 function BtnGhost({ children, onClick, disabled }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );
@@ -92,7 +92,7 @@ function RoleBadge({ role }) {
   const isPM  = role === "Project Manager";
   const c = isTop ? T.navy : isPM ? '#7c3aed' : T.muted;
   return (
-    <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', padding:'2px 6px', color:c, border:`0.5px solid ${c}`, display:'inline-block' }}>
+    <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'2px 6px', color:c, border:`0.5px solid ${c}`, display:'inline-block' }}>
       {ROLE_LABELS[role] || role}
     </span>
   );
@@ -301,9 +301,9 @@ export default function TeamPage() {
 
   // ── stili comuni ──────────────────────────────────────────────────
   const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
-  const statLbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6 };
+  const statLbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 };
   const statVal = { fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.03em', fontFamily:"var(--font-ui)" };
-  const tabBtn  = (active) => ({ padding:'8px 16px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
+  const tabBtn  = (active) => ({ padding:'8px 16px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
 
   if (studioLoading || !studioId || loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Caricamento team...</div>
@@ -522,7 +522,7 @@ export default function TeamPage() {
                         <div style={{ marginTop:16, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                           {!confirmRemove ? (
                             <button onClick={() => setConfirmRemove(true)}
-                              style={{ background:'transparent', color:'#ff453a', border:'0.5px solid #ff453a', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
+                              style={{ background:'transparent', color:'#ff453a', border:'0.5px solid #ff453a', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                               Elimina utente
                             </button>
                           ) : (
@@ -535,11 +535,11 @@ export default function TeamPage() {
                               </div>
                               <div style={{ display:'flex', gap:6 }}>
                                 <button onClick={handleRemoveUser} disabled={removing}
-                                  style={{ background:'#ff453a', color:'#fff', border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:removing ? 'not-allowed' : 'pointer', opacity:removing ? 0.6 : 1 }}>
+                                  style={{ background:'#ff453a', color:'#fff', border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:removing ? 'not-allowed' : 'pointer', opacity:removing ? 0.6 : 1 }}>
                                   {removing ? "Rimozione..." : "Sì, elimina"}
                                 </button>
                                 <button onClick={() => setConfirmRemove(false)}
-                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
+                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                                   Annulla
                                 </button>
                               </div>
@@ -547,7 +547,7 @@ export default function TeamPage() {
                           )}
                           {!confirmRemove && (
                             <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
-                              style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity:saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
+                              style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity:saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
                               {saving ? "Salvataggio..." : "Salva ruolo"}
                             </button>
                           )}
@@ -572,7 +572,7 @@ export default function TeamPage() {
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                         {PERMISSION_SECTIONS.map(section => (
                           <div key={section.label} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg }}>
-                            <div style={{ padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted }}>
+                            <div style={{ padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>
                               {section.label}
                             </div>
                             {section.perms.map((perm, i) => {
@@ -583,7 +583,7 @@ export default function TeamPage() {
                                 <div key={perm.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', borderTop:i > 0 ? `0.5px solid ${T.border}` : 'none', background:isOverride ? (val ? 'rgba(16,185,129,0.04)' : 'rgba(255,69,58,0.04)') : 'transparent' }}>
                                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                                     <span style={{ fontSize:12, color:T.ink }}>{perm.label}</span>
-                                    {isOverride && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#b45309', letterSpacing:'0.04em', textTransform:'uppercase' }}>modificato</span>}
+                                    {isOverride && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#b45309', letterSpacing:'0.1em', textTransform:'uppercase' }}>modificato</span>}
                                   </div>
                                   <button onClick={() => { if (!canEdit) return; setEditPerms(prev => ({ ...prev, [perm.key]:!effective[perm.key] })); }}
                                     disabled={!canEdit}
@@ -606,12 +606,12 @@ export default function TeamPage() {
                               setSelectedMember(p => ({ ...p, custom_permissions:null }));
                               setEditPerms({});
                               setSaving(false);
-                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
+                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                               Ripristina defaults
                             </button>
                           )}
                           <button onClick={handleSavePerms} disabled={saving}
-                            style={{ marginLeft:'auto', background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1 }}>
+                            style={{ marginLeft:'auto', background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1 }}>
                             {saving ? "Salvataggio..." : "Salva permessi"}
                           </button>
                         </div>
@@ -643,7 +643,7 @@ export default function TeamPage() {
                       </div>
                       <div style={{ display:'flex', justifyContent:'flex-end', paddingTop:4 }}>
                         <button onClick={handleSaveProfilo} disabled={saving}
-                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1, borderRadius:T.radiusSm }}>
+                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1, borderRadius:T.radiusSm }}>
                           {saving ? "Salvataggio..." : "Salva profilo"}
                         </button>
                       </div>
@@ -659,7 +659,7 @@ export default function TeamPage() {
                         ))}
                       </div>
                       <div style={{ marginBottom:16 }}>
-                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Personalizzato</div>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Personalizzato</div>
                         <div style={{ display:'flex', gap:8 }}>
                           <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width:38, height:34, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', padding:2 }}/>
                           <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ flex:1, padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"var(--font-label)", outline:'none' }}/>
@@ -673,7 +673,7 @@ export default function TeamPage() {
                       </div>
                       <div style={{ display:'flex', justifyContent:'flex-end' }}>
                         <button onClick={handleSaveColor} disabled={saving || editColor === selectedMember.color}
-                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity:saving || editColor === selectedMember.color ? 0.5 : 1 }}>
+                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity:saving || editColor === selectedMember.color ? 0.5 : 1 }}>
                           {saving ? "Salvataggio..." : "Salva colore"}
                         </button>
                       </div>
@@ -712,7 +712,7 @@ export default function TeamPage() {
                 <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4, lineHeight:1.5 }}>
                   Dalla home → "Unisciti", con questo codice studio e la stessa email inserita sopra:
                 </div>
-                <div style={{ fontFamily:"var(--font-label)", fontSize:16, fontWeight:700, letterSpacing:'0.06em', color:T.navy, marginTop:6 }}>{studioInviteCode || "…"}</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:16, fontWeight:700, letterSpacing:'0.2em', color:T.navy, marginTop:6 }}>{studioInviteCode || "…"}</div>
                 <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>{window.location.origin}/unisciti</div>
               </div>
               {formError && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red }}>{formError}</div>}

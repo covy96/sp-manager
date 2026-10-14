@@ -96,7 +96,7 @@ export default function ProgettiArchiviatiPage() {
       {projects.length === 0 ? (
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '48px 0', textAlign: 'center' }}>
           <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, marginBottom: 16 }}>Nessun progetto archiviato.</div>
-          <button onClick={() => navigate("/progetti")} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px', cursor: 'pointer' }}>Vai ai Progetti</button>
+          <button onClick={() => navigate("/progetti")} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: 'pointer' }}>Vai ai Progetti</button>
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '32px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
@@ -129,8 +129,8 @@ export default function ProgettiArchiviatiPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ flex: 1, padding: '8px 0', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
-                  <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '8px 16px', background: 'transparent', border: `1px solid ${T.navy}`, fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, letterSpacing: '0.02em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
+                  <button onClick={() => navigate(`/impostazioni/progetti-archiviati/${project.id}`)} style={{ flex: 1, padding: '8px 0', background: T.bg, border: `1px solid ${T.borderMd}`, fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Visualizza</button>
+                  <button onClick={() => handleUnarchive(project.id)} disabled={restoring === project.id} style={{ padding: '8px 16px', background: 'transparent', border: `1px solid ${T.navy}`, fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: restoring === project.id ? 'not-allowed' : 'pointer', opacity: restoring === project.id ? 0.6 : 1 }}>
                     {restoring === project.id ? "..." : "Ripristina"}
                   </button>
                 </div>

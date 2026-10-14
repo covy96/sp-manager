@@ -441,7 +441,7 @@ export default function OffertePage() {
 
   const mono = { fontFamily:"var(--font-label)" };
   const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
-  const labelSt = { ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
+  const labelSt = { ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
 
@@ -467,7 +467,7 @@ export default function OffertePage() {
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          {canManage && <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'10px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+          {canManage && <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
             + Nuova offerta
           </button>}
         </div>
@@ -496,7 +496,7 @@ export default function OffertePage() {
                 cursor: k.filtro ? 'pointer' : 'default',
                 transition:'all 0.18s',
               }}>
-              <div style={{ ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
+              <div style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
               <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color: isActive ? T.navy : k.color }}>{k.value}</div>
               {k.sub && <div style={{ ...mono, fontSize:10, color: isActive ? T.navy : T.muted, marginTop:4 }}>{k.sub}</div>}
             </div>
@@ -510,7 +510,7 @@ export default function OffertePage() {
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
-            {!searchQuery && canManage && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
+            {!searchQuery && canManage && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
@@ -524,7 +524,7 @@ export default function OffertePage() {
                   <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:2 }}>{o.nome_offerta}</div>
                   <div style={{ ...mono, fontSize:10, color:T.muted }}>{o.cliente}</div>
                 </div>
-                <span style={{ ...mono, fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'4px 8px', flexShrink:0, borderRadius:2 }}>
+                <span style={{ ...mono, fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'4px 8px', flexShrink:0, borderRadius:2 }}>
                   {st.label}
                 </span>
               </div>
@@ -546,24 +546,24 @@ export default function OffertePage() {
 
               {/* Azioni */}
               <div onClick={e => e.stopPropagation()} style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
+                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
                   Doc
                 </button>
                 {o.stato==='offerta' && canManage && <>
-                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
                   </button>
-                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.red}`, background:'transparent', color:T.red, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.red}`, background:'transparent', color:T.red, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Rifiuta
                   </button>
                 </>}
                 {o.stato==='accettata' && o.commessa_id && (
-                  <button onClick={e => { e.stopPropagation(); navigate(`/commesse/${o.commessa_id}`); }} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={e => { e.stopPropagation(); navigate(`/commesse/${o.commessa_id}`); }} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Vai a commessa
                   </button>
                 )}
                 {o.stato==='rifiutata' && canManage && (
-                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Ripristina
                   </button>
                 )}
@@ -722,8 +722,8 @@ export default function OffertePage() {
             )}
 
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Salta</button>
-              <button onClick={collegaProgetto} disabled={!linkMode || linkSaving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:(!linkMode||linkSaving)?'not-allowed':'pointer', opacity:(!linkMode||linkSaving)?0.5:1 }}>
+              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Salta</button>
+              <button onClick={collegaProgetto} disabled={!linkMode || linkSaving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:(!linkMode||linkSaving)?'not-allowed':'pointer', opacity:(!linkMode||linkSaving)?0.5:1 }}>
                 {linkSaving ? 'Collego…' : 'Collega progetto'}
               </button>
             </div>
@@ -796,7 +796,7 @@ export default function OffertePage() {
                 </div>
                 {form.creaProgetto && (
                   <div style={{ gridColumn:'span 2', display:'flex', flexDirection:'column', gap:10, padding:'16px', background:T.surface2, border:`1px solid ${T.border}` }}>
-                    <div style={{ ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>Nuovo progetto</div>
+                    <div style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>Nuovo progetto</div>
                     <div>
                       <label style={labelSt}>Nome progetto *</label>
                       <input type="text" value={form.nuovoProgettoNome||''} onChange={e=>setForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
@@ -877,7 +877,7 @@ export default function OffertePage() {
                     </div>
                   )}
                   <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
-                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.02em',padding:'6px 12px',cursor:'pointer'}}>
+                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',padding:'6px 12px',cursor:'pointer'}}>
                     + Aggiungi riga
                   </button>
                   {/* Sconto + Totale */}
@@ -932,8 +932,8 @@ export default function OffertePage() {
               {formError && <div style={{ ...mono, fontSize:11, color:T.red }}>{formError}</div>}
 
               <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
-                <button type="submit" disabled={saving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:saving?'not-allowed':'pointer', opacity:saving?0.6:1 }}>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
+                <button type="submit" disabled={saving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving?'not-allowed':'pointer', opacity:saving?0.6:1 }}>
                   {saving?'Salvataggio...':'Crea offerta'}
                 </button>
               </div>
@@ -955,13 +955,13 @@ export default function OffertePage() {
             </div>
             <div style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 16px', marginBottom:20, display:'flex', gap:20 }}>
               <div>
-                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.05em', textTransform:'uppercase' }}>Valore offerta originale</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
                   {currency(offertaOriginale.importo_offerta_base)}
                 </div>
               </div>
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
-                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.05em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
                   {(() => {
                     const lordo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
@@ -975,11 +975,11 @@ export default function OffertePage() {
             </div>
             <div style={{ display:'flex', gap:8 }}>
               <button onClick={() => _doCreaNcommessa(true)} disabled={saving}
-                style={{ flex:1, background:T.navy, color:T.bg, border:'none', ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
+                style={{ flex:1, background:T.navy, color:T.bg, border:'none', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving ? 'Creazione...' : 'Sì, aggiorna offerta'}
               </button>
               <button onClick={() => _doCreaNcommessa(false)} disabled={saving}
-                style={{ flex:1, background:'transparent', color:T.ink, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
+                style={{ flex:1, background:'transparent', color:T.ink, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 0', cursor:'pointer', opacity:saving?0.6:1 }}>
                 No, mantieni offerta
               </button>
             </div>
@@ -1119,8 +1119,8 @@ export default function OffertePage() {
             </div>
             {/* Footer fisso */}
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'16px 28px', borderTop:`0.5px solid ${T.border}`, flexShrink:0 }}>
-              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
-              <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
+              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
+              <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Creazione...':'Crea commessa →'}
               </button>
             </div>

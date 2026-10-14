@@ -30,7 +30,7 @@ export default function CommessePanel({ commesse = [] }) {
         borderRadius: T.radiusSm, background:'transparent',
         cursor:'pointer', color:T.ink,
         fontFamily:"var(--font-label)", fontSize:10,
-        letterSpacing:'0.03em', textTransform:'uppercase',
+        letterSpacing:'0.08em', textTransform:'uppercase',
       }}>
         € Commesse
         <span style={{ background:T.navy, color:T.bg, borderRadius:10, padding:'1px 8px', fontSize:10, fontWeight:600 }}>
@@ -85,7 +85,7 @@ export default function CommessePanel({ commesse = [] }) {
               })}
             </div>
             <div style={{ marginTop:16, paddingTop:16, borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'flex-end' }}>
-              <button onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
+              <button onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
                 Chiudi
               </button>
             </div>

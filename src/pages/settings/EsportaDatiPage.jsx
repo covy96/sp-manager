@@ -289,7 +289,7 @@ export default function EsportaDatiPage() {
 
       {/* Selezione sezioni */}
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'20px 24px', marginBottom:16 }}>
-        <div style={{ ...mono, fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Seleziona cosa esportare</div>
+        <div style={{ ...mono, fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Seleziona cosa esportare</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {SEZIONI.map(s => (
             <label key={s.id} style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', padding:'10px 16px', background: selected.has(s.id) ? T.navyLight : T.surface2, border:`0.5px solid ${selected.has(s.id) ? T.navy : T.border}`, transition:'all 0.1s' }}>
@@ -315,7 +315,7 @@ export default function EsportaDatiPage() {
 
       {/* Info formato */}
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px', marginBottom:16 }}>
-        <div style={{ ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Formato</div>
+        <div style={{ ...mono, fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Formato</div>
         <div style={{ display:'flex', gap:20 }}>
           {[
             ['📊 File', 'Excel (.xls)'],
@@ -332,7 +332,7 @@ export default function EsportaDatiPage() {
 
       {/* Bottone export */}
       <button onClick={handleExport} disabled={loading || selected.size === 0}
-        style={{ width:'100%', padding:'16px 0', background: selected.size===0 ? T.borderMd : T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:12, letterSpacing:'0.04em', textTransform:'uppercase', cursor: selected.size===0||loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition:'all 0.1s' }}>
+        style={{ width:'100%', padding:'16px 0', background: selected.size===0 ? T.borderMd : T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:12, letterSpacing:'0.1em', textTransform:'uppercase', cursor: selected.size===0||loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition:'all 0.1s' }}>
         {loading ? '⏳ Esportazione in corso...' : '⬇ Scarica Excel'}
       </button>
 

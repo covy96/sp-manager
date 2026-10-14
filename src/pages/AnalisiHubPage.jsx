@@ -82,7 +82,7 @@ function KpiCard({ label, value, color, T, active, onClick }) {
       onMouseEnter={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadowMd; }}
       onMouseLeave={e => { if (onClick && !active) e.currentTarget.style.boxShadow = T.shadow; }}
     >
-      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: active ? "rgba(255,255,255,0.65)" : T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: active ? "rgba(255,255,255,0.65)" : T.muted, marginBottom: 8 }}>{label}</div>
       <div style={{ fontFamily: "var(--font-ui)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: active ? "#fff" : (color || T.ink), lineHeight: 1 }}>{value}</div>
     </div>
   );
@@ -115,7 +115,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
     else { setSortBy(col); setSortDir("desc"); }
   };
   const SortBtn = ({ col, label, align = "left" }) => (
-    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4, width: "100%", justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
+    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4, width: "100%", justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
       {label} <span style={{ fontSize: 10 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
   );
@@ -182,7 +182,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
   const nCorso = offerteTutte.filter(o => o.stato === "offerta").length;
   const totVal = offerteFiltrate.reduce((s, o) => s + (Number(o.importo_offerta_base) || 0), 0);
 
-  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `1px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `1px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}` };
 
   return (
@@ -224,7 +224,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                 })}
                 {totalTemplate > 0 && (
                   <div style={{ display: "flex", alignItems: "center", padding: "12px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }}>Totale</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em", flex: 1 }}>Totale</div>
                     <div style={{ fontFamily: "var(--font-ui)", fontSize: 15, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
                   </div>
                 )}
@@ -311,7 +311,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                         <td style={{ ...tdSt, color: T.muted }}>{o.data_offerta ? new Date(o.data_offerta).toLocaleDateString("it-IT") : "—"}</td>
                         <td style={{ ...tdSt, textAlign: "right", fontWeight: 600 }}>{currency(o.importo_offerta_base)}</td>
                         <td style={tdSt}>
-                          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, display: "inline-block" }}>{stato.label}</span>
+                          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, display: "inline-block" }}>{stato.label}</span>
                         </td>
                         <td style={{ ...tdSt, textAlign: "right", fontWeight: valComm ? 600 : 400, color: valComm ? T.ink : T.muted }}>{valComm ? currency(valComm) : "—"}</td>
                       </tr>
@@ -357,7 +357,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                           {o.cliente && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>{o.cliente}</div>}
                         </div>
                         {/* stato */}
-                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{stato.label}</span>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: stato.color, background: stato.bg, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{stato.label}</span>
                         {/* importo voce */}
                         <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: T.ink, minWidth: 90, textAlign: "right" }}>{currency(prezzoVoce)}</div>
                         <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>→</div>
@@ -369,7 +369,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
             {/* footer totale */}
             {voceModal.offerte.length > 0 && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Totale voce</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em" }}>Totale voce</div>
                 <div style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(voceModal.offerte.reduce((s, x) => s + x.prezzoVoce, 0))}</div>
               </div>
             )}
@@ -410,7 +410,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
                   </div>
                 ))}
                 <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 28px", borderTop: `1px solid ${T.border}`, background: T.surface2, position: "sticky", bottom: 0 }}>
-                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em", flex: 1 }}>Totale</div>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "0.15em", flex: 1 }}>Totale</div>
                   <div style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 700, color: T.ink }}>{currency(totalTemplate)}</div>
                 </div>
               </div>
@@ -487,12 +487,12 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
 
   const handleSort = col => { if (sortBy === col) setSortDir(p => p === "asc" ? "desc" : "asc"); else { setSortBy(col); setSortDir("asc"); } };
   const SortBtn = ({ col, label }) => (
-    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4 }}>
+    <button onClick={() => handleSort(col)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: sortBy === col ? T.navy : T.muted, display: "inline-flex", alignItems: "center", gap: 4 }}>
       {label} <span style={{ fontSize: 10 }}>{sortBy === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
   );
 
-  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)", verticalAlign: "middle" };
   const monoSt = { fontFamily: "var(--font-label)", fontSize: 11 };
   const daIncassare = totals.val - totals.inc;
@@ -512,7 +512,7 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear || "tutti gli anni"}</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Andamento valore commesse — {selectedYear || "tutti gli anni"}</div>
             <select value={selectedYear ?? "all"} onChange={e => setSelectedYear(e.target.value === "all" ? null : Number(e.target.value))}
               style={{ padding: "6px 10px", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.bg, color: T.ink, fontSize: 11, fontFamily: "var(--font-label)", outline: "none", cursor: "pointer" }}>
               <option value="all">Tutti gli anni</option>
@@ -578,8 +578,8 @@ function TabCommesse({ commesse, incassatoPerCommessa, permissions, T, navigate,
 // ── TAB 3: Analisi Economica ─────────────────────────────────────
 function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnnoFiltro, search, setSearch, onAnniReady, costiPanel, setCostiPanel, isMobile }) {
   const mono  = { fontFamily: "var(--font-label)" };
-  const lbl   = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted };
-  const thSt  = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const lbl   = { ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
+  const thSt  = { ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "8px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt  = { padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink };
 
   const [members, setMembers]           = useState([]);
@@ -696,7 +696,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => setSelectedCommessa(null)} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "6px 12px", ...mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase" }}>← Analisi</button>
+          <button onClick={() => setSelectedCommessa(null)} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: "pointer", color: T.muted, padding: "6px 12px", ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>← Analisi</button>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: "-0.02em" }}>{c.nome_commessa}</div>
@@ -968,8 +968,8 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
-              <button onClick={() => setCostiPanel(false)} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 20px", cursor: "pointer" }}>Annulla</button>
-              <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background: T.navy, border: "none", color: T.bg, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 20px", cursor: savingCosti ? "not-allowed" : "pointer", opacity: savingCosti ? 0.6 : 1, borderRadius: T.radiusSm }}>
+              <button onClick={() => setCostiPanel(false)} style={{ border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 20px", cursor: "pointer" }}>Annulla</button>
+              <button onClick={handleSaveCosti} disabled={savingCosti} style={{ background: T.navy, border: "none", color: T.bg, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 20px", cursor: savingCosti ? "not-allowed" : "pointer", opacity: savingCosti ? 0.6 : 1, borderRadius: T.radiusSm }}>
                 {savingCosti ? "Salvataggio..." : "Salva costi"}
               </button>
             </div>
@@ -1262,7 +1262,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
     })).sort((a, b) => b.anno - a.anno);
   }, [offerte, commessaDataById, commessaValById]);
 
-  const thSt = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
+  const thSt = { ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}`, textAlign: "left", whiteSpace: "nowrap" };
   const tdSt = { ...mono, fontSize: 11, color: T.ink, padding: "10px 16px", borderBottom: `0.5px solid ${T.border}` };
 
   if (off.length === 0) return (
@@ -1305,7 +1305,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
                     ["Commesse valutate", String(margineStats.n), T.ink],
                   ].map(([lab, val, col]) => (
                     <div key={lab} style={{ background: T.surface, padding: "16px 20px" }}>
-                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{lab}</div>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{lab}</div>
                       <div style={{ fontFamily: "var(--font-ui)", fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: col, lineHeight: 1 }}>{val}</div>
                     </div>
                   ))}
@@ -1334,7 +1334,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             </div>
           ))}
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 20px", borderTop: `1px solid ${T.border}`, background: T.surface2 }}>
-            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, flex: 1 }}>Incassato sulle accettate</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, flex: 1 }}>Incassato sulle accettate</div>
             {pctIncassato != null && <div style={{ ...mono, fontSize: 10, color: T.muted }}>{pctIncassato}%</div>}
             <div style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 700, color: T.green, minWidth: 110, textAlign: "right" }}>{currency(incassato)}</div>
           </div>
@@ -1361,7 +1361,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       {/* Andamento */}
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
-          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
             Offerte emesse e accettate — {anno === 0 ? "tutti gli anni" : anno}
           </div>
           <div style={{ height: 240 }}>
@@ -1386,7 +1386,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
       {/* Stagionalità: tasso di conversione nel tempo */}
       <Panel T={T}>
         <div style={{ padding: "16px 20px" }}>
-          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 16 }}>
             Tasso di conversione — {anno === 0 ? "per anno" : `per mese, ${anno}`}
           </div>
           <div style={{ height: 220 }}>
@@ -1609,7 +1609,7 @@ export default function AnalisiHubPage() {
       <div style={{ fontSize: 32 }}>🔒</div>
       <div style={{ fontFamily: "var(--font-ui)", fontSize: 18, fontWeight: 600, color: T.ink }}>Funzionalità Pro</div>
       <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, textAlign: "center", maxWidth: 360 }}>Disponibile solo per il piano Pro.</div>
-      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
+      <button onClick={() => navigate("/impostazioni/piano")} style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 24px", cursor: "pointer", borderRadius: T.radiusSm }}>Vedi piani →</button>
     </div>
   );
   if (loading) return (
@@ -1640,7 +1640,7 @@ export default function AnalisiHubPage() {
               {anniEco.map(a => <option key={a} value={a}>{a === 0 ? "Tutti gli anni" : a}</option>)}
             </select>
             <button onClick={() => setCostiEcoPanel(true)}
-              style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
+              style={{ background: T.navy, color: T.bg, border: "none", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", borderRadius: T.radiusSm, whiteSpace: "nowrap" }}>
               ⚙ Costi orari
             </button>
           </div>

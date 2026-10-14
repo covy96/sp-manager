@@ -275,7 +275,7 @@ export default function CalendarioPage() {
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
-              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.04em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
+              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, padding:'6px 0', textAlign:'center' }}>{d}</div>
             ))}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
@@ -324,7 +324,7 @@ export default function CalendarioPage() {
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflow:'hidden', minWidth:560, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', borderBottom:`0.5px solid ${T.ink10}`, background:T.bg }}>
             {WEEKDAYS.map(d=>(
-              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
+              <div key={d} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 0', textAlign:'center' }}>{d}</div>
             ))}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
@@ -374,7 +374,7 @@ export default function CalendarioPage() {
               const isToday=iso===todayISO;
               return (
                 <div key={i} style={{ padding: isMobile ? '8px 4px' : '10px 8px', textAlign:'center', borderRight:i<count-1?`0.5px solid ${T.ink10}`:'none' }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 7 : 8, letterSpacing:'0.04em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 7 : 8, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     {WEEKDAYS[(i + (count===7 ? 0 : new Date(startDate).getDay() === 0 ? 6 : new Date(startDate).getDay() - 1)) % 7]}
                   </div>
                   <div style={{ fontFamily:"var(--font-label)", fontSize: isMobile ? 20 : 18, fontWeight:600, color:isToday?T.navy:T.ink, width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, borderRadius:'50%', background:isToday?T.navyLight:'transparent', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>
@@ -423,7 +423,7 @@ export default function CalendarioPage() {
     const dayTasks=tasksByDay[todayISO]??[];
     return (
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '16px' : '20px 24px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
+        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
           {now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
         </div>
         {dayTasks.length===0 ? (
@@ -445,7 +445,7 @@ export default function CalendarioPage() {
                       {task.categoria&&<span>Cat: <span style={{color:T.ink}}>{task.categoria}</span></span>}
                     </div>
                   </div>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color, border:`0.5px solid ${color}`, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>
                     {task.status==="completed"?"Fatto":task.data_pianificata<todayISO?"Scaduta":"In attesa"}
                   </div>
                 </div>
@@ -504,7 +504,7 @@ export default function CalendarioPage() {
               {periodLabel}
             </div>
             <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'4px 12px', fontFamily:"var(--font-label)", fontSize:13, flexShrink:0 }}>→</button>
-            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'4px 8px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em', whiteSpace:'nowrap', flexShrink:0 }}>Oggi</button>
+            <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'4px 8px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', whiteSpace:'nowrap', flexShrink:0 }}>Oggi</button>
           </div>
         )}
 
@@ -517,7 +517,7 @@ export default function CalendarioPage() {
             background: selectedMembers.length>0 ? T.navyLight : 'transparent',
             padding:'8px 16px', cursor:'pointer',
             fontFamily:"var(--font-label)", fontSize:11,
-            letterSpacing:'0.03em', textTransform:'uppercase',
+            letterSpacing:'0.08em', textTransform:'uppercase',
             color: selectedMembers.length>0 ? T.navy : T.ink,
           }}>
             {selectedMembers.length>0 ? `Utenti (${selectedMembers.length})` : `Utenti`}
@@ -538,7 +538,7 @@ export default function CalendarioPage() {
               </div>
               {selectedMembers.length>0 && (
                 <div style={{ padding:'8px 12px', borderTop:`0.5px solid ${T.border}` }}>
-                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.red, letterSpacing:'0.02em' }}>
+                  <button onClick={()=>setSelectedMembers([])} style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.red, letterSpacing:'0.05em' }}>
                     Rimuovi filtri
                   </button>
                 </div>

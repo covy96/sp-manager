@@ -36,7 +36,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm,
       fontFamily: "var(--font-label)", fontSize: 11,
-      letterSpacing: '0.03em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
       padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
@@ -49,7 +49,7 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
       background: 'transparent', border: `1px solid ${danger ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink,
       fontFamily: "var(--font-label)", fontSize: 11,
-      letterSpacing: '0.03em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+      letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap',
       padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
@@ -61,7 +61,7 @@ function FieldLabel({ children }) {
   return (
     <div style={{
       fontFamily: "var(--font-label)", fontSize: 10,
-      letterSpacing: '0.06em', textTransform: 'uppercase',
+      letterSpacing: '0.2em', textTransform: 'uppercase',
       color: T.muted, marginBottom: 6,
     }}>{children}</div>
   );
@@ -126,7 +126,7 @@ function Modal({ open, onClose, title, subtitle, children, width = 520 }) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{title}</div>
-            {subtitle && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: '0.02em' }}>{subtitle}</div>}
+            {subtitle && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4, letterSpacing: '0.05em' }}>{subtitle}</div>}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18, lineHeight: 1, padding: 0 }}>×</button>
         </div>
@@ -211,19 +211,19 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
               display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
               fontFamily: "var(--font-label)", fontSize: 11, color: T.ink,
-              letterSpacing: '0.02em',
+              letterSpacing: '0.05em',
             }}>Modifica</button>
             <button onClick={e => { e.stopPropagation(); onArchive(project, e); }} style={{
               display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
               fontFamily: "var(--font-label)", fontSize: 11, color: '#b45309',
-              letterSpacing: '0.02em',
+              letterSpacing: '0.05em',
             }}>Archivia</button>
             <button onClick={e => { e.stopPropagation(); setMenuOpen(false); onDelete(project); }} style={{
               display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
               background: 'none', border: 'none', cursor: 'pointer',
               fontFamily: "var(--font-label)", fontSize: 11, color: T.red,
-              letterSpacing: '0.02em',
+              letterSpacing: '0.05em',
             }}>Elimina</button>
           </div>
         )}
@@ -237,7 +237,7 @@ function ProjectCard({ project, timesheetByProject, tasksByProject, teamMembers,
           <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em', paddingRight: 24, marginBottom: 4 }}>
             {project.name || "Progetto senza nome"}
           </div>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em', marginBottom: 4 }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em', marginBottom: 4 }}>
             {project.client || "—"}
           </div>
           {project.address && (
@@ -851,7 +851,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
@@ -865,7 +865,7 @@ export default function ProjectsPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flexShrink: 0 }}>
               <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Progetti</div>
-              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.02em' }}>Panoramica dei progetti attivi</div>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em' }}>Panoramica dei progetti attivi</div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
               <input type="text" placeholder="Cerca progetto o cliente..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -902,7 +902,7 @@ export default function ProjectsPage() {
                       ))}
                     </div>
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: 8 }}>
-                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>Rimuovi tutti i filtri</button>
+                      <button onClick={() => { setSelectedUserIds([]); setClientFilter(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>Rimuovi tutti i filtri</button>
                     </div>
                   </div>
                 )}
@@ -932,7 +932,7 @@ export default function ProjectsPage() {
       ) : (
         <>
           {sortBy === "recenti" && !isMobile && (
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
               ↕ Trascina per riordinare
             </div>
           )}
@@ -961,7 +961,7 @@ export default function ProjectsPage() {
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
           background: T.navy, color: T.bg, padding: '10px 20px',
-          fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.02em', zIndex: 100,
+          fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.05em', zIndex: 100,
         }}>✓ {toast}</div>
       )}
 
@@ -988,7 +988,7 @@ export default function ProjectsPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 16px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg }}>
                 <input type="checkbox" checked={formData.createInlineCommessa} onChange={e => setFormData(p => ({ ...p, createInlineCommessa: e.target.checked }))} style={{ accentColor: T.navy, width: 14, height: 14 }} />
-                <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.02em' }}>Crea anche la commessa per questo progetto</span>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>Crea anche la commessa per questo progetto</span>
               </label>
 
               {formData.createInlineCommessa && (

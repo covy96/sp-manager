@@ -171,11 +171,11 @@ export default function CestinoPage() {
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                           <button onClick={() => handleRestore(item)} disabled={restoring === item.id}
-                            style={{ border: `1px solid ${T.green}`, borderRadius: T.radiusSm, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.green}`, borderRadius: T.radiusSm, background: 'transparent', color: T.green, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Ripristina
                           </button>
                           <button onClick={() => handleDeleteForever(item)} disabled={restoring === item.id}
-                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 16px', cursor: 'pointer', opacity: restoring === item.id ? 0.5 : 1 }}>
                             Elimina
                           </button>
                         </div>

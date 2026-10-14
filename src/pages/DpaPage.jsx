@@ -8,7 +8,7 @@ const s = {
   backBtn: {
     background: "none", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
     color: "rgba(255,255,255,0.6)", padding: "8px 16px", marginBottom: 32,
-    ...mono, fontSize: 12, letterSpacing: "0.02em",
+    ...mono, fontSize: 12, letterSpacing: "0.05em",
     display: "inline-flex", alignItems: "center", gap: 6,
   },
   h1: { fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 8 },
@@ -23,11 +23,11 @@ const s = {
     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 8, padding: "16px 20px", marginBottom: 10,
   },
-  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" },
+  lbl: { ...mono, fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6, display: "block" },
   link: { color: "#4f8ef7", textDecoration: "none" },
   em: { color: "rgba(255,255,255,0.9)" },
   table: { width: "100%", borderCollapse: "collapse", marginBottom: 20, fontSize: 13 },
-  th: { textAlign: "left", padding: "8px 12px", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)" },
+  th: { textAlign: "left", padding: "8px 12px", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)" },
   td: { padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", verticalAlign: "top" },
 };
 
@@ -291,7 +291,7 @@ export default function DpaPage() {
         </div>
 
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.04em" }}>
+          <p style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: "0.1em" }}>
             © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
           </p>
         </div>

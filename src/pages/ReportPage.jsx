@@ -50,7 +50,7 @@ function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
     <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
+      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"var(--font-ui)" }}>{value}</div>
       {sub && <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>{sub}</div>}
     </div>
@@ -62,7 +62,7 @@ function TabBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick} style={{
       padding:'8px 16px', border:'none', background:'transparent', cursor:'pointer',
-      fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase',
+      fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
       color: active ? T.navy : T.muted,
       borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`,
     }}>{children}</button>
@@ -73,7 +73,7 @@ function TabBtn({ active, onClick, children }) {
 export default function ReportPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Report");
-  const thSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 16px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left', whiteSpace:'nowrap' };
+  const thSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 16px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left', whiteSpace:'nowrap' };
   const tdSt = { padding:'10px 16px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, color:T.ink };
   const monoSt = { fontFamily:"var(--font-label)", fontSize:11 };
   const tooltipSt = { contentStyle:{ background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius:0, fontFamily:"var(--font-label)", fontSize:11, color:T.ink }, formatter: v => formatOre(v) };
@@ -271,7 +271,7 @@ export default function ReportPage() {
       <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
         Il Report è disponibile solo per il piano Pro.<br/>Fai l'upgrade per accedere ai report avanzati.
       </div>
-      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
+      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
         Vedi piani →
       </button>
     </div>
@@ -293,7 +293,7 @@ export default function ReportPage() {
           />
 
           {/* Esporta */}
-          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase' }}>
+          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
             Esporta CSV
           </button>
         </div>
@@ -305,7 +305,7 @@ export default function ReportPage() {
             {periodLabel}
           </div>
           <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:12 }}>→</button>
-          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em' }}>Oggi</button>
+          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
         </div>
       </div>
 
@@ -332,7 +332,7 @@ export default function ReportPage() {
 
         {/* Andamento temporale */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px', position:'relative' }}>
-          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
             <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
           </div>
@@ -388,7 +388,7 @@ export default function ReportPage() {
 
         {/* Tabella ore per utente — sticky left */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -415,7 +415,7 @@ export default function ReportPage() {
 
         {/* Tabella ore per progetto */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per progetto
           </div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -448,7 +448,7 @@ export default function ReportPage() {
 
       {/* Loading overlay */}
       {loading && (
-        <div style={{ position:'fixed', bottom:24, right:24, background:T.navy, color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.02em' }}>
+        <div style={{ position:'fixed', bottom:24, right:24, background:T.navy, color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.05em' }}>
           Caricamento...
         </div>
       )}
@@ -480,7 +480,7 @@ export default function ReportPage() {
           >
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
-              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
                 {barPopup.label} — per utente
               </div>
               <button onClick={() => setBarPopup(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16, lineHeight:1, padding:0 }}>×</button>
@@ -497,7 +497,7 @@ export default function ReportPage() {
                   </div>
                 ))}
                 <div style={{ padding:'8px 16px', borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'space-between', background:T.bg }}>
-                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.04em', textTransform:'uppercase', color:T.muted }}>Totale</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted }}>Totale</span>
                   <span style={{ fontFamily:"var(--font-label)", fontSize:11, fontWeight:600, color:T.navy }}>
                     {formatOre(barPopup.users.reduce((s, u) => s + u.hours, 0))}
                   </span>

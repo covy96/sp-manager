@@ -189,14 +189,14 @@ export default function OffertaDocumentPanel({
     background: T.surface, color: T.ink, fontSize: 12,
     fontFamily: "var(--font-ui)", outline: "none",
   };
-  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
+  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
   const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 20px", marginBottom: 12 };
   const btn = (primary, extra = {}) => ({
     background: primary ? T.navy : "transparent",
     color: primary ? T.bg : T.ink,
     border: primary ? "none" : `0.5px solid ${T.borderMd}`,
     borderRadius: T.radiusSm, ...mono, fontSize: 11,
-    letterSpacing: "0.03em", textTransform: "uppercase",
+    letterSpacing: "0.08em", textTransform: "uppercase",
     padding: "10px 20px", cursor: "pointer", ...extra,
   });
 
@@ -488,7 +488,7 @@ export default function OffertaDocumentPanel({
         {/* Testata */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px 16px", borderBottom: `0.5px solid ${T.border}` }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 4 }}>{isCreate ? "Nuova offerta" : "Documento offerta"}</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 4 }}>{isCreate ? "Nuova offerta" : "Documento offerta"}</div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {isCreate
                 ? (ana.nome_offerta || "Crea offerta dal documento")
@@ -497,7 +497,7 @@ export default function OffertaDocumentPanel({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
             {!isCreate && versioneAttiva != null && (
-              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase", fontWeight: 600, color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" }}>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" }}>
                 Versione {versioneAttiva}
               </span>
             )}
@@ -569,7 +569,7 @@ export default function OffertaDocumentPanel({
                       <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)}</span>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>{euro(totV)}</span>
                       <button type="button" onClick={() => caricaVersione(v)}
-                        style={{ ...mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "6px 12px", cursor: "pointer" }}>
+                        style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "6px 12px", cursor: "pointer" }}>
                         Carica
                       </button>
                       <button type="button" onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni"
@@ -745,7 +745,7 @@ export default function OffertaDocumentPanel({
                         style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: `0.5px solid ${T.border}`, cursor: "pointer", padding: "10px 12px" }}>
                         <span style={{ marginTop: 1, color: attiva ? T.green : T.muted, fontSize: 13, lineHeight: 1 }}>{attiva ? "☑" : "☐"}</span>
                         <span style={{ minWidth: 0, flex: 1 }}>
-                          {r.nomeApp && <span style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.navy, letterSpacing: "0.02em" }}>{r.nomeApp}</span>}
+                          {r.nomeApp && <span style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.navy, letterSpacing: "0.06em" }}>{r.nomeApp}</span>}
                           <span style={{ display: "block", ...mono, fontSize: 8.5, color: T.muted, marginTop: 1 }}>{r.sezTitolo}</span>
                           <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: 11, color: T.ink, marginTop: 2, lineHeight: 1.4 }}>{r.testo}</span>
                         </span>
@@ -787,7 +787,7 @@ export default function OffertaDocumentPanel({
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
                     {sez.gruppi.map((g, gi) => (
                       <div key={gi} style={{ marginBottom: 10 }}>
-                        {g.label && <div style={{ ...mono, fontSize: 9.5, letterSpacing: "0.05em", color: T.muted, marginBottom: 8 }}>{g.label}</div>}
+                        {g.label && <div style={{ ...mono, fontSize: 9.5, letterSpacing: "0.14em", color: T.muted, marginBottom: 8 }}>{g.label}</div>}
                         {g.voci.map(v => {
                           const vc = cfgS.voci[v.id];
                           return (
@@ -797,7 +797,7 @@ export default function OffertaDocumentPanel({
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 {v.nomeApp && (
-                                  <span style={{ display: "inline-block", ...mono, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.03em", color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 5, padding: "1px 6px", marginBottom: 4 }}>{v.nomeApp}</span>
+                                  <span style={{ display: "inline-block", ...mono, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.08em", color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 5, padding: "1px 6px", marginBottom: 4 }}>{v.nomeApp}</span>
                                 )}
                                 <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
                                   {pulisci(compilaTesto(v.testo, vc.campi))}
@@ -872,7 +872,7 @@ export default function OffertaDocumentPanel({
                       ))}
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <button type="button" onClick={addRateC}
-                          style={{ ...mono, fontSize: 10, letterSpacing: "0.02em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer" }}>
+                          style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer" }}>
                           + Aggiungi rata
                         </button>
                         {(() => {
@@ -923,7 +923,7 @@ export default function OffertaDocumentPanel({
                 style={{ ...inputSt, width: 90, padding: "4px 8px", fontSize: 11.5, textAlign: "right" }} />
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12, marginTop: 12, paddingTop: 10, borderTop: `0.5px solid ${T.borderMd}` }}>
-              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.05em", color: T.muted }}>TOTALE PARCELLA</span>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.14em", color: T.muted }}>TOTALE PARCELLA</span>
               <span style={{ ...mono, fontSize: 15, fontWeight: 700, color: T.navy }}>{euro(tot.totale)}</span>
             </div>
           </div>

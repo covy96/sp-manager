@@ -33,7 +33,7 @@ function avatarColor(seed = "") {
 // ── SHARED UI ────────────────────────────────────────────────────
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, style = {} }) {
   const { T } = useTheme();
@@ -49,7 +49,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none',
-      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
@@ -60,7 +60,7 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background: 'transparent', border: `1px solid ${danger ? T.red : T.ink20}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink, fontFamily: "var(--font-label)", fontSize: 11,
-      letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px',
+      letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px',
       cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
   );
@@ -240,7 +240,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: mode === 'settimana' ? 500 : 400 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${T.ink10}` }}>
-              <th style={{ padding: '10px 16px', textAlign: 'left', ...mono, fontSize: 8.5, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, fontWeight: 400, width: isMobile ? 90 : 160 }}>
+              <th style={{ padding: '10px 16px', textAlign: 'left', ...mono, fontSize: 8.5, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, fontWeight: 400, width: isMobile ? 90 : 160 }}>
                 Progetto
               </th>
               {columns.map((col, ci) => (
@@ -249,7 +249,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
                   {col.sub !== undefined && <div style={{ fontSize: 10, color: col.isToday ? T.navy : T.muted, marginTop: 1 }}>{col.sub}</div>}
                 </th>
               ))}
-              <th style={{ padding: '10px 12px', textAlign: 'right', ...mono, fontSize: 8.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: T.navy, fontWeight: 700, minWidth: 52 }}>Tot</th>
+              <th style={{ padding: '10px 12px', textAlign: 'right', ...mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, fontWeight: 700, minWidth: 52 }}>Tot</th>
             </tr>
           </thead>
           <tbody>
@@ -291,7 +291,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
           {tableData.length > 0 && (
             <tfoot>
               <tr style={{ borderTop: `1px solid ${T.ink10}`, background: T.bg }}>
-                <td style={{ padding: '8px 16px', ...mono, fontSize: 8.5, letterSpacing: '0.04em', textTransform: 'uppercase', color: T.muted }}>Totale</td>
+                <td style={{ padding: '8px 16px', ...mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>Totale</td>
                 {totalByCol.map((tot, ci) => (
                   <td key={columns[ci].key} style={{ padding: '8px 8px', textAlign: 'center', background: columns[ci].isWeekend ? T.bg : 'transparent' }}>
                     {tot > 0
@@ -454,7 +454,7 @@ export default function TimesheetPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Timesheet</div>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.02em', textTransform: 'capitalize' }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
             {formatDateDisplay(selectedDate)}
           </div>
         </div>
@@ -473,7 +473,7 @@ export default function TimesheetPage() {
         {/* ── COLONNA SINISTRA: giornaliero ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {/* sezione label */}
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Registra ore
           </div>
 
@@ -496,7 +496,7 @@ export default function TimesheetPage() {
                   )}
                 </div>
                 {selectedProject?.archived && (
-                  <div style={{ marginTop: 4, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', color: T.yellow, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ marginTop: 4, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.yellow, display: 'flex', alignItems: 'center', gap: 4 }}>
                     ⚠ Progetto archiviato
                   </div>
                 )}
@@ -519,7 +519,7 @@ export default function TimesheetPage() {
                     ))}
                     {filteredProjects.archived.length > 0 && (
                       <>
-                        <div style={{ padding: '6px 12px 4px', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', color: T.muted, borderTop: filteredProjects.active.length > 0 ? `0.5px solid ${T.ink10}` : 'none' }}>Archiviati</div>
+                        <div style={{ padding: '6px 12px 4px', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.muted, borderTop: filteredProjects.active.length > 0 ? `0.5px solid ${T.ink10}` : 'none' }}>Archiviati</div>
                         {filteredProjects.archived.map(p => (
                           <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
                             style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
@@ -569,7 +569,7 @@ export default function TimesheetPage() {
                   <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Descrizione attività..."
                     style={{ ...selectSt }} />
                 </div>
-                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ width: '100%', padding: '10px', justifyContent: 'center', display: 'flex', alignItems: 'center', fontSize: 13, letterSpacing: '0.03em' }}>
+                <BtnPrimary type="submit" disabled={adding || !selectedProject} style={{ width: '100%', padding: '10px', justifyContent: 'center', display: 'flex', alignItems: 'center', fontSize: 13, letterSpacing: '0.08em' }}>
                   {adding ? "..." : "+ Aggiungi"}
                 </BtnPrimary>
               </div>
@@ -615,7 +615,7 @@ export default function TimesheetPage() {
           {/* Totale */}
           {entries.length > 0 && (
             <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Totale {new Date(selectedDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
               </div>
               <div style={{ fontSize: 24, fontWeight: 600, color: T.navy, letterSpacing: '-0.04em', fontFamily: "var(--font-ui)" }}>{formatOre(totalHours)} h</div>
@@ -625,7 +625,7 @@ export default function TimesheetPage() {
 
         {/* ── COLONNA DESTRA: visualizza ore ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Visualizza ore
           </div>
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>

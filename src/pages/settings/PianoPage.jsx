@@ -170,12 +170,12 @@ export default function PianoPage() {
           return (
             <div key={pid} style={{ background:T.surface, border:`0.5px solid ${isCurrent?T.navy:T.border}`, borderRadius: T.radiusSm, padding:'24px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
               {isCurrent && (
-                <div style={{ position:'absolute', top:12, right:12, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'2px 6px' }}>
+                <div style={{ position:'absolute', top:12, right:12, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'2px 6px' }}>
                   Attuale
                 </div>
               )}
 
-              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:isCurrent?T.navy:T.muted, marginBottom:8 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:isCurrent?T.navy:T.muted, marginBottom:8 }}>
                 {p.name}
               </div>
               <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:16 }}>
@@ -197,7 +197,7 @@ export default function PianoPage() {
                     { label:'Commesse', value: p.maxCommesse === Infinity ? 'Illimitate' : `${p.maxCommesse}` },
                   ].map(({ label, value }) => (
                     <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.04em' }}>{label}</span>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.1em' }}>{label}</span>
                       <span style={{ fontFamily:"var(--font-label)", fontSize:10, fontWeight:600, color:T.ink }}>{value}</span>
                     </div>
                   ))}
@@ -217,11 +217,11 @@ export default function PianoPage() {
               {/* CTA */}
               {isCurrent ? (
                 pid !== "free" && stripeCustomerId ? (
-                  <button onClick={handleManageSubscription} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'transparent', border:`0.5px solid ${T.navy}`, color:T.navy, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', cursor:'pointer', opacity:loading?0.6:1 }}>
+                  <button onClick={handleManageSubscription} disabled={loading} style={{ width:'100%', padding:'10px 0', background:'transparent', border:`0.5px solid ${T.navy}`, color:T.navy, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:'pointer', opacity:loading?0.6:1 }}>
                     {loading ? "Caricamento..." : "Gestisci abbonamento"}
                   </button>
                 ) : (
-                  <div style={{ width:'100%', padding:'10px 0', background:T.bg, border:`1px solid ${T.border}`, color:T.muted, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', textAlign:'center' }}>
+                  <div style={{ width:'100%', padding:'10px 0', background:T.bg, border:`1px solid ${T.border}`, color:T.muted, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', textAlign:'center' }}>
                     Piano attuale
                   </div>
                 )
@@ -234,7 +234,7 @@ export default function PianoPage() {
                 // passano tutti da handleSwitchPlan: cancella l'abbonamento corrente (se
                 // esiste) e, se il target non è free, apre un nuovo checkout senza un
                 // secondo periodo di prova gratuito.
-                <button onClick={() => handleSwitchPlan(pid)} disabled={loading} style={{ width:'100%', padding:'10px 0', background:isUpgrade?T.navy:'transparent', border:isUpgrade?'none':`0.5px solid ${T.navy}`, color:isUpgrade?T.bg:T.navy, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
+                <button onClick={() => handleSwitchPlan(pid)} disabled={loading} style={{ width:'100%', padding:'10px 0', background:isUpgrade?T.navy:'transparent', border:isUpgrade?'none':`0.5px solid ${T.navy}`, color:isUpgrade?T.bg:T.navy, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', cursor:loading?'not-allowed':'pointer', opacity:loading?0.6:1 }}>
                   {loading ? "Caricamento..." : pid === "free" ? "Annulla abbonamento" : `Passa a ${p.name}`}
                 </button>
               )}

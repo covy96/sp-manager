@@ -20,7 +20,7 @@ export default function InfoPage() {
   const { plan }  = usePlan();
 
   const mono = { fontFamily: "var(--font-label)" };
-  const label = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted };
+  const label = { ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted };
   const card  = {
     background: T.surface,
     border: `1px solid ${T.border}`,
@@ -85,7 +85,7 @@ export default function InfoPage() {
             ...mono, fontSize: 10,
             color: plan?.id === 'pro' ? '#d97706' : plan?.id === 'studio' ? T.navy : T.muted,
             background: plan?.id === 'pro' ? 'rgba(217,119,6,0.1)' : plan?.id === 'studio' ? `${T.navy}18` : T.surface2,
-            padding: "2px 8px", borderRadius: 2, textTransform: "uppercase", letterSpacing: "0.03em",
+            padding: "2px 8px", borderRadius: 2, textTransform: "uppercase", letterSpacing: "0.08em",
           }}>
             {plan?.name || plan?.id || "Free"}
           </span>
@@ -142,7 +142,7 @@ export default function InfoPage() {
 
       {/* Footer */}
       <div style={{ textAlign: "center", paddingBottom: 40 }}>
-        <div style={{ ...mono, fontSize: 10, color: T.muted, letterSpacing: "0.05em" }}>
+        <div style={{ ...mono, fontSize: 10, color: T.muted, letterSpacing: "0.15em" }}>
           © {new Date().getFullYear()} Giacomo Coviello, architetto libero professionista · Tutti i diritti riservati
         </div>
       </div>

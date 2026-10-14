@@ -90,7 +90,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     background: T.surface, color: T.ink, fontSize: 12,
     fontFamily: "var(--font-ui)", outline: 'none', boxSizing: 'border-box',
   };
-  const labelSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
+  const labelSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 };
 
   // Form condiviso tra mobile e desktop
   const formContent = (
@@ -134,7 +134,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         <div style={{ display:'flex', gap:6 }}>
           {[{id:"", label:"Normale", color:"#6b7280"},{id:"bassa", label:"Bassa", color:"#2563eb"},{id:"media", label:"Media", color:"#d97706"},{id:"alta", label:"Alta", color:"#dc2626"}].map(p => (
             <button key={p.id} type="button" onClick={()=>setForm(f=>({...f,priority:p.id}))}
-              style={{ flex:1, padding:'6px 0', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.02em',
+              style={{ flex:1, padding:'6px 0', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em',
                 border:`0.5px solid ${form.priority===p.id ? p.color : T.border}`,
                 borderRadius:T.radiusSm, cursor:'pointer',
                 background: form.priority===p.id ? p.color+"22" : "transparent",
@@ -174,7 +174,7 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
         </div>
       )}
       <div style={{ display:'flex', gap:8, paddingTop:4 }}>
-        <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"var(--font-label)", letterSpacing:'0.03em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
+        <button onClick={handleSave} disabled={saving||!form.title.trim()} style={{ flex:1, padding:'8px 0', background:T.navy, color:T.bg, border:'none', cursor:saving?'not-allowed':'pointer', fontSize:11, fontFamily:"var(--font-label)", letterSpacing:'0.08em', opacity:saving||!form.title.trim()?0.6:1 }}>{saving?"Salvo...":"Salva"}</button>
         <button onClick={handleDelete} disabled={deleting} style={{ padding:'8px 12px', background:T.red, color:T.surface, border:'none', cursor:'pointer', fontSize:11, fontFamily:"var(--font-label)" }}>{deleting?"...":"Elimina"}</button>
       </div>
     </div>
@@ -280,7 +280,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
               <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:'1px 6px', flexShrink:0, opacity:0.7 }}>↻</span>
             )}
             {assignedName && (
-              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.02em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
                 {assignedName}
               </span>
             )}
@@ -830,10 +830,10 @@ export default function ProjectDetailPage() {
               }}>···</button>
               {menuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
-                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.02em' }}>
+                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
                     Modifica
                   </button>
-                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, letterSpacing: '0.02em' }}>
+                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, letterSpacing: '0.05em' }}>
                     {archiving ? "Archiviazione..." : "Archivia progetto"}
                   </button>
                   <button onClick={async () => {
@@ -842,7 +842,7 @@ export default function ProjectDetailPage() {
                     const { error: dErr } = await supabase.rpc('elimina_progetto', { p_project_id: id });
                     if (dErr) { showToast('Errore: ' + dErr.message); return; }
                     navigate('/progetti');
-                  }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.02em' }}>
+                  }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
                     Elimina progetto
                   </button>
                 </div>
@@ -870,7 +870,7 @@ export default function ProjectDetailPage() {
           return (
             <div style={{ marginTop: 10 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.04em', textTransform:'uppercase' }}>Ore</span>
+                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Ore</span>
                 <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: over ? '#dc2626' : T.ink, fontWeight:600 }}>
                   {totaleOreProgetto.toFixed(1)}h{budget > 0 ? ` / ${budget}h` : ""}
                 </span>
@@ -903,7 +903,7 @@ export default function ProjectDetailPage() {
         {/* Team avatars */}
         {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (
           <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em' }}>TEAM</span>
+            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.15em' }}>TEAM</span>
             {project.assigned_users.map((uid, i) => {
               const m = teamMembers.find(tm => tm.id === uid);
               if (!m) return null;
@@ -954,7 +954,7 @@ export default function ProjectDetailPage() {
               />
               {selectedServices.filter(s => completedCategories[s]).length > 0 && (
                 <div style={{ marginTop: 16 }}>
-                  <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 }}>Servizi completati</label>
+                  <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 6 }}>Servizi completati</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {selectedServices.filter(s => completedCategories[s]).map(cat => (
                       <button key={cat} type="button" onClick={() => handleToggleCategory(cat)}
@@ -964,7 +964,7 @@ export default function ProjectDetailPage() {
                         <span style={{ fontFamily: "var(--font-label)", fontSize: 12, color: T.muted, textDecoration: 'line-through' }}>
                           {cat === "__uncategorized__" ? "Generali" : cat}
                         </span>
-                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, letterSpacing: '0.03em', textTransform: 'uppercase' }}>Riattiva</span>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Riattiva</span>
                       </button>
                     ))}
                   </div>
@@ -974,7 +974,7 @@ export default function ProjectDetailPage() {
                 </div>
               )}
               <div style={{ marginTop: 16 }}>
-                <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commesse collegate</label>
+                <label style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, display: 'block', marginBottom: 4 }}>Commesse collegate</label>
                 <LinkedCommesseField
                   selectedIds={editForm.selectedCommessaIds}
                   commesseList={commesseList}
@@ -983,8 +983,8 @@ export default function ProjectDetailPage() {
               </div>
               {editError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{editError}</div>}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: `0.5px solid ${T.border}` }}>
-                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', cursor: 'pointer' }}>Annulla</button>
-                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: T.bg, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
+                <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>Annulla</button>
+                <button type="submit" disabled={editSaving} style={{ border: 'none', background: T.navy, color: T.bg, padding: '8px 20px', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer' }}>{editSaving ? "Salvataggio..." : "Salva"}</button>
               </div>
             </form>
           </div>
@@ -1103,7 +1103,7 @@ export default function ProjectDetailPage() {
                     </span>
                     <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
                       style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                    <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.02em', flex: 1 }}>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
                       {group.category === "__uncategorized__" ? "Generali" : group.category}
                     </span>
                     <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
@@ -1193,7 +1193,7 @@ export default function ProjectDetailPage() {
               <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 13, color: T.muted }}>📥</span>
-                  <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.muted, letterSpacing: '0.02em', flex: 1 }}>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.muted, letterSpacing: '0.05em', flex: 1 }}>
                     Backlog
                   </span>
                   <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>

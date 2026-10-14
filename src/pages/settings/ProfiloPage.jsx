@@ -6,7 +6,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, disabled }) {
   const { T } = useTheme();
@@ -20,7 +20,7 @@ function Input({ value, onChange, type = "text", placeholder, disabled }) {
 function BtnPrimary({ children, type = "button", onClick, disabled }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
@@ -215,7 +215,7 @@ export default function ProfiloPage() {
               style={{
                 background: notifEnabled ? T.greenLight : T.navy, color: notifEnabled ? T.green : T.bg,
                 border: `1px solid ${notifEnabled ? T.green : T.navy}`, borderRadius: T.radiusSm,
-                fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+                fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
                 padding: '8px 16px', cursor: notifEnabled ? 'default' : 'pointer', opacity: notifLoading ? 0.6 : 1,
               }}>
               {notifLoading ? "Attivazione..." : notifEnabled ? "Attive ✓" : "Abilita"}

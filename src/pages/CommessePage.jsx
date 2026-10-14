@@ -21,7 +21,7 @@ function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   return (
     <button type={type} onClick={onClick} disabled={disabled} className="asm-btn" style={{
       background:T.navy,color:T.bg,border:'none',
-      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',
+      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
       padding:'8px 20px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.6:1,borderRadius:T.radiusSm,...style,
     }}>{children}</button>
   );
@@ -31,14 +31,14 @@ function BtnGhost({ children, onClick, disabled, danger, style={} }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background:'transparent',border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm,color:danger?T.red:T.ink,
-      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',
+      fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',
       padding:'8px 20px',cursor:disabled?'not-allowed':'pointer',opacity:disabled?0.5:1,...style,
     }}>{children}</button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:6}}>{children}</div>;
+  return <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:6}}>{children}</div>;
 }
 function Input({ value, onChange, type="text", placeholder, required, style={} }) {
   const { T } = useTheme();
@@ -86,7 +86,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
       className="asm-card" style={{background:hover?T.surface2:T.surface,border:`1px solid ${T.border}`,padding:'20px 20px',cursor:'pointer',transition:'background 0.12s',position:'relative',display:'flex',flexDirection:'column',height:'100%',borderRadius:T.radius,backdropFilter:T.blurSm,WebkitBackdropFilter:T.blurSm,boxShadow:T.shadow}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div onClick={onClick} style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>{commessa.numero_offerta||"—"}</div>
           <div style={{fontSize:14,fontWeight:600,color:T.ink,letterSpacing:'-0.01em'}}>{commessa.nome_commessa||"Commessa senza nome"}</div>
           <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
         </div>
@@ -120,7 +120,7 @@ function CommessaCard({ commessa, incassato, onClick, onArchive, onDelete }) {
           {label:'Data',value:commessa.data_commessa?new Date(commessa.data_commessa).toLocaleDateString('it-IT'):'—',color:T.muted},
         ].map(({label,value,color})=>(
           <div key={label}>
-            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
             <div style={{fontFamily:"var(--font-label)",fontSize:11,fontWeight:500,color}}>{value}</div>
           </div>
         ))}
@@ -397,7 +397,7 @@ export default function CommessePage() {
         <div style={{border:`1px solid ${T.border}`, borderRadius: T.radiusSm,background:T.surface,padding:'56px 32px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
           <div style={{fontSize:32,opacity:0.25}}>📋</div>
           <div style={{fontFamily:"var(--font-label)",fontSize:11,color:T.muted}}>{searchQuery ? `Nessuna commessa trovata per "${searchQuery}".` : `Nessuna commessa per ${annoFiltro || 'questo filtro'}.`}</div>
-          {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{marginTop:4,background:T.navy,color:T.bg,border:'none',borderRadius:T.radiusSm,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer'}}>+ Nuova commessa</button>}
+          {!searchQuery && <button onClick={()=>setModalOpen(true)} style={{marginTop:4,background:T.navy,color:T.bg,border:'none',borderRadius:T.radiusSm,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer'}}>+ Nuova commessa</button>}
         </div>
       ) : (
         <div className="asm-list asm-fade-in" style={{display:'grid',gridTemplateColumns:window.innerWidth < 768 ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',gap: 16}}>
@@ -483,7 +483,7 @@ export default function CommessePage() {
 
                 {/* Riepilogo commessa */}
                 <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'10px 16px'}}>
-                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.05em',marginBottom:4}}>COMMESSA</div>
+                  <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.15em',marginBottom:4}}>COMMESSA</div>
                   <div style={{fontSize:13,fontWeight:600,color:T.ink}}>{formData.nome_commessa}</div>
                   <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{clientInput} · {currency(Number(formData.importo_offerta_base)||0)}</div>
                 </div>
@@ -532,7 +532,7 @@ export default function CommessePage() {
                 {/* Crea nuovo progetto */}
                 {projectMode==="new" && (
                   <div style={{background:T.bg,border:`1px solid ${T.border}`, borderRadius: T.radiusSm,padding:'16px 16px',display:'flex',flexDirection:'column',gap:12}}>
-                    <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
+                    <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted}}>Dati del nuovo progetto</div>
                     <div>
                       <FieldLabel>Nome progetto *</FieldLabel>
                       <Input value={newProjectData.name} onChange={e=>setNewProjectData(p=>({...p,name:e.target.value}))} placeholder={formData.nome_commessa||"Nome progetto"}/>
@@ -611,7 +611,7 @@ export default function CommessePage() {
             </div>
             {deleteModal.numero_offerta && (
               <div style={{ background:T.surface2, border:`1px solid ${T.border}`, padding:'12px 16px' }}>
-                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:4 }}>Offerta collegata — N° {deleteModal.numero_offerta}</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Offerta collegata — N° {deleteModal.numero_offerta}</div>
                 <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
               </div>
             )}
@@ -627,7 +627,7 @@ export default function CommessePage() {
                       await supabase.from('offerte').update({deleted_at:new Date().toISOString()}).eq('studio',deleteModal.studio).eq('numero_offerta',deleteModal.numero_offerta).is('deleted_at',null);
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
-                    style={{ flex:1, padding:'10px 10px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                    style={{ flex:1, padding:'10px 10px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                   >{deletingSaving?'...':'Sì, elimina entrambe'}</button>
                   <button
                     disabled={deletingSaving}
@@ -637,7 +637,7 @@ export default function CommessePage() {
                       if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                       setDeleteModal(null);setDeletingSaving(false);await loadData();
                     }}
-                    style={{ flex:1, padding:'10px 10px', background:'transparent', color:T.ink, border:`1px solid ${T.borderMd}`, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                    style={{ flex:1, padding:'10px 10px', background:'transparent', color:T.ink, border:`1px solid ${T.borderMd}`, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                   >{deletingSaving?'...':'No, solo la commessa'}</button>
                 </div>
                 <div style={{ display:'flex', justifyContent:'flex-end' }}>
@@ -655,7 +655,7 @@ export default function CommessePage() {
                     if(error){showToast('Errore: '+error.message);setDeletingSaving(false);return;}
                     setDeleteModal(null);setDeletingSaving(false);await loadData();
                   }}
-                  style={{ padding:'8px 20px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
+                  style={{ padding:'8px 20px', background:T.red, color:'#fff', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', opacity:deletingSaving?0.6:1 }}
                 >{deletingSaving?'Eliminazione...':'Elimina'}</button>
               </div>
             )}

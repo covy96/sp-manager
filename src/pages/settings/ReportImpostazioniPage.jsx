@@ -22,7 +22,7 @@ const inputCss = (T) => ({
 function FL({ children }) {
   const { T } = useTheme();
   return (
-    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>
+    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>
       {children}
     </div>
   );
@@ -34,7 +34,7 @@ function Btn({ children, onClick, disabled, ghost, style = {} }) {
     <button onClick={onClick} disabled={disabled} style={{
       padding: "8px 20px", border: ghost ? `0.5px solid ${T.borderMd}` : "none",
       background: ghost ? "transparent" : T.navy, color: ghost ? T.ink : T.bg,
-      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.03em",
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.08em",
       textTransform: "uppercase", cursor: disabled ? "not-allowed" : "pointer",
       opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
@@ -58,7 +58,7 @@ function PreviewModal({ form, onClose }) {
 
       {/* barra */}
       <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 24px", background: "#333", borderBottom: "1px solid #222" }}>
-        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: "#aaa" }}>
+        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#aaa" }}>
           Anteprima PDF — A4 (210 × 297 mm)
         </span>
         <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#aaa", lineHeight: 1, padding: "0 4px" }}>×</button>
@@ -117,7 +117,7 @@ function PreviewModal({ form, onClose }) {
 
           {/* ── Sezione REPORT (titolo + note) ── */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#13315C", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6, fontFamily: "var(--font-label)" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#13315C", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6, fontFamily: "var(--font-label)" }}>
               Report
             </div>
             <div style={{ fontSize: 12, color: "#444", lineHeight: 1.8 }}>
@@ -129,7 +129,7 @@ function PreviewModal({ form, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
             {[1,2].map(n => (
               <div key={n} style={{ height: 140, background: "#f5f5f5", border: "0.5px solid #e0e0e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 10, color: "#ccc", fontFamily: "var(--font-label)", letterSpacing: "0.04em" }}>FOTO {n}</span>
+                <span style={{ fontSize: 10, color: "#ccc", fontFamily: "var(--font-label)", letterSpacing: "0.1em" }}>FOTO {n}</span>
               </div>
             ))}
           </div>
@@ -344,7 +344,7 @@ export default function ReportImpostazioniPage() {
 
           {/* INTESTAZIONE PDF */}
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>Intestazione PDF</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Intestazione PDF</div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
               {/* Logo */}
@@ -389,7 +389,7 @@ export default function ReportImpostazioniPage() {
                     })}
                   </div>
                   <div>
-                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginBottom: 4, letterSpacing: "0.04em" }}>GROTESKA</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginBottom: 4, letterSpacing: "0.1em" }}>GROTESKA</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {GROTESKA_VARIANTS.map(g => {
                         const sel = form.report_footer_font === g.key;
@@ -432,7 +432,7 @@ export default function ReportImpostazioniPage() {
 
             {/* Anteprima intestazione */}
             <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "16px 20px" }}>
-              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>Anteprima intestazione</div>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>Anteprima intestazione</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.navy, minHeight: 20 }}>{form.report_header_name || ""}</div>
@@ -443,14 +443,14 @@ export default function ReportImpostazioniPage() {
                 )}
               </div>
               <div style={{ borderTop: `0.5px solid ${T.navy}`, marginTop: 10, paddingTop: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.navy, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.02em" }}>Titolo del report PDF</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.navy, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.05em" }}>Titolo del report PDF</div>
               </div>
             </div>
           </div>
 
           {/* FOOTER */}
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>Piè di pagina (footer)</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>Piè di pagina (footer)</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {[["report_footer_left","Sinistra"],["report_footer_center","Centro"],["report_footer_right","Destra"]].map(([field,label]) => (
                 <div key={field}>
@@ -464,7 +464,7 @@ export default function ReportImpostazioniPage() {
               Usa <strong style={{ color: T.ink }}>{"{pagina}"}</strong> e <strong style={{ color: T.ink }}>{"{totale}"}</strong> per la numerazione automatica.
             </div>
             <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "10px 16px" }}>
-              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Anteprima footer</div>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Anteprima footer</div>
               <div style={{ height: 1, background: "rgba(150,150,150,0.4)", marginBottom: 8 }} />
               {(() => {
                 const L = form.report_footer_left?.trim();
@@ -498,7 +498,7 @@ export default function ReportImpostazioniPage() {
         {/* ── COLONNA DESTRA: PROGETTI ──────────────────────────────── */}
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 16 }}>
           <div style={{ padding: "16px 16px", borderBottom: `0.5px solid ${T.border}` }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>Applica a questi progetti</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>Applica a questi progetti</div>
             {/* Barra ricerca */}
             <input
               type="text"

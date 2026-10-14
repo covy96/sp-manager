@@ -407,7 +407,7 @@ export default function AppLayout({ session, children }) {
                 onMouseLeave={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='transparent'; }}
               >
                 {({ isActive }) => (<>
-                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.06em', width:18 }}>{String(menuItems.slice(0, idx + 1).filter(i => !i.divider).length).padStart(2, '0')}</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{String(menuItems.slice(0, idx + 1).filter(i => !i.divider).length).padStart(2, '0')}</span>
                   <span style={{ fontSize:12.5, color: isActive ? '#ffffff' : T.sidebarText, fontWeight: isActive ? 600 : 400, letterSpacing:'0.01em' }}>{item.label}</span>
                 </>)}
               </NavLink>
@@ -467,7 +467,7 @@ export default function AppLayout({ session, children }) {
               {studioName || "ASM"}
             </span>
             {pageTitle && (
-              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.04em', marginTop:1 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.1em', marginTop:1 }}>
                 {pageTitle}
               </div>
             )}
@@ -519,7 +519,7 @@ export default function AppLayout({ session, children }) {
                       const tc = TYPE_COLORS[type];
                       return (
                         <div key={type}>
-                          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'8px 16px 4px', borderBottom:`0.5px solid ${T.border}` }}>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 16px 4px', borderBottom:`0.5px solid ${T.border}` }}>
                             {tc.label}
                           </div>
                           {items.map(item => (
@@ -528,7 +528,7 @@ export default function AppLayout({ session, children }) {
                               onMouseEnter={e => e.currentTarget.style.background=T.surface2}
                               onMouseLeave={e => e.currentTarget.style.background='transparent'}
                             >
-                              <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', color:tc.color, background:tc.bg, padding:'2px 6px', flexShrink:0, borderRadius:2 }}>
+                              <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:tc.color, background:tc.bg, padding:'2px 6px', flexShrink:0, borderRadius:2 }}>
                                 {tc.label}
                               </span>
                               <div style={{ minWidth:0, flex:1 }}>
@@ -536,7 +536,7 @@ export default function AppLayout({ session, children }) {
                                 <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{item.sub}</div>
                               </div>
                               {item.archived && (
-                                <span style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.04em', textTransform:'uppercase', color:'#b45309', background:'rgba(180,83,9,0.1)', padding:'2px 6px', borderRadius:2, flexShrink:0 }}>
+                                <span style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:'#b45309', background:'rgba(180,83,9,0.1)', padding:'2px 6px', borderRadius:2, flexShrink:0 }}>
                                   archiviato
                                 </span>
                               )}
@@ -591,12 +591,12 @@ export default function AppLayout({ session, children }) {
                 maxHeight:400, display:'flex', flexDirection:'column',
               }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
-                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted }}>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
                     {unreadNotifs.length > 0 ? `${unreadNotifs.length} non lette` : 'Notifiche'}
                   </span>
                   {unreadNotifs.length > 0 && (
                     <button onClick={async () => { await markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
-                      style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.02em' }}>
+                      style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.05em' }}>
                       Segna tutto letto
                     </button>
                   )}
@@ -611,13 +611,13 @@ export default function AppLayout({ session, children }) {
                         <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{muteStatusLabel(mutePrefs)}</div>
                       </div>
                       <button onClick={() => applyMute(null)}
-                        style={{ flexShrink:0, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.03em', textTransform:'uppercase', padding:'6px 12px' }}>
+                        style={{ flexShrink:0, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px' }}>
                         Riattiva
                       </button>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>🔔 Silenzia notifiche</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>🔔 Silenzia notifiche</div>
                       <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
                         {[
                           { k:'1h',         label:'1 ora' },
@@ -682,7 +682,7 @@ export default function AppLayout({ session, children }) {
 
                 {/* Account */}
                 <div style={{ padding:'6px 4px' }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Account</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Account</div>
                   {(teamMember?.role_internal === 'Owner' || teamMember?.role_internal === 'Partner') && (
                     <DropItem icon={CardIcon} label="Piano" onClick={() => goSettings("/impostazioni/piano")}/>
                   )}
@@ -692,7 +692,7 @@ export default function AppLayout({ session, children }) {
 
                 {/* Studio */}
                 <div style={{ padding:'6px 4px', borderTop:`0.5px solid ${T.border}` }}>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
 
                   <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
@@ -746,7 +746,7 @@ export default function AppLayout({ session, children }) {
               {/* Studi dell'account corrente */}
               {studioList.length > 0 && (
                 <>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     {session?.user?.email}
                   </div>
                   {studioList.map(m => (
@@ -759,9 +759,9 @@ export default function AppLayout({ session, children }) {
                     }}>
                       <div>
                         <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{m.studios?.name || 'Studio'}</div>
-                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.04em' }}>{m.role_internal || '—'}</div>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.role_internal || '—'}</div>
                       </div>
-                      {m.studio === studioId && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.03em', textTransform:'uppercase' }}>✓ Attivo</span>}
+                      {m.studio === studioId && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.08em', textTransform:'uppercase' }}>✓ Attivo</span>}
                     </button>
                   ))}
                 </>
@@ -771,7 +771,7 @@ export default function AppLayout({ session, children }) {
               {savedAccounts.filter(a => a.userId !== session?.user?.id).length > 0 && (
                 <>
                   <div style={{ height:'0.5px', background:T.border, margin:'8px 0' }}/>
-                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     Altri account
                   </div>
                   {savedAccounts.filter(a => a.userId !== session?.user?.id).map(account => (
@@ -810,13 +810,13 @@ export default function AppLayout({ session, children }) {
                 padding:'10px 16px', background:'transparent',
                 border:`0.5px solid ${T.border}`, cursor:'pointer',
                 fontFamily:"var(--font-label)", fontSize:11,
-                color:T.muted, letterSpacing:'0.03em', textTransform:'uppercase', width:'100%',
+                color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase', width:'100%',
               }}>
                 + Aggiungi account
               </button>
             </div>
 
-            <button onClick={() => setShowAccountPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.muted, letterSpacing:'0.03em', textTransform:'uppercase' }}>
+            <button onClick={() => setShowAccountPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
               Annulla
             </button>
           </div>

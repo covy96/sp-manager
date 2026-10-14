@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useEscKey } from '../hooks/useEscKey';
 import { useToast } from "../contexts/ToastContext";
+import SlidingTabs from "../components/SlidingTabs";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(v) || 0);
@@ -20,7 +21,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none',
-      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '8px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
@@ -31,14 +32,14 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background: 'transparent', border: `1px solid ${danger ? T.red : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? T.red : T.ink,
-      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '8px 16px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
   );
 }
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, required, style = {} }) {
   const { T } = useTheme();
@@ -82,7 +83,7 @@ function DatoCommessa({ label, value, mono, strong, color, onClick }) {
   const { T } = useTheme();
   return (
     <div onClick={onClick} style={{ minWidth: 0, cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 4 }}>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 4 }}>
         {label}{onClick && <span style={{ opacity: 0.6 }}> ↗</span>}
       </div>
       <div style={{ fontSize: strong ? 17 : 14, fontWeight: strong ? 600 : 500, color: color || T.ink, fontFamily: mono ? "var(--font-label)" : "var(--font-ui)", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
@@ -97,7 +98,7 @@ function MonitorSection({ title, summary, badge, badgeColor, action, footer, ope
     <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, minWidth: 0 }}>
       <div onClick={onToggle} style={{ padding: '12px 16px', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => action && e.stopPropagation()}>
             {action}
             {badge != null && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: badgeColor || T.muted }}>{badge}</span>}
@@ -153,7 +154,7 @@ function RowMenu({ open, onOpen, onClose, items }) {
     <div ref={menuRef} style={{ position: 'fixed', top: pos.top, right: pos.right, width: 150, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, zIndex: 9999, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden' }}>
       {items.map(item => (
         <button key={item.label} onClick={e => { e.stopPropagation(); onClose(); item.onClick(); }}
-          style={{ display: 'block', width: '100%', padding: '12px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.02em' }}>
+          style={{ display: 'block', width: '100%', padding: '12px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: item.danger ? T.red : T.ink, letterSpacing: '0.05em' }}>
           {item.label}
         </button>
       ))}
@@ -732,7 +733,7 @@ export default function CommessaDetailPage() {
       <Panel style={{ padding: isMobile ? '16px 16px' : '20px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ minWidth: 0, flex: '1 1 320px' }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>{commessa.numero_offerta || "—"}</div>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.25em', textTransform: 'uppercase', marginBottom: 6 }}>{commessa.numero_offerta || "—"}</div>
             <div style={{ fontSize: 22, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{commessa.nome_commessa || "Commessa senza nome"}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -772,7 +773,7 @@ export default function CommessaDetailPage() {
             style={{ background: T.bg, border:`1px solid ${T.border}`, borderRadius: T.radius, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', padding:'20px 24px', width:'100%', maxWidth:420 }}>
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
                 Dettaglio importo base
               </div>
               <button onClick={() => setShowVociPopup(false)}
@@ -814,7 +815,7 @@ export default function CommessaDetailPage() {
                       </div>
                     )}
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop: hasSconti ? 8 : 0, borderTop: hasSconti ? `0.5px solid ${T.border}` : 'none' }}>
-                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>Totale netto</span>
                       <span style={{ fontFamily:"var(--font-label)", fontSize:16, fontWeight:700, color:T.navy }}>{currency(netto)}</span>
                     </div>
                   </div>
@@ -840,18 +841,12 @@ export default function CommessaDetailPage() {
           </div>
 
           <form onSubmit={handleQuickCosto} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, background: T.navyLight, borderRadius: T.radiusSm, marginBottom: 16 }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {TIPI_COSTO.map(t => {
-                const sel = (quickCosto.tipo_costo || 'Altro') === t;
-                return (
-                  <button key={t} type="button" onClick={() => setQuickCosto(p => ({ ...p, tipo_costo: t }))}
-                    style={{ padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em',
-                      border: `1px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navy : T.surface, color: sel ? T.bg : T.ink }}>
-                    {t}
-                  </button>
-                );
-              })}
-            </div>
+            <SlidingTabs
+              fullWidth
+              tabs={TIPI_COSTO.map(t => ({ key: t, label: t }))}
+              active={quickCosto.tipo_costo || 'Altro'}
+              onChange={t => setQuickCosto(p => ({ ...p, tipo_costo: t }))}
+            />
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'minmax(0, 1fr) minmax(0, 1fr) auto', gap: 8 }}>
               <Input value={quickCosto.description} onChange={e => setQuickCosto(p => ({ ...p, description: e.target.value }))} placeholder="Descrizione (opzionale)"
                 style={{ gridColumn: '1 / -1' }} />
@@ -885,7 +880,7 @@ export default function CommessaDetailPage() {
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 4px 0' }}>
-                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.muted }}>Totale</span>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</span>
                   <span style={{ fontFamily: "var(--font-label)", fontSize: 13, fontWeight: 600, color: T.ink }}>{currency(totCostiExtra)}</span>
                 </div>
               </div>
@@ -1125,7 +1120,7 @@ export default function CommessaDetailPage() {
               <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* Rate */}
                 <div>
-                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
                     Rate incluse {tutteLeRate.length > 0 && `(${tutteLeRate.length})`}
                   </div>
                   {tutteLeRate.length === 0 ? (
@@ -1151,7 +1146,7 @@ export default function CommessaDetailPage() {
                 </div>
                 {/* Costi */}
                 <div>
-                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
                     Costi extra inclusi {costiInclusi.length > 0 && `(${costiInclusi.length})`}
                   </div>
                   {costiInclusi.length === 0 ? (
@@ -1169,7 +1164,7 @@ export default function CommessaDetailPage() {
                 {/* Note */}
                 {p.note && (
                   <div>
-                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
                     <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.6 }}>{p.note}</div>
                   </div>
                 )}
@@ -1229,7 +1224,7 @@ export default function CommessaDetailPage() {
             if (acData.suddivisione.length === 0 && acData.costiExtra.length === 0) return null;
             return (
               <div key={ac.id} style={{ marginTop: 16 }}>
-                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${T.border}` }}>
                   {ac.nome_commessa}
                 </div>
                 {acData.suddivisione.map(r => {
@@ -1288,13 +1283,11 @@ export default function CommessaDetailPage() {
         {rataStep === "config" ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div><FieldLabel>Modalità</FieldLabel>
-              <div style={{ display: 'flex', gap: 16 }}>
-                {[['percentuale','Percentuale'],['importo','Importo fisso']].map(([v,l]) => (
-                  <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
-                    <input type="radio" checked={rataMode === v} onChange={() => setRataMode(v)} style={{ accentColor: T.navy }} />{l}
-                  </label>
-                ))}
-              </div>
+              <SlidingTabs
+                tabs={[{ key: 'percentuale', label: 'Percentuale' }, { key: 'importo', label: 'Importo fisso' }]}
+                active={rataMode}
+                onChange={setRataMode}
+              />
             </div>
             <div><FieldLabel>Numero di rate</FieldLabel><Input type="number" value={rataCount} onChange={e => setRataCount(e.target.value)} /></div>
             <Divider /><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}><BtnGhost onClick={() => setRataModal(false)}>Lo farò dopo</BtnGhost><BtnPrimary onClick={initRateRows}>Avanti →</BtnPrimary></div>
@@ -1303,7 +1296,7 @@ export default function CommessaDetailPage() {
           <form onSubmit={handleSaveRate} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, marginBottom: 4 }}>
               {['Rata', rataMode === 'percentuale' ? '%' : '€'].map(h => (
-                <div key={h} style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted }}>{h}</div>
+                <div key={h} style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>{h}</div>
               ))}
             </div>
             {rateRows.map((r, i) => (
@@ -1412,7 +1405,7 @@ export default function CommessaDetailPage() {
           {commessa?.numero_offerta ? (
             <>
               <div style={{ background: T.surface2, border: `1px solid ${T.border}`, padding: '12px 16px' }}>
-                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>Offerta collegata — N° {commessa.numero_offerta}</div>
+                <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Offerta collegata — N° {commessa.numero_offerta}</div>
                 <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Vuoi eliminare anche l'offerta collegata?</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1435,7 +1428,7 @@ export default function CommessaDetailPage() {
                     }
                     navigate('/commesse');
                   }}
-                  style={{ flex: 1, padding: '10px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                  style={{ flex: 1, padding: '10px 10px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
                 >
                   {deletingSaving ? '...' : 'Sì, elimina entrambe'}
                 </button>
@@ -1447,7 +1440,7 @@ export default function CommessaDetailPage() {
                     if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                     navigate('/commesse');
                   }}
-                  style={{ flex: 1, padding: '10px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                  style={{ flex: 1, padding: '10px 10px', background: 'transparent', color: T.ink, border: `1px solid ${T.borderMd}`, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
                 >
                   {deletingSaving ? '...' : 'No, solo la commessa'}
                 </button>
@@ -1467,7 +1460,7 @@ export default function CommessaDetailPage() {
                   if (error) { showToast('Errore: ' + error.message); setDeletingSaving(false); return; }
                   navigate('/commesse');
                 }}
-                style={{ padding: '8px 20px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
+                style={{ padding: '8px 20px', background: '#b91c1c', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: deletingSaving ? 0.6 : 1 }}
               >
                 {deletingSaving ? 'Eliminazione...' : 'Elimina'}
               </button>

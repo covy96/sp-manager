@@ -60,10 +60,10 @@
   scrollbar-color: rgba(14,14,13,0.2) transparent;
   scrollbar-width: thin;
 
-  /* ── Tipografia (stile Apple: font di sistema = SF Pro su Mac/iPhone) ── */
-  --font-ui:    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, system-ui, sans-serif;
-  --font-label: var(--font-ui);       /* etichette, numeri, metadati */
-  --font-brand: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; /* solo logo ASM */
+  /* ── Tipografia: font del brand ASM ── */
+  --font-ui:    'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label: 'IBM Plex Mono', monospace;   /* etichette, numeri, metadati */
+  --font-brand: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; /* logo ASM */
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -383,16 +383,6 @@ button:not(:disabled) {
 }
 button:not(:disabled):active { transform: scale(0.97); }
 
-/* Pulsanti: maiuscoletto spaziato → testo normale, come nei controlli Apple */
-button[style*="text-transform: uppercase"] {
-  text-transform: none !important;
-  letter-spacing: -0.005em !important;
-  font-weight: 500;
-}
-button[style*="text-transform: uppercase"][style*="font-size: 9px"],
-button[style*="text-transform: uppercase"][style*="font-size: 10px"] { font-size: 11px !important; }
-button[style*="text-transform: uppercase"][style*="font-size: 11px"] { font-size: 12px !important; }
-
 /* Titoli grandi: tracking negativo e interlinea stretta */
 h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
 
@@ -414,3 +404,9 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
     -webkit-backdrop-filter: none !important;
   }
 }
+
+/* ── Segmented control stile Apple (SlidingTabs) ── */
+.asm-seg { border-radius: 9px !important; }
+.asm-seg > button { border-radius: 7px !important; }
+.asm-seg > button:active { transform: none !important; }
+.asm-seg-thumb { border-radius: 7px !important; }

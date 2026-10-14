@@ -88,7 +88,7 @@ export default function RegolazioneCapitolatoPage() {
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <input placeholder="Cerca voci…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...inputSt, flex: 1, minWidth: 220 }} />
-        <button onClick={() => setAdding(true)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "10px 16px", cursor: "pointer" }}>+ Nuova voce</button>
+        <button onClick={() => setAdding(true)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "10px 16px", cursor: "pointer" }}>+ Nuova voce</button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
         <Chip T={T} active={catFilter === ""} onClick={() => setCatFilter("")}>Tutte</Chip>
@@ -109,7 +109,7 @@ export default function RegolazioneCapitolatoPage() {
         <div style={{ color: T.muted, fontFamily: mono, fontSize: 12, padding: 40, textAlign: "center" }}>Nessuna voce trovata.</div>
       ) : gruppi.map((g) => (
         <div key={g.cat.code} style={{ marginBottom: 28 }}>
-          <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.02em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
+          <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
           {g.items.map((v, i) => (
             <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato}
               spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
@@ -185,7 +185,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
   };
 
   const inp = { padding: "6px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "var(--font-ui)", outline: "none" };
-  const lbl = { fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
+  const lbl = { fontFamily: mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
 
   return (
     <div style={{ border: `1px solid ${dirty ? T.navy : T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 8, background: T.surface }}>
@@ -252,7 +252,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
           )}
           {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 16px", cursor: "pointer" }}>Annulla</button>}
           {!nuova && !isGlobale && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Elimina</button>}
-          <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
+          <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
         </div>
       </div>
     </div>

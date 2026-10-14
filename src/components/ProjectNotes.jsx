@@ -243,7 +243,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
         }}
       >
         <span style={{ fontSize: 13 }}>📝</span>
-        <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, letterSpacing: "0.03em", textTransform: "uppercase", color: isDark ? T.ink : "#5c4a00" }}>
+        <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? T.ink : "#5c4a00" }}>
           Note di progetto
         </span>
         {totalChecks > 0 && (

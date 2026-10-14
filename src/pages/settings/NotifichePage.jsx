@@ -190,7 +190,7 @@ export default function NotifichePage() {
 
       {/* Lista preferenze */}
       <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow,  opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
-        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, padding: '10px 20px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
+        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 20px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
         {prefsLoading ? (
           <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
         ) : NOTIF_ITEMS.map(item => (

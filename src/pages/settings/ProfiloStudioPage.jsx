@@ -28,7 +28,7 @@ function KpiCard({ label, value, color }) {
   const { T } = useTheme();
   return (
     <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radiusSm, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'16px 20px' }}>
-      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
+      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
       <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink }}>{value}</div>
     </div>
   );
@@ -48,7 +48,7 @@ function Panel({ title, subtitle, children }) {
 export default function ProfiloStudioPage() {
   const { T } = useTheme();
   const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
-  const labelSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
+  const labelSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
   usePageTitleOnMount("Profilo Studio");
   const { studioId, studio } = useStudio();
   const permissions = usePermissions();
@@ -220,7 +220,7 @@ export default function ProfiloStudioPage() {
           </fieldset>
           {canEdit && (
             <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
+              <button type="submit" disabled={saving} style={{background:T.navy,color:T.bg,border:'none',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:saving?'not-allowed':'pointer',opacity:saving?0.6:1}}>
                 {saving?'Salvataggio...':'Salva'}
               </button>
             </div>
@@ -241,7 +241,7 @@ export default function ProfiloStudioPage() {
           </div>
           {canEdit && (
             <button onClick={()=>{ setNuovoTipo(studioData?.tipo_fatturazione||'proforma'); setTipoModal(true); }}
-              style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer',flexShrink:0}}>
+              style={{background:'transparent',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 16px',cursor:'pointer',flexShrink:0}}>
               Modifica
             </button>
           )}
@@ -283,8 +283,8 @@ export default function ProfiloStudioPage() {
             </div>
 
             <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:`0.5px solid ${T.border}`}}>
-              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer'}}>Annulla</button>
-              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
+              <button onClick={()=>setTipoModal(false)} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer'}}>Annulla</button>
+              <button onClick={handleCambiaTipo} disabled={saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')} style={{background:T.navy,border:'none',color:T.bg,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:'pointer',opacity:saving||nuovoTipo===(studioData?.tipo_fatturazione||'proforma')?0.6:1}}>
                 {saving?'Salvataggio...':'Conferma cambio'}
               </button>
             </div>
@@ -295,7 +295,7 @@ export default function ProfiloStudioPage() {
       {/* Codice invito */}
       <Panel title="Codice invito studio">
         <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <div style={{fontFamily:"var(--font-label)",fontSize:24,letterSpacing:'0.08em',color:T.navy,fontWeight:600,background:T.bg,padding:'10px 20px',border:`0.5px solid ${T.border}`}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:24,letterSpacing:'0.3em',color:T.navy,fontWeight:600,background:T.bg,padding:'10px 20px',border:`0.5px solid ${T.border}`}}>
             {studioData?.invite_code||'——'}
           </div>
           <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,lineHeight:1.6}}>
@@ -315,7 +315,7 @@ export default function ProfiloStudioPage() {
               ed elimina tutti i dati. I dati restano recuperabili per 30 giorni, poi vengono cancellati definitivamente.
             </div>
             <button onClick={()=>{ setDeleteConfirm(""); setDeleteError(""); setDeleteModal(true); }}
-              style={{ background:T.red, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', flexShrink:0, whiteSpace:'nowrap' }}>
+              style={{ background:T.red, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', flexShrink:0, whiteSpace:'nowrap' }}>
               Cancella studio
             </button>
           </div>
@@ -357,8 +357,8 @@ export default function ProfiloStudioPage() {
             )}
 
             <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:`0.5px solid ${T.border}`}}>
-              <button onClick={()=>setDeleteModal(false)} disabled={deleting} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',cursor:deleting?'not-allowed':'pointer',opacity:deleting?0.6:1}}>Annulla</button>
-              <button onClick={handleDeleteStudio} disabled={deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE} style={{background:T.red,border:'none',color:'#fff',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.03em',textTransform:'uppercase',padding:'8px 20px',borderRadius:T.radiusSm,cursor:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?'not-allowed':'pointer',opacity:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?0.5:1}}>
+              <button onClick={()=>setDeleteModal(false)} disabled={deleting} style={{border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,background:'transparent',color:T.ink,fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',cursor:deleting?'not-allowed':'pointer',opacity:deleting?0.6:1}}>Annulla</button>
+              <button onClick={handleDeleteStudio} disabled={deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE} style={{background:T.red,border:'none',color:'#fff',fontFamily:"var(--font-label)",fontSize:11,letterSpacing:'0.08em',textTransform:'uppercase',padding:'8px 20px',borderRadius:T.radiusSm,cursor:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?'not-allowed':'pointer',opacity:(deleting||deleteConfirm.trim().toUpperCase()!==CONFIRM_PHRASE)?0.5:1}}>
                 {deleting?'Cancellazione...':'Cancella definitivamente'}
               </button>
             </div>

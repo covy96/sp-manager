@@ -33,7 +33,7 @@ export default function StudioCancellatoPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
           <AsmSeal size="sm" theme={isDark ? "dark" : "light"} showBorder />
           <button onClick={handleLogout}
-            style={{ background: "transparent", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" }}>
+            style={{ background: "transparent", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" }}>
             Esci
           </button>
         </div>

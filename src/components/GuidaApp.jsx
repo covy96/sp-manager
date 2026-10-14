@@ -27,13 +27,13 @@ function Card({ T, children, style = {} }) {
 function Stat({ T, label, value, color, bg }) {
   return (
     <div style={{ background: bg || T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "8px 12px", boxShadow: T.shadow }}>
-      <div style={{ ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
+      <div style={{ ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color: color || T.ink, letterSpacing: "-0.02em" }}>{value}</div>
     </div>
   );
 }
 
-function lbl(T) { return { ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }; }
+function lbl(T) { return { ...mono, fontSize: 7.5, color: T.muted, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }; }
 function track(T) { return { height: 5, background: `${T.muted}26`, borderRadius: 3 }; }
 
 function Mock({ type, T }) {
@@ -74,7 +74,7 @@ function Mock({ type, T }) {
           {steps.map((s, k) => (
             <div key={k} style={{ display: "contents" }}>
               <Card T={T} style={{ flex: 1, padding: "10px 8px" }}>
-                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.04em", color: s.col, fontWeight: 700, marginBottom: 6 }}>{s.tag}</div>
+                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", color: s.col, fontWeight: 700, marginBottom: 6 }}>{s.tag}</div>
                 <div style={{ height: 5, width: "70%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 4 }} />
                 <div style={{ height: 5, width: "50%", borderRadius: 3, background: `${T.muted}33`, marginBottom: 8 }} />
                 <div style={{ fontSize: 12, fontWeight: 700, color: s.col }}>{s.val}</div>
@@ -158,7 +158,7 @@ function Mock({ type, T }) {
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "8px 10px" }}>
-            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.04em", color: navy, fontWeight: 700 }}>TOTALE</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>TOTALE</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: navy }}>€15.500</div>
           </div>
         </Card>
@@ -382,14 +382,14 @@ function Mock({ type, T }) {
           <div style={lbl(T)}>CAPEX — preventivi cantiere</div>
           {rows.map(([cat, forn, val, acc], k) => (
             <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: k < rows.length - 1 ? `0.5px solid ${T.border}` : "none" }}>
-              <span style={{ ...mono, fontSize: 9, letterSpacing: "0.03em", textTransform: "uppercase", color: navy, border: `0.5px solid ${navy}55`, borderRadius: 4, padding: "1px 6px", flexShrink: 0 }}>{cat}</span>
+              <span style={{ ...mono, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: navy, border: `0.5px solid ${navy}55`, borderRadius: 4, padding: "1px 6px", flexShrink: 0 }}>{cat}</span>
               <div style={{ flex: 1, fontSize: 9.5, color: T.ink }}>{forn}</div>
               <div style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.ink }}>{val}</div>
               <span style={{ ...mono, fontSize: 10, color: acc ? green : T.muted, fontWeight: acc ? 600 : 400, width: 62, textAlign: "right" }}>{acc ? "✓ Accettato" : "—"}</span>
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, background: `${navy}14`, borderRadius: T.radiusSm, padding: "6px 10px" }}>
-            <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: navy, fontWeight: 700 }}>ACCETTATO</span>
+            <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: navy, fontWeight: 700 }}>ACCETTATO</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: navy }}>€98.500</span>
           </div>
         </Card>
@@ -448,7 +448,7 @@ function ProjectDemo({ T }) {
             const on = p.key === active;
             return (
               <button key={p.key} onClick={() => setActive(p.key)} style={{
-                ...mono, fontSize: 7.5, fontWeight: 600, letterSpacing: "0.04em",
+                ...mono, fontSize: 7.5, fontWeight: 600, letterSpacing: "0.1em",
                 border: `0.5px solid ${on ? navy : T.border}`, borderRadius: 6,
                 background: on ? `${navy}14` : T.surface, color: on ? navy : T.muted,
                 padding: "6px 10px", cursor: "pointer",
@@ -459,7 +459,7 @@ function ProjectDemo({ T }) {
       </Card>
 
       {/* Anteprima dello strumento selezionato */}
-      <div style={{ ...mono, fontSize: 7.5, letterSpacing: "0.04em", textTransform: "uppercase", color: T.muted, marginBottom: 6, textAlign: "center" }}>
+      <div style={{ ...mono, fontSize: 7.5, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted, marginBottom: 6, textAlign: "center" }}>
         Anteprima · {cur.label} — tocca le pill sopra
       </div>
       <Mock type={cur.mock} T={T} />
@@ -591,20 +591,20 @@ export default function GuidaApp({ open, onClose }) {
   const spotlight = !!rect;
 
   const planBadge = s.plan && (
-    <span style={{ ...mono, fontSize: 10, letterSpacing: "0.04em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
+    <span style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: s.plan === "Pro" ? "#d97706" : T.navy, background: s.plan === "Pro" ? "rgba(217,119,6,0.12)" : `${T.navy}18`, border: `0.5px solid ${s.plan === "Pro" ? "rgba(217,119,6,0.3)" : `${T.navy}33`}`, padding: "2px 8px", borderRadius: 3 }}>
       Piano {s.plan}
     </span>
   );
 
   const btn = (label, onClick, primary, disabled) => (
-    <button onClick={onClick} disabled={disabled} style={{ border: primary ? "none" : `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: primary ? T.navy : "transparent", color: primary ? "#EEF1F6" : T.ink, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: primary ? "10px 24px" : "10px 20px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}>{label}</button>
+    <button onClick={onClick} disabled={disabled} style={{ border: primary ? "none" : `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: primary ? T.navy : "transparent", color: primary ? "#EEF1F6" : T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: primary ? "10px 24px" : "10px 20px", cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1 }}>{label}</button>
   );
 
   // Corpo condiviso (compact = modalità spotlight, senza mock grande)
   const Body = ({ compact }) => (
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: compact ? 12 : 16 }}>
-        <span style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted }}>
+        <span style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted }}>
           Guida · {String(i + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
         <button onClick={onClose} aria-label="Chiudi" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 22, lineHeight: 1 }}>×</button>
@@ -646,7 +646,7 @@ export default function GuidaApp({ open, onClose }) {
 
       {/* Pulsante "Vai alla sezione" */}
       {s.goto && (
-        <button onClick={() => goTo(s.goto)} style={{ marginTop: 16, width: "100%", border: `1px solid ${T.navy}55`, borderRadius: T.radiusSm, background: `${T.navy}10`, color: T.navy, ...mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "10px 0", cursor: "pointer", fontWeight: 600 }}>
+        <button onClick={() => goTo(s.goto)} style={{ marginTop: 16, width: "100%", border: `1px solid ${T.navy}55`, borderRadius: T.radiusSm, background: `${T.navy}10`, color: T.navy, ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "10px 0", cursor: "pointer", fontWeight: 600 }}>
           {s.cta || "Vai a questa sezione →"}
         </button>
       )}

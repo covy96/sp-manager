@@ -9,7 +9,7 @@ import { useToast } from "../../contexts/ToastContext";
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style }}>
       {children}
     </button>
   );
@@ -17,7 +17,7 @@ function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
 function BtnGhost({ children, onClick, disabled, danger, style={} }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.03em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, ...style }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, ...style }}>
       {children}
     </button>
   );
@@ -203,7 +203,7 @@ export default function GestioneServiziPage() {
                 {/* Pannello task predefinite */}
                 {isExpanded && (
                   <div style={{ borderTop:`0.5px solid ${T.border}`, padding:'16px 16px 16px', background:T.bg }}>
-                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.06em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>
                       Task predefinite — verranno create automaticamente per ogni nuovo progetto con questo servizio
                     </div>
 

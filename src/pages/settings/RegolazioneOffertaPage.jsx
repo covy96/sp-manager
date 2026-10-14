@@ -80,7 +80,7 @@ export default function RegolazioneOffertaPage() {
 
   // ── stili ────────────────────────────────────────────────────────────────
   const inputSt = { width: "100%", padding: "8px 10px", boxSizing: "border-box", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12.5, fontFamily: "var(--font-ui)", outline: "none" };
-  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
+  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
   const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, marginBottom: 16, overflow: "hidden" };
 
   const Check = ({ checked, onChange }) => (
@@ -194,7 +194,7 @@ export default function RegolazioneOffertaPage() {
             {coverLogoUrl
               ? <img src={coverLogoUrl} alt="logo copertina" style={{ height: 48, maxWidth: 240, objectFit: "contain", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: 6, background: "#fff" }} />
               : <div style={{ ...mono, fontSize: 10, color: T.muted, height: 48, display: "flex", alignItems: "center" }}>Nessun logo copertina</div>}
-            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, color: T.navy, padding: "8px 16px", cursor: uploadingLogo ? "default" : "pointer", background: "transparent" }}>
+            <label style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, color: T.navy, padding: "8px 16px", cursor: uploadingLogo ? "default" : "pointer", background: "transparent" }}>
               {uploadingLogo ? "Carico…" : (coverLogoUrl ? "Cambia" : "Carica logo")}
               <input type="file" accept="image/*" onChange={handleCoverLogoUpload} disabled={uploadingLogo} style={{ display: "none" }} />
             </label>
@@ -327,10 +327,10 @@ export default function RegolazioneOffertaPage() {
                               <div key={id} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, background: T.surface2 }}>
                                 {arrows}
                                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-                                  <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy }}>VOCE AGGIUNTA</div>
+                                  <div style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy }}>VOCE AGGIUNTA</div>
                                   <textarea value={v.testo} onChange={e => setVoceExtra(sez.id, idx, { testo: e.target.value })} rows={2} placeholder="Testo della voce…" style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                    <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
                                     <input value={v.nomeApp || ""} onChange={e => setVoceExtra(sez.id, idx, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "4px 8px" }} />
                                   </div>
                                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -366,7 +366,7 @@ export default function RegolazioneOffertaPage() {
                               <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
                                 <textarea value={testo} onChange={e => setVoceOv(sez.id, v.id, { testo: e.target.value })} rows={2} style={{ ...inputSt, resize: "vertical", fontSize: 11.5 }} />
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.04em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
+                                  <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, whiteSpace: "nowrap" }}>NOME APP</span>
                                   <input value={vo.nomeApp || ""} onChange={e => setVoceOv(sez.id, v.id, { nomeApp: e.target.value })} placeholder="es. CILA — solo per ricerca, non nel PDF" style={{ ...inputSt, height: 26, fontSize: 11, padding: "4px 8px" }} />
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -487,7 +487,7 @@ export default function RegolazioneOffertaPage() {
                 <div style={labelSt}>Prezzo default</div>
                 <input type="number" value={newPrezzo} onChange={e => setNewPrezzo(e.target.value)} placeholder="0" style={inputSt} />
               </div>
-              <button type="submit" style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 20px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Aggiungi</button>
+              <button type="submit" style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 20px", cursor: "pointer", whiteSpace: "nowrap" }}>+ Aggiungi</button>
             </form>
           </div>
         )}
@@ -495,9 +495,9 @@ export default function RegolazioneOffertaPage() {
 
       {/* ── Barra salvataggio ──────────────────────────────────────────────── */}
       <div style={{ position: "sticky", bottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "12px 0", background: T.bg }}>
-        <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", cursor: "pointer" }}>Ripristina default</button>
+        <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", cursor: "pointer" }}>Ripristina default</button>
         {dirty && !saving && <span style={{ ...mono, fontSize: 10, color: T.red, marginLeft: "auto" }}>Modifiche non salvate</span>}
-        <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.03em", textTransform: "uppercase", padding: "10px 28px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 28px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Salvo…" : "Salva regolazione"}
         </button>
       </div>

@@ -452,8 +452,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const mono = "var(--font-label)";
   const inputSt = { padding: "6px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: "none" };
   const miniInput = { ...inputSt, padding: "4px 6px", fontSize: 11, fontFamily: mono, textAlign: "right", width: "100%" };
-  const labelSt = { fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
-  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: 11, letterSpacing: "0.02em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" };
+  const labelSt = { fontFamily: mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
+  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" };
   const btnPrimary = { ...btnGhost, border: "none", background: T.navy, color: T.bg };
 
   return (
@@ -462,7 +462,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 16px",
         border: `0.5px solid ${versCount > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: versCount > 0 ? T.navyLight : "transparent",
-        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
+        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
         <span style={{ color: versCount > 0 ? T.navy : T.ink, fontWeight: versCount > 0 ? 600 : 400 }}>▤ Capitolato</span>
         {versCount > 0
@@ -532,7 +532,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                             {rev ? <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 6px" }}>rev {rev}</span> : null}
                             <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)} · {nv} {nv === 1 ? "voce" : "voci"}</span>
                             {att ? <span style={{ fontFamily: mono, fontSize: 10, color: T.navy }}>attiva</span> : null}
-                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", color: T.navy }}>Apri →</span>
+                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy }}>Apri →</span>
                           </button>
                           <button onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 16, lineHeight: 1, padding: "2px 4px" }}>⋮</button>
                           {menuVer === v.n && (
@@ -643,7 +643,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     </div>
                   ) : gruppi.map((g) => (
                     <div key={g.code} style={{ marginBottom: 24 }}>
-                      <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.02em", marginBottom: 8 }}>
+                      <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>
                         {g.titoloPagina}
                       </div>
                       {g.items.map((r) => (
@@ -713,7 +713,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       {it.nVoci} {it.nVoci === 1 ? "voce" : "voci"}{it.aggiornato ? ` · ${formattaData(it.aggiornato)}` : ""}
                     </div>
                   </div>
-                  <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
+                  <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
                 </button>
               ))}
             </div>
@@ -825,7 +825,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
               <>
                 <div onClick={() => setCatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
                 <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 220, maxHeight: 280, overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,0.28)" }}>
-                  <div style={{ padding: "8px 12px", fontFamily: mono, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, borderBottom: `0.5px solid ${T.border}` }}>Sposta in</div>
+                  <div style={{ padding: "8px 12px", fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, borderBottom: `0.5px solid ${T.border}` }}>Sposta in</div>
                   {CAPITOLATO_CATEGORIE.map((c) => {
                     const cur = c.code === r.categoria_code;
                     return (
@@ -874,7 +874,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
             </div>
           );
         })}
-        <button onClick={onAddMisura} style={{ fontFamily: mono, fontSize: 10, color: T.navy, background: "none", border: "none", cursor: "pointer", padding: "2px 0", letterSpacing: "0.02em" }}>+ aggiungi misura</button>
+        <button onClick={onAddMisura} style={{ fontFamily: mono, fontSize: 10, color: T.navy, background: "none", border: "none", cursor: "pointer", padding: "2px 0", letterSpacing: "0.05em" }}>+ aggiungi misura</button>
       </div>
 
       {/* SOMMANO */}
@@ -910,7 +910,7 @@ function AssistenzaEditor({ r, T, mono, onPatch }) {
   const toggle = (code) => patchA({ basi: basi.includes(code) ? basi.filter((c) => c !== code) : [...basi, code] });
   const setPerc = (code, val) => patchA({ percs: { ...percs, [code]: val === "" ? "" : Number(val) } });
   const inSt = { padding: "6px 8px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: mono, outline: "none" };
-  const lab = { fontFamily: mono, fontSize: 10, letterSpacing: "0.05em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
+  const lab = { fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
   return (
     <div style={{ marginTop: 8, padding: "10px 12px", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: T.navyLight }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center", marginBottom: 4 }}>

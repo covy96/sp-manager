@@ -44,7 +44,7 @@ export default function CookieBanner() {
             background: "none", border: "1px solid rgba(255,255,255,0.25)", cursor: "pointer",
             color: "rgba(255,255,255,0.6)", padding: "8px 16px",
             fontFamily: "var(--font-label)", fontSize: 11,
-            letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap",
+            letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
           }}
         >
           Solo essenziali
@@ -55,7 +55,7 @@ export default function CookieBanner() {
             background: "#0a84ff", border: "none", cursor: "pointer",
             color: "#fff", padding: "8px 20px",
             fontFamily: "var(--font-label)", fontSize: 11,
-            letterSpacing: "0.02em", textTransform: "uppercase", whiteSpace: "nowrap",
+            letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
           }}
         >
           Accetta tutti

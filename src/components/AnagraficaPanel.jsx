@@ -24,7 +24,7 @@ const FIGURE_PROFESSIONALI = [
 function FieldLabel({ children, required }) {
   const { T } = useTheme();
   return (
-    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>
+    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>
       {children}{required && <span style={{ color: T.red, marginLeft: 2 }}>*</span>}
     </div>
   );
@@ -231,7 +231,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
       background: contacts.length > 0 ? T.navyLight : 'transparent',
       height: 34, padding: '0 12px', cursor: 'pointer',
     }}>
-      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', color: contacts.length > 0 ? T.navy : T.muted, fontWeight: 600 }}>
+      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: contacts.length > 0 ? T.navy : T.muted, fontWeight: 600 }}>
         Anagrafica
       </span>
       {contacts.length > 0 ? (
@@ -266,7 +266,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         {/* Lista contatti esistenti */}
         {contacts.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
               Contatti ({contacts.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -279,7 +279,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{gc.full_name || "—"}</span>
-                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px', letterSpacing: '0.02em' }}>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px', letterSpacing: '0.05em' }}>
                           {pc.professional_role}
                         </span>
                       </div>
@@ -294,7 +294,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                         <>
                           <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, alignSelf: 'center' }}>Sicuro?</span>
                           <button onClick={() => handleDelete(pc)} disabled={deleting}
-                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.02em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             {deleting ? "..." : "Sì"}
                           </button>
                           <button onClick={() => setConfirmDelete(null)}
@@ -305,7 +305,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                       ) : (
                         <>
                           <button onClick={() => openEdit(pc)}
-                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.02em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             Modifica
                           </button>
                           <button onClick={() => setConfirmDelete(pc.id)}
@@ -325,12 +325,12 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         {/* Form nuovo/modifica */}
         <div style={{ borderTop: contacts.length > 0 ? `0.5px solid ${T.border}` : 'none', paddingTop: contacts.length > 0 ? 20 : 0 }}>
           {contacts.length > 0 && !editingId && (
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
               Aggiungi contatto
             </div>
           )}
           {editingId && (
-            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
               Modifica contatto
             </div>
           )}
@@ -407,23 +407,23 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {editingId ? (
               <button onClick={() => { setEditingId(null); setForm(EMPTY_FORM); }}
-                style={{ border: 'none', background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.02em', cursor: 'pointer', padding: 0 }}>
+                style={{ border: 'none', background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer', padding: 0 }}>
                 ← Aggiungi nuovo
               </button>
             ) : (
               <button onClick={openCopyModal}
-                style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.02em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                 ⎘ Copia da progetto
               </button>
             )}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => { setModalOpen(false); setEditingId(null); setConfirmDelete(null); }}
-              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px', cursor: 'pointer' }}>
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: 'pointer' }}>
               Chiudi
             </button>
             <button onClick={handleSave} disabled={saving || !form.full_name.trim()}
-              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1, borderRadius: T.radiusSm }}>
+              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1, borderRadius: T.radiusSm }}>
               {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi contatto"}
             </button>
           </div>
@@ -483,7 +483,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                   {selectedIds.size === sourceContacts.length && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   {selectedIds.size > 0 && selectedIds.size < sourceContacts.length && <div style={{ width: 8, height: 2, background: T.navy, borderRadius: 1 }} />}
                 </div>
-                <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', color: T.muted }}>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>
                   {selectedIds.size === sourceContacts.length ? 'Deseleziona tutti' : 'Seleziona tutti'}
                 </span>
               </button>
@@ -522,11 +522,11 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setCopyModal(false)}
-              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
               Annulla
             </button>
             <button onClick={handleCopy} disabled={copying || selectedIds.size === 0}
-              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.03em', textTransform: 'uppercase', padding: '8px 20px', cursor: copying || selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: copying || selectedIds.size === 0 ? 0.5 : 1 }}>
+              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: copying || selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: copying || selectedIds.size === 0 ? 0.5 : 1 }}>
               {copying ? 'Importazione...' : `Importa ${selectedIds.size > 0 ? selectedIds.size : ''} contatt${selectedIds.size === 1 ? 'o' : 'i'}`}
             </button>
           </div>

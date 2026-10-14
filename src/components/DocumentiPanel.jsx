@@ -130,7 +130,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
         display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 16px",
         border: `0.5px solid ${count > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: count > 0 ? T.navyLight : "transparent",
-        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.03em", textTransform: "uppercase",
+        cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
         <span style={{ color: count > 0 ? T.navy : T.ink, fontWeight: count > 0 ? 600 : 400 }}>▦ Documenti</span>
         {count > 0
@@ -163,7 +163,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
                     <div key={g.key}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                         <span style={{ width: 8, height: 8, borderRadius: 2, background: g.color, flexShrink: 0 }} />
-                        <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.02em", textTransform: "uppercase", color: T.ink }}>{g.label}</span>
+                        <span style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: T.ink }}>{g.label}</span>
                         <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{g.items.length}</span>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -180,7 +180,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
                                 {it.stato ? <span>· {it.stato}</span> : null}
                               </div>
                             </div>
-                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.02em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Apri →</span>
+                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Apri →</span>
                           </button>
                         ))}
                       </div>
