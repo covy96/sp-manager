@@ -825,11 +825,11 @@ export default function CommessaDetailPage() {
         </div>
       )}
 
-      {/* ── CORPO: costi extra (operativo) + colonna monitoraggio ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.7fr) minmax(300px, 1fr)', gap: 14, alignItems: 'start' }}>
+      {/* ── CORPO: colonna monitoraggio (sinistra, più ampia) + costi extra (destra). Su mobile i costi extra vengono prima. ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.6fr) minmax(340px, 1fr)', gap: 14, alignItems: 'start' }}>
 
         {/* COSTI EXTRA — inserimento rapido sempre visibile */}
-        <Panel style={{ padding: isMobile ? '14px 14px' : '18px 20px' }}>
+        <Panel style={{ padding: isMobile ? '14px 14px' : '18px 20px', order: isMobile ? 1 : 2 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em' }}>Costi extra</div>
@@ -852,9 +852,9 @@ export default function CommessaDetailPage() {
                 );
               })}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'minmax(0, 1fr) minmax(0, 1fr) auto', gap: 8 }}>
               <Input value={quickCosto.description} onChange={e => setQuickCosto(p => ({ ...p, description: e.target.value }))} placeholder="Descrizione (opzionale)"
-                style={isMobile ? { gridColumn: '1 / -1' } : {}} />
+                style={{ gridColumn: '1 / -1' }} />
               <Input type="number" value={quickCosto.importo} onChange={e => setQuickCosto(p => ({ ...p, importo: e.target.value }))} placeholder="Importo €" required />
               <Input type="date" value={quickCosto.data_costo} onChange={e => setQuickCosto(p => ({ ...p, data_costo: e.target.value }))} />
               <BtnPrimary type="submit" disabled={quickSaving || !quickCosto.importo} style={isMobile ? { gridColumn: '1 / -1', borderRadius: T.radiusSm } : { borderRadius: T.radiusSm }}>
@@ -893,7 +893,7 @@ export default function CommessaDetailPage() {
         </Panel>
 
         {/* COLONNA MONITORAGGIO */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, order: isMobile ? 2 : 1 }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, padding: '2px 4px' }}>Da tenere d'occhio</div>
 
           {/* INCASSI + RATE */}
@@ -946,7 +946,7 @@ export default function CommessaDetailPage() {
               : <span style={{ color: T.muted, fontWeight: 400 }}>{proforma.length === 0 ? (isFattura ? 'Nessuna fattura' : 'Nessuna proforma') : 'Tutte incassate'}</span>}
             badge={proforma.length > 0 ? `${proforma.length}` : null}
             action={hasAnyRates
-              ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }} style={{ fontSize: 9, padding: '4px 10px', borderRadius: T.radiusSm }}>+ Nuova</BtnPrimary>
+              ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }} style={{ fontSize: 10, padding: '7px 14px', borderRadius: T.radiusSm }}>{isFattura ? "+ Nuova fattura" : "+ Nuova proforma"}</BtnPrimary>
               : null}>
             {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 14px', textAlign: 'center' }}>{hasAnyRates ? (isFattura ? "Nessuna fattura" : "Nessuna proforma") : "Crea prima la suddivisione pagamenti"}</div>}
             {[...proformaDaPagare, ...proforma.filter(p => p.pagato)].map(p => (
