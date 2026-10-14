@@ -96,6 +96,21 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const totalePagato    = useMemo(() => accettate.reduce((s, v) => s + (pagatoByVoce[v.id] || 0), 0), [accettate, pagatoByVoce]);
   const totaleResiduo   = totaleAccettato - totalePagato;
 
+  // Divide un insieme di voci accettate in preventivo originale (voce senza
+  // parent) ed extra (parent_id valorizzato), con accettato e pagato per parte.
+  const splitOrigExtra = (items) => {
+    const r = { orig: { acc: 0, pag: 0, n: 0 }, extra: { acc: 0, pag: 0, n: 0 } };
+    items.forEach(v => {
+      const b = v.parent_id ? r.extra : r.orig;
+      b.acc += Number(v.importo || 0);
+      b.pag += pagatoByVoce[v.id] || 0;
+      b.n += 1;
+    });
+    r.tot = { acc: r.orig.acc + r.extra.acc, pag: r.orig.pag + r.extra.pag, n: r.orig.n + r.extra.n };
+    return r;
+  };
+  const splitTotale = useMemo(() => splitOrigExtra(accettate), [accettate, pagatoByVoce]);
+
   // Chiave categoria normalizzata (trim + case-insensitive) così "Edile",
   // "edile" e "Edile " finiscono nello stesso gruppo per il confronto.
   const catKey = (c) => (c || "Altro").trim().toLowerCase() || "altro";
@@ -439,12 +454,12 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     const pags = pagamenti.filter(p => p.voce_id === v.id);
     return (
                 <div key={v.id} style={{ border: `1px solid ${T.border}`, borderRadius: T.radius, overflow: 'hidden', background: isExtra ? T.surface : T.bg, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
-                  <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px', cursor: 'pointer' }}>
+                  <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px', cursor: 'pointer', flexWrap: 'wrap', rowGap: 8 }}>
                     {isExtra
                       ? <span style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>Extra</span>
                       : <span style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>{v.categoria}</span>}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
-                    <div style={{ display: 'flex', gap: 20, flexShrink: 0, alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, flex: '1 1 160px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
+                    <div style={{ display: 'flex', gap: 20, flexShrink: 0, alignItems: 'baseline', marginLeft: 'auto' }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Accettato</div>
                         <div style={{ ...mono, fontSize: 12, color: T.ink }}>{currency(v.importo)}</div>
@@ -457,8 +472,8 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                         <div style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Residuo</div>
                         <div style={{ ...mono, fontSize: 12, color: residuo < 0 ? T.red : (residuo === 0 ? T.muted : T.navy) }}>{currency(residuo)}</div>
                       </div>
+                      <span style={{ ...mono, fontSize: 11, color: T.muted, flexShrink: 0, width: 14, textAlign: 'center', alignSelf: 'center' }}>{isOpen ? "▾" : "▸"}</span>
                     </div>
-                    <span style={{ ...mono, fontSize: 11, color: T.muted, flexShrink: 0, width: 14, textAlign: 'center' }}>{isOpen ? "▾" : "▸"}</span>
                   </div>
 
                   {isOpen && (
@@ -509,6 +524,47 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     );
   };
 
+  // ── Riga avanzamento pagamenti (originale / extra / totale) ─────────
+  const pct = (pag, acc) => acc > 0 ? Math.round((pag / acc) * 100) : null;
+  const renderProgressRow = (label, b, { strong = false, accent = T.green } = {}) => {
+    const p = pct(b.pag, b.acc);
+    const over = b.pag > b.acc + 0.005;
+    const res = b.acc - b.pag;
+    const barColor = over ? T.red : accent;
+    return (
+      <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          <span style={{ ...mono, fontSize: strong ? 10 : 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: strong ? T.ink : T.muted, fontWeight: strong ? 600 : 400, flex: 1, minWidth: 0 }}>{label}</span>
+          <span style={{ ...mono, fontSize: strong ? 16 : 13, fontWeight: 600, color: over ? T.red : (p === 100 ? T.green : T.ink), flexShrink: 0 }}>
+            {p === null ? "—" : `${p}%`}
+          </span>
+        </div>
+        <div style={{ height: strong ? 8 : 6, borderRadius: 99, background: T.borderMd, overflow: 'hidden' }}>
+          <div style={{ width: `${Math.min(100, p || 0)}%`, height: '100%', borderRadius: 99, background: barColor, transition: 'width .3s ease' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', ...mono, fontSize: strong ? 11 : 10, color: T.muted }}>
+          <span><span style={{ color: over ? T.red : T.green }}>{currency(b.pag)}</span> pagati su <span style={{ color: T.ink }}>{currency(b.acc)}</span></span>
+          <span style={{ color: res < -0.005 ? T.red : (Math.abs(res) < 0.005 ? T.muted : T.navy) }}>
+            {res < -0.005 ? `pagato in eccesso ${currency(-res)}` : Math.abs(res) < 0.005 ? "saldato" : `residuo ${currency(res)}`}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // Blocco con le tre righe: preventivo originale, extra, totale
+  const renderProgressBlock = (sp) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {sp.orig.n > 0 && renderProgressRow("Preventivo originale", sp.orig, { accent: T.green })}
+      {sp.extra.n > 0 && renderProgressRow(`Extra (${sp.extra.n})`, sp.extra, { accent: T.brass })}
+      {sp.orig.n > 0 && sp.extra.n > 0 && (
+        <div style={{ paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
+          {renderProgressRow("Totale", sp.tot, { strong: true, accent: T.green })}
+        </div>
+      )}
+    </div>
+  );
+
   // ── Tab Accettati ─────────────────────────────────────────────────
   const tabAccettati = (
     <div>
@@ -520,19 +576,13 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
             {accettatePerOperatore.map(g => {
-              const gAcc = g.items.reduce((s, x) => s + Number(x.importo || 0), 0);
-              const gPag = g.items.reduce((s, x) => s + (pagatoByVoce[x.id] || 0), 0);
-              const hasExtra = g.items.length > 1;
               return (
                 <div key={g.rootId} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {g.items.map(v => renderAccettataCard(v, !!v.parent_id))}
-                  {hasExtra && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 10, ...mono, fontSize: 10, color: T.muted, paddingRight: 28 }}>
-                      <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>Subtotale {g.label}</span>
-                      <span style={{ color: T.ink }}>tot {currency(gAcc)}</span>
-                      <span style={{ color: T.navy }}>residuo {currency(gAcc - gPag)}</span>
-                    </div>
-                  )}
+                  <div style={{ marginTop: 2, border: `1px solid ${T.border}`, borderRadius: T.radius, background: T.surface, padding: '12px 16px' }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · {g.label}</div>
+                    {renderProgressBlock(splitOrigExtra(g.items))}
+                  </div>
                 </div>
               );
             })}
@@ -540,7 +590,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
 
           {/* Riepilogo totali */}
           <div style={{ border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
               <div>
                 <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale accettato</div>
                 <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 4 }}>{currency(totaleAccettato)}</div>
@@ -553,20 +603,21 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                 <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale da pagare</div>
                 <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: totaleResiduo < 0 ? T.red : T.navy, marginTop: 4 }}>{currency(totaleResiduo)}</div>
               </div>
+              <div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>% pagato</div>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 4 }}>{pct(totalePagato, totaleAccettato) === null ? "—" : `${pct(totalePagato, totaleAccettato)}%`}</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · tutto il cantiere</div>
+              {renderProgressBlock(splitTotale)}
             </div>
             {/* breakdown per categoria */}
             {breakdownCategoria.length > 1 && (
               <div style={{ marginTop: 16, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
                 <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Per categoria</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {breakdownCategoria.map(d => (
-                    <div key={d.label.toLowerCase()} style={{ display: 'flex', alignItems: 'center', gap: 8, ...mono, fontSize: 10 }}>
-                      <span style={{ flex: 1, color: T.ink }}>{d.label}</span>
-                      <span style={{ color: T.muted }}>accettato {currency(d.accettato)}</span>
-                      <span style={{ color: T.green }}>pagato {currency(d.pagato)}</span>
-                      <span style={{ color: T.navy, width: 110, textAlign: 'right' }}>residuo {currency(d.accettato - d.pagato)}</span>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {breakdownCategoria.map(d => renderProgressRow(d.label, { acc: d.accettato, pag: d.pagato }, { accent: T.navy }))}
                 </div>
               </div>
             )}
