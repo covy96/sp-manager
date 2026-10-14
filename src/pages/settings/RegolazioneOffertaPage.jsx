@@ -19,6 +19,7 @@ export default function RegolazioneOffertaPage() {
   const { studioId, studio } = useStudio();
 
   const [ov, setOv]         = useState({});     // override su studio.offerta_template
+  const [savedJson, setSavedJson] = useState("{}"); // ultimo stato salvato, per segnalare modifiche pendenti
   const [saving, setSaving] = useState(false);
   const [open, setOpen]     = useState({ flag: true }); // sezioni collassabili
   const [sezOpen, setSezOpen] = useState({});   // sotto-sezioni "Sezioni e voci"
@@ -31,11 +32,25 @@ export default function RegolazioneOffertaPage() {
   const [coverLogoUrl, setCoverLogoUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  const applyTemplate = (tpl) => {
+    const t = tpl && typeof tpl === "object" ? JSON.parse(JSON.stringify(tpl)) : {};
+    setOv(t);
+    setSavedJson(JSON.stringify(t));
+  };
+
   useEffect(() => {
-    setOv(studio?.offerta_template && typeof studio.offerta_template === "object"
-      ? JSON.parse(JSON.stringify(studio.offerta_template)) : {});
+    applyTemplate(studio?.offerta_template);
     setCoverLogoUrl(studio?.offerta_logo_url || "");
   }, [studio?.id]);
+
+  const dirty = JSON.stringify(ov) !== savedJson;
+  // Avvisa prima di chiudere/ricaricare la pagina con modifiche non salvate.
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [dirty]);
 
   const handleCoverLogoUpload = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -117,18 +132,22 @@ export default function RegolazioneOffertaPage() {
   // ── salvataggio ────────────────────────────────────────────────────────────
   const salva = async () => {
     setSaving(true);
-    const { error } = await supabase.from("studios").update({ offerta_template: ov }).eq("id", studioId);
+    const { data, error } = await supabase.from("studios").update({ offerta_template: ov }).eq("id", studioId).select("offerta_template");
     setSaving(false);
     if (error) { showToast("Errore salvataggio: " + error.message, "error"); return; }
+    // Con la RLS un UPDATE non permesso non dà errore: aggiorna 0 righe. Lo segnaliamo.
+    if (!data || data.length === 0) { showToast("Salvataggio non riuscito: nessuna modifica scritta (permessi sullo studio?)", "error"); return; }
+    applyTemplate(data[0].offerta_template);
     showToast("Regolazione salvata", "success");
   };
 
   const resetTutto = async () => {
     if (!confirm("Ripristinare tutti i valori di default? Le personalizzazioni verranno perse.")) return;
-    setOv({});
     setSaving(true);
-    await supabase.from("studios").update({ offerta_template: {} }).eq("id", studioId);
+    const { data, error } = await supabase.from("studios").update({ offerta_template: {} }).eq("id", studioId).select("offerta_template");
     setSaving(false);
+    if (error || !data || data.length === 0) { showToast("Ripristino non riuscito" + (error ? ": " + error.message : ""), "error"); return; }
+    applyTemplate({});
     showToast("Ripristinato ai default", "success");
   };
 
@@ -136,7 +155,8 @@ export default function RegolazioneOffertaPage() {
   const addPreset = async (e) => {
     e.preventDefault();
     if (!newNome.trim()) return;
-    await supabase.from("voci_offerta_template").insert({ studio: studioId, nome: newNome.trim(), prezzo_default: Number(newPrezzo) || 0, order: preset.length });
+    const { error } = await supabase.from("voci_offerta_template").insert({ studio: studioId, nome: newNome.trim(), prezzo_default: Number(newPrezzo) || 0, order: preset.length });
+    if (error) { showToast("Errore salvataggio preset: " + error.message, "error"); return; }
     setNewNome(""); setNewPrezzo(""); await loadPreset();
   };
   const delPreset = async (id) => { if (!confirm("Eliminare questa voce preset?")) return; await supabase.from("voci_offerta_template").delete().eq("id", id); await loadPreset(); };
@@ -476,6 +496,7 @@ export default function RegolazioneOffertaPage() {
       {/* ── Barra salvataggio ──────────────────────────────────────────────── */}
       <div style={{ position: "sticky", bottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "12px 0", background: T.bg }}>
         <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "9px 16px", cursor: "pointer" }}>Ripristina default</button>
+        {dirty && !saving && <span style={{ ...mono, fontSize: 10, color: T.red, marginLeft: "auto" }}>Modifiche non salvate</span>}
         <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 26px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Salvo…" : "Salva regolazione"}
         </button>
