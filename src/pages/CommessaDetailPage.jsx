@@ -892,9 +892,8 @@ export default function CommessaDetailPage() {
           }
         </Panel>
 
-        {/* COLONNA MONITORAGGIO */}
+        {/* COLONNA MONITORAGGIO (da tenere d'occhio) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, order: isMobile ? 2 : 1 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, padding: '2px 4px' }}>Da tenere d'occhio</div>
 
           {/* INCASSI + RATE */}
           <MonitorSection title="Incassi" open={showRate || !hasAnyRates} onToggle={() => setShowRate(p => !p)}
