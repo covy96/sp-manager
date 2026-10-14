@@ -218,22 +218,103 @@ export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   if (error) throw error;
 
   const byKey = new Map();
+  const conGlobale = new Set(); // chiavi che esistono nel template globale
   for (const v of data || []) {
     const key = `${v.categoria_code}||${v.codice}`;
+    if (!v.studio) conGlobale.add(key);
     const ex = byKey.get(key);
     if (!ex || (v.studio && !ex.studio)) byKey.set(key, v); // la voce studio vince sulla globale
   }
-  return [...byKey.values()].sort((a, b) =>
+  const voci = [...byKey.entries()].map(([key, v]) => ({
+    ...v, _layoutKey: conGlobale.has(key) ? `k:${key}` : `id:${v.id}`,
+  }));
+  return applicaLayout(voci, studioId ? await loadLayout(studioId) : []);
+}
+
+// ── Disposizione della libreria (ordine + sezione per studio) ─────────────────
+// Tabella capitolato_voci_layout: lo studio riordina le voci e le sposta tra le
+// sezioni senza toccarne i testi (le globali restano in sola lettura). Le voci
+// ricevono categoria/ordine EFFETTIVI; quelli salvati sulla riga restano in _orig,
+// così modificare il testo di una voce spostata non ne cambia l'identità.
+async function loadLayout(studioId) {
+  const { data, error } = await supabase
+    .from("capitolato_voci_layout")
+    .select("voce_key, categoria_code, ordine")
+    .eq("studio", studioId);
+  if (error) { console.warn("capitolato_voci_layout non disponibile:", error.message); return []; } // migration mancante → ordine base
+  return data || [];
+}
+
+export function ordinaLibreria(voci) {
+  return [...voci].sort((a, b) =>
     a.categoria_code.localeCompare(b.categoria_code) || (a.ordine || 0) - (b.ordine || 0));
+}
+
+export function applicaLayout(voci, layout) {
+  const byKey = new Map((layout || []).map((l) => [l.voce_key, l]));
+  return ordinaLibreria(voci.map((v) => {
+    const l = byKey.get(v._layoutKey);
+    if (!l) return v;
+    const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === l.categoria_code);
+    return {
+      ...v,
+      _orig: { categoria_code: v.categoria_code, categoria_nome: v.categoria_nome, ordine: v.ordine },
+      categoria_code: l.categoria_code,
+      categoria_nome: cat?.nome || v.categoria_nome,
+      ordine: l.ordine,
+    };
+  }));
+}
+
+// Sposta una voce su/giù nella sua sezione (dir = -1 | 1) o in fondo a un'altra
+// sezione (cat = codice categoria). Ritorna la libreria aggiornata e le righe di
+// layout da salvare (tutta la sezione di destinazione, rinumerata 0..n-1), oppure
+// null se lo spostamento non è possibile.
+export function spostaVoce(voci, id, { dir, cat }) {
+  const voce = voci.find((v) => v.id === id);
+  if (!voce) return null;
+  const dest = cat || voce.categoria_code;
+  if (cat && cat === voce.categoria_code) return null;
+  let sezione = ordinaLibreria(voci.filter((v) => v.categoria_code === dest && v.id !== id));
+  if (cat) sezione.push(voce);
+  else {
+    const corrente = ordinaLibreria(voci.filter((v) => v.categoria_code === dest));
+    const pos = corrente.findIndex((v) => v.id === id);
+    const to = pos + dir;
+    if (to < 0 || to >= corrente.length) return null;
+    sezione = [...corrente];
+    [sezione[pos], sezione[to]] = [sezione[to], sezione[pos]];
+  }
+  const nome = CAPITOLATO_CATEGORIE.find((c) => c.code === dest)?.nome;
+  const aggiornate = new Map(sezione.map((v, i) => [v.id, {
+    ...v,
+    _orig: v._orig || { categoria_code: v.categoria_code, categoria_nome: v.categoria_nome, ordine: v.ordine },
+    categoria_code: dest,
+    categoria_nome: nome || v.categoria_nome,
+    ordine: i,
+  }]));
+  return {
+    voci: ordinaLibreria(voci.map((v) => aggiornate.get(v.id) || v)),
+    layout: sezione.map((v, i) => ({ voce_key: v._layoutKey, categoria_code: dest, ordine: i })),
+  };
+}
+
+export async function saveLayout(studioId, righe) {
+  if (!righe.length) return;
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("capitolato_voci_layout")
+    .upsert(righe.map((r) => ({ ...r, studio: studioId, updated_at: now })), { onConflict: "studio,voce_key" });
+  if (error) throw error;
 }
 
 // Salva una voce nella libreria: se è già dello studio la aggiorna, altrimenti
 // (voce globale o nuova) crea/aggiorna un override dello studio.
 export async function saveVoceLibreria(voce, studioId) {
+  const base = voce._orig || voce; // sezione/ordine salvati sulla riga, non quelli del layout
   const payload = {
     studio: studioId,
-    categoria_code: voce.categoria_code,
-    categoria_nome: voce.categoria_nome || "",
+    categoria_code: base.categoria_code,
+    categoria_nome: base.categoria_nome || "",
     codice: voce.codice || "",
     titolo: voce.titolo || "",
     descrizione: voce.descrizione || "",
@@ -241,17 +322,28 @@ export async function saveVoceLibreria(voce, studioId) {
     tipo: voce.tipo || "singolo",
     sommano_labels: (voce.sommano_labels && voce.sommano_labels.length)
       ? voce.sommano_labels : defaultSommanoLabels(voce.unita, voce.tipo),
-    ordine: voce.ordine || 0,
+    ordine: base.ordine || 0,
     attiva: voce.attiva !== false,
   };
+  let res;
   if (voce.id && voce.studio === studioId) {
-    const { data, error } = await supabase.from("capitolato_voci")
+    res = await supabase.from("capitolato_voci")
       .update(payload).eq("id", voce.id).select("*").single();
-    if (error) throw error; return data;
+  } else {
+    res = await supabase.from("capitolato_voci")
+      .insert(payload).select("*").single();
   }
-  const { data, error } = await supabase.from("capitolato_voci")
-    .insert(payload).select("*").single();
-  if (error) throw error; return data;
+  if (res.error) throw res.error;
+  const data = res.data;
+  if (!voce._layoutKey) return data;
+  // riporta la disposizione effettiva (la voce resta dove l'utente l'ha messa)
+  const out = { ...data, _layoutKey: voce._layoutKey };
+  if (!voce._orig) return out;
+  return {
+    ...out,
+    _orig: { categoria_code: data.categoria_code, categoria_nome: data.categoria_nome, ordine: data.ordine },
+    categoria_code: voce.categoria_code, categoria_nome: voce.categoria_nome, ordine: voce.ordine,
+  };
 }
 
 // Elimina una voce dello studio (le globali non sono eliminabili via RLS).

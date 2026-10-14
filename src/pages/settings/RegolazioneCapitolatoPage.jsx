@@ -4,7 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
-import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels } from "../../lib/capitolatoModel";
+import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout } from "../../lib/capitolatoModel";
 
 const mono = "'IBM Plex Mono', monospace";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -45,10 +45,25 @@ export default function RegolazioneCapitolatoPage() {
   const onSaved = (row) => setVoci((prev) => {
     // rimuovi eventuale globale oscurata e la stessa riga, poi reinserisci
     const filtered = prev.filter((v) => v.id !== row.id &&
+      !(row._layoutKey && v._layoutKey === row._layoutKey) &&
       !(v.categoria_code === row.categoria_code && v.codice === row.codice && v.studio == null && row.studio));
     return [...filtered, row];
   });
   const onDeleted = (id) => { ricarica(); };
+
+  // Riordino e spostamento tra sezioni: aggiornamento ottimistico + salvataggio
+  // della disposizione dello studio. Durante una ricerca testuale è disattivato
+  // (le voci vicine potrebbero essere nascoste).
+  const puoSpostare = !!studioId && !query.trim();
+  const sposta = async (id, mossa) => {
+    const res = spostaVoce(voci, id, mossa);
+    if (!res) return;
+    const prima = voci;
+    setVoci(res.voci);
+    try { await saveLayout(studioId, res.layout); }
+    catch (e) { console.error(e); setVoci(prima); showToast("Errore nello spostamento: " + (e.message || ""), "error"); }
+  };
+  const prossimoOrdine = (code) => Math.max(-1, ...voci.filter((v) => v.categoria_code === code).map((v) => v.ordine || 0)) + 1;
 
   const inputSt = { padding: "7px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
 
@@ -56,7 +71,7 @@ export default function RegolazioneCapitolatoPage() {
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 20px 80px" }}>
       <div style={{ marginBottom: 4, fontSize: 20, fontWeight: 700, color: T.ink }}>Regolazione capitolato</div>
       <div style={{ fontFamily: mono, fontSize: 11, color: T.muted, marginBottom: 20 }}>
-        Libreria voci del computo metrico. Le voci del template sono condivise; modificandone il testo crei una versione dello studio. Puoi aggiungere voci nuove.
+        Libreria voci del computo metrico. Le voci del template sono condivise; modificandone il testo crei una versione dello studio. Puoi aggiungere voci nuove, riordinarle con ↑↓ e spostarle in un'altra sezione.
       </div>
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, flexWrap: "wrap" }}>
@@ -71,8 +86,8 @@ export default function RegolazioneCapitolatoPage() {
       </div>
 
       {adding && (
-        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast}
-          onSaved={(r) => { onSaved(r); setAdding(false); showToast("Voce aggiunta", "success"); }}
+        <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} prossimoOrdine={prossimoOrdine}
+          onSaved={() => { ricarica(); setAdding(false); showToast("Voce aggiunta", "success"); }}
           onCancel={() => setAdding(false)} />
       )}
 
@@ -83,8 +98,9 @@ export default function RegolazioneCapitolatoPage() {
       ) : gruppi.map((g) => (
         <div key={g.cat.code} style={{ marginBottom: 26 }}>
           <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
-          {g.items.map((v) => (
-            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} />
+          {g.items.map((v, i) => (
+            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted}
+              spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
           ))}
         </div>
       ))}
@@ -102,7 +118,7 @@ function Chip({ T, active, children, ...rest }) {
 
 const CAT_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c]));
 
-function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel }) {
+function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, prossimoOrdine }) {
   const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
   const [d, setD] = useState(voce ? { ...voce } : blank);
   const [dirty, setDirty] = useState(!!nuova);
@@ -121,7 +137,10 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
     if (!d.codice.trim() || !d.titolo.trim()) { showToast("Codice e titolo obbligatori", "error"); return; }
     setSaving(true);
     try {
-      const payload = { ...d, categoria_nome: CAT_BY_CODE[d.categoria_code]?.nome || d.categoria_nome || "" };
+      const payload = voce
+        // sezione/ordine/identità dalla voce corrente (può essere stata spostata dopo il mount)
+        ? { ...d, categoria_code: voce.categoria_code, categoria_nome: voce.categoria_nome, ordine: voce.ordine, _orig: voce._orig, _layoutKey: voce._layoutKey }
+        : { ...d, categoria_nome: CAT_BY_CODE[d.categoria_code]?.nome || d.categoria_nome || "", ordine: prossimoOrdine?.(d.categoria_code) ?? 0 };
       if (!payload.sommano_labels || !payload.sommano_labels.length) payload.sommano_labels = defaultSommanoLabels(payload.unita, payload.tipo);
       const row = await saveVoceLibreria(payload, studioId);
       setD({ ...row }); setDirty(false); onSaved?.(row);
@@ -185,7 +204,21 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
           {nuova ? "nuova voce" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
           {" · SOMMANO: " + (d.sommano_labels && d.sommano_labels.length ? d.sommano_labels.join(" / ") : defaultSommanoLabels(d.unita, d.tipo).join(" / "))}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {spostamento && (
+            <>
+              <button title={dirty ? "Salva prima di spostare" : "Sposta su"} onClick={() => spostamento.onMove(-1)} disabled={dirty || spostamento.primo}
+                style={{ ...moveBtn(T), opacity: dirty || spostamento.primo ? 0.35 : 1 }}>↑</button>
+              <button title={dirty ? "Salva prima di spostare" : "Sposta giù"} onClick={() => spostamento.onMove(1)} disabled={dirty || spostamento.ultimo}
+                style={{ ...moveBtn(T), opacity: dirty || spostamento.ultimo ? 0.35 : 1 }}>↓</button>
+              <select value="" disabled={dirty} title={dirty ? "Salva prima di spostare" : "Sposta in un'altra sezione"}
+                onChange={(e) => e.target.value && spostamento.onMoveCat(e.target.value)}
+                style={{ ...inp, fontFamily: mono, fontSize: 10, padding: "6px 6px", cursor: dirty ? "default" : "pointer", opacity: dirty ? 0.35 : 1 }}>
+                <option value="">Sposta in…</option>
+                {CAPITOLATO_CATEGORIE.filter((c) => c.code !== voce.categoria_code).map((c) => <option key={c.code} value={c.code}>{c.code}) {c.nome}</option>)}
+              </select>
+            </>
+          )}
           {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "7px 14px", cursor: "pointer" }}>Annulla</button>}
           {!nuova && !isGlobale && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "7px 12px", cursor: "pointer" }}>Elimina</button>}
           <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "7px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
@@ -193,4 +226,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       </div>
     </div>
   );
+}
+
+function moveBtn(T) {
+  return { border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 12, width: 28, height: 28, padding: 0, cursor: "pointer" };
 }
