@@ -8,7 +8,7 @@ import { useEscKey } from "../hooks/useEscKey";
 // capitolati, pratiche edilizie e report di cantiere, con tipo, titolo, data e
 // numero di versioni. Le offerte sono legate alle commesse del progetto.
 
-const mono = "'IBM Plex Mono', monospace";
+const mono = "var(--font-label)";
 const fmtData = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -127,15 +127,15 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
   return (
     <>
       <button onClick={() => setOpen(true)} style={{
-        display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 14px",
+        display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 16px",
         border: `0.5px solid ${count > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: count > 0 ? T.navyLight : "transparent",
         cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
         <span style={{ color: count > 0 ? T.navy : T.ink, fontWeight: count > 0 ? 600 : 400 }}>▦ Documenti</span>
         {count > 0
-          ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{count}</span>
-          : <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>+ Apri</span>}
+          ? <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{count}</span>
+          : <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>+ Apri</span>}
       </button>
 
       {open && (
@@ -158,7 +158,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
               ) : count === 0 ? (
                 <div style={{ textAlign: "center", marginTop: 40, color: T.muted, fontFamily: mono, fontSize: 12 }}>Nessun documento per questo progetto.</div>
               ) : (
-                <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
                   {gruppi.filter((g) => g.items.length > 0).map((g) => (
                     <div key={g.key}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -169,7 +169,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
                       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         {g.items.map((it) => (
                           <button key={it.id} onClick={() => { onOpen?.(g.key, it.id); setOpen(false); }}
-                            style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 13px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, cursor: "pointer", textAlign: "left", width: "100%" }}
+                            style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, cursor: "pointer", textAlign: "left", width: "100%" }}
                             onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.navy; }}
                             onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -180,7 +180,7 @@ export default function DocumentiPanel({ projectId, studioId, project, commesse,
                                 {it.stato ? <span>· {it.stato}</span> : null}
                               </div>
                             </div>
-                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Apri →</span>
+                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Apri →</span>
                           </button>
                         ))}
                       </div>

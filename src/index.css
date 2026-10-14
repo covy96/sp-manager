@@ -59,6 +59,11 @@
   /* ── Scrollbar ── */
   scrollbar-color: rgba(14,14,13,0.2) transparent;
   scrollbar-width: thin;
+
+  /* ── Tipografia: font del brand ASM ── */
+  --font-ui:    'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label: 'IBM Plex Mono', monospace;   /* etichette, numeri, metadati */
+  --font-brand: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; /* logo ASM */
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -127,9 +132,16 @@ html, body {
   min-height: 100vh;
   background-color: var(--bg);
   color: var(--ink);
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;   /* cifre allineate in colonne e KPI */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* Gli input non ereditano il font di default: allineali al resto dell'interfaccia */
+input, select, textarea, button { font-family: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════
    SCROLLBAR
@@ -218,7 +230,8 @@ input, textarea, select, button { touch-action: manipulation; }
 /* ── Apple easing ── */
 :root {
   --ease-apple: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Critically damped (nessun rimbalzo): ciò che appare non deve oscillare */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 150ms;
   --duration-normal: 220ms;
@@ -239,9 +252,8 @@ input, textarea, select, button { touch-action: manipulation; }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes asm-pop {
-  0%   { transform: scale(0.95); opacity: 0; }
-  60%  { transform: scale(1.02); }
-  100% { transform: scale(1);    opacity: 1; }
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 /* ── Classi animazione ── */
@@ -267,7 +279,6 @@ input, textarea, select, button { touch-action: manipulation; }
               box-shadow var(--duration-normal) var(--ease-apple);
 }
 .asm-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06) !important;
 }
 .dark .asm-card:hover {
@@ -280,7 +291,6 @@ input, textarea, select, button { touch-action: manipulation; }
               opacity  var(--duration-fast) var(--ease-apple),
               box-shadow var(--duration-fast) var(--ease-apple);
 }
-.asm-btn:hover  { transform: translateY(-1px); }
 .asm-btn:active { transform: scale(0.97); opacity: 0.85; }
 
 /* ── Modal entrance ── */
@@ -362,3 +372,41 @@ aside  { border-radius: 0 !important; }
 [style*="height:4px"] {
   border-radius: 99px !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   APPLE DESIGN — feedback, tipografia, accessibilità
+═══════════════════════════════════════════════════════════════ */
+
+/* Feedback immediato alla pressione (pointer-down), non al rilascio */
+button:not(:disabled) {
+  transition: transform 100ms ease-out, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+button:not(:disabled):active { transform: scale(0.97); }
+
+/* Titoli grandi: tracking negativo e interlinea stretta */
+h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
+
+/* Riduci movimento: dissolvenze brevi al posto di scale/slide */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  button:not(:disabled):active { transform: none; }
+}
+
+/* Riduci trasparenza: superfici piene, niente blur */
+@media (prefers-reduced-transparency: reduce) {
+  header, aside, [style*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* ── Segmented control stile Apple (SlidingTabs) ── */
+.asm-seg { border-radius: 9px !important; }
+.asm-seg > button { border-radius: 7px !important; }
+.asm-seg > button:active { transform: none !important; }
+.asm-seg-thumb { border-radius: 7px !important; }

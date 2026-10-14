@@ -439,19 +439,19 @@ export default function OffertePage() {
   const valTotale    = offerteAnno.reduce((s,o)=>s+Number(o.importo_totale||o.importo_offerta_base||0),0);
   const totaleAnno   = offerteAnno.length;
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
-  const labelSt = { ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
+  const mono = { fontFamily:"var(--font-label)" };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
+  const labelSt = { ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink, marginBottom:4 }}>Offerte</div>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color:T.ink, marginBottom:4 }}>Offerte</div>
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -460,21 +460,21 @@ export default function OffertePage() {
             placeholder="Cerca offerta, cliente..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:200 }}
+            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, outline:'none', width:200 }}
           />
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto', opacity:searchQuery?0.4:1 }}>
+            style={{ padding:'8px 10px', border:`1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto', opacity:searchQuery?0.4:1 }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          {canManage && <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'9px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
+          {canManage && <button onClick={()=>setChoiceOpen(true)} style={{ background:T.navy, color:'#EEF1F6', border:'none', borderRadius:T.radiusSm, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 20px', cursor:'pointer', whiteSpace:'nowrap' }}>
             + Nuova offerta
           </button>}
         </div>
       </div>
 
       {/* KPI — cliccabili come filtri */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap: 16 }}>
         {[
           { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink,   filtro:'tutti'     },
           { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink,   filtro:'offerta'   },
@@ -496,7 +496,7 @@ export default function OffertePage() {
                 cursor: k.filtro ? 'pointer' : 'default',
                 transition:'all 0.18s',
               }}>
-              <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
+              <div style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color: isActive ? T.navy : T.muted, marginBottom:8 }}>{k.label}</div>
               <div style={{ fontSize:24, fontWeight:600, letterSpacing:'-0.03em', color: isActive ? T.navy : k.color }}>{k.value}</div>
               {k.sub && <div style={{ ...mono, fontSize:10, color: isActive ? T.navy : T.muted, marginTop:4 }}>{k.sub}</div>}
             </div>
@@ -505,26 +505,26 @@ export default function OffertePage() {
       </div>
 
       {/* Lista offerte */}
-      <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap:10 }}>
+      <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))', gap: 16 }}>
         {visibili.length === 0 ? (
           <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'56px 32px', textAlign:'center', gridColumn:'1/-1', borderRadius:T.radius, display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
             <div style={{ fontSize:32, opacity:0.25 }}>📄</div>
             <div style={{ ...mono, fontSize:11, color:T.muted }}>{searchQuery ? `Nessuna offerta trovata per "${searchQuery}".` : 'Nessuna offerta trovata'}</div>
-            {!searchQuery && canManage && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
+            {!searchQuery && canManage && <button onClick={()=>setChoiceOpen(true)} style={{ marginTop:4, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>+ Nuova offerta</button>}
           </div>
         ) : visibili.map(o => {
           const st = STATI[o.stato]||STATI.offerta;
           const valore = Number(o.importo_totale||o.importo_offerta_base||0);
           return (
-            <div key={o.id} className="asm-card" onClick={() => navigate(`/offerte/${o.id}`)} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'18px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, cursor:'pointer' }}>
+            <div key={o.id} className="asm-card" onClick={() => navigate(`/offerte/${o.id}`)} style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 20px', display:'flex', flexDirection:'column', gap:10, height:'100%', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, cursor:'pointer' }}>
               {/* Header card */}
               <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8 }}>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ ...mono, fontSize:9, color:T.muted, marginBottom:4 }}>{o.numero_offerta}</div>
+                  <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4 }}>{o.numero_offerta}</div>
                   <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:2 }}>{o.nome_offerta}</div>
                   <div style={{ ...mono, fontSize:10, color:T.muted }}>{o.cliente}</div>
                 </div>
-                <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', flexShrink:0, borderRadius:2 }}>
+                <span style={{ ...mono, fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'4px 8px', flexShrink:0, borderRadius:2 }}>
                   {st.label}
                 </span>
               </div>
@@ -539,35 +539,35 @@ export default function OffertePage() {
 
               {/* Data */}
               {o.data_offerta && (
-                <div style={{ ...mono, fontSize:9, color:T.muted }}>
+                <div style={{ ...mono, fontSize:10, color:T.muted }}>
                   Data: {new Date(o.data_offerta).toLocaleDateString('it-IT')}
                 </div>
               )}
 
               {/* Azioni */}
               <div onClick={e => e.stopPropagation()} style={{ display:'flex', flexWrap:'nowrap', alignItems:'center', gap:6, marginTop:'auto', paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
-                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
+                <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
                   Doc
                 </button>
                 {o.stato==='offerta' && canManage && <>
-                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta
                   </button>
-                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.red}`, background:'transparent', color:T.red, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRifiuta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.red}`, background:'transparent', color:T.red, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Rifiuta
                   </button>
                 </>}
                 {o.stato==='accettata' && o.commessa_id && (
-                  <button onClick={e => { e.stopPropagation(); navigate(`/commesse/${o.commessa_id}`); }} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={e => { e.stopPropagation(); navigate(`/commesse/${o.commessa_id}`); }} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Vai a commessa
                   </button>
                 )}
                 {o.stato==='rifiutata' && canManage && (
-                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'7px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <button onClick={()=>handleRipristina(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Ripristina
                   </button>
                 )}
-                {canManage && <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'7px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
+                {canManage && <button onClick={()=>handleElimina(o)} style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.border}`, background:'transparent', color:T.muted, borderRadius:T.radiusSm, ...mono, fontSize:10, cursor:'pointer', lineHeight:1 }}>
                   🗑
                 </button>}
               </div>
@@ -613,7 +613,7 @@ export default function OffertePage() {
             <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12 }}>
               {/* Opzione 1: crea dal documento */}
               <button onClick={()=>{ setChoiceOpen(false); setDocCreateOpen(true); }} className="asm-card"
-                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.navy}`, borderRadius:T.radius, cursor:'pointer' }}>
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'20px 20px', background:T.surface, border:`1px solid ${T.navy}`, borderRadius:T.radius, cursor:'pointer' }}>
                 <div style={{ fontSize:22 }}>📄</div>
                 <div style={{ fontSize:14, fontWeight:600, color:T.navy }}>Crea offerta</div>
                 <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
@@ -622,7 +622,7 @@ export default function OffertePage() {
               </button>
               {/* Opzione 2: inserimento rapido */}
               <button onClick={()=>{ setChoiceOpen(false); setModalOpen(true); }} className="asm-card"
-                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'18px 18px', background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                style={{ textAlign:'left', display:'flex', flexDirection:'column', gap:8, padding:'20px 20px', background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
                 <div style={{ fontSize:22 }}>⚡</div>
                 <div style={{ fontSize:14, fontWeight:600, color:T.ink }}>Inserisci offerta</div>
                 <div style={{ ...mono, fontSize:10, color:T.muted, lineHeight:1.6 }}>
@@ -641,20 +641,20 @@ export default function OffertePage() {
             <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Collega un progetto</div>
-                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>Offerta creata. Vuoi collegarla a un progetto?</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>Offerta creata. Vuoi collegarla a un progetto?</div>
               </div>
               <button onClick={()=>setLinkProg(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, margin:'16px 0' }}>
               <button onClick={()=>setLinkMode('esistente')} className="asm-card"
-                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='esistente'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                style={{ textAlign:'left', padding:'16px', background:T.surface, border:`1px solid ${linkMode==='esistente'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
                 <div style={{ fontSize:20 }}>🔗</div>
                 <div style={{ fontSize:13, fontWeight:600, color:linkMode==='esistente'?T.navy:T.ink, marginTop:6 }}>Progetto esistente</div>
                 <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Collega a un progetto già presente.</div>
               </button>
               <button onClick={()=>setLinkMode('nuovo')} className="asm-card"
-                style={{ textAlign:'left', padding:'14px', background:T.surface, border:`1px solid ${linkMode==='nuovo'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
+                style={{ textAlign:'left', padding:'16px', background:T.surface, border:`1px solid ${linkMode==='nuovo'?T.navy:T.border}`, borderRadius:T.radius, cursor:'pointer' }}>
                 <div style={{ fontSize:20 }}>✨</div>
                 <div style={{ fontSize:13, fontWeight:600, color:linkMode==='nuovo'?T.navy:T.ink, marginTop:6 }}>Nuovo progetto</div>
                 <div style={{ ...mono, fontSize:9.5, color:T.muted, marginTop:4 }}>Crea un progetto precompilato dai dati offerta.</div>
@@ -672,7 +672,7 @@ export default function OffertePage() {
             )}
 
             {linkMode==='nuovo' && (
-              <div style={{ display:'flex', flexDirection:'column', gap:12, padding:'14px', background:T.surface2, border:`1px solid ${T.border}`, borderRadius:T.radiusSm }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:12, padding:'16px', background:T.surface2, border:`1px solid ${T.border}`, borderRadius:T.radiusSm }}>
                 <div>
                   <label style={labelSt}>Nome progetto *</label>
                   <input type="text" value={linkForm.nome} onChange={e=>setLinkForm(p=>({...p,nome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
@@ -689,11 +689,11 @@ export default function OffertePage() {
                       {serviceTemplates.map(s => {
                         const selected = (linkForm.servizi||[]).includes(s.service_name);
                         return (
-                          <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                          <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 0' }}>
                             <input type="checkbox" checked={selected}
                               onChange={() => setLinkForm(p => ({ ...p, servizi: selected ? p.servizi.filter(x=>x!==s.service_name) : [...(p.servizi||[]), s.service_name] }))}
                               style={{ accentColor:T.navy, width:13, height:13 }}/>
-                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"var(--font-ui)" }}>{s.service_name}</span>
                           </label>
                         );
                       })}
@@ -707,11 +707,11 @@ export default function OffertePage() {
                       {teamMembers.map(m => {
                         const selected = (linkForm.membri||[]).includes(m.id);
                         return (
-                          <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                          <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 0' }}>
                             <input type="checkbox" checked={selected}
                               onChange={() => setLinkForm(p => ({ ...p, membri: selected ? p.membri.filter(x=>x!==m.id) : [...(p.membri||[]), m.id] }))}
                               style={{ accentColor:T.navy, width:13, height:13 }}/>
-                            <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                            <span style={{ fontSize:12, color:T.ink, fontFamily:"var(--font-ui)" }}>{m.user_name || m.user_email}</span>
                           </label>
                         );
                       })}
@@ -721,8 +721,8 @@ export default function OffertePage() {
               </div>
             )}
 
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Salta</button>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setLinkProg(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Salta</button>
               <button onClick={collegaProgetto} disabled={!linkMode || linkSaving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:(!linkMode||linkSaving)?'not-allowed':'pointer', opacity:(!linkMode||linkSaving)?0.5:1 }}>
                 {linkSaving ? 'Collego…' : 'Collega progetto'}
               </button>
@@ -735,13 +735,13 @@ export default function OffertePage() {
       {modalOpen && (
         <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
           <div className="asm-modal-content" style={{ width:'100%', maxWidth:560, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, padding:28, maxHeight:'90vh', overflowY:'auto' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
               <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Nuova offerta</div>
               <button onClick={()=>setModalOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:20 }}>×</button>
             </div>
 
-            <form onSubmit={handleSave} style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+            <form onSubmit={handleSave} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                 <div>
                   <label style={labelSt}>N° Offerta</label>
                   <input type="text" value={form.numero_offerta} onChange={e=>setForm(p=>({...p,numero_offerta:e.target.value}))} placeholder="OFF.001" style={inputSt}/>
@@ -771,7 +771,7 @@ export default function OffertePage() {
                     <div style={{ position:'absolute', left:0, right:0, top:'100%', background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:12, boxShadow:T.shadowMd, zIndex:50, maxHeight:200, overflowY:'auto' }}>
                       {clientSuggestions.map(c => (
                         <button key={c.id} type="button" onMouseDown={() => { setForm(p=>({...p,cliente:c.full_name})); setClientSuggestions([]); }}
-                          style={{ display:'block', width:'100%', padding:'9px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
+                          style={{ display:'block', width:'100%', padding:'10px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, color:T.ink, fontFamily:"var(--font-ui)" }}>
                           {c.full_name}
                         </button>
                       ))}
@@ -795,8 +795,8 @@ export default function OffertePage() {
                   </label>
                 </div>
                 {form.creaProgetto && (
-                  <div style={{ gridColumn:'span 2', display:'flex', flexDirection:'column', gap:10, padding:'14px', background:T.surface2, border:`1px solid ${T.border}` }}>
-                    <div style={{ ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>Nuovo progetto</div>
+                  <div style={{ gridColumn:'span 2', display:'flex', flexDirection:'column', gap:10, padding:'16px', background:T.surface2, border:`1px solid ${T.border}` }}>
+                    <div style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>Nuovo progetto</div>
                     <div>
                       <label style={labelSt}>Nome progetto *</label>
                       <input type="text" value={form.nuovoProgettoNome||''} onChange={e=>setForm(p=>({...p,nuovoProgettoNome:e.target.value}))} placeholder="Es. Ristrutturazione Villa Bianchi" style={inputSt}/>
@@ -812,14 +812,14 @@ export default function OffertePage() {
                           {serviceTemplates.map(s => {
                             const selected = (form.nuovoProgettoServizi||[]).includes(s.service_name);
                             return (
-                              <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                              <label key={s.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 0' }}>
                                 <input type="checkbox" checked={selected}
                                   onChange={() => setForm(p => {
                                     const list = p.nuovoProgettoServizi || [];
                                     return { ...p, nuovoProgettoServizi: selected ? list.filter(x=>x!==s.service_name) : [...list, s.service_name] };
                                   })}
                                   style={{ accentColor:T.navy, width:13, height:13 }}/>
-                                <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{s.service_name}</span>
+                                <span style={{ fontSize:12, color:T.ink, fontFamily:"var(--font-ui)" }}>{s.service_name}</span>
                               </label>
                             );
                           })}
@@ -833,14 +833,14 @@ export default function OffertePage() {
                           {teamMembers.map(m => {
                             const selected = (form.nuovoProgettoMembri||[]).includes(m.id);
                             return (
-                              <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                              <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 0' }}>
                                 <input type="checkbox" checked={selected}
                                   onChange={() => setForm(p => {
                                     const list = p.nuovoProgettoMembri || [];
                                     return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
                                   })}
                                   style={{ accentColor:T.navy, width:13, height:13 }}/>
-                                <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                                <span style={{ fontSize:12, color:T.ink, fontFamily:"var(--font-ui)" }}>{m.user_name || m.user_email}</span>
                               </label>
                             );
                           })}
@@ -862,7 +862,7 @@ export default function OffertePage() {
                       </div>
                     ))}
                     {(form.voci||[]).length===0 && (
-                      <div style={{padding:'16px',textAlign:'center',fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>Nessuna voce — aggiungi dal preset o crea una riga</div>
+                      <div style={{padding:'16px',textAlign:'center',fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>Nessuna voce — aggiungi dal preset o crea una riga</div>
                     )}
                   </div>
                   {/* Preset template */}
@@ -870,14 +870,14 @@ export default function OffertePage() {
                     <div style={{marginBottom:8,display:'flex',flexWrap:'wrap',gap:4}}>
                       {vociTemplates.filter(t=>!(form.voci||[]).some(v=>v.templateId===t.id)).map(t=>(
                         <button type="button" key={t.id} onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`t${t.id}${Date.now()}`,templateId:t.id,nome:t.nome,prezzo:Number(t.prezzo_default)||0,attiva:true}]}))}
-                          style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:T.bg,color:T.ink,fontFamily:"'IBM Plex Mono',monospace",fontSize:10,padding:'3px 10px',cursor:'pointer'}}>
+                          style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:T.bg,color:T.ink,fontFamily:"var(--font-label)",fontSize:10,padding:'4px 10px',cursor:'pointer'}}>
                           + {t.nome}
                         </button>
                       ))}
                     </div>
                   )}
                   <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
-                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"'IBM Plex Mono',monospace",fontSize:10,letterSpacing:'0.06em',padding:'5px 12px',cursor:'pointer'}}>
+                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',padding:'6px 12px',cursor:'pointer'}}>
                     + Aggiungi riga
                   </button>
                   {/* Sconto + Totale */}
@@ -892,32 +892,32 @@ export default function OffertePage() {
                       <div style={{marginTop:10,paddingTop:8,borderTop:`0.5px solid ${T.border}`}}>
                         {/* Riga sconto % */}
                         <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:6}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO %</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>SCONTO %</span>
                           <div style={{display:'flex',alignItems:'center',gap:4}}>
                             <input type="number" min={0} max={100} step={0.1} value={form.sconto} onChange={e=>setForm(p=>({...p,sconto:e.target.value}))}
                               placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
-                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.muted}}>%</span>
                           </div>
                         </div>
                         {/* Riga sconto fisso € */}
                         <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO €</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>SCONTO €</span>
                           <div style={{display:'flex',alignItems:'center',gap:4}}>
                             <input type="number" min={0} step={0.01} value={form.sconto_fisso} onChange={e=>setForm(p=>({...p,sconto_fisso:e.target.value}))}
                               placeholder="0" style={{...inputSt,width:90,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
-                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>€</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.muted}}>€</span>
                           </div>
                         </div>
                         {totaleSc > 0 && (
                           <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,marginBottom:6}}>
-                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
-                            <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
+                            <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
                           </div>
                         )}
                         {/* Totale */}
                         <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>TOTALE OFFERTA</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
                         </div>
                       </div>
                     );
@@ -931,8 +931,8 @@ export default function OffertePage() {
 
               {formError && <div style={{ ...mono, fontSize:11, color:T.red }}>{formError}</div>}
 
-              <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+              <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+                <button type="button" onClick={()=>setModalOpen(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
                 <button type="submit" disabled={saving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving?'not-allowed':'pointer', opacity:saving?0.6:1 }}>
                   {saving?'Salvataggio...':'Crea offerta'}
                 </button>
@@ -953,15 +953,15 @@ export default function OffertePage() {
               Hai modificato il valore rispetto all'offerta originale.<br/>
               Vuoi allineare anche il valore dell'offerta a quello della commessa?
             </div>
-            <div style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
+            <div style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 16px', marginBottom:20, display:'flex', gap:20 }}>
               <div>
-                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
                   {currency(offertaOriginale.importo_offerta_base)}
                 </div>
               </div>
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
-                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
                   {(() => {
                     const lordo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);
@@ -996,7 +996,7 @@ export default function OffertePage() {
         <div className="asm-modal-bg" style={{ position:'fixed', inset:0, zIndex:70, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
           <div className="asm-modal-content" style={{ width:'100%', maxWidth:480, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius:T.radiusLg, display:'flex', flexDirection:'column', maxHeight:'90vh', overflow:'hidden' }}>
             {/* Header fisso */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'22px 28px 16px', borderBottom:`0.5px solid ${T.border}`, flexShrink:0 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'24px 28px 16px', borderBottom:`0.5px solid ${T.border}`, flexShrink:0 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Accetta offerta</div>
                 <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:2 }}>Verifica i dati prima di creare la commessa</div>
@@ -1043,14 +1043,14 @@ export default function OffertePage() {
                             {teamMembers.map(m => {
                               const selected = (accettaForm.nuovoProgettoMembri||[]).includes(m.id);
                               return (
-                                <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'3px 0' }}>
+                                <label key={m.id} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 0' }}>
                                   <input type="checkbox" checked={selected}
                                     onChange={() => setAccettaForm(p => {
                                       const list = p.nuovoProgettoMembri || [];
                                       return { ...p, nuovoProgettoMembri: selected ? list.filter(x=>x!==m.id) : [...list, m.id] };
                                     })}
                                     style={{ accentColor:T.navy, width:13, height:13 }}/>
-                                  <span style={{ fontSize:12, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{m.user_name || m.user_email}</span>
+                                  <span style={{ fontSize:12, color:T.ink, fontFamily:"var(--font-ui)" }}>{m.user_name || m.user_email}</span>
                                 </label>
                               );
                             })}
@@ -1071,7 +1071,7 @@ export default function OffertePage() {
                   {(accettaForm.voci||[]).map((v,i)=>(
                     <div key={v.id||i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderBottom:i<(accettaForm.voci||[]).length-1?`0.5px solid ${T.border}`:'none',background:v.attiva?'transparent':T.surface2}}>
                       <input type="checkbox" checked={v.attiva} onChange={()=>setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,attiva:!x.attiva}:x)}))} style={{accentColor:T.navy,width:13,height:13,flexShrink:0}}/>
-                      <span style={{flex:1,fontSize:12,color:v.attiva?T.ink:T.muted,fontFamily:"'Space Grotesk',sans-serif",opacity:v.attiva?1:0.5}}>{v.nome}</span>
+                      <span style={{flex:1,fontSize:12,color:v.attiva?T.ink:T.muted,fontFamily:"var(--font-ui)",opacity:v.attiva?1:0.5}}>{v.nome}</span>
                       <input type="number" value={v.prezzo} onChange={e=>{const val=e.target.value;setAccettaForm(p=>({...p,voci:p.voci.map((x,j)=>j===i?{...x,prezzo:val}:x)}));}} style={{...inputSt,width:110,padding:'4px 8px',fontSize:12,textAlign:'right',opacity:v.attiva?1:0.5}} placeholder="€"/>
                     </div>
                   ))}
@@ -1087,30 +1087,30 @@ export default function OffertePage() {
                   return (
                     <div style={{paddingTop:8}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:6}}>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO %</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>SCONTO %</span>
                         <div style={{display:'flex',alignItems:'center',gap:4}}>
                           <input type="number" min={0} max={100} step={0.1} value={accettaForm.sconto||''} onChange={e=>setAccettaForm(p=>({...p,sconto:e.target.value}))}
                             placeholder="0" style={{...inputSt,width:70,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>%</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.muted}}>%</span>
                         </div>
                       </div>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginBottom:8}}>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>SCONTO €</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>SCONTO €</span>
                         <div style={{display:'flex',alignItems:'center',gap:4}}>
                           <input type="number" min={0} step={0.01} value={accettaForm.sconto_fisso||''} onChange={e=>setAccettaForm(p=>({...p,sconto_fisso:e.target.value}))}
                             placeholder="0" style={{...inputSt,width:90,padding:'4px 8px',fontSize:12,textAlign:'right'}}/>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.muted}}>€</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.muted}}>€</span>
                         </div>
                       </div>
                       {totaleSc > 0 && (
                         <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12,marginBottom:6}}>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
-                          <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>TOTALE SCONTI</span>
+                          <span style={{fontFamily:"var(--font-label)",fontSize:12,color:T.red}}>−{currency(totaleSc)}</span>
                         </div>
                       )}
                       <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:12}}>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
-                        <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>TOTALE COMMESSA</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:16,fontWeight:700,color:T.navy}}>{currency(netto)}</span>
                       </div>
                     </div>
                   );
@@ -1118,8 +1118,8 @@ export default function OffertePage() {
               </div>
             </div>
             {/* Footer fisso */}
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 28px', borderTop:`0.5px solid ${T.border}`, flexShrink:0 }}>
-              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'16px 28px', borderTop:`0.5px solid ${T.border}`, flexShrink:0 }}>
+              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
               <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Creazione...':'Crea commessa →'}
               </button>

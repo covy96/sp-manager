@@ -360,11 +360,11 @@ export default function AppLayout({ session, children }) {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
-          display:'flex', alignItems:'center', gap:10, width:'100%', padding:'7px 10px',
+          display:'flex', alignItems:'center', gap:10, width:'100%', padding:'8px 10px',
           background: hover ? T.border : 'transparent',
           border:'none', cursor:'pointer', textAlign:'left',
           color: danger ? T.red : T.ink,
-          fontFamily:"'Space Grotesk', sans-serif", fontSize:13, borderRadius:2,
+          fontFamily:"var(--font-ui)", fontSize:13, borderRadius:2,
         }}>
         <Icon style={{ width:15, height:15, flexShrink:0, color: danger ? T.red : T.muted }}/>
         {label}
@@ -374,7 +374,7 @@ export default function AppLayout({ session, children }) {
   };
 
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:T.bg, color:T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:T.bg, color:T.ink, fontFamily:"var(--font-ui)" }}>
 
       {/* ── SIDEBAR — glass scura ── */}
       <aside style={{
@@ -385,16 +385,16 @@ export default function AppLayout({ session, children }) {
         borderRight: `1px solid ${T.sidebarBorder}`,
       }}>
         <button onClick={() => navigate("/dashboard")} style={{
-          padding:'20px 18px 16px', background:'transparent', border:'none',
+          padding:'28px 22px 24px', background:'transparent', border:'none',
           borderBottom:`1px solid ${T.sidebarBorder}`, cursor:'pointer', textAlign:'left', width:'100%',
         }}>
-          <AsmSeal size="sm" showBorder={false} showBottom={false} showTop={false} theme="dark"/>
+          <AsmSeal size="sm" showBorder={false} showBottom={false} showTop={false} theme="dark" style={{ padding:0 }}/>
         </button>
 
         <nav style={{ padding:'10px 10px', flex:1, display:'flex', flexDirection:'column', gap:2, overflowY:'auto' }}>
           {menuItems.map((item, idx) => {
             if (item.divider) return (
-              <div key={`div-${idx}`} style={{ margin:'6px 10px', height:'0.5px', background:'rgba(255,255,255,0.08)' }}/>
+              <div key={`div-${idx}`} style={{ margin:'8px 12px', height:'0.5px', background:'rgba(255,255,255,0.08)' }}/>
             );
             return (
               <NavLink key={item.path} to={item.path} data-tour={item.path} style={({ isActive }) => ({
@@ -407,7 +407,7 @@ export default function AppLayout({ session, children }) {
                 onMouseLeave={e => { if (!location.pathname.startsWith(item.path)) e.currentTarget.style.background='transparent'; }}
               >
                 {({ isActive }) => (<>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{item.num}</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: isActive ? T.brass : 'rgba(255,255,255,0.2)', letterSpacing:'0.2em', width:18 }}>{String(menuItems.slice(0, idx + 1).filter(i => !i.divider).length).padStart(2, '0')}</span>
                   <span style={{ fontSize:12.5, color: isActive ? '#ffffff' : T.sidebarText, fontWeight: isActive ? 600 : 400, letterSpacing:'0.01em' }}>{item.label}</span>
                 </>)}
               </NavLink>
@@ -415,7 +415,7 @@ export default function AppLayout({ session, children }) {
           })}
         </nav>
 
-        <div style={{ padding:'10px 12px', borderTop:`1px solid ${T.sidebarBorder}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding:'12px 22px', borderTop:`1px solid ${T.sidebarBorder}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           {/* Logo ASM — apre pagina Info */}
           <button
             onClick={() => navigate('/info')}
@@ -432,7 +432,7 @@ export default function AppLayout({ session, children }) {
             onMouseLeave={e => { if (location.pathname !== '/info') { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; } }}
           >
             <span style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--font-brand)",
               fontWeight: 700, fontSize: 15, letterSpacing: '-0.04em',
               color: location.pathname === '/info' ? '#D9C98A' : 'rgba(255,255,255,0.55)',
               lineHeight: 1,
@@ -467,7 +467,7 @@ export default function AppLayout({ session, children }) {
               {studioName || "ASM"}
             </span>
             {pageTitle && (
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, letterSpacing:'0.1em', marginTop:1 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.1em', marginTop:1 }}>
                 {pageTitle}
               </div>
             )}
@@ -483,14 +483,14 @@ export default function AppLayout({ session, children }) {
                 onChange={e => setQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 style={{
-                  width:'100%', padding:'8px 48px 8px 34px',
+                  width:'100%', padding:'8px 48px 8px 32px',
                   border:`1px solid ${searchFocused ? T.navy : T.borderMd}`,
                   borderRadius: 10,
                   background: T.inputBg,
                   backdropFilter: T.blurSm,
                   WebkitBackdropFilter: T.blurSm,
                   color:T.inputText,
-                  fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
+                  fontSize:13, fontFamily:"var(--font-ui)", outline:'none',
                   transition:'border-color 0.15s, box-shadow 0.15s',
                   boxShadow: searchFocused ? `0 0 0 3px ${T.navyLight}` : 'none',
                 }}
@@ -498,7 +498,7 @@ export default function AppLayout({ session, children }) {
               {query ? (
                 <button onClick={clear} style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, lineHeight:1 }}>×</button>
               ) : (
-                <kbd style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, background:T.borderMd, padding:'2px 6px', borderRadius:5 }}>
+                <kbd style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, background:T.borderMd, padding:'2px 6px', borderRadius:5 }}>
                   {showMacShortcut ? "⌘K" : "Ctrl+K"}
                 </kbd>
               )}
@@ -508,9 +508,9 @@ export default function AppLayout({ session, children }) {
             {showDropdown && (
               <div style={{ position:'absolute', left:0, right:0, top:'calc(100% + 8px)', background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:14, zIndex:50, maxHeight:360, overflowY:'auto', boxShadow:T.shadowMd }}>
                 {searchLoading ? (
-                  <div style={{ padding:16, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center' }}>Ricerca...</div>
+                  <div style={{ padding:16, fontFamily:"var(--font-label)", fontSize:11, color:T.muted, textAlign:'center' }}>Ricerca...</div>
                 ) : results.length === 0 ? (
-                  <div style={{ padding:16, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center' }}>Nessun risultato per "{query}"</div>
+                  <div style={{ padding:16, fontFamily:"var(--font-label)", fontSize:11, color:T.muted, textAlign:'center' }}>Nessun risultato per "{query}"</div>
                 ) : (
                   <>
                     {["progetto","commessa","task","cliente"].map(type => {
@@ -519,24 +519,24 @@ export default function AppLayout({ session, children }) {
                       const tc = TYPE_COLORS[type];
                       return (
                         <div key={type}>
-                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 14px 4px', borderBottom:`0.5px solid ${T.border}` }}>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 16px 4px', borderBottom:`0.5px solid ${T.border}` }}>
                             {tc.label}
                           </div>
                           {items.map(item => (
                             <button key={item.id + (item.archived ? "_arch" : "")} onClick={() => handleResultClick(item)}
-                              style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 14px', textAlign:'left', background:'none', border:'none', cursor:'pointer', borderBottom:`0.5px solid ${T.border}` }}
+                              style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 16px', textAlign:'left', background:'none', border:'none', cursor:'pointer', borderBottom:`0.5px solid ${T.border}` }}
                               onMouseEnter={e => e.currentTarget.style.background=T.surface2}
                               onMouseLeave={e => e.currentTarget.style.background='transparent'}
                             >
-                              <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.08em', textTransform:'uppercase', color:tc.color, background:tc.bg, padding:'2px 6px', flexShrink:0, borderRadius:2 }}>
+                              <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:tc.color, background:tc.bg, padding:'2px 6px', flexShrink:0, borderRadius:2 }}>
                                 {tc.label}
                               </span>
                               <div style={{ minWidth:0, flex:1 }}>
                                 <div style={{ fontSize:13, fontWeight:600, color: item.archived ? T.muted : T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.label}</div>
-                                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>{item.sub}</div>
+                                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{item.sub}</div>
                               </div>
                               {item.archived && (
-                                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase', color:'#b45309', background:'rgba(180,83,9,0.1)', padding:'2px 5px', borderRadius:2, flexShrink:0 }}>
+                                <span style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:'#b45309', background:'rgba(180,83,9,0.1)', padding:'2px 6px', borderRadius:2, flexShrink:0 }}>
                                   archiviato
                                 </span>
                               )}
@@ -545,7 +545,7 @@ export default function AppLayout({ session, children }) {
                         </div>
                       );
                     })}
-                    <div style={{ padding:'8px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, borderTop:`0.5px solid ${T.border}`, textAlign:'center' }}>
+                    <div style={{ padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, borderTop:`0.5px solid ${T.border}`, textAlign:'center' }}>
                       {results.length} risultati — Esc per chiudere
                     </div>
                   </>
@@ -568,9 +568,9 @@ export default function AppLayout({ session, children }) {
               {!muted && unreadNotifs.length > 0 && (
                 <span style={{
                   position:'absolute', top:4, right:3, minWidth:14, height:14, borderRadius:7,
-                  background:T.red, color:'#fff', fontSize:8, fontWeight:700,
-                  fontFamily:"'IBM Plex Mono', monospace",
-                  display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px',
+                  background:T.red, color:'#fff', fontSize:10, fontWeight:700,
+                  fontFamily:"var(--font-label)",
+                  display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px',
                 }}>
                   {unreadNotifs.length > 9 ? '9+' : unreadNotifs.length}
                 </span>
@@ -590,34 +590,34 @@ export default function AppLayout({ session, children }) {
                 boxShadow:`0 4px 16px rgba(0,0,0,${isDark?'0.4':'0.12'})`,
                 maxHeight:400, display:'flex', flexDirection:'column',
               }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
                     {unreadNotifs.length > 0 ? `${unreadNotifs.length} non lette` : 'Notifiche'}
                   </span>
                   {unreadNotifs.length > 0 && (
                     <button onClick={async () => { await markAllRead(studioId, session.user.email); setUnreadNotifs([]); }}
-                      style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, letterSpacing:'0.05em' }}>
+                      style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.05em' }}>
                       Segna tutto letto
                     </button>
                   )}
                 </div>
 
                 {/* Non disturbare — silenzia rapido / riattiva */}
-                <div style={{ padding:'10px 14px', borderBottom:`0.5px solid ${T.border}`, background: muted ? (isDark ? 'rgba(255,255,255,0.04)' : '#f7f7f9') : 'transparent' }}>
+                <div style={{ padding:'10px 16px', borderBottom:`0.5px solid ${T.border}`, background: muted ? (isDark ? 'rgba(255,255,255,0.04)' : '#f7f7f9') : 'transparent' }}>
                   {muted ? (
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
                       <div style={{ minWidth:0 }}>
                         <div style={{ fontSize:11, fontWeight:600, color:T.ink }}>🔕 Notifiche silenziate</div>
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{muteStatusLabel(mutePrefs)}</div>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{muteStatusLabel(mutePrefs)}</div>
                       </div>
                       <button onClick={() => applyMute(null)}
-                        style={{ flexShrink:0, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px' }}>
+                        style={{ flexShrink:0, background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px' }}>
                         Riattiva
                       </button>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>🔔 Silenzia notifiche</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>🔔 Silenzia notifiche</div>
                       <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
                         {[
                           { k:'1h',         label:'1 ora' },
@@ -626,7 +626,7 @@ export default function AppLayout({ session, children }) {
                           { k:'indefinite', label:'Finché riattivo' },
                         ].map(p => (
                           <button key={p.k} onClick={() => applyMute(muteUntilPreset(p.k))}
-                            style={{ background:'none', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.ink, padding:'5px 9px' }}
+                            style={{ background:'none', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.ink, padding:'6px 10px' }}
                             onMouseEnter={e => e.currentTarget.style.background=T.border}
                             onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                             {p.label}
@@ -639,19 +639,19 @@ export default function AppLayout({ session, children }) {
 
                 <div style={{ overflowY:'auto', flex:1 }}>
                   {unreadNotifs.length === 0 ? (
-                    <div style={{ padding:'32px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+                    <div style={{ padding:'32px 0', textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
                       Nessuna notifica non letta
                     </div>
                   ) : unreadNotifs.map(n => (
                     <button key={n.id}
                       onClick={async () => { setBellOpen(false); await markOneRead(n.id); setUnreadNotifs(p => p.filter(x => x.id !== n.id)); if (n.link) navigate(n.link); }}
-                      style={{ display:'block', width:'100%', padding:'12px 14px', textAlign:'left', background:'none', border:'none', cursor: n.link ? 'pointer' : 'default', borderBottom:`0.5px solid ${T.border}` }}
+                      style={{ display:'block', width:'100%', padding:'12px 16px', textAlign:'left', background:'none', border:'none', cursor: n.link ? 'pointer' : 'default', borderBottom:`0.5px solid ${T.border}` }}
                       onMouseEnter={e => e.currentTarget.style.background=T.border}
                       onMouseLeave={e => e.currentTarget.style.background='transparent'}
                     >
-                      <div style={{ fontSize:12, fontWeight:600, color:T.ink, marginBottom:3 }}>{n.title}</div>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:4, lineHeight:1.4 }}>{n.message}</div>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>
+                      <div style={{ fontSize:12, fontWeight:600, color:T.ink, marginBottom:4 }}>{n.title}</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:4, lineHeight:1.4 }}>{n.message}</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
                         {new Date(n.created_at).toLocaleDateString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}
                       </div>
                     </button>
@@ -675,14 +675,14 @@ export default function AppLayout({ session, children }) {
               <div style={{ position:'absolute', right:0, top:'calc(100% + 8px)', width:240, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:16, zIndex:50, boxShadow:T.shadowLg, overflow:'visible' }}>
 
                 {/* User info */}
-                <div style={{ padding:'12px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+                <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{teamMember?.user_name || "Utente"}</div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>{session?.user?.email}</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{session?.user?.email}</div>
                 </div>
 
                 {/* Account */}
                 <div style={{ padding:'6px 4px' }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Account</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Account</div>
                   {(teamMember?.role_internal === 'Owner' || teamMember?.role_internal === 'Partner') && (
                     <DropItem icon={CardIcon} label="Piano" onClick={() => goSettings("/impostazioni/piano")}/>
                   )}
@@ -692,7 +692,7 @@ export default function AppLayout({ session, children }) {
 
                 {/* Studio */}
                 <div style={{ padding:'6px 4px', borderTop:`0.5px solid ${T.border}` }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'4px 10px 6px' }}>Studio</div>
 
                   <DropItem icon={ThemeIcon} label="Aspetto" onClick={() => goSettings('/impostazioni/aspetto')}/>
 
@@ -737,7 +737,7 @@ export default function AppLayout({ session, children }) {
             onClick={e => e.stopPropagation()}>
 
             <div style={{ fontSize:16, fontWeight:600, color:T.ink, marginBottom:4 }}>Cambia account</div>
-            <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:20 }}>
+            <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:20 }}>
               Seleziona un account o uno studio
             </div>
 
@@ -746,7 +746,7 @@ export default function AppLayout({ session, children }) {
               {/* Studi dell'account corrente */}
               {studioList.length > 0 && (
                 <>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     {session?.user?.email}
                   </div>
                   {studioList.map(m => (
@@ -759,9 +759,9 @@ export default function AppLayout({ session, children }) {
                     }}>
                       <div>
                         <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>{m.studios?.name || 'Studio'}</div>
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.role_internal || '—'}</div>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.role_internal || '—'}</div>
                       </div>
-                      {m.studio === studioId && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, letterSpacing:'0.08em', textTransform:'uppercase' }}>✓ Attivo</span>}
+                      {m.studio === studioId && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.08em', textTransform:'uppercase' }}>✓ Attivo</span>}
                     </button>
                   ))}
                 </>
@@ -771,7 +771,7 @@ export default function AppLayout({ session, children }) {
               {savedAccounts.filter(a => a.userId !== session?.user?.id).length > 0 && (
                 <>
                   <div style={{ height:'0.5px', background:T.border, margin:'8px 0' }}/>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>
                     Altri account
                   </div>
                   {savedAccounts.filter(a => a.userId !== session?.user?.id).map(account => (
@@ -793,12 +793,12 @@ export default function AppLayout({ session, children }) {
                           {account.email}
                         </div>
                         {account.studioName && (
-                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
                             {account.studioName}
                           </div>
                         )}
                       </div>
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>→</span>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>→</span>
                     </button>
                   ))}
                 </>
@@ -809,14 +809,14 @@ export default function AppLayout({ session, children }) {
               <button onClick={async () => { setShowAccountPicker(false); await supabase.auth.signOut(); navigate('/login'); }} style={{
                 padding:'10px 16px', background:'transparent',
                 border:`0.5px solid ${T.border}`, cursor:'pointer',
-                fontFamily:"'IBM Plex Mono', monospace", fontSize:11,
+                fontFamily:"var(--font-label)", fontSize:11,
                 color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase', width:'100%',
               }}>
                 + Aggiungi account
               </button>
             </div>
 
-            <button onClick={() => setShowAccountPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+            <button onClick={() => setShowAccountPicker(false)} style={{ marginTop:16, background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:11, color:T.muted, letterSpacing:'0.08em', textTransform:'uppercase' }}>
               Annulla
             </button>
           </div>

@@ -84,7 +84,7 @@ function fmtDate(d) {
 // ── FIELD LABEL ───────────────────────────────────────────────────
 function FieldLabel({ children, required, T }) {
   return (
-    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:5 }}>
+    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:6 }}>
       {children}{required && <span style={{ color:T.red, marginLeft:2 }}>*</span>}
     </div>
   );
@@ -94,12 +94,12 @@ function FieldLabel({ children, required, T }) {
 function FineLavoriModal({ pratica, onClose, onSaved }) {
   const { T } = useTheme();
   const showToast = useToast();
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
   const inputSt = {
-    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    width:"100%", padding:"8px 10px", boxSizing:"border-box",
     border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
     background:T.surface, color:T.ink, fontSize:12,
-    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+    fontFamily:"var(--font-ui)", outline:"none",
   };
 
   const { varianti: existingV, flProtocollo: existingFlProt, nota: existingNota, scadenza: existingScad, stato: existingStato } = parseNote(pratica.note);
@@ -138,10 +138,10 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
     <div style={{ position:"fixed", inset:0, zIndex:80, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.6)", padding:16 }}>
       <div style={{ width:"100%", maxWidth:440, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28 }}>
 
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Fine lavori</div>
-            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>
               {pratica.tipo_pratica}{pratica.protocollo ? ` · ${pratica.protocollo}` : ""}
             </div>
           </div>
@@ -161,14 +161,14 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
           </div>
         </div>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:14, borderTop:`0.5px solid ${T.border}`, gap:8 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:16, borderTop:`0.5px solid ${T.border}`, gap:8 }}>
           {pratica.data_fine_lavori ? (
-            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"7px 14px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
               Rimuovi
             </button>
           ) : <div/>}
           <div style={{ display:"flex", gap:8 }}>
-            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
               Annulla
             </button>
             <button onClick={handleSave} disabled={saving || !data}
@@ -186,12 +186,12 @@ function FineLavoriModal({ pratica, onClose, onSaved }) {
 function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
   const { T } = useTheme();
   const showToast = useToast();
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
   const inputSt = {
-    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    width:"100%", padding:"8px 10px", boxSizing:"border-box",
     border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
     background:T.surface, color:T.ink, fontSize:12,
-    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+    fontFamily:"var(--font-ui)", outline:"none",
   };
 
   const { varianti: initial } = parseNote(pratica.note);
@@ -230,7 +230,7 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
           <div>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>Varianti edilizie</div>
-            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>
               {pratica.tipo_pratica}{pratica.protocollo ? ` · ${pratica.protocollo}` : ""}
             </div>
           </div>
@@ -240,11 +240,11 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
         {localV.length > 0 && (
           <div style={{ marginBottom:16, display:"flex", flexDirection:"column", gap:6 }}>
             {localV.map(v => (
-              <div key={v.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm }}>
-                <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 6px", flexShrink:0 }}>{v.tipo}</span>
+              <div key={v.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm }}>
+                <span style={{ ...mono, fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 6px", flexShrink:0 }}>{v.tipo}</span>
                 <div style={{ flex:1, minWidth:0 }}>
                   {v.protocollo && <span style={{ ...mono, fontSize:10, color:T.ink }}>{v.protocollo}</span>}
-                  {v.data && <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft: v.protocollo?8:0 }}>{fmtDate(v.data)}</span>}
+                  {v.data && <span style={{ ...mono, fontSize:10, color:T.muted, marginLeft: v.protocollo?8:0 }}>{fmtDate(v.data)}</span>}
                   {v.nota && <span style={{ fontSize:11, color:T.muted, marginLeft:8 }}>{v.nota}</span>}
                 </div>
                 <button onClick={() => removeVariante(v.id)} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:15, lineHeight:1 }}>×</button>
@@ -261,8 +261,8 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
         )}
 
         {/* Form nuova variante */}
-        <div style={{ padding:14, background:T.bg, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, marginBottom:16 }}>
-          <div style={{ ...mono, fontSize:8, letterSpacing:"0.18em", textTransform:"uppercase", color:T.muted, marginBottom:10 }}>Nuova variante</div>
+        <div style={{ padding:16, background:T.bg, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, marginBottom:16 }}>
+          <div style={{ ...mono, fontSize:10, letterSpacing:"0.18em", textTransform:"uppercase", color:T.muted, marginBottom:10 }}>Nuova variante</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             <div style={{ gridColumn:"span 2" }}>
               <FieldLabel T={T} required>Tipo variante</FieldLabel>
@@ -277,7 +277,7 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
             </div>
             <div>
               <FieldLabel T={T}>Data</FieldLabel>
-              <input type="date" value={newV.data} onChange={e => setNewV(p => ({ ...p, data:e.target.value }))} style={{ ...inputSt, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}/>
+              <input type="date" value={newV.data} onChange={e => setNewV(p => ({ ...p, data:e.target.value }))} style={{ ...inputSt, fontFamily:"var(--font-label)", fontSize:11 }}/>
             </div>
             <div style={{ gridColumn:"span 2" }}>
               <FieldLabel T={T}>Note</FieldLabel>
@@ -285,14 +285,14 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
             </div>
           </div>
           <div style={{ display:"flex", justifyContent:"flex-end", marginTop:10 }}>
-            <button onClick={addVariante} disabled={!newV.tipo} style={{ ...mono, fontSize:10, letterSpacing:"0.08em", textTransform:"uppercase", padding:"6px 14px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:newV.tipo?"pointer":"not-allowed", opacity:newV.tipo?1:0.5 }}>
+            <button onClick={addVariante} disabled={!newV.tipo} style={{ ...mono, fontSize:10, letterSpacing:"0.08em", textTransform:"uppercase", padding:"6px 16px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:newV.tipo?"pointer":"not-allowed", opacity:newV.tipo?1:0.5 }}>
               + Aggiungi
             </button>
           </div>
         </div>
 
-        <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+        <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+          <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
             Annulla
           </button>
           <button onClick={saveAll} disabled={saving} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:saving?"not-allowed":"pointer", opacity:saving?0.6:1 }}>
@@ -308,12 +308,12 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
 function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
   const { T } = useTheme();
   const showToast = useToast();
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
   const inputSt = {
-    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    width:"100%", padding:"8px 10px", boxSizing:"border-box",
     border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
     background:T.surface, color:T.ink, fontSize:12,
-    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+    fontFamily:"var(--font-ui)", outline:"none",
   };
 
   const [giorni, setGiorni]         = useState("");
@@ -378,13 +378,13 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
           <div>
             <div style={{ fontSize:15, fontWeight:600, color:T.ink }}>{existing ? "Modifica scadenza" : "Imposta scadenza"}</div>
-            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>{tipoPratica}</div>
+            <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>{tipoPratica}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
         </div>
 
         {existing && (
-          <div style={{ ...mono, fontSize:9, color:T.muted, background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, padding:"7px 10px", marginBottom:14 }}>
+          <div style={{ ...mono, fontSize:10, color:T.muted, background:T.surface, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm, padding:"8px 10px", marginBottom:16 }}>
             Scadenza attuale: <span style={{ color:T.ink }}>{fmtDate(existing.data)}</span>
           </div>
         )}
@@ -395,7 +395,7 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
           <div style={{ display:"flex", gap:6, marginBottom:8 }}>
             {presets.map(g => (
               <button key={g} onClick={() => setGiorni(String(g))}
-                style={{ ...mono, fontSize:9, padding:"4px 10px",
+                style={{ ...mono, fontSize:10, padding:"4px 10px",
                   border:`0.5px solid ${giorni===String(g) ? T.navy : T.border}`,
                   borderRadius:T.radiusSm,
                   background: giorni===String(g) ? (T.navyLight||"rgba(19,49,92,0.07)") : "transparent",
@@ -410,7 +410,7 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
             placeholder="oppure inserisci numero..."
             style={{ ...inputSt, ...mono, fontSize:11 }}/>
           {dataCalcolata && (
-            <div style={{ ...mono, fontSize:9, color:T.navy, marginTop:5 }}>
+            <div style={{ ...mono, fontSize:10, color:T.navy, marginTop:6 }}>
               → Scade il {fmtDate(dataCalcolata)}
             </div>
           )}
@@ -424,18 +424,18 @@ function ScadenzaModal({ praticaId, tipoPratica, onClose, onSaved }) {
             style={inputSt}/>
         </div>
 
-        <div style={{ display:"flex", justifyContent:"space-between", gap:8, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", gap:8, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
           {existing ? (
-            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"7px 14px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
+            <button onClick={handleRemove} style={{ ...mono, fontSize:10, letterSpacing:"0.06em", textTransform:"uppercase", padding:"8px 16px", border:`0.5px solid ${T.red}`, borderRadius:T.radiusSm, background:"transparent", color:T.red, cursor:"pointer" }}>
               Rimuovi
             </button>
           ) : (
-            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
+            <button onClick={onClose} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.muted, cursor:"pointer" }}>
               Salta
             </button>
           )}
           <button onClick={handleSave} disabled={saving || !dataCalcolata}
-            style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 22px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
+            style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 24px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor: saving||!dataCalcolata?"not-allowed":"pointer", opacity: saving||!dataCalcolata?0.6:1 }}>
             {saving ? "Salvataggio..." : "Imposta scadenza"}
           </button>
         </div>
@@ -450,12 +450,12 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
   const showToast = useToast();
   const navigate = useNavigate();
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
+  const mono = { fontFamily:"var(--font-label)" };
   const inputSt = {
-    width:"100%", padding:"7px 10px", boxSizing:"border-box",
+    width:"100%", padding:"8px 10px", boxSizing:"border-box",
     border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm,
     background:T.surface, color:T.ink, fontSize:12,
-    fontFamily:"'Space Grotesk', sans-serif", outline:"none",
+    fontFamily:"var(--font-ui)", outline:"none",
   };
 
   const [pratiche, setPratiche]   = useState([]);
@@ -639,7 +639,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
   // Bottone azione inline
   const ActionBtn = ({ onClick, active, children }) => (
     <button onClick={onClick} style={{
-      ...mono, fontSize:9,
+      ...mono, fontSize:10,
       color: active ? T.navy : T.muted,
       background:"none",
       border:`0.5px solid ${active ? T.navy : T.border}`,
@@ -658,12 +658,12 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
         background: totale > 0 ? (T.navyLight||"rgba(19,49,92,0.07)") : "transparent",
         height:34, padding:"0 12px", cursor:"pointer",
       }}>
-        <span style={{ ...mono, fontSize:9, letterSpacing:"0.15em", textTransform:"uppercase", color:T.navy, fontWeight:600 }}>
+        <span style={{ ...mono, fontSize:10, letterSpacing:"0.15em", textTransform:"uppercase", color:T.navy, fontWeight:600 }}>
           Pratiche
         </span>
         {totale > 0
-          ? <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 6px" }}>{totale}</span>
-          : <span style={{ ...mono, fontSize:9, color:T.muted }}>+ Aggiungi</span>
+          ? <span style={{ ...mono, fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 6px" }}>{totale}</span>
+          : <span style={{ ...mono, fontSize:10, color:T.muted }}>+ Aggiungi</span>
         }
       </button>
 
@@ -676,7 +676,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
               <div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.ink, letterSpacing:"-0.02em" }}>Pratiche</div>
-                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:3 }}>Autorizzazioni e pratiche collegate al progetto</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>Autorizzazioni e pratiche collegate al progetto</div>
               </div>
               <button onClick={() => setListOpen(false)} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:20, lineHeight:1 }}>×</button>
             </div>
@@ -694,7 +694,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                   if (!items.length) return null;
                   return (
                     <div key={cat.id}>
-                      <div style={{ ...mono, fontSize:8, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:6, marginTop:4 }}>
+                      <div style={{ ...mono, fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.muted, marginBottom:6, marginTop:4 }}>
                         {cat.icon} {cat.label}
                       </div>
                       {items.map(p => {
@@ -709,7 +709,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                         return (
                           <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", background:T.surface, border:`0.5px solid ${scadExpired ? T.red : T.border}`, borderRadius:T.radiusSm, marginBottom:4, flexWrap:"wrap" }}>
                             {/* Badge tipo */}
-                            <span style={{ ...mono, fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 7px", flexShrink:0 }}>
+                            <span style={{ ...mono, fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 8px", flexShrink:0 }}>
                               {p.tipo_pratica}
                             </span>
                             {/* Badge stato — select inline */}
@@ -717,7 +717,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                               value={statoId || "in_istruttoria"}
                               onChange={e => { e.stopPropagation(); handleChangeStato(p, e.target.value); }}
                               onClick={e => e.stopPropagation()}
-                              style={{ ...mono, fontSize:9, color:statoObj.color, background:"transparent", border:`0.5px solid ${statoObj.color}`, borderRadius:T.radiusSm, padding:"1px 6px", cursor:"pointer", outline:"none", flexShrink:0 }}>
+                              style={{ ...mono, fontSize:10, color:statoObj.color, background:"transparent", border:`0.5px solid ${statoObj.color}`, borderRadius:T.radiusSm, padding:"1px 6px", cursor:"pointer", outline:"none", flexShrink:0 }}>
                               {STATI_PRATICA.map(s => (
                                 <option key={s.id} value={s.id}>{s.label}</option>
                               ))}
@@ -726,12 +726,12 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                             <div style={{ flex:1, minWidth:80 }}>
                               {p.protocollo && <span style={{ ...mono, fontSize:10, color:T.ink }}>{p.protocollo}</span>}
                               {p.data_presentazione && (
-                                <span style={{ ...mono, fontSize:9, color:T.muted, marginLeft: p.protocollo?8:0 }}>
+                                <span style={{ ...mono, fontSize:10, color:T.muted, marginLeft: p.protocollo?8:0 }}>
                                   pres. {fmtDate(p.data_presentazione)}
                                 </span>
                               )}
                               {scadenza?.data && (
-                                <span style={{ ...mono, fontSize:9, color:scadColor, marginLeft:8, border:`0.5px solid ${scadColor}`, borderRadius:T.radiusSm, padding:"1px 5px" }}>
+                                <span style={{ ...mono, fontSize:10, color:scadColor, marginLeft:8, border:`0.5px solid ${scadColor}`, borderRadius:T.radiusSm, padding:"1px 6px" }}>
                                   {scadExpired ? "SCADUTA" : `scad. ${fmtDate(scadenza.data)}`}
                                 </span>
                               )}
@@ -769,11 +769,11 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             )}
 
             {/* Footer lista */}
-            <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <button onClick={() => setListOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+            <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <button onClick={() => setListOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Chiudi
               </button>
-              <button onClick={openNew} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:"pointer" }}>
+              <button onClick={openNew} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", background:T.navy, color:T.bg, border:"none", borderRadius:T.radiusSm, cursor:"pointer" }}>
                 + Aggiungi pratica
               </button>
             </div>
@@ -786,7 +786,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
         <div style={{ position:"fixed", inset:0, zIndex:70, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.55)", padding:16 }}>
           <div style={{ width:"100%", maxWidth:620, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"90vh", overflowY:"auto" }}>
 
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
               <div style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:"-0.02em" }}>
                 {editingId ? "Modifica pratica" : "Nuova pratica"}
               </div>
@@ -794,7 +794,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             </div>
 
             {/* Selezione categoria */}
-            <div style={{ marginBottom:18 }}>
+            <div style={{ marginBottom:20 }}>
               <FieldLabel T={T} required>Categoria</FieldLabel>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                 {CATEGORIE.map(cat => (
@@ -804,7 +804,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                       setForm(p => ({ ...p, categoria:cat.id, tipo_pratica:defaultTipo }));
                     }}
                     style={{
-                      ...mono, fontSize:10, letterSpacing:"0.06em", padding:"5px 12px",
+                      ...mono, fontSize:10, letterSpacing:"0.06em", padding:"6px 12px",
                       border:`0.5px solid ${form.categoria===cat.id ? T.navy : T.border}`,
                       borderRadius:T.radiusSm,
                       background: form.categoria===cat.id ? (T.navyLight||"rgba(19,49,92,0.07)") : T.surface,
@@ -819,7 +819,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
 
             {/* Campi per categoria */}
             {form.categoria && (
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
 
                 {/* EDILIZIA */}
                 {form.categoria === "edilizia" && <>
@@ -838,7 +838,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                     <FieldLabel T={T}>{isSameDate ? "Data pres. / protocollazione" : "Data presentazione"}</FieldLabel>
                     <input type="date" value={form.data_presentazione} onChange={e => setField("data_presentazione", e.target.value)} style={{ ...inputSt, ...mono, fontSize:11 }}/>
                     {isSameDate && form.tipo_pratica && (
-                      <div style={{ ...mono, fontSize:8, color:T.muted, marginTop:3 }}>Coincide con protocollazione per {form.tipo_pratica}</div>
+                      <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>Coincide con protocollazione per {form.tipo_pratica}</div>
                     )}
                   </div>
                   {!isSameDate && (
@@ -941,7 +941,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>N° Protocollo / Autorizzazione</FieldLabel>
                     <input type="text" value={form.protocollo} onChange={e => setField("protocollo", e.target.value)} placeholder="Es. Aut. paes. 2024-001" style={inputSt}/>
-                    <div style={{ ...mono, fontSize:8, color:T.muted, marginTop:3 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
+                    <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
                   </div>
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>
@@ -962,7 +962,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>N° Protocollo / Autorizzazione</FieldLabel>
                     <input type="text" value={form.protocollo} onChange={e => setField("protocollo", e.target.value)} placeholder="Es. Aut. mon. 2024-001" style={inputSt}/>
-                    <div style={{ ...mono, fontSize:8, color:T.muted, marginTop:3 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
+                    <div style={{ ...mono, fontSize:10, color:T.muted, marginTop:4 }}>Il protocollo arriva con il rilascio dell'autorizzazione</div>
                   </div>
                   <div style={{ gridColumn:"span 2" }}>
                     <FieldLabel T={T}>Note</FieldLabel>
@@ -980,7 +980,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                 <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                   {STATI_PRATICA.map(s => (
                     <button key={s.id} onClick={() => setField("stato", s.id)}
-                      style={{ ...mono, fontSize:9, letterSpacing:"0.06em", padding:"5px 12px",
+                      style={{ ...mono, fontSize:10, letterSpacing:"0.06em", padding:"6px 12px",
                         border:`0.5px solid ${form.stato===s.id ? s.color : T.border}`,
                         borderRadius:T.radiusSm,
                         background: form.stato===s.id ? s.color+"22" : "transparent",
@@ -994,8 +994,8 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             )}
 
             {/* Footer form */}
-            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:22, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={() => setFormOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:24, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={() => setFormOpen(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Annulla
               </button>
               <button onClick={handleSave} disabled={saving || !form.tipo_pratica}
@@ -1049,7 +1049,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
             </div>
 
             {commesse.length > 1 && (
-              <div style={{ marginBottom:18 }}>
+              <div style={{ marginBottom:20 }}>
                 <FieldLabel T={T} required>Commessa</FieldLabel>
                 <select value={chosenCommessaId} onChange={e => setChosenCommessaId(e.target.value)}
                   style={{ ...inputSt, cursor:"pointer" }}>
@@ -1059,8 +1059,8 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
               </div>
             )}
 
-            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={() => setDirittiPrompt(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 18px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={() => setDirittiPrompt(false)} style={{ ...mono, fontSize:11, letterSpacing:"0.08em", textTransform:"uppercase", padding:"8px 20px", border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:"transparent", color:T.ink, cursor:"pointer" }}>
                 Non ora
               </button>
               <button onClick={goToDiritti} disabled={commesse.length > 1 && !chosenCommessaId}

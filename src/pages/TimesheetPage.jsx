@@ -33,7 +33,7 @@ function avatarColor(seed = "") {
 // ── SHARED UI ────────────────────────────────────────────────────
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
+  return <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", placeholder, style = {} }) {
   const { T } = useTheme();
@@ -41,7 +41,7 @@ function Input({ value, onChange, type = "text", placeholder, style = {} }) {
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `1px solid ${focus ? T.navy : T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', ...style }} />
+      style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `1px solid ${focus ? T.navy : T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', ...style }} />
   );
 }
 function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }) {
@@ -49,8 +49,8 @@ function BtnPrimary({ children, onClick, disabled, type = "button", style = {} }
   return (
     <button type={type} onClick={onClick} disabled={disabled} style={{
       background: T.navy, color: T.bg, border: 'none',
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-      padding: '8px 18px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
+      fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+      padding: '8px 20px', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1, ...style,
     }}>{children}</button>
   );
 }
@@ -59,8 +59,8 @@ function BtnGhost({ children, onClick, disabled, danger, style = {} }) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{
       background: 'transparent', border: `1px solid ${danger ? T.red : T.ink20}`, borderRadius: T.radiusSm,
-      color: danger ? T.red : T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
-      letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px',
+      color: danger ? T.red : T.ink, fontFamily: "var(--font-label)", fontSize: 11,
+      letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px',
       cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, ...style,
     }}>{children}</button>
   );
@@ -80,7 +80,7 @@ function Modal({ open, onClose, title, children, width = 480 }) {
     </div>
   );
 }
-function Divider() { const { T } = useTheme(); return <div style={{ height: '0.5px', background: T.ink10, margin: '14px 0' }} />; }
+function Divider() { const { T } = useTheme(); return <div style={{ height: '0.5px', background: T.ink10, margin: '16px 0' }} />; }
 
 // ── HELPERS DATE ─────────────────────────────────────────────────
 function getMonday(d) {
@@ -216,7 +216,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
     [columns, tableData]
   );
 
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const mono = { fontFamily: "var(--font-label)" };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -228,9 +228,9 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
           onChange={setMode}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: 'hidden' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', borderRight: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '5px 10px', fontSize: 13, lineHeight: 1 }}>←</button>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', borderRight: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '6px 10px', fontSize: 13, lineHeight: 1 }}>←</button>
           <span style={{ ...mono, fontSize: 10, color: T.ink, whiteSpace: 'nowrap', padding: '0 12px', minWidth: 100, textAlign: 'center' }}>{label}</span>
-          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', borderLeft: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '5px 10px', fontSize: 13, lineHeight: 1 }}>→</button>
+          <button onClick={() => navigate(1)} style={{ background: 'none', border: 'none', borderLeft: `0.5px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, padding: '6px 10px', fontSize: 13, lineHeight: 1 }}>→</button>
         </div>
         {loading && <span style={{ ...mono, fontSize: 10, color: T.muted }}>...</span>}
       </div>
@@ -246,7 +246,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
               {columns.map((col, ci) => (
                 <th key={col.key} style={{ padding: '10px 8px', textAlign: 'center', ...mono, fontSize: 8.5, color: col.isToday ? T.navy : col.isWeekend ? T.muted : T.ink, fontWeight: col.isToday ? 700 : 400, background: col.isWeekend ? T.bg : 'transparent', minWidth: 48 }}>
                   <div>{col.label}</div>
-                  {col.sub !== undefined && <div style={{ fontSize: 9, color: col.isToday ? T.navy : T.muted, marginTop: 1 }}>{col.sub}</div>}
+                  {col.sub !== undefined && <div style={{ fontSize: 10, color: col.isToday ? T.navy : T.muted, marginTop: 1 }}>{col.sub}</div>}
                 </th>
               ))}
               <th style={{ padding: '10px 12px', textAlign: 'right', ...mono, fontSize: 8.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, fontWeight: 700, minWidth: 52 }}>Tot</th>
@@ -265,23 +265,23 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {/* label */}
-                <td style={{ padding: '9px 16px' }}>
+                <td style={{ padding: '10px 16px' }}>
                   <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? 70 : 120, display: 'block' }}>{row.label}</span>
                 </td>
                 {/* celle ore */}
                 {columns.map(col => {
                   const val = col.getVal(row.byDay);
                   return (
-                    <td key={col.key} style={{ padding: '9px 8px', textAlign: 'center', background: col.isWeekend ? T.bg : 'transparent' }}>
+                    <td key={col.key} style={{ padding: '10px 8px', textAlign: 'center', background: col.isWeekend ? T.bg : 'transparent' }}>
                       {val > 0
-                        ? <span style={{ display: 'inline-flex', minWidth: 32, height: 22, background: `${row.color}20`, borderRadius: 5, ...mono, fontSize: 9, color: row.color, fontWeight: 700, alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{formatOre(val)}h</span>
+                        ? <span style={{ display: 'inline-flex', minWidth: 32, height: 22, background: `${row.color}20`, borderRadius: 5, ...mono, fontSize: 10, color: row.color, fontWeight: 700, alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{formatOre(val)}h</span>
                         : <span style={{ ...mono, fontSize: 10, color: 'rgba(14,14,13,0.18)' }}>—</span>
                       }
                     </td>
                   );
                 })}
                 {/* totale riga */}
-                <td style={{ padding: '9px 12px', textAlign: 'right' }}>
+                <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                   <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: T.navy }}>{formatOre(row.total)}h</span>
                 </td>
               </tr>
@@ -295,7 +295,7 @@ function VistaTeam({ studioId, projects, currentMemberId, refreshKey = 0 }) {
                 {totalByCol.map((tot, ci) => (
                   <td key={columns[ci].key} style={{ padding: '8px 8px', textAlign: 'center', background: columns[ci].isWeekend ? T.bg : 'transparent' }}>
                     {tot > 0
-                      ? <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: T.navy }}>{formatOre(tot)}h</span>
+                      ? <span style={{ ...mono, fontSize: 10, fontWeight: 700, color: T.navy }}>{formatOre(tot)}h</span>
                       : <span style={{ ...mono, fontSize: 10, color: 'rgba(14,14,13,0.18)' }}>—</span>
                     }
                   </td>
@@ -439,22 +439,22 @@ export default function TimesheetPage() {
   const getProjectName = pid => projects.find(p => p.id === pid)?.name || null;
   const getClientName  = pid => projects.find(p => p.id === pid)?.client || null;
 
-  const selectSt = { width: '100%', padding: '8px 12px', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', appearance: 'none' };
+  const selectSt = { width: '100%', padding: '8px 12px', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', appearance: 'none' };
 
   if (!studioId) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
   );
 
   const isMobile = window.innerWidth < 768;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Header globale */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Timesheet</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Timesheet</div>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: '0.05em', textTransform: 'capitalize' }}>
             {formatDateDisplay(selectedDate)}
           </div>
         </div>
@@ -462,7 +462,7 @@ export default function TimesheetPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, padding: '4px 8px', background: T.surface }}>
           <button onClick={() => navigateDate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>←</button>
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-            style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }} />
+            style={{ background: 'transparent', border: 'none', color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none', cursor: 'pointer' }} />
           <button onClick={() => navigateDate(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16, padding: '2px 6px' }}>→</button>
         </div>
       </div>
@@ -473,12 +473,12 @@ export default function TimesheetPage() {
         {/* ── COLONNA SINISTRA: giornaliero ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {/* sezione label */}
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Registra ore
           </div>
 
           {/* Add entry form */}
-          <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: isMobile ? '14px 16px' : '16px 20px' }}>
+          <form onSubmit={handleAddEntry} style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: isMobile ? '16px 16px' : '16px 20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 90px' : '1fr 90px 1fr auto', gap: 10, alignItems: 'end' }}>
               {/* Project search */}
               <div ref={searchRef} style={{ position: 'relative' }}>
@@ -496,12 +496,12 @@ export default function TimesheetPage() {
                   )}
                 </div>
                 {selectedProject?.archived && (
-                  <div style={{ marginTop: 4, fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.yellow, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ marginTop: 4, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.yellow, display: 'flex', alignItems: 'center', gap: 4 }}>
                     ⚠ Progetto archiviato
                   </div>
                 )}
                 {showDrop && filteredProjects.isEmpty && (
-                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, padding: '12px 14px', marginTop: 2, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 20, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, padding: '12px 16px', marginTop: 2, fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
                     Nessun progetto trovato
                   </div>
                 )}
@@ -514,12 +514,12 @@ export default function TimesheetPage() {
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{p.name}</div>
-                        {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
+                        {p.client && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{p.client}</div>}
                       </button>
                     ))}
                     {filteredProjects.archived.length > 0 && (
                       <>
-                        <div style={{ padding: '6px 12px 4px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.muted, borderTop: filteredProjects.active.length > 0 ? `0.5px solid ${T.ink10}` : 'none' }}>Archiviati</div>
+                        <div style={{ padding: '6px 12px 4px', fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.muted, borderTop: filteredProjects.active.length > 0 ? `0.5px solid ${T.ink10}` : 'none' }}>Archiviati</div>
                         {filteredProjects.archived.map(p => (
                           <button key={p.id} type="button" onClick={() => handleSelectProject(p)}
                             style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderBottom: `0.5px solid ${T.ink10}` }}
@@ -527,7 +527,7 @@ export default function TimesheetPage() {
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                           >
                             <div style={{ fontSize: 12, fontWeight: 600, color: T.muted }}>{p.name}</div>
-                            {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{p.client}</div>}
+                            {p.client && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{p.client}</div>}
                           </button>
                         ))}
                       </>
@@ -575,21 +575,21 @@ export default function TimesheetPage() {
               </div>
             )}
 
-            {error && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{error}</div>}
+            {error && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red, marginTop: 10 }}>{error}</div>}
           </form>
 
           {/* Entries */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px 0', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+        <div style={{ textAlign: 'center', padding: '48px 0', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
       ) : entries.length === 0 ? (
-        <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '48px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
           Nessuna registrazione per questa data.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {entries.map(en => (
             <button key={en.id} onClick={() => { setEditingEntry(en); setEditHours(en.hours); setEditNotes(en.notes || ""); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'background 0.1s' }}
               onMouseEnter={e => e.currentTarget.style.background = T.bg}
               onMouseLeave={e => e.currentTarget.style.background = T.surface}
             >
@@ -599,13 +599,13 @@ export default function TimesheetPage() {
                   {getProjectName(en.project_id) || en.project_name || '—'}
                 </div>
                 {getClientName(en.project_id) && (
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{getClientName(en.project_id)}</div>
+                  <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>{getClientName(en.project_id)}</div>
                 )}
-                {en.notes && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>{en.notes}</div>}
+                {en.notes && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2 }}>{en.notes}</div>}
               </div>
               {/* Hours */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 600, color: T.navy, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.03em' }}>{formatOre(en.hours)} h</div>
+                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 600, color: T.navy, fontFamily: "var(--font-ui)", letterSpacing: '-0.03em' }}>{formatOre(en.hours)} h</div>
               </div>
             </button>
           ))}
@@ -614,18 +614,18 @@ export default function TimesheetPage() {
 
           {/* Totale */}
           {entries.length > 0 && (
-            <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            <div style={{ background: T.surface, border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Totale {new Date(selectedDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
               </div>
-              <div style={{ fontSize: 24, fontWeight: 600, color: T.navy, letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>{formatOre(totalHours)} h</div>
+              <div style={{ fontSize: 24, fontWeight: 600, color: T.navy, letterSpacing: '-0.04em', fontFamily: "var(--font-ui)" }}>{formatOre(totalHours)} h</div>
             </div>
           )}
         </div>{/* fine colonna sinistra */}
 
         {/* ── COLONNA DESTRA: visualizza ore ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>
             Visualizza ore
           </div>
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -640,7 +640,7 @@ export default function TimesheetPage() {
         <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <FieldLabel>Progetto</FieldLabel>
-            <div style={{ padding: '8px 12px', border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, background: T.bg, fontSize: 12, color: T.muted, fontFamily: "'Space Grotesk', sans-serif" }}>
+            <div style={{ padding: '8px 12px', border: `1px solid ${T.ink10}`, borderRadius: T.radiusSm, background: T.bg, fontSize: 12, color: T.muted, fontFamily: "var(--font-ui)" }}>
               {editingEntry?.project_name}
               {getClientName(editingEntry?.project_id) && <span style={{ marginLeft: 8 }}>· {getClientName(editingEntry?.project_id)}</span>}
             </div>
@@ -654,7 +654,7 @@ export default function TimesheetPage() {
           <div>
             <FieldLabel>Note</FieldLabel>
             <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={3} placeholder="Descrizione attività..."
-              style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none', resize: 'vertical' }} />
+              style={{ width: '100%', padding: '8px 12px', boxSizing: 'border-box', border: `1px solid ${T.ink20}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', resize: 'vertical' }} />
           </div>
           <Divider />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

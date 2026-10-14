@@ -24,7 +24,7 @@ const FIGURE_PROFESSIONALI = [
 function FieldLabel({ children, required }) {
   const { T } = useTheme();
   return (
-    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>
+    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>
       {children}{required && <span style={{ color: T.red, marginLeft: 2 }}>*</span>}
     </div>
   );
@@ -51,9 +51,9 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   const showToast = useToast();
 
   const inputSt = {
-    width: '100%', padding: '7px 10px', boxSizing: 'border-box',
+    width: '100%', padding: '8px 10px', boxSizing: 'border-box',
     border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink,
-    fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
+    fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none',
   };
 
   const [contacts, setContacts] = useState([]);
@@ -231,15 +231,15 @@ export default function AnagraficaPanel({ projectId, studioId }) {
       background: contacts.length > 0 ? T.navyLight : 'transparent',
       height: 34, padding: '0 12px', cursor: 'pointer',
     }}>
-      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: contacts.length > 0 ? T.navy : T.muted, fontWeight: 600 }}>
+      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: contacts.length > 0 ? T.navy : T.muted, fontWeight: 600 }}>
         Anagrafica
       </span>
       {contacts.length > 0 ? (
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
           {contacts.length} {contacts.length === 1 ? "contatto" : "contatti"}
         </span>
       ) : (
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>
+        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
           + Aggiungi
         </span>
       )}
@@ -252,10 +252,10 @@ export default function AnagraficaPanel({ projectId, studioId }) {
       <div style={{ width: '100%', maxWidth: 680, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>Anagrafica progetto</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 3 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4 }}>
               Figure professionali e contatti collegati a questo progetto
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         {/* Lista contatti esistenti */}
         {contacts.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
               Contatti ({contacts.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -274,42 +274,42 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                 const gc = pc.global_contacts || {};
                 const isDeleting = confirmDelete === pc.id;
                 return (
-                  <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: T.bg, border: `1px solid ${T.border}` }}>
+                  <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: T.bg, border: `1px solid ${T.border}` }}>
                     <Avatar name={gc.full_name} size={36} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{gc.full_name || "—"}</span>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px', letterSpacing: '0.05em' }}>
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px', letterSpacing: '0.05em' }}>
                           {pc.professional_role}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: 12, marginTop: 3, flexWrap: 'wrap' }}>
-                        {gc.company && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{gc.company}</span>}
-                        {gc.email && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{gc.email}</span>}
-                        {gc.phone && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{gc.phone}</span>}
+                      <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                        {gc.company && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{gc.company}</span>}
+                        {gc.email && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{gc.email}</span>}
+                        {gc.phone && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{gc.phone}</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       {isDeleting ? (
                         <>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, alignSelf: 'center' }}>Sicuro?</span>
+                          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, alignSelf: 'center' }}>Sicuro?</span>
                           <button onClick={() => handleDelete(pc)} disabled={deleting}
-                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.red}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             {deleting ? "..." : "Sì"}
                           </button>
                           <button onClick={() => setConfirmDelete(null)}
-                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
                             No
                           </button>
                         </>
                       ) : (
                         <>
                           <button onClick={() => openEdit(pc)}
-                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', padding: '4px 10px', cursor: 'pointer' }}>
                             Modifica
                           </button>
                           <button onClick={() => setConfirmDelete(pc.id)}
-                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
+                            style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.red, fontFamily: "var(--font-label)", fontSize: 10, padding: '4px 10px', cursor: 'pointer' }}>
                             ✕
                           </button>
                         </>
@@ -325,17 +325,17 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         {/* Form nuovo/modifica */}
         <div style={{ borderTop: contacts.length > 0 ? `0.5px solid ${T.border}` : 'none', paddingTop: contacts.length > 0 ? 20 : 0 }}>
           {contacts.length > 0 && !editingId && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
               Aggiungi contatto
             </div>
           )}
           {editingId && (
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 16 }}>
               Modifica contatto
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
             {/* Figura professionale — full width con dropdown custom */}
             <div style={{ gridColumn: 'span 2', position: 'relative' }}>
@@ -359,7 +359,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                     {matches.map(f => (
                       <button key={f} type="button"
                         onMouseDown={() => setForm(p => ({ ...p, professional_role: f, _roleFocus: false }))}
-                        style={{ display: 'block', width: '100%', padding: '9px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", borderBottom: `0.5px solid ${T.border}` }}
+                        style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "var(--font-ui)", borderBottom: `0.5px solid ${T.border}` }}
                         onMouseEnter={e => e.currentTarget.style.background = T.surface2}
                         onMouseLeave={e => e.currentTarget.style.background = 'none'}
                       >
@@ -407,23 +407,23 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {editingId ? (
               <button onClick={() => { setEditingId(null); setForm(EMPTY_FORM); }}
-                style={{ border: 'none', background: 'transparent', color: T.muted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer', padding: 0 }}>
+                style={{ border: 'none', background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.05em', cursor: 'pointer', padding: 0 }}>
                 ← Aggiungi nuovo
               </button>
             ) : (
               <button onClick={openCopyModal}
-                style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                 ⎘ Copia da progetto
               </button>
             )}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => { setModalOpen(false); setEditingId(null); setConfirmDelete(null); }}
-              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: 'pointer' }}>
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: 'pointer' }}>
               Chiudi
             </button>
             <button onClick={handleSave} disabled={saving || !form.full_name.trim()}
-              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1, borderRadius: T.radiusSm }}>
+              style={{ background: T.navy, color: T.bg, border: 'none', fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: saving || !form.full_name.trim() ? 'not-allowed' : 'pointer', opacity: saving || !form.full_name.trim() ? 0.6 : 1, borderRadius: T.radiusSm }}>
               {saving ? "Salvataggio..." : editingId ? "Aggiorna" : "Aggiungi contatto"}
             </button>
           </div>
@@ -440,17 +440,17 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         {/* Header */}
         <div style={{ padding: '20px 24px 16px', borderBottom: `0.5px solid ${T.border}` }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>Copia anagrafica da progetto</div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 3 }}>Seleziona un progetto per importarne i contatti</div>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 4 }}>Seleziona un progetto per importarne i contatti</div>
         </div>
 
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Lista progetti */}
           <div style={{ width: 220, borderRight: `0.5px solid ${T.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
-            <div style={{ padding: '10px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+            <div style={{ padding: '10px 16px', borderBottom: `0.5px solid ${T.border}` }}>
               <input
                 type="text" placeholder="Cerca progetto..." value={projectSearch}
                 onChange={e => setProjectSearch(e.target.value)}
-                style={{ width: '100%', padding: '6px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}
+                style={{ width: '100%', padding: '6px 10px', boxSizing: 'border-box', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none' }}
               />
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -458,11 +458,11 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                 .filter(p => !projectSearch.trim() || (p.name || '').toLowerCase().includes(projectSearch.toLowerCase()) || (p.client || '').toLowerCase().includes(projectSearch.toLowerCase()))
                 .map(p => (
                   <button key={p.id} onClick={() => loadSourceContacts(p)}
-                    style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: selectedSource?.id === p.id ? T.navyLight : 'transparent', border: 'none', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer', transition: 'background 120ms' }}
+                    style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: selectedSource?.id === p.id ? T.navyLight : 'transparent', border: 'none', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer', transition: 'background 120ms' }}
                     onMouseEnter={e => { if (selectedSource?.id !== p.id) e.currentTarget.style.background = T.surface2; }}
                     onMouseLeave={e => { if (selectedSource?.id !== p.id) e.currentTarget.style.background = 'transparent'; }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: selectedSource?.id === p.id ? T.navy : T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    {p.client && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.client}</div>}
+                    {p.client && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.client}</div>}
                   </button>
                 ))}
             </div>
@@ -471,11 +471,11 @@ export default function AnagraficaPanel({ projectId, studioId }) {
           {/* Preview contatti con spunte */}
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {!selectedSource ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>← Seleziona un progetto</div>
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>← Seleziona un progetto</div>
             ) : loadingSource ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
             ) : sourceContacts.length === 0 ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Nessun contatto in questo progetto</div>
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Nessun contatto in questo progetto</div>
             ) : <>
               {/* Seleziona tutti */}
               <button onClick={toggleAll} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'none', border: 'none', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
@@ -483,7 +483,7 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                   {selectedIds.size === sourceContacts.length && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   {selectedIds.size > 0 && selectedIds.size < sourceContacts.length && <div style={{ width: 8, height: 2, background: T.navy, borderRadius: 1 }} />}
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>
+                <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted }}>
                   {selectedIds.size === sourceContacts.length ? 'Deseleziona tutti' : 'Seleziona tutti'}
                 </span>
               </button>
@@ -502,8 +502,8 @@ export default function AnagraficaPanel({ projectId, studioId }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gc.full_name || '—'}</div>
                       <div style={{ display: 'flex', gap: 6, marginTop: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>{pc.professional_role}</span>
-                        {gc.company && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{gc.company}</span>}
+                        <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>{pc.professional_role}</span>
+                        {gc.company && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{gc.company}</span>}
                       </div>
                     </div>
                   </button>
@@ -514,19 +514,19 @@ export default function AnagraficaPanel({ projectId, studioId }) {
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderTop: `0.5px solid ${T.border}` }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: `0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
             {selectedSource && !loadingSource && sourceContacts.length > 0
               ? `${selectedIds.size} di ${sourceContacts.length} selezionat${selectedIds.size === 1 ? 'o' : 'i'}`
               : ''}
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setCopyModal(false)}
-              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
+              style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>
               Annulla
             </button>
             <button onClick={handleCopy} disabled={copying || selectedIds.size === 0}
-              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: copying || selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: copying || selectedIds.size === 0 ? 0.5 : 1 }}>
+              style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: copying || selectedIds.size === 0 ? 'not-allowed' : 'pointer', opacity: copying || selectedIds.size === 0 ? 0.5 : 1 }}>
               {copying ? 'Importazione...' : `Importa ${selectedIds.size > 0 ? selectedIds.size : ''} contatt${selectedIds.size === 1 ? 'o' : 'i'}`}
             </button>
           </div>

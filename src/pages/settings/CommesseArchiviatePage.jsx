@@ -27,7 +27,7 @@ function CommessaArchiviataCard({ commessa, incassato, onClick }) {
       className="asm-card"
       style={{
         background: hover ? T.surface2 : T.surface,
-        border:`1px solid ${T.border}`, padding:'18px 20px',
+        border:`1px solid ${T.border}`, padding:'20px 20px',
         cursor:'pointer', transition:'background 0.12s',
         display:'flex', flexDirection:'column', height:'100%',
         borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow,
@@ -35,15 +35,15 @@ function CommessaArchiviataCard({ commessa, incassato, onClick }) {
       }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:4}}>
             {commessa.numero_offerta||"—"}
           </div>
           <div style={{fontSize:14,fontWeight:600,color:T.ink,letterSpacing:'-0.01em'}}>{commessa.nome_commessa||"Commessa senza nome"}</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>{commessa.cliente||"—"}</div>
         </div>
         <div style={{textAlign:'right',flexShrink:0,marginLeft:12}}>
           <div style={{fontSize:18,fontWeight:600,color:T.ink,letterSpacing:'-0.03em'}}>{currency(base)}</div>
-          <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:9,color:T.muted,marginTop:2}}>offerta base</div>
+          <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>offerta base</div>
         </div>
       </div>
       <div style={{height:2,background:T.border,marginBottom:10}}>
@@ -56,8 +56,8 @@ function CommessaArchiviataCard({ commessa, incassato, onClick }) {
           {label:'Data',    value:commessa.data_commessa?new Date(commessa.data_commessa).toLocaleDateString('it-IT'):'—', color:T.muted},
         ].map(({label,value,color})=>(
           <div key={label}>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:8,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
-            <div style={{fontFamily:"'IBM Plex Mono', monospace",fontSize:11,fontWeight:500,color}}>{value}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,marginBottom:2}}>{label}</div>
+            <div style={{fontFamily:"var(--font-label)",fontSize:11,fontWeight:500,color}}>{value}</div>
           </div>
         ))}
       </div>
@@ -105,7 +105,7 @@ export default function CommesseArchiviatePage() {
   }, [commesse, searchQuery]);
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:200, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Caricamento...</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:200, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Caricamento...</div>
   );
 
   return (
@@ -113,8 +113,8 @@ export default function CommesseArchiviatePage() {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>Commesse Archiviate</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color:T.ink }}>Commesse Archiviate</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
             {filtered.length} commesse archiviate
           </div>
         </div>
@@ -124,22 +124,22 @@ export default function CommesseArchiviatePage() {
             placeholder="Cerca commessa, cliente..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, outline:'none', width:220 }}
+            style={{ padding:'8px 12px', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, outline:'none', width:220 }}
           />
         )}
       </div>
 
-      {error && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, marginBottom:14 }}>{error}</div>}
+      {error && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red, marginBottom:16 }}>{error}</div>}
 
       {commesse.length === 0 ? (
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'48px 0', textAlign:'center' }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, marginBottom:16 }}>Nessuna commessa archiviata.</div>
-          <button onClick={()=>navigate("/commesse")} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, marginBottom:16 }}>Nessuna commessa archiviata.</div>
+          <button onClick={()=>navigate("/commesse")} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>
             Vai alle Commesse
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'32px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'32px 0', textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
           Nessun risultato per "{searchQuery}"
         </div>
       ) : (

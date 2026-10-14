@@ -449,25 +449,25 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const nVoci = righe.length;
 
   // ── stili ──────────────────────────────────────────────────────────────────
-  const mono = "'IBM Plex Mono', monospace";
-  const inputSt = { padding: "6px 9px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: "none" };
-  const miniInput = { ...inputSt, padding: "3px 5px", fontSize: 11, fontFamily: mono, textAlign: "right", width: "100%" };
-  const labelSt = { fontFamily: mono, fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
-  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 14px", cursor: "pointer" };
+  const mono = "var(--font-label)";
+  const inputSt = { padding: "6px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: "none" };
+  const miniInput = { ...inputSt, padding: "4px 6px", fontSize: 11, fontFamily: mono, textAlign: "right", width: "100%" };
+  const labelSt = { fontFamily: mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
+  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" };
   const btnPrimary = { ...btnGhost, border: "none", background: T.navy, color: T.bg };
 
   return (
     <>
       <button onClick={() => setOpen(true)} style={{
-        display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 14px",
+        display: "flex", alignItems: "center", gap: 8, height: 34, padding: "0 16px",
         border: `0.5px solid ${versCount > 0 ? T.navy : T.borderMd}`, borderRadius: T.radiusSm,
         background: versCount > 0 ? T.navyLight : "transparent",
         cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
       }}>
         <span style={{ color: versCount > 0 ? T.navy : T.ink, fontWeight: versCount > 0 ? 600 : 400 }}>▤ Capitolato</span>
         {versCount > 0
-          ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{versCount}</span>
-          : <span style={{ fontFamily: mono, fontSize: 9, color: T.muted }}>+ Apri</span>}
+          ? <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{versCount}</span>
+          : <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>+ Apri</span>}
       </button>
 
       {open && (
@@ -501,7 +501,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
               <div style={{ flex: 1, overflowY: "auto", padding: 20, minHeight: 0 }}>
                 {versioni.length === 0 ? (
                   <div style={{ textAlign: "center", marginTop: 40, color: T.muted, fontFamily: mono, fontSize: 12 }}>
-                    <div style={{ marginBottom: 14 }}>
+                    <div style={{ marginBottom: 16 }}>
                       {nVoci > 0
                         ? `Nessuna versione salvata · bozza con ${nVoci} ${nVoci === 1 ? "voce" : "voci"}`
                         : "Nessuna versione salvata."}
@@ -526,18 +526,18 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       const rev = v.snapshot?.revisione;
                       const att = versioneAttiva === v.n;
                       return (
-                        <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", border: `0.5px solid ${att ? T.navy : T.border}`, borderRadius: T.radiusSm, background: T.surface }}>
+                        <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "16px 16px", border: `0.5px solid ${att ? T.navy : T.border}`, borderRadius: T.radiusSm, background: T.surface }}>
                           <button onClick={() => apriVersione(v)} style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: att ? T.navy : T.ink }}>Versione {v.n}</span>
                             {rev ? <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: 3, padding: "1px 6px" }}>rev {rev}</span> : null}
                             <span style={{ fontFamily: mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)} · {nv} {nv === 1 ? "voce" : "voci"}</span>
-                            {att ? <span style={{ fontFamily: mono, fontSize: 9, color: T.navy }}>attiva</span> : null}
-                            <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy }}>Apri →</span>
+                            {att ? <span style={{ fontFamily: mono, fontSize: 10, color: T.navy }}>attiva</span> : null}
+                            <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy }}>Apri →</span>
                           </button>
                           <button onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 16, lineHeight: 1, padding: "2px 4px" }}>⋮</button>
                           {menuVer === v.n && (
                             <div style={{ position: "absolute", right: 6, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 150 }}>
-                              <button onClick={() => eliminaVersione(v)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, fontFamily: mono, fontSize: 11, padding: "9px 12px" }}>Elimina versione</button>
+                              <button onClick={() => eliminaVersione(v)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, fontFamily: mono, fontSize: 11, padding: "10px 12px" }}>Elimina versione</button>
                             </div>
                           )}
                         </div>
@@ -549,25 +549,25 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
             ) : view === "recap" ? (
               <div style={{ flex: 1, overflowY: "auto", padding: 20, minHeight: 0 }}>
                 <div style={{ maxWidth: 820, margin: "0 auto" }}>
-                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginBottom: 14 }}>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginBottom: 16 }}>
                     {[meta.committente && `Committente: ${meta.committente}`, meta.localita && `Località: ${meta.localita}`, meta.revisione && `Rev ${meta.revisione}`, versioneAttiva && `Versione ${versioneAttiva}`].filter(Boolean).join("  ·  ") || "—"}
                   </div>
                   {gruppi.length === 0 ? (
-                    <div style={{ textAlign: "center", marginTop: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>
-                      <div style={{ marginBottom: 14 }}>Capitolato vuoto.</div>
+                    <div style={{ textAlign: "center", marginTop: 32, color: T.muted, fontFamily: mono, fontSize: 12 }}>
+                      <div style={{ marginBottom: 16 }}>Capitolato vuoto.</div>
                       <button onClick={() => setView("edit")} style={btnPrimary}>+ Aggiungi voce</button>
                     </div>
                   ) : gruppi.map((g) => (
                     <button key={g.code} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
                       <div style={{ border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow: "hidden", background: T.surface }}>
-                        <div style={{ background: T.navy, color: "#fff", padding: "7px 12px", fontFamily: mono, fontSize: 11, fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
+                        <div style={{ background: T.navy, color: "#fff", padding: "8px 12px", fontFamily: mono, fontSize: 11, fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
                           <span>{g.titoloPagina}</span>
                           <span style={{ opacity: 0.85 }}>{g.items.length} {g.items.length === 1 ? "voce" : "voci"}</span>
                         </div>
                         <div style={{ padding: "8px 12px" }}>
                           {g.items.map((r) => (
-                            <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "3px 0", fontSize: 12 }}>
-                              <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
+                            <div key={r._key} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "4px 0", fontSize: 12 }}>
+                              <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 600, width: 34, flexShrink: 0 }}>{r._code}</span>
                               <span style={{ color: T.ink, flex: 1 }}>{r.titolo}</span>
                               <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{r.assistenza ? (assistenzaBasi(r.assistenza).map((c) => { const p = assistenzaPerc(r.assistenza, c); return `${c}${p === "" || p == null ? "" : " " + p + "%"}`; }).join(" · ") || "—") : `${fmtNum(totaleRigaEff(r))} ${r.unita}`}</span>
                             </div>
@@ -598,12 +598,12 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                 {/* Colonna ricerca */}
                 <div style={{ width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
                   {/* Le voci finiscono da sole nella loro mega-voce; con ⋮ si spostano */}
-                  <div style={{ padding: "9px 14px", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.border}` }}>
                     <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, lineHeight: 1.4 }}>
                       Ogni voce entra nella sua mega-voce (demolizioni, costruzioni…). Usa ⋮ sulla voce per spostarla.
                     </div>
                   </div>
-                  <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}` }}>
                     <input autoFocus placeholder="Cerca voci (es. cartongessi)…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...inputSt, width: "100%" }} />
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
                       <button onClick={() => setCatFilter("")} style={{ ...chip(T, catFilter === "") }}>Tutte</button>
@@ -611,7 +611,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         <button key={c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome} style={{ ...chip(T, catFilter === c.code) }}>{c.code}</button>
                       ))}
                     </div>
-                    <button onClick={openNuovaVoce} style={{ ...btnGhost, width: "100%", marginTop: 8, padding: "7px 10px", borderStyle: "dashed" }}>+ Nuova voce (non in libreria)</button>
+                    <button onClick={openNuovaVoce} style={{ ...btnGhost, width: "100%", marginTop: 8, padding: "8px 10px", borderStyle: "dashed" }}>+ Nuova voce (non in libreria)</button>
                   </div>
                   <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
                     {risultati.length === 0 ? (
@@ -621,12 +621,12 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       </div>
                     ) : risultati.map((v) => (
                       <button key={v.id} onClick={() => addVoce(v)} disabled={v._added}
-                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginBottom: 5, background: v._added ? T.surface2 : "transparent", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: v._added ? "default" : "pointer", opacity: v._added ? 0.55 : 1 }}
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginBottom: 6, background: v._added ? T.surface2 : "transparent", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: v._added ? "default" : "pointer", opacity: v._added ? 0.55 : 1 }}
                         onMouseEnter={(e) => { if (!v._added) e.currentTarget.style.borderColor = T.navy; }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                          <span style={{ fontFamily: mono, fontSize: 9, color: T.navy, fontWeight: 600 }}>{v.codice}</span>
-                          <span style={{ fontFamily: mono, fontSize: 8, color: T.muted }}>{v.categoria_code}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 600 }}>{v.codice}</span>
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{v.categoria_code}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, marginTop: 2 }}>{v.titolo}</div>
                         <div style={{ fontSize: 10, color: T.muted, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.descrizione}</div>
@@ -642,7 +642,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       Cerca una voce a sinistra e aggiungila al capitolato.
                     </div>
                   ) : gruppi.map((g) => (
-                    <div key={g.code} style={{ marginBottom: 22 }}>
+                    <div key={g.code} style={{ marginBottom: 24 }}>
                       <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>
                         {g.titoloPagina}
                       </div>
@@ -690,7 +690,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         <div style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
           onClick={() => setImportOpen(false)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "80vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Importa da un altro progetto</div>
                 <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Le voci vengono aggiunte al capitolato corrente</div>
@@ -699,12 +699,12 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 12, minHeight: 0 }}>
               {importLoading ? (
-                <div style={{ textAlign: "center", padding: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
+                <div style={{ textAlign: "center", padding: 32, color: T.muted, fontFamily: mono, fontSize: 12 }}>Carico…</div>
               ) : importList.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 30, color: T.muted, fontFamily: mono, fontSize: 12 }}>Nessun altro progetto con un capitolato.</div>
+                <div style={{ textAlign: "center", padding: 32, color: T.muted, fontFamily: mono, fontSize: 12 }}>Nessun altro progetto con un capitolato.</div>
               ) : importList.map((it) => (
                 <button key={it.capitolato_id} onClick={() => doImport(it)} disabled={busy}
-                  style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "11px 13px", marginBottom: 6, background: T.surface, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
+                  style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 12, textAlign: "left", padding: "12px 12px", marginBottom: 6, background: T.surface, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}
                   onMouseEnter={(e) => { if (!busy) e.currentTarget.style.borderColor = T.navy; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                   <div style={{ minWidth: 0 }}>
@@ -713,7 +713,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       {it.nVoci} {it.nVoci === 1 ? "voce" : "voci"}{it.aggiornato ? ` · ${formattaData(it.aggiornato)}` : ""}
                     </div>
                   </div>
-                  <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
+                  <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, flexShrink: 0 }}>Importa →</span>
                 </button>
               ))}
             </div>
@@ -726,7 +726,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
         <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
           onClick={() => setNuovaOpen(false)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, maxHeight: "88vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
-            <div style={{ padding: "14px 18px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Nuova voce</div>
                 <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Voce personalizzata, aggiunta al capitolato corrente</div>
@@ -778,7 +778,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
 
 function chip(T, active) {
   return {
-    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, padding: "3px 7px", cursor: "pointer",
+    fontFamily: "var(--font-label)", fontSize: 10, padding: "4px 8px", cursor: "pointer",
     border: `0.5px solid ${active ? T.navy : T.border}`, borderRadius: T.radiusSm,
     background: active ? T.navy : "transparent", color: active ? T.bg : T.muted,
   };
@@ -789,7 +789,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
   const [catMenu, setCatMenu] = useState(false); // menu ⋮ "sposta in un'altra mega-voce"
   const tot = totaleRigaEff(r);
   const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
-  const cellHead = { fontFamily: mono, fontSize: 8, color: T.muted, textAlign: "center", paddingBottom: 2 };
+  const cellHead = { fontFamily: mono, fontSize: 10, color: T.muted, textAlign: "center", paddingBottom: 2 };
   const grid = "1fr 52px 52px 52px 60px 24px"; // descrizione, lung, larg, hpeso, qta, x
 
   return (
@@ -797,26 +797,26 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: mono, fontSize: 9, fontWeight: 700, color: T.navy, flexShrink: 0 }}>{r._code || r.codice}</span>
+            <span style={{ fontFamily: mono, fontSize: 10, fontWeight: 700, color: T.navy, flexShrink: 0 }}>{r._code || r.codice}</span>
             <input value={r.titolo} onChange={(e) => onPatch({ titolo: e.target.value })}
-              style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: T.ink, background: "transparent", border: "none", borderBottom: `1px dashed transparent`, outline: "none", fontFamily: "'Space Grotesk', sans-serif", padding: "1px 0" }}
+              style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 700, color: T.ink, background: "transparent", border: "none", borderBottom: `1px dashed transparent`, outline: "none", fontFamily: "var(--font-ui)", padding: "1px 0" }}
               onFocus={(e) => (e.target.style.borderBottomColor = T.borderMd)}
               onBlur={(e) => (e.target.style.borderBottomColor = "transparent")} />
             {/* Selettore "sommano": unità o Fornitura + Posa */}
             <select value={presetKeyOf(r)} title="Tipo di sommano"
               onChange={(e) => { const p = presetPatch(r, e.target.value); if (p) onPatch(p); }}
-              style={{ flexShrink: 0, fontFamily: mono, fontSize: 9, color: r.tipo === "fornitura_posa" ? "#b45309" : T.navy, background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 3, padding: "2px 4px", cursor: "pointer", outline: "none" }}>
+              style={{ flexShrink: 0, fontFamily: mono, fontSize: 10, color: r.tipo === "fornitura_posa" ? "#b45309" : T.navy, background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 3, padding: "2px 4px", cursor: "pointer", outline: "none" }}>
               {presetKeyOf(r) === "" && <option value="">{r.unita || "unità…"}</option>}
               {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </div>
           <textarea value={r.descrizione} onChange={(e) => onPatch({ descrizione: e.target.value })}
             rows={Math.max(2, String(r.descrizione || "").split("\n").length)}
-            style={{ width: "100%", boxSizing: "border-box", fontSize: 10.5, color: T.muted, marginTop: 4, background: "transparent", border: `1px solid transparent`, borderRadius: T.radiusSm, outline: "none", resize: "vertical", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.35, padding: "2px 4px" }}
+            style={{ width: "100%", boxSizing: "border-box", fontSize: 10.5, color: T.muted, marginTop: 4, background: "transparent", border: `1px solid transparent`, borderRadius: T.radiusSm, outline: "none", resize: "vertical", fontFamily: "var(--font-ui)", lineHeight: 1.35, padding: "2px 4px" }}
             onFocus={(e) => (e.target.style.borderColor = T.borderMd)}
             onBlur={(e) => (e.target.style.borderColor = "transparent")} />
         </div>
-        <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
           <button title="Su" onClick={() => onMove(-1)} style={iconBtn(T)}>↑</button>
           <button title="Giù" onClick={() => onMove(1)} style={iconBtn(T)}>↓</button>
           <div style={{ position: "relative" }}>
@@ -825,7 +825,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
               <>
                 <div onClick={() => setCatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 9 }} />
                 <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 220, maxHeight: 280, overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,0.28)" }}>
-                  <div style={{ padding: "7px 12px", fontFamily: mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, borderBottom: `0.5px solid ${T.border}` }}>Sposta in</div>
+                  <div style={{ padding: "8px 12px", fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, borderBottom: `0.5px solid ${T.border}` }}>Sposta in</div>
                   {CAPITOLATO_CATEGORIE.map((c) => {
                     const cur = c.code === r.categoria_code;
                     return (
@@ -833,7 +833,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
                         style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: cur ? T.navyLight : "none", border: "none", cursor: cur ? "default" : "pointer", fontFamily: mono, fontSize: 11, color: cur ? T.navy : T.ink, padding: "8px 12px" }}>
                         <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{c.code}</span>
                         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nomeIndice || c.nome}</span>
-                        {cur ? <span style={{ marginLeft: "auto", fontSize: 9 }}>✓</span> : null}
+                        {cur ? <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span> : null}
                       </button>
                     );
                   })}
@@ -850,7 +850,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
       ) : (<>
       {/* Misurazioni */}
       <div style={{ marginTop: 8 }}>
-        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 5, alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: grid, gap: 6, alignItems: "center" }}>
           <div style={{ ...cellHead, textAlign: "left" }}>MISURAZIONI</div>
           <div style={cellHead}>Lung.</div><div style={cellHead}>Larg.</div><div style={cellHead}>H/peso</div>
           <div style={cellHead}>Quantità</div><div />
@@ -859,14 +859,14 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
           const auto = ["lung", "larg", "hpeso"].some((k) => String(m[k] ?? "") !== "");
           const q = qtaMisurazione(m);
           return (
-            <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 5, alignItems: "center", marginBottom: 4 }}>
+            <div key={i} style={{ display: "grid", gridTemplateColumns: grid, gap: 6, alignItems: "center", marginBottom: 4 }}>
               <input placeholder="descrizione misura" value={m.descrizione} onChange={(e) => onPatchMisura(i, { descrizione: e.target.value })}
-                style={{ ...miniInput, textAlign: "left", fontFamily: "'Space Grotesk', sans-serif" }} />
+                style={{ ...miniInput, textAlign: "left", fontFamily: "var(--font-ui)" }} />
               <input value={m.lung} onChange={(e) => onPatchMisura(i, { lung: e.target.value })} style={miniInput} />
               <input value={m.larg} onChange={(e) => onPatchMisura(i, { larg: e.target.value })} style={miniInput} />
               <input value={m.hpeso} onChange={(e) => onPatchMisura(i, { hpeso: e.target.value })} style={miniInput} />
               {auto ? (
-                <div style={{ fontFamily: mono, fontSize: 11, textAlign: "right", color: T.ink, padding: "3px 5px" }}>{fmtNum(q)}</div>
+                <div style={{ fontFamily: mono, fontSize: 11, textAlign: "right", color: T.ink, padding: "4px 6px" }}>{fmtNum(q)}</div>
               ) : (
                 <input value={m.qta} onChange={(e) => onPatchMisura(i, { qta: e.target.value })} style={miniInput} />
               )}
@@ -874,7 +874,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
             </div>
           );
         })}
-        <button onClick={onAddMisura} style={{ fontFamily: mono, fontSize: 9, color: T.navy, background: "none", border: "none", cursor: "pointer", padding: "2px 0", letterSpacing: "0.05em" }}>+ aggiungi misura</button>
+        <button onClick={onAddMisura} style={{ fontFamily: mono, fontSize: 10, color: T.navy, background: "none", border: "none", cursor: "pointer", padding: "2px 0", letterSpacing: "0.05em" }}>+ aggiungi misura</button>
       </div>
 
       {/* SOMMANO */}
@@ -889,7 +889,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
 
       {/* Nota */}
       <input placeholder="NOTE (opzionale)" value={r.note || ""} onChange={(e) => onPatch({ note: e.target.value })}
-        style={{ marginTop: 6, width: "100%", boxSizing: "border-box", padding: "4px 8px", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, fontSize: 10.5, fontFamily: "'Space Grotesk', sans-serif", outline: "none" }} />
+        style={{ marginTop: 6, width: "100%", boxSizing: "border-box", padding: "4px 8px", border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, fontSize: 10.5, fontFamily: "var(--font-ui)", outline: "none" }} />
     </div>
   );
 }
@@ -909,13 +909,13 @@ function AssistenzaEditor({ r, T, mono, onPatch }) {
   const patchA = (patch) => onPatch({ assistenza: { ...a, basi, percs, ...patch } });
   const toggle = (code) => patchA({ basi: basi.includes(code) ? basi.filter((c) => c !== code) : [...basi, code] });
   const setPerc = (code, val) => patchA({ percs: { ...percs, [code]: val === "" ? "" : Number(val) } });
-  const inSt = { padding: "5px 8px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: mono, outline: "none" };
-  const lab = { fontFamily: mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, marginBottom: 3 };
+  const inSt = { padding: "6px 8px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: mono, outline: "none" };
+  const lab = { fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
   return (
     <div style={{ marginTop: 8, padding: "10px 12px", border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: T.navyLight }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center", marginBottom: 4 }}>
         <div style={lab}>Impianti base (% sul totale)</div>
-        <div style={{ ...lab, textAlign: "right", marginBottom: 3 }}>Percentuale</div>
+        <div style={{ ...lab, textAlign: "right", marginBottom: 4 }}>Percentuale</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {IMPIANTI_ASSISTENZA.map((imp) => {
@@ -925,7 +925,7 @@ function AssistenzaEditor({ r, T, mono, onPatch }) {
           return (
             <div key={imp.code} style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center" }}>
               <label title={self ? "Stessa categoria della voce: non selezionabile" : ""}
-                style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: mono, fontSize: 11, color: self ? T.muted : T.ink, cursor: self ? "not-allowed" : "pointer", opacity: self ? 0.5 : 1, minWidth: 0 }}>
+                style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: mono, fontSize: 11, color: self ? T.muted : T.ink, cursor: self ? "not-allowed" : "pointer", opacity: self ? 0.5 : 1, minWidth: 0 }}>
                 <input type="checkbox" checked={on} disabled={self} onChange={() => toggle(imp.code)} />
                 <span style={{ color: on ? T.navy : "inherit", fontWeight: on ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{imp.code}) {imp.nome}</span>
               </label>
@@ -939,9 +939,9 @@ function AssistenzaEditor({ r, T, mono, onPatch }) {
           );
         })}
       </div>
-      <div style={{ fontFamily: mono, fontSize: 8, color: T.muted, marginTop: 5, textAlign: "right" }}>vuota = la mette l'impresa</div>
+      <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 6, textAlign: "right" }}>vuota = la mette l'impresa</div>
       <div style={{ marginTop: 8, fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 700 }}>{assistenzaLabel(a)}</div>
-      <div style={{ marginTop: 2, fontFamily: mono, fontSize: 9, color: T.muted }}>
+      <div style={{ marginTop: 2, fontFamily: mono, fontSize: 10, color: T.muted }}>
         {basi.length === 0
           ? "Seleziona almeno un impianto."
           : `L'importo si calcola nell'Excel: per ogni impianto, la sua % × il totale di quell'impianto (si aggiorna quando l'impresa compila i prezzi). Lascia la % vuota per farla mettere all'impresa.`}

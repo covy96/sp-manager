@@ -28,11 +28,11 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const { T } = useTheme();
   const showToast = useToast();
 
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const mono = { fontFamily: "var(--font-label)" };
   const inputSt = {
-    width: '100%', padding: '7px 10px', boxSizing: 'border-box',
+    width: '100%', padding: '8px 10px', boxSizing: 'border-box',
     border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink,
-    fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none',
+    fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none',
   };
 
   const [voci, setVoci]       = useState([]);
@@ -290,15 +290,15 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
       background: hasData ? T.navyLight : 'transparent',
       height: 34, padding: '0 12px', cursor: 'pointer',
     }}>
-      <span style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: hasData ? T.navy : T.muted, fontWeight: 600 }}>
+      <span style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: hasData ? T.navy : T.muted, fontWeight: 600 }}>
         CAPEX
       </span>
       {hasData ? (
-        <span style={{ ...mono, fontSize: 9, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+        <span style={{ ...mono, fontSize: 10, color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
           {currency(totaleAccettato)}
         </span>
       ) : (
-        <span style={{ ...mono, fontSize: 9, color: T.muted }}>+ Aggiungi</span>
+        <span style={{ ...mono, fontSize: 10, color: T.muted }}>+ Aggiungi</span>
       )}
     </button>
   );
@@ -307,22 +307,22 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const renderRigaPreventivo = (v, isExtra = false) => {
     const isDel = confirmDelete === v.id;
     return (
-      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
+      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {isExtra && <span style={{ ...mono, fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '1px 5px' }}>Extra</span>}
+            {isExtra && <span style={{ ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>Extra</span>}
             <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
-            <span style={{ ...mono, fontSize: 9, color: T.muted }}>{fmtDate(v.data_preventivo)}</span>
+            <span style={{ ...mono, fontSize: 10, color: T.muted }}>{fmtDate(v.data_preventivo)}</span>
           </div>
-          {!isExtra && v.note && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>{v.note}</div>}
+          {!isExtra && v.note && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>{v.note}</div>}
         </div>
         <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: T.ink, flexShrink: 0 }}>{currency(v.importo)}</div>
         {/* toggle accettato */}
         <button onClick={() => toggleAccettato(v)} title={v.accettato ? "Accettato" : "Non accettato"} style={{
           display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${v.accettato ? T.green : T.borderMd}`,
-          borderRadius: T.radiusSm, background: v.accettato ? T.greenLight : 'transparent', padding: '4px 9px', cursor: 'pointer', flexShrink: 0,
+          borderRadius: T.radiusSm, background: v.accettato ? T.greenLight : 'transparent', padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
         }}>
-          <span style={{ ...mono, fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase', color: v.accettato ? T.green : T.muted }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: v.accettato ? T.green : T.muted }}>
             {v.accettato ? "✓ Accettato" : "Accetta"}
           </span>
         </button>
@@ -350,18 +350,18 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
       <CapexAnalisiUpload projectId={projectId} onCreated={load} />
 
       {/* Form inserimento / modifica */}
-      <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, borderRadius: T.radius, background: T.bg, padding: 16, marginBottom: 18 }}>
+      <div style={{ border: `1px solid ${extraParent ? T.brass : T.border}`, borderRadius: T.radius, background: T.bg, padding: 16, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: extraParent ? T.brass : T.muted }}>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: extraParent ? T.brass : T.muted }}>
             {extraParent ? `Extra per ${extraParent.fornitore || "—"} · ${extraParent.categoria}` : editingId ? "Modifica preventivo" : "Nuovo preventivo"}
           </div>
           {extraParent && (
-            <button onClick={resetForm} style={{ border: 'none', background: 'none', color: T.muted, ...mono, fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>✕ annulla extra</button>
+            <button onClick={resetForm} style={{ border: 'none', background: 'none', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>✕ annulla extra</button>
           )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.4fr 1fr 1fr', gap: 10 }}>
           <div style={{ position: 'relative' }}>
-            <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Categoria *</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Categoria *</div>
             <input
               value={form.categoria}
               disabled={!!extraParent}
@@ -378,7 +378,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                   {matches.map(c => (
                     <button key={c} type="button"
                       onMouseDown={() => { setForm(p => ({ ...p, categoria: c })); setCatFocus(false); }}
-                      style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", borderBottom: `0.5px solid ${T.border}` }}
+                      style={{ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink, fontFamily: "var(--font-ui)", borderBottom: `0.5px solid ${T.border}` }}
                       onMouseEnter={e => e.currentTarget.style.background = T.surface2}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                       {c}
@@ -389,27 +389,27 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
             })()}
           </div>
           <div>
-            <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Fornitore</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Fornitore</div>
             <input value={form.fornitore} disabled={!!extraParent} onChange={e => setForm(p => ({ ...p, fornitore: e.target.value }))} placeholder="Es. Impresa Rossi" style={{ ...inputSt, opacity: extraParent ? 0.6 : 1, cursor: extraParent ? 'not-allowed' : 'text' }} />
           </div>
           <div>
-            <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Data preventivo</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Data preventivo</div>
             <input type="date" value={form.data_preventivo} onChange={e => setForm(p => ({ ...p, data_preventivo: e.target.value }))} style={inputSt} />
           </div>
           <div>
-            <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Importo (€) *</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Importo (€) *</div>
             <input type="number" min="0" step="0.01" value={form.importo} onChange={e => setForm(p => ({ ...p, importo: e.target.value }))} placeholder="0,00" style={{ ...inputSt, ...mono }} />
           </div>
         </div>
         <div style={{ marginTop: 10 }}>
-          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Note</div>
+          <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Note</div>
           <input value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} placeholder="Note opzionali" style={inputSt} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
           {editingId && (
             <button onClick={resetForm} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink, ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 16px', cursor: 'pointer' }}>Annulla</button>
           )}
-          <button onClick={handleSaveVoce} disabled={saving} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 18px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+          <button onClick={handleSaveVoce} disabled={saving} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 20px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
             {saving ? "Salvataggio..." : editingId ? "Aggiorna" : extraParent ? "Aggiungi extra" : "Aggiungi preventivo"}
           </button>
         </div>
@@ -421,10 +421,10 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           Nessun preventivo. Aggiungi il primo preventivo qui sopra.
         </div>
       ) : vociPerCategoria.map(({ label, list }) => (
-        <div key={label.toLowerCase()} style={{ marginBottom: 18 }}>
+        <div key={label.toLowerCase()} style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{label}</span>
-            <span style={{ ...mono, fontSize: 9, color: T.muted }}>{list.length} {list.length === 1 ? "preventivo" : "preventivi"}</span>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.ink, fontWeight: 600 }}>{label}</span>
+            <span style={{ ...mono, fontSize: 10, color: T.muted }}>{list.length} {list.length === 1 ? "preventivo" : "preventivi"}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {list.map(v => {
@@ -433,7 +433,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                 <div key={v.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {renderRigaPreventivo(v, false)}
                   {extras.map(e => renderRigaPreventivo(e, true))}
-                  <button onClick={() => startAddExtra(v)} style={{ alignSelf: 'flex-start', marginLeft: 24, border: `1px dashed ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '5px 10px', cursor: 'pointer' }}>
+                  <button onClick={() => startAddExtra(v)} style={{ alignSelf: 'flex-start', marginLeft: 24, border: `1px dashed ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer' }}>
                     + Aggiungi extra
                   </button>
                 </div>
@@ -454,22 +454,22 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     const pags = pagamenti.filter(p => p.voce_id === v.id);
     return (
                 <div key={v.id} style={{ border: `1px solid ${T.border}`, borderRadius: T.radius, overflow: 'hidden', background: isExtra ? T.surface : T.bg, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
-                  <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', cursor: 'pointer', flexWrap: 'wrap', rowGap: 8 }}>
+                  <div onClick={() => { setExpanded(isOpen ? null : v.id); setPagForm(EMPTY_PAG); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px', cursor: 'pointer', flexWrap: 'wrap', rowGap: 8 }}>
                     {isExtra
-                      ? <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>Extra</span>
-                      : <span style={{ ...mono, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>{v.categoria}</span>}
+                      ? <span style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>Extra</span>
+                      : <span style={{ ...mono, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, padding: '2px 6px', flexShrink: 0 }}>{v.categoria}</span>}
                     <span style={{ fontSize: 13, fontWeight: 600, color: T.ink, flex: '1 1 160px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isExtra ? (v.note || "Extra") : (v.fornitore || "—")}</span>
-                    <div style={{ display: 'flex', gap: 18, flexShrink: 0, alignItems: 'baseline', marginLeft: 'auto' }}>
+                    <div style={{ display: 'flex', gap: 20, flexShrink: 0, alignItems: 'baseline', marginLeft: 'auto' }}>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ ...mono, fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Accettato</div>
+                        <div style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Accettato</div>
                         <div style={{ ...mono, fontSize: 12, color: T.ink }}>{currency(v.importo)}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ ...mono, fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Pagato</div>
+                        <div style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Pagato</div>
                         <div style={{ ...mono, fontSize: 12, color: overpaid ? T.red : T.green }}>{currency(pagato)}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ ...mono, fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Residuo</div>
+                        <div style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Residuo</div>
                         <div style={{ ...mono, fontSize: 12, color: residuo < 0 ? T.red : (residuo === 0 ? T.muted : T.navy) }}>{currency(residuo)}</div>
                       </div>
                       <span style={{ ...mono, fontSize: 11, color: T.muted, flexShrink: 0, width: 14, textAlign: 'center', alignSelf: 'center' }}>{isOpen ? "▾" : "▸"}</span>
@@ -478,11 +478,11 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
 
                   {isOpen && (
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: '12px', background: T.surface }}>
-                      <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Registro pagamenti</div>
+                      <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Registro pagamenti</div>
                       {pags.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
                           {pags.map(p => (
-                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 10px', background: T.bg, border: `1px solid ${T.border}` }}>
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', background: T.bg, border: `1px solid ${T.border}` }}>
                               <span style={{ ...mono, fontSize: 10, color: T.muted, flexShrink: 0 }}>{fmtDate(p.data_pagamento)}</span>
                               <span style={{ ...mono, fontSize: 12, color: T.ink, flex: 1 }}>{currency(p.importo)}</span>
                               {p.note && <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 2, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.note}</span>}
@@ -498,18 +498,18 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                       {/* form nuovo pagamento */}
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         <div style={{ width: 140 }}>
-                          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Data</div>
+                          <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Data</div>
                           <input type="date" value={pagForm.data_pagamento} onChange={e => setPagForm(p => ({ ...p, data_pagamento: e.target.value }))} style={inputSt} />
                         </div>
                         <div style={{ width: 120 }}>
-                          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Importo (€)</div>
+                          <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Importo (€)</div>
                           <input type="number" min="0" step="0.01" value={pagForm.importo} onChange={e => setPagForm(p => ({ ...p, importo: e.target.value }))} placeholder="0,00" style={{ ...inputSt, ...mono }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 120 }}>
-                          <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 5 }}>Nota</div>
+                          <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Nota</div>
                           <input value={pagForm.note} onChange={e => setPagForm(p => ({ ...p, note: e.target.value }))} placeholder="Es. acconto" style={inputSt} />
                         </div>
-                        <button onClick={() => handleAddPagamento(v)} disabled={savingPag} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 14px', cursor: savingPag ? 'not-allowed' : 'pointer', opacity: savingPag ? 0.6 : 1, height: 33 }}>
+                        <button onClick={() => handleAddPagamento(v)} disabled={savingPag} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 16px', cursor: savingPag ? 'not-allowed' : 'pointer', opacity: savingPag ? 0.6 : 1, height: 33 }}>
                           + Pagamento
                         </button>
                       </div>
@@ -532,7 +532,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     const res = b.acc - b.pag;
     const barColor = over ? T.red : accent;
     return (
-      <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span style={{ ...mono, fontSize: strong ? 10 : 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: strong ? T.ink : T.muted, fontWeight: strong ? 600 : 400, flex: 1, minWidth: 0 }}>{label}</span>
           <span style={{ ...mono, fontSize: strong ? 16 : 13, fontWeight: 600, color: over ? T.red : (p === 100 ? T.green : T.ink), flexShrink: 0 }}>
@@ -574,13 +574,13 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 18 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
             {accettatePerOperatore.map(g => {
               return (
                 <div key={g.rootId} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {g.items.map(v => renderAccettataCard(v, !!v.parent_id))}
-                  <div style={{ marginTop: 2, border: `1px solid ${T.border}`, borderRadius: T.radius, background: T.surface, padding: '12px 14px' }}>
-                    <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · {g.label}</div>
+                  <div style={{ marginTop: 2, border: `1px solid ${T.border}`, borderRadius: T.radius, background: T.surface, padding: '12px 16px' }}>
+                    <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · {g.label}</div>
                     {renderProgressBlock(splitOrigExtra(g.items))}
                   </div>
                 </div>
@@ -592,30 +592,30 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           <div style={{ border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
               <div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale accettato</div>
-                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 3 }}>{currency(totaleAccettato)}</div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale accettato</div>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 4 }}>{currency(totaleAccettato)}</div>
               </div>
               <div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale pagato</div>
-                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.green, marginTop: 3 }}>{currency(totalePagato)}</div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale pagato</div>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.green, marginTop: 4 }}>{currency(totalePagato)}</div>
               </div>
               <div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale da pagare</div>
-                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: totaleResiduo < 0 ? T.red : T.navy, marginTop: 3 }}>{currency(totaleResiduo)}</div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale da pagare</div>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: totaleResiduo < 0 ? T.red : T.navy, marginTop: 4 }}>{currency(totaleResiduo)}</div>
               </div>
               <div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>% pagato</div>
-                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 3 }}>{pct(totalePagato, totaleAccettato) === null ? "—" : `${pct(totalePagato, totaleAccettato)}%`}</div>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>% pagato</div>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 500, color: T.ink, marginTop: 4 }}>{pct(totalePagato, totaleAccettato) === null ? "—" : `${pct(totalePagato, totaleAccettato)}%`}</div>
               </div>
             </div>
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
-              <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · tutto il cantiere</div>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
+              <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Avanzamento pagamenti · tutto il cantiere</div>
               {renderProgressBlock(splitTotale)}
             </div>
             {/* breakdown per categoria */}
             {breakdownCategoria.length > 1 && (
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Per categoria</div>
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Per categoria</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {breakdownCategoria.map(d => renderProgressRow(d.label, { acc: d.accettato, pag: d.pagato }, { accent: T.navy }))}
                 </div>
@@ -632,10 +632,10 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
       <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>CAPEX — quadro economico cantiere</div>
-            <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>Preventivi di imprese e fornitori del progetto, accettazione e pagamenti.</div>
+            <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>Preventivi di imprese e fornitori del progetto, accettazione e pagamenti.</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {voci.length > 0 && (
@@ -646,7 +646,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
         </div>
 
         {/* Switch Preventivi/Accettati — stesso SlidingTabs del resto dell'app */}
-        <div style={{ marginBottom: 22 }}>
+        <div style={{ marginBottom: 24 }}>
           <SlidingTabs
             tabs={[
               { key: "preventivi", label: `Preventivi ${voci.length}` },

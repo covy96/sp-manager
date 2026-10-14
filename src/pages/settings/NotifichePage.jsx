@@ -156,15 +156,15 @@ export default function NotifichePage() {
   const supportsNotifications = 'Notification' in window && 'serviceWorker' in navigator;
 
   return (
-    <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <div style={{ fontSize: 18, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>Notifiche</div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Gestisci le notifiche push per questo dispositivo</div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: T.ink, letterSpacing: '-0.025em', marginBottom: 4 }}>Notifiche</div>
+        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>Gestisci le notifiche push per questo dispositivo</div>
       </div>
 
       {!supportsNotifications && (
-        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 22px' }}>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 24px' }}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>
             Le notifiche push non sono supportate su questo browser.<br/>
             Su iPhone, aggiungi l'app alla schermata home e aprila da lì.
           </div>
@@ -174,42 +174,42 @@ export default function NotifichePage() {
       {supportsNotifications && (
       <>
       {/* Toggle principale */}
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Notifiche push</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
               {pushEnabled ? "Attive su questo dispositivo" : "Disattivate su questo dispositivo"}
             </div>
           </div>
           <Toggle checked={pushEnabled} disabled={pushLoading} onChange={v => v ? handleEnablePush() : handleDisablePush()} />
         </div>
-        {pushLoading && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 10 }}>{pushEnabled ? "Disattivazione..." : "Attivazione..."}</div>}
-        {pushError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red, marginTop: 10 }}>{pushError}</div>}
+        {pushLoading && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 10 }}>{pushEnabled ? "Disattivazione..." : "Attivazione..."}</div>}
+        {pushError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red, marginTop: 10 }}>{pushError}</div>}
       </div>
 
       {/* Lista preferenze */}
       <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow,  opacity: pushEnabled ? 1 : 0.4, pointerEvents: pushEnabled ? 'auto' : 'none' }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 18px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
+        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 20px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
         {prefsLoading ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+          <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
         ) : NOTIF_ITEMS.map(item => (
-          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: `0.5px solid ${T.border}` }}>
+          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderBottom: `0.5px solid ${T.border}` }}>
             <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, color: T.ink, marginBottom: item.hasDays && prefs[item.key] ? 8 : 0 }}>{item.label}</div>
               {item.hasDays && prefs[item.key] && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>Avvisami</span>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>Avvisami</span>
                   <input type="number" min={1} max={30} value={proformaDays} onChange={e => handleProformaDays(e.target.value)}
-                    style={{ width: 48, padding: '4px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', textAlign: 'center' }} />
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>giorni prima</span>
+                    style={{ width: 48, padding: '4px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none', textAlign: 'center' }} />
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>giorni prima</span>
                 </div>
               )}
             </div>
             <div style={{ flexShrink: 0 }}>
               {savingKey === item.key
-                ? <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>...</span>
+                ? <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>...</span>
                 : <Toggle checked={!!prefs[item.key]} disabled={!pushEnabled} onChange={v => handleTogglePref(item.key, v)} />
               }
             </div>
@@ -218,11 +218,11 @@ export default function NotifichePage() {
       </div>
 
       {/* Silenzio programmato — fascia ricorrente settimanale */}
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '18px 20px' }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding: '20px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>🌙 Silenzio programmato</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
               Silenzia in automatico ogni settimana in una fascia ricorrente.<br/>Le notifiche restano nello storico, non arriva la push.
             </div>
           </div>
@@ -236,16 +236,16 @@ export default function NotifichePage() {
               { label: 'Al',  day: quiet.endDay,   time: quiet.endTime,   dayKey: 'endDay',   timeKey: 'endTime'   },
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 28, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>{row.label}</span>
+                <span style={{ width: 28, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>{row.label}</span>
                 <select value={row.day} onChange={e => saveQuiet({ [row.dayKey]: Number(e.target.value) })}
-                  style={{ flex: 1, padding: '7px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none', cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '8px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none', cursor: 'pointer' }}>
                   {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
                 <input type="time" value={row.time} onChange={e => saveQuiet({ [row.timeKey]: e.target.value })}
-                  style={{ padding: '6px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: 'none' }} />
+                  style={{ padding: '6px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none' }} />
               </div>
             ))}
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
               Es. da <b>Ven 19:00</b> a <b>Lun 09:00</b> = silenzio per tutto il weekend. Orari riferiti all'Italia (Europe/Rome).
             </div>
           </div>

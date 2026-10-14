@@ -9,7 +9,7 @@ const C = {
   paper: '#EEF1F6',
   muted: '#8a847b',
 };
-const mono    = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono    = { fontFamily: "var(--font-label)" };
 const eyebrow = { ...mono, fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase' };
 
 /* ─── Replica esatta del design system dell'app ─────────────────
@@ -70,7 +70,7 @@ function AppShell({ activeLabel, children, w = 520, h = 340 }) {
       <div style={{ width: 126, background: '#0E0E0D', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         {/* Logo area */}
         <div style={{ padding: '12px 12px 8px', borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 24, height: 24, borderRadius: 6, background: APP.navy, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: APP.brass, letterSpacing: '-0.05em' }}>ASM</span>
             </div>
@@ -85,22 +85,22 @@ function AppShell({ activeLabel, children, w = 520, h = 340 }) {
               : (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '5px 10px',
+                  padding: '6px 10px',
                   background: item.l === activeLabel ? 'rgba(255,255,255,0.12)' : 'transparent',
                   borderRadius: 7, margin: '1px 6px',
                   cursor: 'pointer',
                 }}>
-                  <span style={{ ...mono, fontSize: 7, color: item.l === activeLabel ? 'rgba(217,201,138,0.7)' : 'rgba(255,255,255,0.3)', width: 14, flexShrink: 0 }}>{item.n}</span>
-                  <span style={{ fontSize: 9, fontWeight: item.l === activeLabel ? 600 : 400, color: item.l === activeLabel ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', letterSpacing: '-0.01em' }}>{item.l}</span>
+                  <span style={{ ...mono, fontSize: 9, color: item.l === activeLabel ? 'rgba(217,201,138,0.7)' : 'rgba(255,255,255,0.3)', width: 14, flexShrink: 0 }}>{item.n}</span>
+                  <span style={{ fontSize: 10, fontWeight: item.l === activeLabel ? 600 : 400, color: item.l === activeLabel ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)', letterSpacing: '-0.01em' }}>{item.l}</span>
                 </div>
               )
           )}
         </div>
         {/* Bottom user */}
         <div style={{ padding: '8px 10px', borderTop: '0.5px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: APP.navy, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#fff', flexShrink: 0 }}>AR</div>
+          <div style={{ width: 20, height: 20, borderRadius: '50%', background: APP.navy, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }}>AR</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>A. Rossi</div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>A. Rossi</div>
             <div style={{ ...mono, fontSize: 6.5, color: 'rgba(255,255,255,0.35)' }}>Titolare</div>
           </div>
         </div>
@@ -108,7 +108,7 @@ function AppShell({ activeLabel, children, w = 520, h = 340 }) {
       {/* Content area */}
       <div style={{ flex: 1, background: APP.bg, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* Top header */}
-        <div style={{ height: 36, background: 'rgba(232,234,240,0.75)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', padding: '0 14px', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ height: 36, background: 'rgba(232,234,240,0.75)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: APP.ink, letterSpacing: '-0.01em' }}>{activeLabel}</span>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <div style={{ width: 24, height: 16, background: 'rgba(0,0,0,0.07)', borderRadius: 4 }}/>
@@ -145,7 +145,7 @@ function Card({ children, style = {} }) {
 function Stat({ label, value, color = APP.navy, bg }) {
   return (
     <div style={{ background: bg || APP.surface, border: `1px solid ${APP.border}`, borderRadius: APP.radiusSm, padding: '8px 12px', boxShadow: APP.shadow }}>
-      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
+      <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color, letterSpacing: '-0.02em' }}>{value}</div>
     </div>
   );
@@ -160,7 +160,7 @@ function MockScrivania() {
     { t: 'Sopralluogo cantiere',         p: 'Residenza Privata',   d: 'Lun 23',   sc: APP.muted},
   ];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 4 }}>
         <Stat label="Progetti" value="8"   color={APP.navy}/>
         <Stat label="Task oggi" value="5"  color={APP.red}/>
@@ -169,10 +169,10 @@ function MockScrivania() {
       <Card style={{ padding: '10px 12px' }}>
         <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Prossime scadenze</div>
         {tasks.map((r, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < tasks.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < tasks.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{r.t}</div>
-              <div style={{ ...mono, fontSize: 8, color: APP.muted }}>{r.p}</div>
+              <div style={{ ...mono, fontSize: 10, color: APP.muted }}>{r.p}</div>
             </div>
             <div style={{ ...mono, fontSize: 8.5, color: r.sc, flexShrink: 0, marginLeft: 8, fontWeight: r.sc !== APP.muted ? 600 : 400 }}>{r.d}</div>
           </div>
@@ -198,15 +198,15 @@ function MockGantt() {
       <div style={{ display: 'flex', marginBottom: 8, paddingBottom: 6, borderBottom: `0.5px solid ${APP.border}` }}>
         <div style={{ width: 108, flexShrink: 0 }}/>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
-          {months.map(m => <span key={m} style={{ ...mono, fontSize: 7, color: APP.muted }}>{m}</span>)}
+          {months.map(m => <span key={m} style={{ ...mono, fontSize: 9, color: APP.muted }}>{m}</span>)}
         </div>
       </div>
       {bars.map(b => (
-        <div key={b.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}>
+        <div key={b.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
           <div style={{ width: 108, flexShrink: 0, fontSize: 8.5, fontWeight: 500, color: APP.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 6 }}>{b.label}</div>
           <div style={{ flex: 1, height: 18, position: 'relative' }}>
             <div style={{ position: 'absolute', left: `${b.x}%`, width: `${b.w}%`, height: '100%', background: b.color, borderRadius: 4, display: 'flex', alignItems: 'center', paddingLeft: 6 }}>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 7.5, fontWeight: 600, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden' }}>{b.label}</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 7.5, fontWeight: 600, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap', overflow: 'hidden' }}>{b.label}</span>
             </div>
           </div>
         </div>
@@ -218,7 +218,7 @@ function MockGantt() {
 /* ─── MOCK COMMESSA ──────────────────────────────────────────── */
 function MockCommessa() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         <Stat label="Contratto"   value="€52.000" color={APP.ink}/>
         <Stat label="Incassato"   value="€21.000" color={APP.green}/>
@@ -231,9 +231,9 @@ function MockCommessa() {
           ['SAL 1',   '40%', '€20.800', 'In attesa', APP.muted],
           ['Saldo',   '30%', '€15.600', 'In attesa', APP.muted],
         ].map(([r, p, v, s, sc]) => (
-          <div key={r} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `0.5px solid ${APP.border}` }}>
+          <div key={r} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `0.5px solid ${APP.border}` }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{r}</div>
-            <div style={{ ...mono, fontSize: 8, color: APP.muted }}>{p}</div>
+            <div style={{ ...mono, fontSize: 10, color: APP.muted }}>{p}</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: APP.navy }}>{v}</div>
             <div style={{ ...mono, fontSize: 8.5, color: sc, fontWeight: sc === APP.green ? 600 : 400 }}>{s}</div>
           </div>
@@ -255,25 +255,25 @@ function MockTimesheet() {
   return (
     <Card style={{ padding: '10px 12px' }}>
       <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Settimana 22 — Blocco A Milano</div>
-      <div style={{ display: 'flex', marginBottom: 5 }}>
+      <div style={{ display: 'flex', marginBottom: 6 }}>
         <div style={{ width: 32, flexShrink: 0 }}/>
         {days.map(d => <div key={d} style={{ flex: 1, textAlign: 'center', ...mono, fontSize: 7.5, color: APP.muted }}>{d}</div>)}
         <div style={{ width: 28, ...mono, fontSize: 7.5, color: APP.muted, textAlign: 'right' }}>Tot</div>
       </div>
       {rows.map(r => (
-        <div key={r.i} style={{ display: 'flex', alignItems: 'center', marginBottom: 5, paddingBottom: 5, borderBottom: `0.5px solid ${APP.border}` }}>
+        <div key={r.i} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, paddingBottom: 6, borderBottom: `0.5px solid ${APP.border}` }}>
           <div style={{ width: 32, flexShrink: 0 }}>
             <div style={{ width: 22, height: 22, borderRadius: '50%', background: r.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 700, color: '#fff' }}>{r.i}</div>
           </div>
           {r.days.map((h, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
               {h > 0
-                ? <span style={{ display: 'inline-flex', width: 24, height: 19, background: `${r.color}22`, borderRadius: 4, ...mono, fontSize: 8, color: r.color, fontWeight: 700, alignItems: 'center', justifyContent: 'center' }}>{h}h</span>
-                : <span style={{ ...mono, fontSize: 9, color: 'rgba(14,14,13,0.2)' }}>—</span>
+                ? <span style={{ display: 'inline-flex', width: 24, height: 19, background: `${r.color}22`, borderRadius: 4, ...mono, fontSize: 10, color: r.color, fontWeight: 700, alignItems: 'center', justifyContent: 'center' }}>{h}h</span>
+                : <span style={{ ...mono, fontSize: 10, color: 'rgba(14,14,13,0.2)' }}>—</span>
               }
             </div>
           ))}
-          <div style={{ width: 28, textAlign: 'right', ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>{r.days.reduce((s, v) => s + v, 0)}h</div>
+          <div style={{ width: 28, textAlign: 'right', ...mono, fontSize: 10, fontWeight: 700, color: APP.navy }}>{r.days.reduce((s, v) => s + v, 0)}h</div>
         </div>
       ))}
     </Card>
@@ -291,7 +291,7 @@ function MockMonitoraggio() {
   const totV = items.reduce((s, i) => s + i.valore, 0);
   const totI = items.reduce((s, i) => s + i.incassato, 0);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         <Stat label="Contratti"     value={`€${(totV/1000).toFixed(0)}k`} color={APP.ink}/>
         <Stat label="Incassato"     value={`€${(totI/1000).toFixed(0)}k`} color={APP.green}/>
@@ -303,11 +303,11 @@ function MockMonitoraggio() {
           const saldato = pct === 100;
           return (
             <div key={item.name} style={{ marginBottom: idx < items.length - 1 ? 8 : 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                 <div style={{ fontSize: 9.5, fontWeight: 600, color: APP.ink }}>{item.name}</div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>€{(item.valore/1000).toFixed(0)}k</span>
-                  <span style={{ ...mono, fontSize: 8, color: saldato ? APP.green : '#b45309' }}>{saldato ? '✓ Saldato' : `res. €${((item.valore-item.incassato)/1000).toFixed(0)}k`}</span>
+                  <span style={{ ...mono, fontSize: 10, fontWeight: 700, color: APP.navy }}>€{(item.valore/1000).toFixed(0)}k</span>
+                  <span style={{ ...mono, fontSize: 10, color: saldato ? APP.green : '#b45309' }}>{saldato ? '✓ Saldato' : `res. €${((item.valore-item.incassato)/1000).toFixed(0)}k`}</span>
                 </div>
               </div>
               <div style={{ height: 4, background: 'rgba(0,0,0,0.07)', borderRadius: 2 }}>
@@ -331,7 +331,7 @@ function MockReport() {
   ];
   const max = 54;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <Stat label="Ore totali"   value="139h"  color="#1a6b3c"/>
         <Stat label="Progetti"     value="4"     color={APP.navy}/>
@@ -362,7 +362,7 @@ function MockAnalisiHub() {
     { n: 'Showroom Navigli',     v: '€29.500', s: 'In attesa', sc: APP.muted },
   ];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         <Stat label="Offerte tot."  value="12"      color={APP.ink}/>
         <Stat label="Valore"        value="€214k"   color={APP.navy}/>
@@ -371,10 +371,10 @@ function MockAnalisiHub() {
       <Card style={{ padding: '10px 12px' }}>
         <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Offerte recenti</div>
         {offerte.map((o, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < offerte.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < offerte.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{o.n}</div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>{o.v}</span>
+              <span style={{ ...mono, fontSize: 10, fontWeight: 700, color: APP.navy }}>{o.v}</span>
               <span style={{ ...mono, fontSize: 8.5, color: o.sc, fontWeight: o.sc !== APP.muted ? 600 : 400 }}>{o.s}</span>
             </div>
           </div>
@@ -393,7 +393,7 @@ function MockPreventivo() {
     { cat: 'Impianti',       desc: 'Elettrico + termico',      v: '€9.800',  tipo: 'Capex' },
   ];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
         <Stat label="Totale Opex"  value="€22.500" color={APP.navy}/>
         <Stat label="Totale Capex" value="€41.800" color="#b45309"/>
@@ -401,14 +401,14 @@ function MockPreventivo() {
       <Card style={{ padding: '10px 12px' }}>
         <div style={{ ...mono, fontSize: 7.5, color: APP.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Voci preventivo — Residenza Privata</div>
         {voci.map((v, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: i < voci.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < voci.length-1 ? `0.5px solid ${APP.border}` : 'none' }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{v.desc}</div>
-              <div style={{ ...mono, fontSize: 8, color: APP.muted }}>{v.cat}</div>
+              <div style={{ ...mono, fontSize: 10, color: APP.muted }}>{v.cat}</div>
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ ...mono, fontSize: 9, fontWeight: 700, color: APP.navy }}>{v.v}</span>
-              <span style={{ ...mono, fontSize: 8, color: v.tipo === 'Capex' ? '#b45309' : APP.green, background: v.tipo === 'Capex' ? 'rgba(180,83,9,0.1)' : 'rgba(26,107,60,0.1)', padding: '2px 5px', borderRadius: 3 }}>{v.tipo}</span>
+              <span style={{ ...mono, fontSize: 10, fontWeight: 700, color: APP.navy }}>{v.v}</span>
+              <span style={{ ...mono, fontSize: 10, color: v.tipo === 'Capex' ? '#b45309' : APP.green, background: v.tipo === 'Capex' ? 'rgba(180,83,9,0.1)' : 'rgba(26,107,60,0.1)', padding: '2px 6px', borderRadius: 3 }}>{v.tipo}</span>
             </div>
           </div>
         ))}
@@ -420,7 +420,7 @@ function MockPreventivo() {
 /* ─── MOCK ANALISI FATTURE ───────────────────────────────────── */
 function MockFatture() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         <Stat label="Emesse"    value="€73.400" color={APP.ink}/>
         <Stat label="Pagate"    value="€42.200" color={APP.green}/>
@@ -433,14 +433,14 @@ function MockFatture() {
           { n: 'FT 2026/003', p: 'Showroom Navigli',    v: '€11.800', s: 'IN ATTESA', sc: APP.muted },
           { n: 'FT 2026/004', p: 'Residenza Privata',   v: '€19.200', s: 'IN ATTESA', sc: APP.muted },
         ].map(f => (
-          <div key={f.n} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `0.5px solid ${APP.border}` }}>
+          <div key={f.n} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `0.5px solid ${APP.border}` }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 600, color: APP.ink }}>{f.n}</div>
-              <div style={{ ...mono, fontSize: 8, color: APP.muted }}>{f.p}</div>
+              <div style={{ ...mono, fontSize: 10, color: APP.muted }}>{f.p}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ ...mono, fontSize: 10, fontWeight: 700, color: APP.navy }}>{f.v}</div>
-              <div style={{ ...mono, fontSize: 8, color: f.sc, fontWeight: f.sc === APP.green ? 600 : 400 }}>{f.s}</div>
+              <div style={{ ...mono, fontSize: 10, color: f.sc, fontWeight: f.sc === APP.green ? 600 : 400 }}>{f.s}</div>
             </div>
           </div>
         ))}
@@ -521,7 +521,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
   const pad = isMobile ? '80px 22px 40px' : '0 64px';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', fontFamily: "'Space Grotesk', sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', fontFamily: "var(--font-ui)" }}>
 
       {/* ── NAV ── */}
       <nav style={{
@@ -536,8 +536,8 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         <AsmSeal size={isMobile ? 'xs' : 'sm'} showBorder={false} showBottom={false} showTop={!isMobile} theme={activeSection === 0 ? 'dark' : 'light'}/>
         {isMobile ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={onLogin} style={{ background: 'transparent', border: `1px solid ${activeSection===0?'rgba(238,241,246,0.45)':'rgba(14,14,13,0.25)'}`, color: activeSection===0?'#EEF1F6':C.ink, padding: '7px 14px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
-            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: '7px 14px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Registrati</button>
+            <button onClick={onLogin} style={{ background: 'transparent', border: `1px solid ${activeSection===0?'rgba(238,241,246,0.45)':'rgba(14,14,13,0.25)'}`, color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
+            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: '8px 16px', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Registrati</button>
             <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, padding: 4 }}>
               {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 1.5, background: activeSection===0?'#EEF1F6':C.ink, borderRadius: 1 }}/>)}
             </button>
@@ -550,9 +550,9 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               ))}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={onLogin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.4)':'rgba(14,14,13,0.25)'}`, background: 'transparent', color: activeSection===0?'#EEF1F6':C.ink, padding: '7px 18px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
-              <button onClick={onJoin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.3)':'rgba(14,14,13,0.2)'}`, background: 'transparent', color: activeSection===0?'rgba(238,241,246,0.8)':C.ink, padding: '7px 18px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Entra</button>
-              <button onClick={onRegister} style={{ border: 'none', background: C.brass, color: C.ink, padding: '7px 22px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Crea Studio →</button>
+              <button onClick={onLogin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.4)':'rgba(14,14,13,0.25)'}`, background: 'transparent', color: activeSection===0?'#EEF1F6':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Accedi</button>
+              <button onClick={onJoin} style={{ border: `0.5px solid ${activeSection===0?'rgba(238,241,246,0.3)':'rgba(14,14,13,0.2)'}`, background: 'transparent', color: activeSection===0?'rgba(238,241,246,0.8)':C.ink, padding: '8px 20px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Entra</button>
+              <button onClick={onRegister} style={{ border: 'none', background: C.brass, color: C.ink, padding: '8px 24px', ...mono, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700 }}>Crea Studio →</button>
             </div>
           </>
         )}
@@ -589,26 +589,26 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(238,241,246,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(238,241,246,0.022) 1px, transparent 1px)', backgroundSize: '52px 52px' }}/>
           {!isMobile && <div style={{ position: 'absolute', top: '10%', right: '7%', opacity: 0.05 }}><AsmSeal size="hero" theme="dark"/></div>}
           <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 780, padding: '0 20px' }}>
-            <div style={{ ...eyebrow, color: 'rgba(217,201,138,0.6)', marginBottom: isMobile?14:26 }}>Gestionale per studi di architettura</div>
-            <h1 style={{ fontSize: isMobile?38:76, fontWeight: 600, lineHeight: 1.02, letterSpacing: '-0.045em', color: '#EEF1F6', marginBottom: isMobile?16:22 }}>
+            <div style={{ ...eyebrow, color: 'rgba(217,201,138,0.6)', marginBottom: isMobile?16:28 }}>Gestionale per studi di architettura</div>
+            <h1 style={{ fontSize: isMobile?38:76, fontWeight: 600, lineHeight: 1.02, letterSpacing: '-0.045em', color: '#EEF1F6', marginBottom: isMobile?16:24 }}>
               Tutto il tuo studio.<br/><span style={{ color: C.brass }}>Un solo posto.</span>
             </h1>
             <p style={{ ...mono, fontSize: isMobile?12:13, lineHeight: 1.85, color: 'rgba(238,241,246,0.45)', margin: `0 auto ${isMobile?28:40}px`, maxWidth: 440 }}>
               Progetti, Gantt, commesse, timesheet e analisi.<br/>Fatto per architetti — non per contabili.<br/><span style={{ color: 'rgba(217,201,138,0.55)' }}>1 mese gratuito su tutti i piani a pagamento.</span>
             </p>
             <div style={{ display: 'flex', flexDirection: isMobile?'column':'row', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
-              {isMobile && <button onClick={onLogin} style={{ background: '#EEF1F6', border: 'none', color: C.ink, padding: '13px 28px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: '100%' }}>Accedi all'app →</button>}
-              <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'14px 40px', ...mono, fontSize: isMobile?11:12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
+              {isMobile && <button onClick={onLogin} style={{ background: '#EEF1F6', border: 'none', color: C.ink, padding: '12px 28px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: '100%' }}>Accedi all'app →</button>}
+              <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 40px', ...mono, fontSize: isMobile?11:12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
                 {isMobile ? 'Crea un nuovo studio →' : 'Crea il tuo studio →'}
               </button>
-              {!isMobile && <button onClick={() => scrollTo(1)} style={{ background: 'transparent', border: '0.5px solid rgba(238,241,246,0.25)', color: 'rgba(238,241,246,0.65)', padding: '14px 36px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>Scopri di più ↓</button>}
+              {!isMobile && <button onClick={() => scrollTo(1)} style={{ background: 'transparent', border: '0.5px solid rgba(238,241,246,0.25)', color: 'rgba(238,241,246,0.65)', padding: '16px 40px', ...mono, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}>Scopri di più ↓</button>}
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16 }}>
               <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
             </div>
           </div>
           {!isMobile && (
-            <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', ...mono, fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(238,241,246,0.22)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(238,241,246,0.22)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <span>Scorri</span><div style={{ width: 1, height: 30, background: 'rgba(238,241,246,0.15)' }}/>
             </div>
           )}
@@ -669,7 +669,7 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
               </div>
             )}
             {isMobile && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 22px 32px', order: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 32px', order: 3 }}>
                 <div style={{ width: 320, height: 211, position: 'relative' }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, transform: 'scale(0.64)', transformOrigin: 'top left' }}>
                     <AppShell activeLabel={mockLabel} w={500} h={330}>{mock}</AppShell>
@@ -692,25 +692,25 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: isMobile ? undefined : '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: C.paper, overflowY: isMobile ? 'visible' : 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: isMobile?'72px 20px 24px':'56px 48px 0', flexShrink: 0 }}>
             <div style={{ ...eyebrow, color: C.navy, marginBottom: 12 }}>Pricing</div>
-            <div style={{ fontSize: isMobile?28:40, fontWeight: 600, letterSpacing: '-0.03em', color: C.ink, marginBottom: isMobile?24:36 }}>Semplice e trasparente.</div>
+            <div style={{ fontSize: isMobile?28:40, fontWeight: 600, letterSpacing: '-0.03em', color: C.ink, marginBottom: isMobile?24:40 }}>Semplice e trasparente.</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile?'1fr':'repeat(3,1fr)', gap: isMobile?12:0, flex: 1, borderTop: isMobile?'none':'0.5px solid rgba(14,14,13,0.1)', padding: isMobile?'0 20px 40px':0 }}>
             {PLANS.map((plan, i) => (
-              <div key={plan.id} style={{ padding: isMobile?'24px 20px':'36px 32px', display: 'flex', flexDirection: 'column', borderRight: (!isMobile&&i<2)?'0.5px solid rgba(14,14,13,0.1)':'none', border: isMobile?`0.5px solid ${plan.highlight?C.navy:'rgba(14,14,13,0.1)'}`:undefined, background: plan.highlight ? C.navy : '#fff', position: 'relative' }}>
-                {plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', background: C.brass, color: C.ink, padding: '3px 8px' }}>Consigliato</div>}
-                {plan.trial && !plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(26,107,60,0.12)', color: '#1a6b3c', padding: '3px 8px', border: '0.5px solid rgba(26,107,60,0.25)' }}>30 giorni gratis</div>}
-                <div style={{ ...mono, fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: plan.highlight?C.brass:C.muted, marginBottom: 4 }}>{plan.name}</div>
+              <div key={plan.id} style={{ padding: isMobile?'24px 20px':'40px 32px', display: 'flex', flexDirection: 'column', borderRight: (!isMobile&&i<2)?'0.5px solid rgba(14,14,13,0.1)':'none', border: isMobile?`0.5px solid ${plan.highlight?C.navy:'rgba(14,14,13,0.1)'}`:undefined, background: plan.highlight ? C.navy : '#fff', position: 'relative' }}>
+                {plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', background: C.brass, color: C.ink, padding: '4px 8px' }}>Consigliato</div>}
+                {plan.trial && !plan.highlight && <div style={{ position: 'absolute', top: 12, right: 12, ...mono, fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', background: 'rgba(26,107,60,0.12)', color: '#1a6b3c', padding: '4px 8px', border: '0.5px solid rgba(26,107,60,0.25)' }}>30 giorni gratis</div>}
+                <div style={{ ...mono, fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: plan.highlight?C.brass:C.muted, marginBottom: 4 }}>{plan.name}</div>
                 <div style={{ ...mono, fontSize: 10, color: plan.highlight?'rgba(238,241,246,0.45)':C.muted, marginBottom: 16 }}>{plan.desc}</div>
                 <div style={{ marginBottom: plan.trial ? 6 : 20 }}>
                   <span style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-0.03em', color: plan.highlight?'#EEF1F6':C.ink }}>{plan.price}</span>
                   <span style={{ ...mono, fontSize: 10, color: plan.highlight?'rgba(238,241,246,0.45)':C.muted }}>{plan.period}</span>
                 </div>
                 {plan.trial && (
-                  <div style={{ ...mono, fontSize: 9, color: plan.highlight ? 'rgba(217,201,138,0.7)' : '#1a6b3c', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ ...mono, fontSize: 10, color: plan.highlight ? 'rgba(217,201,138,0.7)' : '#1a6b3c', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span>✓</span><span>1° mese gratuito — poi {plan.price}{plan.period}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1, marginBottom: 20 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, marginBottom: 20 }}>
                   {plan.features.map((f, fi) => (
                     <div key={fi} style={{ display: 'flex', gap: 8 }}>
                       <span style={{ color: plan.highlight?C.brass:'#1a6b3c', fontSize: 11, flexShrink: 0 }}>✓</span>
@@ -742,24 +742,24 @@ export default function LandingPage({ onLogin, onRegister, onJoin }) {
         </section>
 
         {/* 10 · CTA */}
-        <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: C.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: isMobile?'60px 20px 90px':'0 32px', position: 'relative', overflow: isMobile ? 'visible' : 'hidden' }}>
+        <section style={{ height: isMobile ? 'auto' : '100vh', minHeight: '100vh', scrollSnapAlign: isMobile ? undefined : 'start', background: C.ink, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: isMobile?'64px 20px 96px':'0 32px', position: 'relative', overflow: isMobile ? 'visible' : 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 40% 60%, #13315C 0%, #0E0E0D 65%)', opacity: 0.85 }}/>
           <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
             <div style={{ ...eyebrow, color: 'rgba(217,201,138,0.45)', marginBottom: isMobile?16:24 }}>Pronto a iniziare?</div>
             <h2 style={{ fontSize: isMobile?30:62, fontWeight: 600, letterSpacing: '-0.04em', color: '#EEF1F6', lineHeight: 1.06, marginBottom: 16 }}>
               Il tuo studio merita<br/><span style={{ color: C.brass }}>uno strumento su misura.</span>
             </h2>
-            <p style={{ ...mono, fontSize: 12, lineHeight: 1.85, color: 'rgba(238,241,246,0.4)', maxWidth: 420, margin: '0 auto 36px' }}>1 mese di prova gratuita su Studio e Pro. Inserisci i dati su Stripe — nessun addebito per 30 giorni. Disdici quando vuoi.</p>
-            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'13px 28px':'16px 48px', ...mono, fontSize: isMobile?11:13, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
+            <p style={{ ...mono, fontSize: 12, lineHeight: 1.85, color: 'rgba(238,241,246,0.4)', maxWidth: 420, margin: '0 auto 40px' }}>1 mese di prova gratuita su Studio e Pro. Inserisci i dati su Stripe — nessun addebito per 30 giorni. Disdici quando vuoi.</p>
+            <button onClick={onRegister} style={{ background: C.brass, border: 'none', color: C.ink, padding: isMobile?'12px 28px':'16px 48px', ...mono, fontSize: isMobile?11:13, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 700, width: isMobile?'100%':'auto' }}>
               Inizia il mese gratuito →
             </button>
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16 }}>
               <button onClick={onJoin} style={{ background: 'none', border: 'none', color: 'rgba(238,241,246,0.3)', ...mono, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}>Hai un codice invito? Entra in uno studio</button>
             </div>
           </div>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile?'16px 20px':'20px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '0.5px solid rgba(238,241,246,0.06)', flexWrap: 'wrap', gap: 8 }}>
             <AsmSeal size="sm" showBorder={false} showBottom={false} theme="dark"/>
-            <span style={{ ...mono, fontSize: 9, letterSpacing: '0.15em', color: 'rgba(238,241,246,0.2)', textTransform: 'uppercase' }}>© 2026 ASM</span>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: '0.15em', color: 'rgba(238,241,246,0.2)', textTransform: 'uppercase' }}>© 2026 ASM</span>
           </div>
         </section>
 

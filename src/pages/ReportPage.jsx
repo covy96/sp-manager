@@ -49,10 +49,10 @@ function csvEscape(v) {
 function KpiCard({ label, value, color, sub }) {
   const { T } = useTheme();
   return (
-    <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
-      <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"'Space Grotesk', sans-serif" }}>{value}</div>
-      {sub && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>{sub}</div>}
+    <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+      <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>{label}</div>
+      <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:color||T.ink, fontFamily:"var(--font-ui)" }}>{value}</div>
+      {sub && <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>{sub}</div>}
     </div>
   );
 }
@@ -61,8 +61,8 @@ function TabBtn({ active, onClick, children }) {
   const { T } = useTheme();
   return (
     <button onClick={onClick} style={{
-      padding:'7px 16px', border:'none', background:'transparent', cursor:'pointer',
-      fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
+      padding:'8px 16px', border:'none', background:'transparent', cursor:'pointer',
+      fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
       color: active ? T.navy : T.muted,
       borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`,
     }}>{children}</button>
@@ -73,11 +73,11 @@ function TabBtn({ active, onClick, children }) {
 export default function ReportPage() {
   const { T } = useTheme();
   usePageTitleOnMount("Report");
-  const thSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 14px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left', whiteSpace:'nowrap' };
-  const tdSt = { padding:'9px 14px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, color:T.ink };
-  const monoSt = { fontFamily:"'IBM Plex Mono', monospace", fontSize:11 };
-  const tooltipSt = { contentStyle:{ background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius:0, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.ink }, formatter: v => formatOre(v) };
-  const axisSt = { tick:{ fill:T.muted, fontSize:9, fontFamily:"'IBM Plex Mono', monospace" }, axisLine:false, tickLine:false };
+  const thSt = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, padding:'8px 16px', borderBottom:`0.5px solid ${T.border}`, textAlign:'left', whiteSpace:'nowrap' };
+  const tdSt = { padding:'10px 16px', borderBottom:`0.5px solid ${T.border}`, fontSize:12, color:T.ink };
+  const monoSt = { fontFamily:"var(--font-label)", fontSize:11 };
+  const tooltipSt = { contentStyle:{ background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius:0, fontFamily:"var(--font-label)", fontSize:11, color:T.ink }, formatter: v => formatOre(v) };
+  const axisSt = { tick:{ fill:T.muted, fontSize:10, fontFamily:"var(--font-label)" }, axisLine:false, tickLine:false };
   const { studioId, loading:studioLoading } = useStudio();
   const permissions = usePermissions();
   const { plan } = usePlan();
@@ -261,27 +261,27 @@ export default function ReportPage() {
   };
 
   if (!studioLoading && !permissions.canViewReport) return (
-    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
 
   if (plan.id !== 'pro') return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:300, gap:16 }}>
       <div style={{ fontSize:32 }}>🔒</div>
       <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>Funzionalità Pro</div>
-      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
+      <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, textAlign:'center', maxWidth:360 }}>
         Il Report è disponibile solo per il piano Pro.<br/>Fai l'upgrade per accedere ai report avanzati.
       </div>
-      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
+      <button onClick={()=>navigate('/impostazioni/piano')} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'10px 24px', cursor:'pointer' }}>
         Vedi piani →
       </button>
     </div>
   );
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* ── TOOLBAR ── */}
-      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '12px 14px' : '12px 18px', display:'flex', flexDirection:'column', gap:10, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '12px 16px' : '12px 20px', display:'flex', flexDirection:'column', gap:10, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
         {/* Riga 1: toggle + esporta */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
@@ -293,24 +293,24 @@ export default function ReportPage() {
           />
 
           {/* Esporta */}
-          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
+          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
             Esporta CSV
           </button>
         </div>
 
         {/* Riga 2: navigazione periodo */}
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>←</button>
-          <div style={{ flex:1, fontFamily:"'Space Grotesk', sans-serif", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center' }}>
+          <button onClick={goBack} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:12 }}>←</button>
+          <div style={{ flex:1, fontFamily:"var(--font-ui)", fontSize:14, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', textAlign:'center' }}>
             {periodLabel}
           </div>
-          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:12 }}>→</button>
-          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
+          <button onClick={goNext} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.ink, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:12 }}>→</button>
+          <button onClick={goToday} style={{ background:T.bg, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'6px 12px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em' }}>Oggi</button>
         </div>
       </div>
 
       {/* ── KPI ── */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 16 }}>
         <KpiCard
           label={mode==="week"?"Ore settimana":"Ore del mese"}
           value={formatOre(oreTotali)}
@@ -328,11 +328,11 @@ export default function ReportPage() {
       </div>
 
       {/* ── GRAFICI ── */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 
         {/* Andamento temporale */}
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 18px', position:'relative' }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px', position:'relative' }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>
             Andamento ore — {mode==="week"?"per giorno":"per settimana"}
             <span style={{ marginLeft:10, opacity:0.5, fontWeight:400 }}>clicca una barra per il dettaglio</span>
           </div>
@@ -350,9 +350,9 @@ export default function ReportPage() {
         </div>
 
         {/* Grafico per vista selezionata */}
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 18px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'16px 20px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
           {/* Tab vista */}
-          <div style={{ marginBottom:14 }}>
+          <div style={{ marginBottom:16 }}>
             <SlidingTabs
               tabs={[
                 { key:"progetto", label:"Per progetto" },
@@ -365,7 +365,7 @@ export default function ReportPage() {
           </div>
           <div style={{ height:200 }}>
             {chartData.length === 0 ? (
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
                 Nessun dato nel periodo
               </div>
             ) : (
@@ -373,7 +373,7 @@ export default function ReportPage() {
                 <BarChart data={chartData} layout="vertical">
                   <CartesianGrid stroke={T.border} strokeDasharray="3 3"/>
                   <XAxis type="number" {...axisSt} stroke="transparent" tickFormatter={v=>formatOre(v)}/>
-                  <YAxis type="category" dataKey="name" width={120} {...axisSt} stroke="transparent" tick={{...axisSt.tick,fontSize:9}}/>
+                  <YAxis type="category" dataKey="name" width={120} {...axisSt} stroke="transparent" tick={{...axisSt.tick,fontSize:10}}/>
                   <Tooltip {...tooltipSt}/>
                   <Bar dataKey="hours" fill={T.navy} radius={[0,2,2,0]}/>
                 </BarChart>
@@ -384,11 +384,11 @@ export default function ReportPage() {
       </div>
 
       {/* ── TABELLE DETTAGLIO ── */}
-      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap:10, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : '1fr 1fr', gap: 16, alignItems:'start' }}>
 
         {/* Tabella ore per utente — sticky left */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', position:'sticky', top:0, alignSelf:'start', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per utente
           </div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -415,7 +415,7 @@ export default function ReportPage() {
 
         {/* Tabella ore per progetto */}
         <div style={{ background:T.surface, border:`1px solid ${T.border}`, overflowX:'auto', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.25em', textTransform:'uppercase', color:T.muted, padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
             Dettaglio per progetto
           </div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -448,13 +448,13 @@ export default function ReportPage() {
 
       {/* Loading overlay */}
       {loading && (
-        <div style={{ position:'fixed', bottom:24, right:24, background:T.navy, color:T.bg, padding:'8px 16px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.05em' }}>
+        <div style={{ position:'fixed', bottom:24, right:24, background:T.navy, color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.05em' }}>
           Caricamento...
         </div>
       )}
 
       {error && (
-        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:16, color:T.red, fontFamily:"'IBM Plex Mono', monospace", fontSize:11 }}>
+        <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:16, color:T.red, fontFamily:"var(--font-label)", fontSize:11 }}>
           {error}
         </div>
       )}
@@ -479,26 +479,26 @@ export default function ReportPage() {
             }}
           >
             {/* Header */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:`0.5px solid ${T.border}` }}>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:`0.5px solid ${T.border}` }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>
                 {barPopup.label} — per utente
               </div>
               <button onClick={() => setBarPopup(null)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16, lineHeight:1, padding:0 }}>×</button>
             </div>
             {/* Righe utenti */}
             {barPopup.users.length === 0 ? (
-              <div style={{ padding:'16px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Nessun dato</div>
+              <div style={{ padding:'16px 16px', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Nessun dato</div>
             ) : (
               <div>
                 {barPopup.users.map((u, i) => (
-                  <div key={u.name} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 14px', borderTop: i > 0 ? `0.5px solid ${T.border}` : 'none' }}>
+                  <div key={u.name} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderTop: i > 0 ? `0.5px solid ${T.border}` : 'none' }}>
                     <span style={{ fontSize:12, color:T.ink, fontWeight: i === 0 ? 600 : 400 }}>{u.name}</span>
-                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: i === 0 ? T.navy : T.muted, fontWeight: i === 0 ? 600 : 400 }}>{formatOre(u.hours)}</span>
+                    <span style={{ fontFamily:"var(--font-label)", fontSize:11, color: i === 0 ? T.navy : T.muted, fontWeight: i === 0 ? 600 : 400 }}>{formatOre(u.hours)}</span>
                   </div>
                 ))}
-                <div style={{ padding:'8px 14px', borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'space-between', background:T.bg }}>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted }}>Totale</span>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:600, color:T.navy }}>
+                <div style={{ padding:'8px 16px', borderTop:`0.5px solid ${T.border}`, display:'flex', justifyContent:'space-between', background:T.bg }}>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:T.muted }}>Totale</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:11, fontWeight:600, color:T.navy }}>
                     {formatOre(barPopup.users.reduce((s, u) => s + u.hours, 0))}
                   </span>
                 </div>

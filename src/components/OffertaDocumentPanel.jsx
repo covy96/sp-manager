@@ -13,7 +13,7 @@ import {
 import { generaOffertaPdf } from "../lib/offertaPdf";
 import { generaOffertaDocx } from "../lib/offertaDocx";
 
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono = { fontFamily: "var(--font-label)" };
 
 // Testo senza i marcatori **…**, per l'anteprima nel pannello
 const pulisci = (t) => String(t).replace(/\*\*/g, "");
@@ -184,20 +184,20 @@ export default function OffertaDocumentPanel({
 
   // ── stili ──────────────────────────────────────────────────────────────────
   const inputSt = {
-    width: "100%", padding: "7px 10px", boxSizing: "border-box",
+    width: "100%", padding: "8px 10px", boxSizing: "border-box",
     border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,
     background: T.surface, color: T.ink, fontSize: 12,
-    fontFamily: "'Space Grotesk', sans-serif", outline: "none",
+    fontFamily: "var(--font-ui)", outline: "none",
   };
-  const labelSt = { ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 5 };
-  const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 18px", marginBottom: 12 };
+  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
+  const cardSt = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "16px 20px", marginBottom: 12 };
   const btn = (primary, extra = {}) => ({
     background: primary ? T.navy : "transparent",
     color: primary ? T.bg : T.ink,
     border: primary ? "none" : `0.5px solid ${T.borderMd}`,
     borderRadius: T.radiusSm, ...mono, fontSize: 11,
     letterSpacing: "0.08em", textTransform: "uppercase",
-    padding: "9px 18px", cursor: "pointer", ...extra,
+    padding: "10px 20px", cursor: "pointer", ...extra,
   });
 
   // ── mutatori ───────────────────────────────────────────────────────────────
@@ -473,7 +473,7 @@ export default function OffertaDocumentPanel({
     const len = String(value || placeholder || "").length;
     return (
       <input value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 3px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%", ...extra }} />
+        style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 4px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%", ...extra }} />
     );
   };
 
@@ -486,18 +486,18 @@ export default function OffertaDocumentPanel({
         border: `1px solid ${T.glassBorder}`, boxShadow: T.shadowLg, borderRadius: T.radiusLg,
       }}>
         {/* Testata */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 26px 14px", borderBottom: `0.5px solid ${T.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px 16px", borderBottom: `0.5px solid ${T.border}` }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 3 }}>{isCreate ? "Nuova offerta" : "Documento offerta"}</div>
+            <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 4 }}>{isCreate ? "Nuova offerta" : "Documento offerta"}</div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {isCreate
                 ? (ana.nome_offerta || "Crea offerta dal documento")
                 : `${numeroEdit.trim() || offerta?.numero_offerta} — ${nomeEdit.trim() || offerta?.nome_offerta}`}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
             {!isCreate && versioneAttiva != null && (
-              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 999, padding: "5px 12px", whiteSpace: "nowrap" }}>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600, color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" }}>
                 Versione {versioneAttiva}
               </span>
             )}
@@ -506,7 +506,7 @@ export default function OffertaDocumentPanel({
         </div>
 
         {/* Corpo scrollabile */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 26px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
 
           {/* Anagrafica offerta — solo in creazione */}
           {isCreate && (
@@ -534,7 +534,7 @@ export default function OffertaDocumentPanel({
                     <div style={{ position: "absolute", left: 0, right: 0, top: "100%", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, zIndex: 50, maxHeight: 200, overflowY: "auto" }}>
                       {clientSuggestions.map(c => (
                         <button key={c.id} type="button" onMouseDown={() => { onClienteChange(c.full_name); setClientSuggestions([]); }}
-                          style={{ display: "block", width: "100%", padding: "9px 12px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink, fontFamily: "'Space Grotesk', sans-serif" }}>
+                          style={{ display: "block", width: "100%", padding: "10px 12px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink, fontFamily: "var(--font-ui)" }}>
                           {c.full_name}
                         </button>
                       ))}
@@ -564,12 +564,12 @@ export default function OffertaDocumentPanel({
                   {versioni.map(v => {
                     const totV = calcolaTotali(normalizzaDocumento(v.doc, offerta, tpl), tpl).totale;
                     return (
-                    <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
+                    <div key={v.n} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, background: versioneAttiva === v.n ? T.surface2 : "transparent" }}>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>Versione {v.n}</span>
                       <span style={{ ...mono, fontSize: 10, color: T.muted, flex: 1 }}>{formattaData(v.ts)}</span>
                       <span style={{ ...mono, fontSize: 11, fontWeight: 600, color: versioneAttiva === v.n ? T.navy : T.ink }}>{euro(totV)}</span>
                       <button type="button" onClick={() => caricaVersione(v)}
-                        style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "5px 12px", cursor: "pointer" }}>
+                        style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "6px 12px", cursor: "pointer" }}>
                         Carica
                       </button>
                       <button type="button" onClick={() => setMenuVer(menuVer === v.n ? null : v.n)} title="Altre azioni"
@@ -577,7 +577,7 @@ export default function OffertaDocumentPanel({
                       {menuVer === v.n && (
                         <div style={{ position: "absolute", right: 6, top: "100%", marginTop: 2, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, boxShadow: T.shadowMd, overflow: "hidden", minWidth: 150 }}>
                           <button type="button" onClick={() => eliminaVersione(v)}
-                            style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, ...mono, fontSize: 11, padding: "9px 12px" }}>
+                            style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: T.red, ...mono, fontSize: 11, padding: "10px 12px" }}>
                             Elimina versione
                           </button>
                         </div>
@@ -621,7 +621,7 @@ export default function OffertaDocumentPanel({
                   <div style={{ position: "absolute", left: 0, right: 0, top: "100%", zIndex: 20, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
                     {clienteSugg.map(c => (
                       <button key={c.id} type="button" onMouseDown={() => { setClienteEdit(c.full_name); setClienteSugg([]); }}
-                        style={{ display: "block", width: "100%", textAlign: "left", padding: "7px 12px", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink }}>
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink }}>
                         {c.full_name}
                       </button>
                     ))}
@@ -637,24 +637,24 @@ export default function OffertaDocumentPanel({
           {/* Intestazione — fac-simile della lettera, parti in rosso editabili */}
           <div style={cardSt}>
             <div style={{ ...labelSt, marginBottom: 4 }}>Intestazione — lettera</div>
-            <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginBottom: 14 }}>
+            <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginBottom: 16 }}>
               Le parti in <span style={{ color: T.red, fontWeight: 600 }}>rosso</span> sono modificabili: clicca e scrivi. È l'anteprima della pagina dopo la copertina.
             </div>
 
-            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "18px 22px", fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, lineHeight: 2, color: T.ink }}>
+            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: "20px 24px", fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 2, color: T.ink }}>
               <div style={{ textAlign: "right", marginBottom: 12 }}>
                 {campoInline(doc.luogo, v => set({ luogo: v }), "Milano")} lì,{" "}
                 <input type="date" value={doc.data} onChange={e => set({ data: e.target.value })}
-                  style={{ display: "inline-block", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 3px", outline: "none" }} />
+                  style={{ display: "inline-block", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 4px", outline: "none" }} />
               </div>
               <div style={{ fontWeight: 600, marginBottom: 2 }}>
                 {numeroEdit.trim() || offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER {campoInline(doc.oggettoIncarico, v => set({ oggettoIncarico: v }), "oggetto dell'incarico", { textTransform: "uppercase" })}.
               </div>
-              <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 14px" }} />
+              <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 16px" }} />
               <div style={{ marginBottom: 12 }}>OGGETTO: Offerta di prestazioni professionali.</div>
               <div style={{ marginBottom: 12 }}>
                 <select value={doc.destinatario.appellativo || "Spettabile"} onChange={e => setDest("appellativo", e.target.value)}
-                  style={{ border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 3px", outline: "none", cursor: "pointer" }}>
+                  style={{ border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 4px", outline: "none", cursor: "pointer" }}>
                   <option value="Spettabile">Spettabile</option>
                   <option value="Egregio">Egregio</option>
                   <option value="Gentile">Gentile</option>
@@ -666,16 +666,16 @@ export default function OffertaDocumentPanel({
               <div>In attesa di un vostro cordiale riscontro porgiamo i nostri migliori saluti.</div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16, marginTop: 14, alignItems: "end" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 16, marginTop: 16, alignItems: "end" }}>
               <div>
                 <div style={labelSt}>Indirizzo in copertina</div>
                 <input value={doc.destinatario.indirizzo} onChange={e => setDest("indirizzo", e.target.value)} placeholder="Via Gaudenzio Ferrari, Milano" style={inputSt} />
               </div>
-              <div style={{ display: "flex", gap: 18, flexWrap: "wrap", paddingBottom: 8 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap", paddingBottom: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                   <Check checked={doc.copertina} onChange={() => set({ copertina: !doc.copertina })} /> Copertina
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                   <Check checked={doc.firma} onChange={() => set({ firma: !doc.firma })} /> Firma
                 </label>
               </div>
@@ -705,13 +705,13 @@ export default function OffertaDocumentPanel({
                         const len = String(val || part || "").length;
                         return (
                           <input key={i} value={val} onChange={e => setCampoInq(key, e.target.value)} placeholder={part}
-                            style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 3px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%" }} />
+                            style={{ display: "inline-block", verticalAlign: "baseline", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", lineHeight: "inherit", padding: "0 4px", outline: "none", width: `${Math.max(len + 1, 4)}ch`, maxWidth: "100%" }} />
                         );
                       });
                     })()}
                   </div>
                 )}
-                <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 10, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 10, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                   {(doc.inquadramento.testoLibero || "").trim() ? (
                     <>
                       <span>Stai modificando tutto il testo liberamente.</span>
@@ -729,11 +729,11 @@ export default function OffertaDocumentPanel({
           </div>
 
           {/* Sezioni prestazione */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 18, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 20, marginBottom: 8 }}>
             <div style={{ ...labelSt, marginBottom: 0 }}>Prestazioni</div>
             <div style={{ position: "relative", width: 230, maxWidth: "55%" }}>
               <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca voce (es. CILA)…"
-                style={{ ...inputSt, height: 30, padding: "5px 10px", fontSize: 11.5 }} />
+                style={{ ...inputSt, height: 30, padding: "6px 10px", fontSize: 11.5 }} />
               {ricerca.trim().length >= 2 && (
                 <div style={{ position: "absolute", left: 0, right: 0, top: "100%", marginTop: 4, zIndex: 40, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: 12, boxShadow: T.shadowMd, maxHeight: 300, overflowY: "auto" }}>
                   {risultatiRicerca.length === 0 ? (
@@ -742,7 +742,7 @@ export default function OffertaDocumentPanel({
                     const attiva = !!doc.sezioni?.[r.sezId]?.voci?.[r.voceId]?.attiva;
                     return (
                       <button key={r.sezId + r.voceId} type="button" onClick={() => toggleDaRicerca(r)}
-                        style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: `0.5px solid ${T.border}`, cursor: "pointer", padding: "9px 11px" }}>
+                        style={{ display: "flex", alignItems: "flex-start", gap: 8, width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: `0.5px solid ${T.border}`, cursor: "pointer", padding: "10px 12px" }}>
                         <span style={{ marginTop: 1, color: attiva ? T.green : T.muted, fontSize: 13, lineHeight: 1 }}>{attiva ? "☑" : "☐"}</span>
                         <span style={{ minWidth: 0, flex: 1 }}>
                           {r.nomeApp && <span style={{ ...mono, fontSize: 9.5, fontWeight: 700, color: T.navy, letterSpacing: "0.06em" }}>{r.nomeApp}</span>}
@@ -766,14 +766,14 @@ export default function OffertaDocumentPanel({
                   <Check checked={cfgS.attiva} onChange={() => { setSez(sez.id, { attiva: !cfgS.attiva }); setAperte(a => ({ ...a, [sez.id]: !cfgS.attiva })); }} />
                   <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => setAperte(a => ({ ...a, [sez.id]: !aperta }))}>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sez.titolo}</div>
-                    <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 2 }}>
+                    <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
                       {sez.modoPrezzo === "voci" ? "prezzo per voce" : "prezzo forfettario"}
                     </div>
                   </div>
                   {sez.modoPrezzo === "forfait" ? (
                     <input type="number" value={cfgS.prezzo} onChange={e => setSez(sez.id, { prezzo: e.target.value })}
                       disabled={!cfgS.attiva} placeholder="€"
-                      style={{ ...inputSt, width: 110, padding: "5px 8px", fontSize: 12, textAlign: "right" }} />
+                      style={{ ...inputSt, width: 110, padding: "6px 8px", fontSize: 12, textAlign: "right" }} />
                   ) : (
                     <div style={{ ...mono, fontSize: 12, color: T.navy, fontWeight: 600, width: 110, textAlign: "right" }}>{euro(imp)}</div>
                   )}
@@ -791,7 +791,7 @@ export default function OffertaDocumentPanel({
                         {g.voci.map(v => {
                           const vc = cfgS.voci[v.id];
                           return (
-                            <div key={v.id} style={{ display: "flex", gap: 9, padding: "7px 0", borderBottom: `0.5px solid ${T.border}`, opacity: vc.attiva ? 1 : 0.5 }}>
+                            <div key={v.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, opacity: vc.attiva ? 1 : 0.5 }}>
                               <div style={{ paddingTop: 2 }}>
                                 <Check checked={vc.attiva} onChange={() => setVoce(sez.id, v.id, { attiva: !vc.attiva })} />
                               </div>
@@ -809,7 +809,7 @@ export default function OffertaDocumentPanel({
                                 const q = isCad ? quantitaVoce(v, vc) : 1;
                                 const unit = Number(vc.prezzo) || 0;
                                 return (
-                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
                                     <input type="number" value={vc.prezzo} onChange={e => setVoce(sez.id, v.id, { prezzo: e.target.value })}
                                       disabled={!vc.attiva} placeholder={v.prezzoLabel || "€"}
                                       style={{ ...inputSt, width: 100, height: 30, padding: "4px 8px", fontSize: 11.5, textAlign: "right" }} />
@@ -831,11 +831,11 @@ export default function OffertaDocumentPanel({
           })}
 
           {/* Testi fissi */}
-          <div style={{ ...labelSt, marginTop: 18, marginBottom: 8 }}>Testi fissi</div>
+          <div style={{ ...labelSt, marginTop: 20, marginBottom: 8 }}>Testi fissi</div>
           <div style={cardSt}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 22px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px" }}>
               {BLOCCHI_FISSI.map(b => (
-                <label key={b.id} style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
+                <label key={b.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                   <Check checked={doc.blocchi[b.id]} onChange={() => toggleBlocco(b.id)} /> {b.titolo}
                 </label>
               ))}
@@ -843,7 +843,7 @@ export default function OffertaDocumentPanel({
           </div>
 
           {/* Pagamento */}
-          <div style={{ ...labelSt, marginTop: 18, marginBottom: 8 }}>Modalità di pagamento</div>
+          <div style={{ ...labelSt, marginTop: 20, marginBottom: 8 }}>Modalità di pagamento</div>
           <div style={cardSt}>
             {MODALITA_PAGAMENTO.map(o => {
               const selected = (doc.pagamento.opzioni || []).includes(o.id);
@@ -856,7 +856,7 @@ export default function OffertaDocumentPanel({
                     </span>
                   </label>
                   {o.rate && selected && (
-                    <div style={{ marginTop: 8, marginLeft: 26, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ marginTop: 8, marginLeft: 28, display: "flex", flexDirection: "column", gap: 6 }}>
                       {(doc.pagamento.rateC || []).map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <input type="number" min={0} max={100} value={r.percentuale}
@@ -872,7 +872,7 @@ export default function OffertaDocumentPanel({
                       ))}
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <button type="button" onClick={addRateC}
-                          style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "5px 12px", cursor: "pointer" }}>
+                          style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer" }}>
                           + Aggiungi rata
                         </button>
                         {(() => {
@@ -896,13 +896,13 @@ export default function OffertaDocumentPanel({
           </div>
 
           {/* Riepilogo economico */}
-          <div style={{ ...labelSt, marginTop: 18, marginBottom: 8 }}>Compensi e oneri</div>
+          <div style={{ ...labelSt, marginTop: 20, marginBottom: 8 }}>Compensi e oneri</div>
           <div style={cardSt}>
             {tot.righe.length === 0 && (
               <div style={{ ...mono, fontSize: 11, color: T.muted, textAlign: "center", padding: "10px 0" }}>Nessuna prestazione selezionata</div>
             )}
             {tot.righe.map(r => (
-              <div key={r.lettera} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `0.5px solid ${T.border}` }}>
+              <div key={r.lettera} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `0.5px solid ${T.border}` }}>
                 <span style={{ ...mono, fontSize: 10, color: T.muted, width: 24 }}>({r.lettera})</span>
                 <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: T.ink }}>{r.titolo}</span>
                 <span style={{ ...mono, fontSize: 12, color: T.ink }}>{euro(r.importo)}</span>
@@ -930,7 +930,7 @@ export default function OffertaDocumentPanel({
         </div>
 
         {/* Barra azioni */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "14px 26px", borderTop: `0.5px solid ${T.border}`, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "16px 28px", borderTop: `0.5px solid ${T.border}`, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <button onClick={onClose} style={btn(false)}>Annulla</button>
             {createError && <span style={{ ...mono, fontSize: 11, color: T.red }}>{createError}</span>}
@@ -959,22 +959,22 @@ export default function OffertaDocumentPanel({
     {/* Modal: aggiorna la commessa collegata dopo modifica offerta accettata */}
     {syncModal && (
       <div className="asm-modal-bg" style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-        <div className="asm-modal-content" style={{ width: "100%", maxWidth: 520, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, boxShadow: T.shadowLg, borderRadius: T.radiusLg, padding: 26, maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="asm-modal-content" style={{ width: "100%", maxWidth: 520, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, boxShadow: T.shadowLg, borderRadius: T.radiusLg, padding: 28, maxHeight: "90vh", overflowY: "auto" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
             <div>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.ink }}>Aggiorna commessa</div>
-              <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 3 }}>Il totale dell'offerta è cambiato.</div>
+              <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>Il totale dell'offerta è cambiato.</div>
             </div>
             <button onClick={() => setSyncModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20 }}>×</button>
           </div>
 
-          <div style={{ display: "flex", gap: 16, margin: "14px 0", padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
+          <div style={{ display: "flex", gap: 16, margin: "16px 0", padding: "12px 16px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
             <div>
-              <div style={{ ...labelSt, marginBottom: 3 }}>Totale attuale</div>
+              <div style={{ ...labelSt, marginBottom: 4 }}>Totale attuale</div>
               <div style={{ ...mono, fontSize: 14, color: T.muted }}>{euro(syncModal.oldBase)}</div>
             </div>
             <div style={{ borderLeft: `0.5px solid ${T.border}`, paddingLeft: 16 }}>
-              <div style={{ ...labelSt, marginBottom: 3 }}>Nuovo totale</div>
+              <div style={{ ...labelSt, marginBottom: 4 }}>Nuovo totale</div>
               <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: T.navy }}>{euro(syncModal.newTotal)}</div>
             </div>
           </div>
@@ -993,11 +993,11 @@ export default function OffertaDocumentPanel({
             <>
               <div style={{ ...mono, fontSize: 10, color: T.muted, marginBottom: 10 }}>Ci sono {syncModal.pagate.length} rate già pagate ({euro(syncModal.sommaPagate)}). Come procedo?</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <button onClick={() => applicaSync("aggiornaTutto")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "14px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, cursor: "pointer" }}>
+                <button onClick={() => applicaSync("aggiornaTutto")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "16px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, cursor: "pointer" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>Aggiorna tutto alla nuova versione</div>
                   <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 4, lineHeight: 1.5 }}>Tutte le rate (comprese le pagate) vengono ricalcolate sul nuovo totale.</div>
                 </button>
-                <button onClick={() => setSyncStep("tieni")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "14px", background: T.surface, border: `1px solid ${T.navy}`, borderRadius: T.radius, cursor: "pointer" }}>
+                <button onClick={() => setSyncStep("tieni")} disabled={syncSaving} className="asm-card" style={{ textAlign: "left", padding: "16px", background: T.surface, border: `1px solid ${T.navy}`, borderRadius: T.radius, cursor: "pointer" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>Tieni i pagamenti e ridistribuisci il resto</div>
                   <div style={{ ...mono, fontSize: 9.5, color: T.muted, marginTop: 4, lineHeight: 1.5 }}>Le rate pagate restano invariate; il residuo di {euro(syncModal.residuo)} viene ripartito sulle rate successive (modificabili).</div>
                 </button>

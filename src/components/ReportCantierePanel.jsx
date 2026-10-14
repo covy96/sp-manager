@@ -8,6 +8,7 @@ import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { handleListKeyDown } from "../lib/listKeyDown";
 import { useStudio } from "../hooks/useStudio";
+import SlidingTabs from "./SlidingTabs";
 
 // Registra i font Groteska globalmente (una volta sola)
 registerGroteskaFonts();
@@ -16,16 +17,16 @@ registerGroteskaFonts();
 const FL = ({ children, required }) => {
   const { T } = useTheme();
   return (
-    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 }}>
+    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>
       {children}{required && <span style={{ color:'#ef4444', marginLeft:2 }}>*</span>}
     </div>
   );
 };
 
 const inputCss = (T) => ({
-  width:'100%', padding:'7px 10px', boxSizing:'border-box',
+  width:'100%', padding:'8px 10px', boxSizing:'border-box',
   border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink,
-  fontSize:12, fontFamily:"'Space Grotesk', sans-serif", outline:'none',
+  fontSize:12, fontFamily:"var(--font-ui)", outline:'none',
 });
 
 const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
@@ -34,16 +35,16 @@ const Btn = ({ children, onClick, disabled, ghost, danger, style={} }) => {
     <button onClick={onClick} disabled={disabled} style={{
       background:'transparent', border:`0.5px solid ${danger ? '#ef4444' : T.borderMd}`, borderRadius: T.radiusSm,
       color: danger ? '#ef4444' : T.ink,
-      fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em',
-      textTransform:'uppercase', padding:'8px 18px', cursor:disabled?'not-allowed':'pointer',
+      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em',
+      textTransform:'uppercase', padding:'8px 20px', cursor:disabled?'not-allowed':'pointer',
       opacity:disabled?0.5:1, ...style,
     }}>{children}</button>
   );
   return (
     <button onClick={onClick} disabled={disabled} style={{
       background:T.navy, color:T.bg, border:'none',
-      fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase',
-      padding:'8px 18px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style,
+      fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase',
+      padding:'8px 20px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style,
     }}>{children}</button>
   );
 };
@@ -237,7 +238,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
       headStyles: {
         font: tblLFont,
         fontStyle: "normal",
-        fontSize: 7,
+        fontSize: 9,
         textColor: [160, 160, 160],
         cellPadding: { top: 3, bottom: 5, left: 2, right: 2 },
         lineWidth: { bottom: 0.4 },
@@ -246,7 +247,7 @@ async function generatePdf({ report, project, studio, fotos = [] }) {
       bodyStyles: {
         font: tblFont,
         fontStyle: "normal",
-        fontSize: 9,
+        fontSize: 10,
         textColor: [30, 30, 30],
         cellPadding: { top: 5, bottom: 5, left: 2, right: 2 },
         lineWidth: { bottom: 0.2 },
@@ -828,10 +829,10 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       background: reports.length > 0 ? T.navyLight : 'transparent',
       padding:'6px 12px', cursor:'pointer',
     }}>
-      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
+      <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:reports.length>0?T.navy:T.muted, fontWeight:600 }}>Report</span>
       {reports.length > 0
-        ? <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>{reports.length}</span>
-        : <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>+ Crea</span>}
+        ? <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>{reports.length}</span>
+        : <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>+ Crea</span>}
     </button>
   );
 
@@ -841,7 +842,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
       <div style={{ width:'100%', maxWidth:800, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column', boxShadow:T.shadowLg }}>
 
         {/* ── Header modal ── */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 24px 14px', borderBottom:`1px solid ${T.border}`, borderRadius:`${T.radiusLg} ${T.radiusLg} 0 0`, position:'sticky', top:0, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, zIndex:1 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'20px 24px 16px', borderBottom:`1px solid ${T.border}`, borderRadius:`${T.radiusLg} ${T.radiusLg} 0 0`, position:'sticky', top:0, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, zIndex:1 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {view !== "list" && (
               <button onClick={()=>{ setViewTracked("list"); setEditingId(null); setPreviewReport(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:18, padding:0 }}>←</button>
@@ -852,7 +853,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   {view==="list" ? "Report di Cantiere" : view==="header" ? "Intestazione PDF" : view==="preview" ? (previewReport?.nome_interno || previewReport?.titolo || "Report") : editingId ? "Modifica Report" : "Nuovo Report"}
                 </span>
               </div>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
                 {project?.name}{project?.client?` · ${project.client}`:""}
               </div>
             </div>
@@ -870,11 +871,11 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
           {view === "list" && (
             <>
               {loading ? (
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, textAlign:'center', padding:'40px 0' }}>Caricamento...</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, textAlign:'center', padding:'40px 0' }}>Caricamento...</div>
               ) : reports.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'40px 0' }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, marginBottom:20 }}>Nessun report ancora</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.muted, marginBottom:20 }}>Nessun report ancora</div>
                   {canManage && <Btn onClick={openNew}>+ Crea primo report</Btn>}
                 </div>
               ) : (
@@ -888,10 +889,10 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     {reports.map(r => {
                       const isDel = confirmDel === r.id;
                       return (
-                        <div key={r.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}`, cursor:'pointer' }}
+                        <div key={r.id} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 16px', background:T.bg, border:`0.5px solid ${T.border}`, cursor:'pointer' }}
                           onClick={(e)=>{ if(!e.target.closest('button')) openPreview(r); }}>
                           <div style={{ width:36, height:36, background:T.navyLight, border:`0.5px solid ${T.navy}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:700, color:T.navy }}>#{r.numero}</span>
+                            <span style={{ fontFamily:"var(--font-label)", fontSize:11, fontWeight:700, color:T.navy }}>#{r.numero}</span>
                           </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             {/* Nome nell'app */}
@@ -900,24 +901,24 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             </div>
                             {/* Titolo PDF (se diverso) */}
                             {r.titolo && r.titolo !== r.nome_interno && (
-                              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, marginTop:1 }}>
+                              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, marginTop:1 }}>
                                 PDF: {r.titolo}
                               </div>
                             )}
                             <div style={{ display:'flex', gap:12, marginTop:2, flexWrap:'wrap' }}>
-                              <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{formatDt(r.data_ora)}</span>
-                              {r.luogo && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{r.luogo}</span>}
+                              <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>{formatDt(r.data_ora)}</span>
+                              {r.luogo && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>{r.luogo}</span>}
                               {Array.isArray(r.presenti) && r.presenti.length > 0 && (
-                                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>{r.presenti.length} presenti</span>
+                                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>{r.presenti.length} presenti</span>
                               )}
                             </div>
                           </div>
                           <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                             {canManage && isDel ? (
                               <>
-                                <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, alignSelf:'center' }}>Sicuro?</span>
-                                <button onClick={()=>handleDelete(r.id)} style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
-                                <button onClick={()=>setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
+                                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, alignSelf:'center' }}>Sicuro?</span>
+                                <button onClick={()=>handleDelete(r.id)} style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"var(--font-label)", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>Sì</button>
+                                <button onClick={()=>setConfirmDel(null)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>No</button>
                               </>
                             ) : (
                               <>
@@ -925,18 +926,18 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                                   const { data:rf } = await supabase.from("report_cantiere_foto").select("*").eq("report_id",r.id).order("ordine",{ascending:true});
                                   generatePdf({report:r,project,studio,fotos:rf||[]});
                                 }}
-                                  style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
+                                  style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                   ↓ PDF
                                 </button>
                                 {canManage && (
                                   <button onClick={()=>openEdit(r)}
-                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
+                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.05em', padding:'4px 10px', cursor:'pointer' }}>
                                     Modifica
                                   </button>
                                 )}
                                 {canManage && (
                                   <button onClick={()=>setConfirmDel(r.id)}
-                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
+                                    style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:'#ef4444', fontFamily:"var(--font-label)", fontSize:10, padding:'4px 10px', cursor:'pointer' }}>
                                     ✕
                                   </button>
                                 )}
@@ -968,28 +969,27 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     )}
                     <input ref={fileRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display:'none' }}/>
                     <button onClick={()=>fileRef.current?.click()} disabled={uploadingLogo}
-                      style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
+                      style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
                       {uploadingLogo ? "..." : headerForm.report_logo_url ? "Cambia" : "Carica logo"}
                     </button>
                     {headerForm.report_logo_url && (
                       <button onClick={()=>setHeaderForm(h=>({...h,report_logo_url:""}))}
-                        style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, padding:'6px 10px', cursor:'pointer' }}>
+                        style={{ border:`0.5px solid #ef4444`, background:'transparent', color:'#ef4444', fontFamily:"var(--font-label)", fontSize:10, padding:'6px 10px', cursor:'pointer' }}>
                         Rimuovi
                       </button>
                     )}
                   </div>
                   {headerForm.report_logo_url && (
-                    <div style={{ display:'flex', gap:4, marginTop:8 }}>
-                      {[["small","S"],["medium","M"],["large","L"]].map(([val,lbl])=>(
-                        <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_logo_size:val}))}
-                          style={{ width:28, height:28, border:`0.5px solid ${headerForm.report_logo_size===val?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:headerForm.report_logo_size===val?T.navyLight:'transparent', color:headerForm.report_logo_size===val?T.navy:T.muted, cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, fontWeight:600 }}>
-                          {lbl}
-                        </button>
-                      ))}
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, alignSelf:'center', marginLeft:4 }}>dimensione logo</span>
+                    <div style={{ display:'flex', gap:8, marginTop:8, alignItems:"center" }}>
+                      <SlidingTabs
+                        tabs={[{ key:"small", label:"S" }, { key:"medium", label:"M" }, { key:"large", label:"L" }]}
+                        active={headerForm.report_logo_size || "medium"}
+                        onChange={val=>setHeaderForm(h=>({...h,report_logo_size:val}))}
+                      />
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, alignSelf:'center', marginLeft:4 }}>dimensione logo</span>
                     </div>
                   )}
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:5 }}>PNG consigliato · appare in alto a destra</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:6 }}>PNG consigliato · appare in alto a destra</div>
                 </div>
 
                 {/* Font + Switch */}
@@ -1007,7 +1007,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         const sel = headerForm.report_footer_font === val;
                         return (
                           <button key={val} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:val,report_body_font_enabled:false}))}
-                            style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11 }}>
+                            style={{ padding:'6px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11 }}>
                             {label}
                           </button>
                         );
@@ -1015,13 +1015,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     </div>
                     {/* Groteska gruppo */}
                     <div>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.1em' }}>GROTESKA</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.1em' }}>GROTESKA</div>
                       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                         {GROTESKA_VARIANTS.map(g=>{
                           const sel = headerForm.report_footer_font === g.key;
                           return (
                             <button key={g.key} onClick={()=>setHeaderForm(h=>({...h,report_footer_font:g.key}))}
-                              style={{ padding:'5px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11, fontFamily:"'Space Grotesk', sans-serif" }}>
+                              style={{ padding:'6px 12px', border:`0.5px solid ${sel?T.navy:T.borderMd}`, borderRadius: T.radiusSm, background:sel?T.navyLight:'transparent', color:sel?T.navy:T.ink, cursor:'pointer', fontSize:11, fontFamily:"var(--font-ui)" }}>
                               {g.label}
                             </button>
                           );
@@ -1038,7 +1038,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         </button>
                         <div>
                           <div style={{ fontSize:12, color:T.ink, fontWeight:500 }}>Applica a tutto il documento</div>
-                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginTop:1 }}>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:1 }}>
                             Titolo → Bold · Etichette → Regular · Testo → Book
                           </div>
                         </div>
@@ -1049,7 +1049,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               </div>
 
               {/* ── Nome studio + Testo sotto ── */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                 <div>
                   <FL>Nome studio nel PDF</FL>
                   <input type="text" value={headerForm.report_header_name}
@@ -1066,12 +1066,12 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               </div>
 
               {/* Anteprima intestazione */}
-              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'14px 18px' }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
+              <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'16px 20px' }}>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>Anteprima intestazione</div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:14, fontWeight:700, color:T.navy, minHeight:20 }}>{headerForm.report_header_name||""}</div>
-                    <div style={{ fontSize:9, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>{headerForm.report_header_text||""}</div>
+                    <div style={{ fontSize:10, color:T.muted, marginTop:4, whiteSpace:'pre-line', lineHeight:1.7 }}>{headerForm.report_header_text||""}</div>
                   </div>
                   {headerForm.report_logo_url && (
                     <img src={headerForm.report_logo_url} alt="logo" style={{ height:36, maxWidth:110, objectFit:'contain', marginLeft:12 }}/>
@@ -1084,7 +1084,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
               {/* ── Sezione Footer ── */}
               <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:14 }}>Piè di pagina (footer)</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:16 }}>Piè di pagina (footer)</div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
                   {[["report_footer_left","Sinistra"],["report_footer_center","Centro"],["report_footer_right","Destra"]].map(([field,label])=>(
                     <div key={field}>
@@ -1095,19 +1095,19 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     </div>
                   ))}
                 </div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:6 }}>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:6 }}>
                   Usa <strong style={{color:T.ink}}>{"{pagina}"}</strong> e <strong style={{color:T.ink}}>{"{totale}"}</strong> per la numerazione automatica.
                 </div>
                 {/* Anteprima footer */}
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
-                  <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 14px' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>Anteprima footer</div>
+                  <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'10px 16px' }}>
                     <div style={{ height:1, background:'rgba(150,150,150,0.4)', marginBottom:8 }}/>
-                    <div style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:9, color:T.muted,
+                    <div style={{ display:'flex', gap:8, alignItems:'flex-start', fontSize:10, color:T.muted,
                       fontFamily: headerForm.report_footer_font==='times'?'Georgia, serif':headerForm.report_footer_font==='courier'?"'Courier New', monospace":'Arial, sans-serif' }}>
                       {[["report_footer_left","SINISTRA","left"],["report_footer_center","CENTRO","center"],["report_footer_right","DESTRA","right"]].map(([field,lbl,align])=>(
                         <div key={field} style={{ flex:1, borderLeft:`2px solid ${T.border}`, paddingLeft:6, textAlign:align }}>
-                          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, color:T.muted, marginBottom:3, opacity:0.6 }}>{lbl}</div>
+                          <div style={{ fontFamily:"var(--font-label)", fontSize:9, color:T.muted, marginBottom:4, opacity:0.6 }}>{lbl}</div>
                           {(headerForm[field]||"").split("\n").map((line,i)=>(
                             <div key={i} style={{ minHeight:13 }}>{line?(line.replace(/\{pagina\}/g,"1").replace(/\{totale\}/g,"3")):(<span style={{opacity:0.25}}>—</span>)}</div>
                           ))}
@@ -1119,18 +1119,18 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               </div>
 
               {headerMsg && (
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color: headerMsg.startsWith("Errore") ? '#ef4444' : '#16a34a', padding:'8px 12px', background: headerMsg.startsWith("Errore") ? '#fef2f2' : '#f0fdf4', border:`0.5px solid ${headerMsg.startsWith("Errore") ? '#fca5a5' : '#86efac'}` }}>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:11, color: headerMsg.startsWith("Errore") ? '#ef4444' : '#16a34a', padding:'8px 12px', background: headerMsg.startsWith("Errore") ? '#fef2f2' : '#f0fdf4', border:`0.5px solid ${headerMsg.startsWith("Errore") ? '#fca5a5' : '#86efac'}` }}>
                   {headerMsg}
                 </div>
               )}
 
               {/* Popup conferma aggiornamento report esistenti */}
               {confirmUpdateAll && (
-                <div style={{ background: T.navyLight, border:`1px solid ${T.navy}`, padding:'16px 18px', borderRadius:4 }}>
+                <div style={{ background: T.navyLight, border:`1px solid ${T.navy}`, padding:'16px 20px', borderRadius:4 }}>
                   <div style={{ fontSize:14, fontWeight:600, color:T.ink, marginBottom:6 }}>
                     Aggiornare anche i report esistenti?
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginBottom:14 }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:16 }}>
                     Hai {reports.length} report salvati. Vuoi applicare la nuova intestazione anche a quelli già creati?
                   </div>
                   <div style={{ display:'flex', gap:10 }}>
@@ -1163,14 +1163,14 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
             <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
               {/* Badge numero + metadati */}
-              <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:16 }}>
                 <div style={{ width:44, height:44, background:T.navyLight, border:`0.5px solid ${T.navy}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:13, fontWeight:700, color:T.navy }}>#{previewReport.numero}</span>
+                  <span style={{ fontFamily:"var(--font-label)", fontSize:13, fontWeight:700, color:T.navy }}>#{previewReport.numero}</span>
                 </div>
                 <div>
                   <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>{previewReport.nome_interno || previewReport.titolo || "Report"}</div>
                   {previewReport.titolo && previewReport.titolo !== previewReport.nome_interno && (
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.navy, marginTop:2 }}>PDF: {previewReport.titolo}</div>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, marginTop:2 }}>PDF: {previewReport.titolo}</div>
                   )}
                 </div>
               </div>
@@ -1181,8 +1181,8 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   ["Data e ora", formatDt(previewReport.data_ora)],
                   ["Luogo", previewReport.luogo || "—"],
                 ].map(([k,v])=>(
-                  <div key={k} style={{ padding:'10px 14px', background:T.bg, border:`0.5px solid ${T.border}` }}>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>{k}</div>
+                  <div key={k} style={{ padding:'10px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, marginBottom:4 }}>{k}</div>
                     <div style={{ fontSize:13, color:T.ink }}>{v}</div>
                   </div>
                 ))}
@@ -1191,13 +1191,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Presenti */}
               {Array.isArray(previewReport.presenti) && previewReport.presenti.length > 0 && (
                 <div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Presenti</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Presenti</div>
                   <div style={{ overflowX:'auto' }}>
                     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                       <thead>
                         <tr>
                           {["Figura","Azienda","Referente","Email","Telefono"].map(h=>(
-                            <th key={h} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:7, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}` }}>{h}</th>
+                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'4px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}` }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1218,8 +1218,8 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Contenuto */}
               {previewReport.contenuto?.trim() && (
                 <div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Report</div>
-                  <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, whiteSpace:'pre-wrap', padding:'14px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Report</div>
+                  <div style={{ fontSize:13, color:T.ink, lineHeight:1.7, whiteSpace:'pre-wrap', padding:'16px 16px', background:T.bg, border:`0.5px solid ${T.border}` }}>
                     {previewReport.contenuto}
                   </div>
                 </div>
@@ -1228,7 +1228,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               {/* Foto */}
               {previewFotos.length > 0 && (
                 <div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Foto ({previewFotos.length})</div>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(100px, 1fr))', gap:8 }}>
                     {previewFotos.map(f=>(
                       <img key={f.id} src={f.url} alt="" style={{ width:'100%', height:120, objectFit:'cover', border:`0.5px solid ${T.border}` }}/>
@@ -1253,26 +1253,26 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
 
           {/* ══════════════ FORM REPORT ══════════════ */}
           {view === "form" && (
-            <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
               {/* Nome interno (app) + Titolo PDF */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                 <div>
                   <FL required>Nome nell'app</FL>
                   <input type="text" value={form.nome_interno} onChange={e=>setForm(f=>({...f,nome_interno:e.target.value}))}
                     placeholder="Es. Sopralluogo cucina" style={inputSt}/>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>Come appare nella lista dei report</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>Come appare nella lista dei report</div>
                 </div>
                 <div>
                   <FL>Titolo PDF</FL>
                   <input type="text" value={form.titolo} onChange={e=>setForm(f=>({...f,titolo:e.target.value}))}
                     placeholder="Es. Verifica tramezzature interne" style={inputSt}/>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>Titolo grande nel documento PDF</div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>Titolo grande nel documento PDF</div>
                 </div>
               </div>
 
               {/* Luogo + Data/Ora */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                 <div>
                   <FL>Luogo</FL>
                   <input type="text" value={form.luogo} onChange={e=>setForm(f=>({...f,luogo:e.target.value}))}
@@ -1300,7 +1300,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             // salva posizione per dropdown fixed
                             e.currentTarget._rect = r;
                           }}
-                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.muted, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                          style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.muted, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
                           + Dal team
                         </button>
                         {teamDropOpen && (() => {
@@ -1309,9 +1309,9 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             <div style={{ position:'absolute', right:0, top:'100%', marginTop:4, zIndex:200, background:T.surface, border:`0.5px solid ${T.borderMd}`, boxShadow:'0 4px 16px rgba(0,0,0,0.15)', minWidth:200, maxHeight:240, overflowY:'auto' }}>
                               {teamMembers.map(m => (
                                 <button key={m.id} onClick={() => addFromTeam(m)}
-                                  style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"'Space Grotesk', sans-serif", fontSize:12, color:T.ink, borderBottom:`0.5px solid ${T.border}` }}>
+                                  style={{ display:'block', width:'100%', padding:'8px 12px', textAlign:'left', background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-ui)", fontSize:12, color:T.ink, borderBottom:`0.5px solid ${T.border}` }}>
                                   <div style={{ fontWeight:600 }}>{m.user_name || m.user_email}</div>
-                                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:2 }}>{m.role_internal || ""}</div>
+                                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{m.role_internal || ""}</div>
                                 </button>
                               ))}
                             </div>
@@ -1319,13 +1319,13 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                         })()}
                       </div>
                     )}
-                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'3px 10px', cursor:'pointer' }}>
+                    <button onClick={addP} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'4px 10px', cursor:'pointer' }}>
                       + Aggiungi riga
                     </button>
                   </div>
                 </div>
                 {form.presenti.length === 0 ? (
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'10px 0' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'10px 0' }}>
                     Nessun presente — aggiungi righe o compila l'Anagrafica del progetto
                   </div>
                 ) : (
@@ -1334,7 +1334,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                       <thead>
                         <tr style={{ background:T.bg }}>
                           {["Figura","Azienda","Referente","Email","Telefono",""].map(h=>(
-                            <th key={h} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
+                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1344,7 +1344,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                             {["figura","azienda","referente","email","telefono"].map(field=>(
                               <td key={field} style={{ padding:'4px 4px' }}>
                                 <input type="text" value={p[field]||""} onChange={e=>updateP(i,field,e.target.value)}
-                                  style={{ ...inputSt, padding:'5px 7px', fontSize:11 }}/>
+                                  style={{ ...inputSt, padding:'6px 8px', fontSize:11 }}/>
                               </td>
                             ))}
                             <td style={{ padding:'4px 4px' }}>
@@ -1372,7 +1372,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                   <FL>Foto</FL>
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                     {!editingId && (
-                      <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>
+                      <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
                         Salva il report per aggiungere foto
                       </span>
                     )}
@@ -1380,7 +1380,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                       <>
                         <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoUpload} style={{ display:'none' }}/>
                         <button onClick={()=>fotoInputRef.current?.click()} disabled={uploadingFoto}
-                          style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'5px 12px', cursor:'pointer' }}>
+                          style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', padding:'6px 12px', cursor:'pointer' }}>
                           {uploadingFoto ? "Caricamento..." : "+ Aggiungi foto"}
                         </button>
                       </>
@@ -1389,7 +1389,7 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                 </div>
 
                 {fotos.length === 0 ? (
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'12px 0' }}>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'12px 0' }}>
                     {editingId ? "Nessuna foto ancora — clicca \"+ Aggiungi foto\"" : ""}
                   </div>
                 ) : (
@@ -1408,12 +1408,12 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
               </div>
 
               {saveOk && (
-                <div style={{ background:'#f0fdf4', border:'0.5px solid #86efac', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#16a34a' }}>
+                <div style={{ background:'#f0fdf4', border:'0.5px solid #86efac', padding:'10px 16px', fontFamily:"var(--font-label)", fontSize:11, color:'#16a34a' }}>
                   ✓ Report salvato — ora puoi aggiungere le foto qui sotto
                 </div>
               )}
               {saveError && (
-                <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 14px', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:'#b91c1c' }}>
+                <div style={{ background:'#fef2f2', border:'0.5px solid #fca5a5', padding:'10px 16px', fontFamily:"var(--font-label)", fontSize:11, color:'#b91c1c' }}>
                   ⚠ Errore: {saveError}
                 </div>
               )}

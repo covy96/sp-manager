@@ -58,7 +58,7 @@ function getMondayISODate() {
 // ── UI ATOMS ─────────────────────────────────────────────────────
 function FieldLabel({ children }) {
   const { T } = useTheme();
-  return <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
+  return <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 }}>{children}</div>;
 }
 function Input({ value, onChange, type = "text", required, placeholder }) {
   const { T } = useTheme();
@@ -66,13 +66,13 @@ function Input({ value, onChange, type = "text", required, placeholder }) {
   return (
     <input type={type} value={value} onChange={onChange} required={required} placeholder={placeholder}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
-      style={{ width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }} />
+      style={{ width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${focus ? T.navy : T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' }} />
   );
 }
 function BtnPrimary({ children, onClick, disabled, type = "button" }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.6 : 1 }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
@@ -80,7 +80,7 @@ function BtnPrimary({ children, onClick, disabled, type = "button" }) {
 function BtnGhost({ children, onClick, disabled }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ background:'transparent', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:disabled ? 'not-allowed' : 'pointer', opacity:disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );
@@ -92,7 +92,7 @@ function RoleBadge({ role }) {
   const isPM  = role === "Project Manager";
   const c = isTop ? T.navy : isPM ? '#7c3aed' : T.muted;
   return (
-    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', padding:'2px 6px', color:c, border:`0.5px solid ${c}`, display:'inline-block' }}>
+    <span style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', padding:'2px 6px', color:c, border:`0.5px solid ${c}`, display:'inline-block' }}>
       {ROLE_LABELS[role] || role}
     </span>
   );
@@ -301,25 +301,25 @@ export default function TeamPage() {
 
   // ── stili comuni ──────────────────────────────────────────────────
   const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
-  const statLbl = { fontFamily:"'IBM Plex Mono', monospace", fontSize:8, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:5 };
-  const statVal = { fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.03em', fontFamily:"'Space Grotesk', sans-serif" };
-  const tabBtn  = (active) => ({ padding:'7px 14px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
+  const statLbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 };
+  const statVal = { fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.03em', fontFamily:"var(--font-ui)" };
+  const tabBtn  = (active) => ({ padding:'8px 16px', border:'none', background:'transparent', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:active ? T.navy : T.muted, borderBottom:`1.5px solid ${active ? T.navy : 'transparent'}`, marginBottom:-0.5 });
 
   if (studioLoading || !studioId || loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Caricamento team...</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Caricamento team...</div>
   );
   if (error) return (
     <div style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, color:T.red, fontSize:13 }}>Errore: {error}</div>
   );
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {/* ── HEADER ── */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.03em', color:T.ink }}>Team</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color:T.ink }}>Team</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>
             Ore e produttività — {annoFiltro}
             {" · "}
             <span>{members.length} / {plan.maxUsers === Infinity ? '∞' : plan.maxUsers} membri</span>
@@ -330,7 +330,7 @@ export default function TeamPage() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <select value={annoFiltro} onChange={e => setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             {Array.from({ length:5 }, (_, i) => new Date().getFullYear() - i).map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
@@ -347,41 +347,41 @@ export default function TeamPage() {
       {!selectedMember ? (
 
         /* ── CARD GRID ── */
-        <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap:10 }}>
+        <div className="asm-list asm-fade-in" style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16 }}>
           {cards.length === 0 ? (
-            <div style={{ gridColumn:'1/-1', background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted, borderRadius:T.radius }}>
+            <div style={{ gridColumn:'1/-1', background:T.surface, border:`1px solid ${T.border}`, padding:'48px 0', textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted, borderRadius:T.radius }}>
               Nessun membro presente.
             </div>
           ) : cards.map(({ member:m, stats:s, progress }) => (
             <div key={m.id}
               onClick={() => canEditRoles ? openMember(m) : undefined}
-              className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}
+              className="asm-card" style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 24px', cursor: canEditRoles ? 'pointer' : 'default', transition:'border-color 0.1s', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}
               onMouseEnter={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.navy; }}
               onMouseLeave={e => { if (canEditRoles) e.currentTarget.style.borderColor = T.border; }}
             >
               {/* Avatar + info */}
-              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:18 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20 }}>
                 <div style={{ width:44, height:44, borderRadius:'50%', background:m.color || avatarColor(m.user_name || m.user_email || ""), flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:600, color:'#fff' }}>
                   {getInitials(m.user_name || m.user_email)}
                 </div>
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {m.user_name || "—"}
-                    {m.id === currentMember?.id && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginLeft:8 }}>(tu)</span>}
+                    {m.id === currentMember?.id && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginLeft:8 }}>(tu)</span>}
                   </div>
-                  <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.user_email || "—"}</div>
-                  <div style={{ marginTop:5 }}><RoleBadge role={m.role_internal} /></div>
+                  <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m.user_email || "—"}</div>
+                  <div style={{ marginTop:6 }}><RoleBadge role={m.role_internal} /></div>
                 </div>
               </div>
               {/* Stats */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(90px, 1fr))', gap:8, marginBottom:14 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(90px, 1fr))', gap:8, marginBottom:16 }}>
                 <div style={statSt}><div style={statLbl}>Ore sett.</div><div style={statVal}>{formatOre(s.weeklyHours)}</div></div>
                 <div style={statSt}><div style={statLbl}>Task attivi</div><div style={statVal}>{s.activeTasks}</div></div>
                 <div style={statSt}><div style={statLbl}>Progetti</div><div style={statVal}>{s.projects}</div></div>
               </div>
               {/* Progress task */}
               <div>
-                <div style={{ display:'flex', justifyContent:'space-between', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:5 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6 }}>
                   <span>Task completati</span><span>{s.completedTasks}/{s.totalTasks}</span>
                 </div>
                 <div style={{ height:2, background:T.border }}>
@@ -403,7 +403,7 @@ export default function TeamPage() {
               const isSel = selectedMember?.id === m.id;
               return (
                 <button key={m.id} onClick={() => isSel ? setSelectedMember(null) : openMember(m)}
-                  style={{ display:'flex', alignItems:'center', gap:10, background:isSel ? T.navyLight : T.surface, border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, padding:'11px 13px', cursor:'pointer', textAlign:'left', transition:'all 0.1s' }}
+                  style={{ display:'flex', alignItems:'center', gap:10, background:isSel ? T.navyLight : T.surface, border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, padding:'12px 12px', cursor:'pointer', textAlign:'left', transition:'all 0.1s' }}
                   onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = T.bg; }}
                   onMouseLeave={e => { e.currentTarget.style.background = isSel ? T.navyLight : T.surface; }}
                 >
@@ -413,16 +413,16 @@ export default function TeamPage() {
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:T.ink, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                       {m.user_name || "Utente"}
-                      {m.id === currentMember?.id && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted, marginLeft:6 }}>(tu)</span>}
+                      {m.id === currentMember?.id && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginLeft:6 }}>(tu)</span>}
                     </div>
-                    <div style={{ marginTop:3 }}><RoleBadge role={m.role_internal} /></div>
+                    <div style={{ marginTop:4 }}><RoleBadge role={m.role_internal} /></div>
                   </div>
                   {statsByMember[m.id]?.weeklyHours > 0 && (
                     <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.navy, fontWeight:600 }}>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, fontWeight:600 }}>
                         {formatOre(statsByMember[m.id].weeklyHours)}
                       </div>
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:T.muted }}>sett.</div>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>sett.</div>
                     </div>
                   )}
                   <span style={{ color:T.muted, fontSize:14 }}>{isSel ? '×' : '›'}</span>
@@ -440,16 +440,16 @@ export default function TeamPage() {
             const hasCustom = selectedMember?.custom_permissions && Object.keys(selectedMember.custom_permissions).length > 0;
 
             return (
-              <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 22px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
+              <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:'20px 24px', borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
                 {/* Header membro */}
-                <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:18, paddingBottom:16, borderBottom:`0.5px solid ${T.border}` }}>
+                <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20, paddingBottom:16, borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ width:48, height:48, borderRadius:'50%', background:editColor, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:600, color:'#fff' }}>
                     {getInitials(selectedMember.user_name || selectedMember.user_email)}
                   </div>
                   <div>
                     <div style={{ fontSize:16, fontWeight:600, color:T.ink }}>{selectedMember.user_name || "Utente"}</div>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>{selectedMember.user_email}</div>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:2 }}>{selectedMember.user_email}</div>
                   </div>
                 </div>
 
@@ -460,7 +460,7 @@ export default function TeamPage() {
                   <div style={statSt}><div style={statLbl}>Progetti</div><div style={statVal}>{s.projects}</div></div>
                 </div>
                 <div style={{ marginBottom:20 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:5 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6 }}>
                     <span>Task completati</span><span>{s.completedTasks}/{s.totalTasks}</span>
                   </div>
                   <div style={{ height:2, background:T.border }}>
@@ -470,7 +470,7 @@ export default function TeamPage() {
 
                 {/* Tabs gestione */}
                 <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>
-                  <div style={{ marginBottom:18 }}>
+                  <div style={{ marginBottom:20 }}>
                     <SlidingTabs
                       tabs={[
                         { key:"role",    label:"Ruolo" },
@@ -487,12 +487,12 @@ export default function TeamPage() {
                   {activeTab === "role" && (
                     <div>
                       {!canEditRoles && (
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:16 }}>
                           Solo il Titolare o un Partner possono modificare i ruoli.
                         </div>
                       )}
                       {isOwnProfile && (
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:16 }}>
                           Non puoi modificare il tuo stesso ruolo.
                         </div>
                       )}
@@ -503,15 +503,15 @@ export default function TeamPage() {
                           const perms = PERM_SUMMARY[role] || [];
                           return (
                             <button key={role} onClick={() => canClick && setEditRole(role)}
-                              style={{ padding:'10px 13px', border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, background:isSel ? T.navyLight : T.surface, cursor:canClick ? 'pointer' : 'not-allowed', textAlign:'left', opacity:canEditRoles ? 1 : 0.6 }}>
-                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:3 }}>
+                              style={{ padding:'10px 12px', border:`0.5px solid ${isSel ? T.navy : T.border}`, borderRadius: T.radiusSm, background:isSel ? T.navyLight : T.surface, cursor:canClick ? 'pointer' : 'not-allowed', textAlign:'left', opacity:canEditRoles ? 1 : 0.6 }}>
+                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
                                 <span style={{ fontSize:12, fontWeight:600, color:isSel ? T.navy : T.ink }}>{ROLE_LABELS[role]}</span>
                                 {isSel && <span style={{ color:T.navy, fontSize:12 }}>✓</span>}
                               </div>
-                              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:5 }}>{ROLE_DESCRIPTIONS[role]}</div>
-                              <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+                              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:6 }}>{ROLE_DESCRIPTIONS[role]}</div>
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
                                 {perms.map(p => (
-                                  <span key={p} style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:isSel ? T.navy : T.muted, background:isSel ? '#dbeafe' : T.bg, padding:'1px 5px' }}>{p}</span>
+                                  <span key={p} style={{ fontFamily:"var(--font-label)", fontSize:10, color:isSel ? T.navy : T.muted, background:isSel ? '#dbeafe' : T.bg, padding:'1px 6px' }}>{p}</span>
                                 ))}
                               </div>
                             </button>
@@ -519,27 +519,27 @@ export default function TeamPage() {
                         })}
                       </div>
                       {canEditRoles && !isOwnProfile && (
-                        <div style={{ marginTop:14, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                        <div style={{ marginTop:16, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                           {!confirmRemove ? (
                             <button onClick={() => setConfirmRemove(true)}
-                              style={{ background:'transparent', color:'#ff453a', border:'0.5px solid #ff453a', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 14px', cursor:'pointer' }}>
+                              style={{ background:'transparent', color:'#ff453a', border:'0.5px solid #ff453a', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                               Elimina utente
                             </button>
                           ) : (
-                            <div style={{ background:'rgba(255,69,58,0.08)', border:'0.5px solid rgba(255,69,58,0.4)', padding:'10px 14px', flex:1 }}>
-                              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:'#ff453a', marginBottom:8, fontWeight:600 }}>
+                            <div style={{ background:'rgba(255,69,58,0.08)', border:'0.5px solid rgba(255,69,58,0.4)', padding:'10px 16px', flex:1 }}>
+                              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#ff453a', marginBottom:8, fontWeight:600 }}>
                                 Eliminare {selectedMember.user_name || selectedMember.user_email}?
                               </div>
-                              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:10, lineHeight:1.6 }}>
+                              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:10, lineHeight:1.6 }}>
                                 Le ore, task e dati inseriti rimarranno. L'account verrà disattivato.
                               </div>
                               <div style={{ display:'flex', gap:6 }}>
                                 <button onClick={handleRemoveUser} disabled={removing}
-                                  style={{ background:'#ff453a', color:'#fff', border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:removing ? 'not-allowed' : 'pointer', opacity:removing ? 0.6 : 1 }}>
+                                  style={{ background:'#ff453a', color:'#fff', border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:removing ? 'not-allowed' : 'pointer', opacity:removing ? 0.6 : 1 }}>
                                   {removing ? "Rimozione..." : "Sì, elimina"}
                                 </button>
                                 <button onClick={() => setConfirmRemove(false)}
-                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>
+                                  style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                                   Annulla
                                 </button>
                               </div>
@@ -547,7 +547,7 @@ export default function TeamPage() {
                           )}
                           {!confirmRemove && (
                             <button onClick={handleSaveRole} disabled={saving || editRole === selectedMember.role_internal}
-                              style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity:saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
+                              style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editRole === selectedMember.role_internal ? 'not-allowed' : 'pointer', opacity:saving || editRole === selectedMember.role_internal ? 0.5 : 1 }}>
                               {saving ? "Salvataggio..." : "Salva ruolo"}
                             </button>
                           )}
@@ -560,11 +560,11 @@ export default function TeamPage() {
                   {activeTab === "perms" && (
                     <div>
                       {(!canEditRoles || isOwnProfile) && (
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:16 }}>
                           {!canEditRoles ? "Solo il Titolare o un Partner possono modificare i permessi." : "Non puoi modificare i tuoi stessi permessi."}
                         </div>
                       )}
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginBottom:14, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, lineHeight:1.7 }}>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginBottom:16, padding:'8px 12px', background:T.bg, border:`0.5px solid ${T.border}`, lineHeight:1.7 }}>
                         Base: <span style={{ color:T.navy, fontWeight:600 }}>{ROLE_LABELS[editRole]}</span>
                         {hasCustom && <span style={{ marginLeft:8, color:'#b45309' }}>· permessi personalizzati attivi</span>}
                         <br/>Le modifiche sovrascrivono i permessi del ruolo.
@@ -572,7 +572,7 @@ export default function TeamPage() {
                       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                         {PERMISSION_SECTIONS.map(section => (
                           <div key={section.label} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:T.bg }}>
-                            <div style={{ padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>
+                            <div style={{ padding:'6px 12px', borderBottom:`0.5px solid ${T.border}`, fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted }}>
                               {section.label}
                             </div>
                             {section.perms.map((perm, i) => {
@@ -583,7 +583,7 @@ export default function TeamPage() {
                                 <div key={perm.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', borderTop:i > 0 ? `0.5px solid ${T.border}` : 'none', background:isOverride ? (val ? 'rgba(16,185,129,0.04)' : 'rgba(255,69,58,0.04)') : 'transparent' }}>
                                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                                     <span style={{ fontSize:12, color:T.ink }}>{perm.label}</span>
-                                    {isOverride && <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:8, color:'#b45309', letterSpacing:'0.1em', textTransform:'uppercase' }}>modificato</span>}
+                                    {isOverride && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#b45309', letterSpacing:'0.1em', textTransform:'uppercase' }}>modificato</span>}
                                   </div>
                                   <button onClick={() => { if (!canEdit) return; setEditPerms(prev => ({ ...prev, [perm.key]:!effective[perm.key] })); }}
                                     disabled={!canEdit}
@@ -597,7 +597,7 @@ export default function TeamPage() {
                         ))}
                       </div>
                       {canEditRoles && !isOwnProfile && (
-                        <div style={{ marginTop:14, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                        <div style={{ marginTop:16, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                           {hasCustom && (
                             <button onClick={async () => {
                               setSaving(true);
@@ -606,12 +606,12 @@ export default function TeamPage() {
                               setSelectedMember(p => ({ ...p, custom_permissions:null }));
                               setEditPerms({});
                               setSaving(false);
-                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 14px', cursor:'pointer' }}>
+                            }} style={{ background:'transparent', color:T.muted, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>
                               Ripristina defaults
                             </button>
                           )}
                           <button onClick={handleSavePerms} disabled={saving}
-                            style={{ marginLeft:'auto', background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1 }}>
+                            style={{ marginLeft:'auto', background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1 }}>
                             {saving ? "Salvataggio..." : "Salva permessi"}
                           </button>
                         </div>
@@ -621,7 +621,7 @@ export default function TeamPage() {
 
                   {/* ── TAB: Profilo ── */}
                   {activeTab === "profilo" && (
-                    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
                       <div>
                         <FieldLabel>Telefono</FieldLabel>
                         <Input value={editTelefono} onChange={e => setEditTelefono(e.target.value)} placeholder="+39 333 1234567"/>
@@ -637,13 +637,13 @@ export default function TeamPage() {
                           <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:12 }}>
                             <img src={editAvatarUrl} alt="avatar" onError={e => e.target.style.display='none'}
                               style={{ width:44, height:44, borderRadius:'50%', objectFit:'cover', border:`0.5px solid ${T.borderMd}` }}/>
-                            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>Anteprima</span>
+                            <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>Anteprima</span>
                           </div>
                         )}
                       </div>
                       <div style={{ display:'flex', justifyContent:'flex-end', paddingTop:4 }}>
                         <button onClick={handleSaveProfilo} disabled={saving}
-                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1, borderRadius:T.radiusSm }}>
+                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving ? 'not-allowed' : 'pointer', opacity:saving ? 0.5 : 1, borderRadius:T.radiusSm }}>
                           {saving ? "Salvataggio..." : "Salva profilo"}
                         </button>
                       </div>
@@ -653,27 +653,27 @@ export default function TeamPage() {
                   {/* ── TAB: Colore ── */}
                   {activeTab === "color" && (
                     <div>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:8, marginBottom:14 }}>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:8, marginBottom:16 }}>
                         {PREDEFINED_COLORS.map(c => (
                           <button key={c} onClick={() => setEditColor(c)} style={{ width:34, height:34, borderRadius:'50%', background:c, border:'none', outline:editColor === c ? `2px solid ${T.ink}` : 'none', outlineOffset:2, cursor:'pointer' }}/>
                         ))}
                       </div>
-                      <div style={{ marginBottom:14 }}>
-                        <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Personalizzato</div>
+                      <div style={{ marginBottom:16 }}>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:8 }}>Personalizzato</div>
                         <div style={{ display:'flex', gap:8 }}>
                           <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width:38, height:34, border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', padding:2 }}/>
-                          <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ flex:1, padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono', monospace", outline:'none' }}/>
+                          <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ flex:1, padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"var(--font-label)", outline:'none' }}/>
                         </div>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:14 }}>
-                        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted }}>Anteprima</span>
+                      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 12px', background:T.bg, border:`0.5px solid ${T.border}`, marginBottom:16 }}>
+                        <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>Anteprima</span>
                         <div style={{ width:38, height:38, borderRadius:'50%', background:editColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:600, color:'#fff' }}>
                           {getInitials(selectedMember.user_name || selectedMember.user_email)}
                         </div>
                       </div>
                       <div style={{ display:'flex', justifyContent:'flex-end' }}>
                         <button onClick={handleSaveColor} disabled={saving || editColor === selectedMember.color}
-                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity:saving || editColor === selectedMember.color ? 0.5 : 1 }}>
+                          style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:saving || editColor === selectedMember.color ? 'not-allowed' : 'pointer', opacity:saving || editColor === selectedMember.color ? 0.5 : 1 }}>
                           {saving ? "Salvataggio..." : "Salva colore"}
                         </button>
                       </div>
@@ -700,7 +700,7 @@ export default function TeamPage() {
               <div>
                 <FieldLabel>Ruolo *</FieldLabel>
                 <select value={formData.role_internal} onChange={e => setFormData(p => ({ ...p, role_internal:e.target.value }))} required
-                  style={{ width:'100%', padding:'8px 12px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' }}>
+                  style={{ width:'100%', padding:'8px 12px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' }}>
                   {ROLE_OPTIONS.filter(r => r !== "Owner").map(r => (
                     <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                   ))}
@@ -709,13 +709,13 @@ export default function TeamPage() {
               {/* Come accede il nuovo membro */}
               <div style={{ padding:'10px 12px', background:T.bg, border:`0.5px solid ${T.border}`, borderRadius:T.radiusSm }}>
                 <div style={{ fontSize:12, fontWeight:600, color:T.ink }}>Come accede</div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:4, lineHeight:1.5 }}>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4, lineHeight:1.5 }}>
                   Dalla home → "Unisciti", con questo codice studio e la stessa email inserita sopra:
                 </div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:16, fontWeight:700, letterSpacing:'0.2em', color:T.navy, marginTop:6 }}>{studioInviteCode || "…"}</div>
-                <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, marginTop:4 }}>{window.location.origin}/unisciti</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:16, fontWeight:700, letterSpacing:'0.2em', color:T.navy, marginTop:6 }}>{studioInviteCode || "…"}</div>
+                <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:4 }}>{window.location.origin}/unisciti</div>
               </div>
-              {formError && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red }}>{formError}</div>}
+              {formError && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red }}>{formError}</div>}
               <div style={{ height:'0.5px', background:T.border, margin:'4px 0' }}/>
               <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
                 <BtnGhost onClick={() => setModalOpen(false)} disabled={saving}>Annulla</BtnGhost>

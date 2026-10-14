@@ -9,7 +9,7 @@ import { useToast } from "../../contexts/ToastContext";
 function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
   const { T } = useTheme();
   return (
-    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style }}>
+    <button type={type} onClick={onClick} disabled={disabled} style={{ background:T.navy, color:T.bg, border:'none', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.6:1, ...style }}>
       {children}
     </button>
   );
@@ -17,7 +17,7 @@ function BtnPrimary({ children, onClick, disabled, type="button", style={} }) {
 function BtnGhost({ children, onClick, disabled, danger, style={} }) {
   const { T } = useTheme();
   return (
-    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, ...style }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ border:`0.5px solid ${danger?T.red:T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:danger?T.red:T.ink, fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, ...style }}>
       {children}
     </button>
   );
@@ -28,7 +28,7 @@ export default function GestioneServiziPage() {
   const showToast = useToast();
   usePageTitleOnMount("Gestione Servizi");
   const { studioId } = useStudio();
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
 
   const [services, setServices]             = useState([]);
   const [loading, setLoading]               = useState(true);
@@ -132,25 +132,25 @@ export default function GestioneServiziPage() {
   };
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:200, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Caricamento...</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:200, fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Caricamento...</div>
   );
 
   return (
     <div style={{ maxWidth:680 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
         <div>
-          <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', marginBottom:4 }}>Gestione Servizi</div>
-          <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color:T.ink, letterSpacing: '-0.025em', marginBottom:4 }}>Gestione Servizi</div>
+          <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
             Gestisci servizi e task predefinite per ogni servizio
           </div>
         </div>
         <BtnPrimary onClick={() => setAddModalOpen(true)}>+ Nuovo</BtnPrimary>
       </div>
 
-      {error && <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.red, marginBottom:14 }}>{error}</div>}
+      {error && <div style={{ fontFamily:"var(--font-label)", fontSize:11, color:T.red, marginBottom:16 }}>{error}</div>}
 
       {services.length === 0 ? (
-        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'48px 0', textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>
           Nessun servizio configurato.
         </div>
       ) : (
@@ -165,21 +165,21 @@ export default function GestioneServiziPage() {
                 {/* Header riga servizio */}
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-                    <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, width:22, textAlign:'right', flexShrink:0 }}>
+                    <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, width:22, textAlign:'right', flexShrink:0 }}>
                       {String(index+1).padStart(2,'0')}
                     </span>
                     {isEditing ? (
                       <form onSubmit={handleUpdateName} style={{ display:'flex', alignItems:'center', gap:8, flex:1 }}>
                         <input type="text" value={editName} onChange={e => setEditName(e.target.value)} autoFocus
-                          style={{ ...inputSt, padding:'5px 8px', flex:1 }} />
-                        <button type="submit" disabled={saving} style={{ background:T.navy, color:T.bg, border:'none', padding:'5px 10px', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10 }}>✓</button>
-                        <button type="button" onClick={() => { setEditingService(null); setEditName(""); }} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:'5px 10px', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>✕</button>
+                          style={{ ...inputSt, padding:'6px 8px', flex:1 }} />
+                        <button type="submit" disabled={saving} style={{ background:T.navy, color:T.bg, border:'none', padding:'6px 10px', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10 }}>✓</button>
+                        <button type="button" onClick={() => { setEditingService(null); setEditName(""); }} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:'6px 10px', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>✕</button>
                       </form>
                     ) : (
                       <button onClick={() => setExpandedId(isExpanded ? null : service.id)}
                         style={{ flex:1, textAlign:'left', background:'none', border:'none', cursor:'pointer', fontSize:13, fontWeight:600, color:T.ink, display:'flex', alignItems:'center', gap:8 }}>
                         {service.service_name}
-                        <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>
+                        <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'1px 6px' }}>
                           {tasks.length} task
                         </span>
                         <span style={{ fontSize:11, color:T.muted, marginLeft:'auto' }}>{isExpanded ? '▲' : '▼'}</span>
@@ -189,11 +189,11 @@ export default function GestioneServiziPage() {
                   {!isEditing && (
                     <div style={{ display:'flex', gap:6, marginLeft:10, flexShrink:0 }}>
                       <button onClick={() => { setEditingService(service); setEditName(service.service_name||""); setExpandedId(service.id); }}
-                        style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:'4px 10px', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted }}>
+                        style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, padding:'4px 10px', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
                         Rinomina
                       </button>
                       <button onClick={() => handleDeleteService(service.id)}
-                        style={{ background:'none', border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, padding:'4px 10px', cursor:'pointer', fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.red }}>
+                        style={{ background:'none', border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, padding:'4px 10px', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.red }}>
                         Elimina
                       </button>
                     </div>
@@ -202,26 +202,26 @@ export default function GestioneServiziPage() {
 
                 {/* Pannello task predefinite */}
                 {isExpanded && (
-                  <div style={{ borderTop:`0.5px solid ${T.border}`, padding:'14px 16px 16px', background:T.bg }}>
-                    <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>
+                  <div style={{ borderTop:`0.5px solid ${T.border}`, padding:'16px 16px 16px', background:T.bg }}>
+                    <div style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:10 }}>
                       Task predefinite — verranno create automaticamente per ogni nuovo progetto con questo servizio
                     </div>
 
                     {tasks.length === 0 ? (
-                      <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, padding:'8px 0', marginBottom:10 }}>
+                      <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, padding:'8px 0', marginBottom:10 }}>
                         Nessuna task predefinita. Aggiungine una qui sotto.
                       </div>
                     ) : (
                       <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:12 }}>
                         {tasks.map((task, i) => (
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'7px 12px' }}>
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radiusSm, padding:'8px 12px' }}>
                             <div style={{ display:'flex', flexDirection:'column', gap:2, flexShrink:0 }}>
                               <button onClick={() => handleMoveTask(service, i, -1)} disabled={i===0}
                                 style={{ background:'none', border:'none', cursor:i===0?'default':'pointer', color:i===0?T.border:T.muted, fontSize:10, lineHeight:1, padding:'1px 2px' }}>▲</button>
                               <button onClick={() => handleMoveTask(service, i, 1)} disabled={i===tasks.length-1}
                                 style={{ background:'none', border:'none', cursor:i===tasks.length-1?'default':'pointer', color:i===tasks.length-1?T.border:T.muted, fontSize:10, lineHeight:1, padding:'1px 2px' }}>▼</button>
                             </div>
-                            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:9, color:T.muted, width:18, textAlign:'right', flexShrink:0 }}>{String(i+1).padStart(2,'0')}</span>
+                            <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, width:18, textAlign:'right', flexShrink:0 }}>{String(i+1).padStart(2,'0')}</span>
                             <span style={{ flex:1, fontSize:12, color:T.ink }}>{task}</span>
                             <button onClick={() => handleRemoveTask(service, i)}
                               style={{ background:'none', border:'none', cursor:'pointer', color:T.red, fontSize:16, lineHeight:1, padding:'0 4px', flexShrink:0 }}>×</button>
@@ -237,9 +237,9 @@ export default function GestioneServiziPage() {
                         onChange={e => setNewTaskInput(e.target.value)}
                         onKeyDown={e => { if (e.key==='Enter') { e.preventDefault(); handleAddTask(service); } }}
                         placeholder="Nome task predefinita..."
-                        style={{ ...inputSt, flex:1, padding:'7px 10px', fontSize:12 }}
+                        style={{ ...inputSt, flex:1, padding:'8px 10px', fontSize:12 }}
                       />
-                      <BtnPrimary onClick={() => handleAddTask(service)} disabled={!newTaskInput.trim()} style={{ padding:'7px 14px', fontSize:11 }}>
+                      <BtnPrimary onClick={() => handleAddTask(service)} disabled={!newTaskInput.trim()} style={{ padding:'8px 16px', fontSize:11 }}>
                         + Aggiungi
                       </BtnPrimary>
                     </div>
@@ -255,8 +255,8 @@ export default function GestioneServiziPage() {
       {addModalOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(14,14,13,0.5)', padding:16 }}>
           <div style={{ width:'100%', maxWidth:400, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding:28 }}>
-            <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:18 }}>Nuovo Servizio</div>
-            <form onSubmit={handleAddService} style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div style={{ fontSize:15, fontWeight:600, color:T.ink, marginBottom:20 }}>Nuovo Servizio</div>
+            <form onSubmit={handleAddService} style={{ display:'flex', flexDirection:'column', gap:16 }}>
               <input type="text" placeholder="Nome del servizio" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} required autoFocus style={inputSt} />
               <div style={{ height:'0.5px', background:T.border }} />
               <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>

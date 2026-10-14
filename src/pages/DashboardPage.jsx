@@ -7,6 +7,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
+import SlidingTabs from "../components/SlidingTabs";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function currency(value) {
@@ -61,7 +62,7 @@ function KpiCard({ label, value, note, valueColor, isMobile, onClick }) {
       backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
       border: `1px solid ${hover ? T.borderMd : T.border}`,
       borderRadius: T.radius,
-      padding: isMobile ? '12px 14px' : '18px 20px',
+      padding: isMobile ? '12px 16px' : '20px 20px',
       boxShadow: hover ? (T.shadowMd ?? T.shadow) : T.shadow,
       minWidth: 0,
       cursor: clickable ? 'pointer' : 'default',
@@ -69,8 +70,8 @@ function KpiCard({ label, value, note, valueColor, isMobile, onClick }) {
       transform: hover ? 'translateY(-2px)' : 'none',
     }}>
       <div style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 8, letterSpacing: isMobile ? '0.08em' : '0.2em',
+        fontFamily: "var(--font-label)",
+        fontSize: 10, letterSpacing: isMobile ? '0.08em' : '0.2em',
         textTransform: 'uppercase', color: T.muted, marginBottom: 8,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{label}</div>
@@ -78,12 +79,12 @@ function KpiCard({ label, value, note, valueColor, isMobile, onClick }) {
         fontSize: isMobile ? 22 : 32, fontWeight: 600,
         letterSpacing: '-0.03em', lineHeight: 1,
         color: valueColor || T.ink,
-        fontFamily: "'Space Grotesk', sans-serif",
+        fontFamily: "var(--font-ui)",
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{value}</div>
       <div style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 8, color: T.muted, marginTop: 5,
+        fontFamily: "var(--font-label)",
+        fontSize: 10, color: T.muted, marginTop: 6,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{note}</div>
     </div>
@@ -98,14 +99,14 @@ function Panel({ title, children, isMobile }) {
       backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
       border: `1px solid ${T.border}`,
       borderRadius: T.radius,
-      padding: isMobile ? '14px 14px' : '20px 22px',
+      padding: isMobile ? '16px 16px' : '20px 24px',
       boxShadow: T.shadow,
     }}>
       <div style={{
         fontSize: isMobile ? 12 : 13, fontWeight: 600,
         letterSpacing: '-0.01em', color: T.ink,
-        marginBottom: 14,
-        fontFamily: "'Space Grotesk', sans-serif",
+        marginBottom: 16,
+        fontFamily: "var(--font-ui)",
       }}>{title}</div>
       {children}
     </div>
@@ -117,7 +118,7 @@ function EmptyState({ label }) {
   return (
     <div style={{
       padding: '40px 0', textAlign: 'center',
-      fontFamily: "'IBM Plex Mono', monospace",
+      fontFamily: "var(--font-label)",
       fontSize: 11, color: T.muted, letterSpacing: '0.05em',
     }}>{label}</div>
   );
@@ -166,11 +167,11 @@ function TaskRow({ task, onToggle, overdue }) {
           color: done ? T.muted : T.ink,
           textDecoration: done ? 'line-through' : 'none',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "var(--font-ui)",
         }}>{task.title}</div>
         <div style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 9, color: T.muted, marginTop: 2,
+          fontFamily: "var(--font-label)",
+          fontSize: 10, color: T.muted, marginTop: 2,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {task.projects?.name}{task.category ? ` · ${task.category}` : ''}
@@ -180,8 +181,8 @@ function TaskRow({ task, onToggle, overdue }) {
       {/* Date (overdue only) */}
       {overdue && (
         <span style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 9, color: T.red, flexShrink: 0,
+          fontFamily: "var(--font-label)",
+          fontSize: 10, color: T.red, flexShrink: 0,
         }}>
           {new Date(task.data_pianificata).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
         </span>
@@ -198,24 +199,24 @@ function ProjectRow({ proj }) {
         <div style={{
           fontSize: 12, fontWeight: 600, color: T.ink,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "var(--font-ui)",
         }}>{proj.name}</div>
         <span style={{
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "var(--font-label)",
           fontSize: 10, color: T.muted, marginLeft: 12, flexShrink: 0,
         }}>{proj.progress}%</span>
       </div>
       <div style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 9, color: T.muted, marginBottom: 6,
+        fontFamily: "var(--font-label)",
+        fontSize: 10, color: T.muted, marginBottom: 6,
       }}>{proj.client || '—'}</div>
       {/* Progress bar */}
       <div style={{ height: 2, background: T.border, width: '100%' }}>
         <div style={{ height: 2, background: T.navy, width: `${proj.progress}%`, transition: 'width 0.3s' }} />
       </div>
       <div style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 9, color: T.muted, marginTop: 4,
+        fontFamily: "var(--font-label)",
+        fontSize: 10, color: T.muted, marginTop: 4,
       }}>{proj.completedTasks}/{proj.totalTasks} task completati</div>
     </div>
   );
@@ -394,7 +395,7 @@ export default function DashboardPage() {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        height: 240, fontFamily: "'IBM Plex Mono', monospace",
+        height: 240, fontFamily: "var(--font-label)",
         fontSize: 11, color: T.muted, letterSpacing: '0.1em',
       }}>
         Caricamento dashboard...
@@ -403,19 +404,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 16 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <h1 style={{
-            fontSize: isMobile ? 20 : 28, fontWeight: 600, letterSpacing: '-0.03em',
-            color: T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4,
+            fontSize: isMobile ? 22 : 26, fontWeight: 700, letterSpacing: '-0.025em',
+            color: T.ink, fontFamily: "var(--font-ui)", marginBottom: 4,
           }}>
             {greeting}{teamMember?.user_name ? `, ${teamMember.user_name.trim().split(/\s+/)[0]}` : ""}
           </h1>
           <p style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-label)",
             fontSize: 10, color: T.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
             {formatDateIt(new Date())}
@@ -424,23 +425,17 @@ export default function DashboardPage() {
 
         {/* Toggle scope — solo per owner con team */}
         {permissions.isOwner && (
-          <div style={{ display: 'flex', border: `1px solid ${T.borderMd}`, overflow: 'hidden', alignSelf: 'flex-start', marginTop: 4 }}>
-            {[["mine", "Solo miei"], ["all", "Tutto lo studio"]].map(([s, label]) => (
-              <button key={s} onClick={() => setScope(s)} style={{
-                padding: '6px 14px', border: 'none', cursor: 'pointer',
-                background: scope === s ? T.navy : 'transparent',
-                color: scope === s ? T.bg : T.muted,
-                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                transition: 'background 0.15s',
-              }}>{label}</button>
-            ))}
-          </div>
+          <SlidingTabs
+            tabs={[{ key: "mine", label: "Solo miei" }, { key: "all", label: "Tutto lo studio" }]}
+            active={scope}
+            onChange={setScope}
+            style={{ alignSelf: 'flex-start', marginTop: 4 }}
+          />
         )}
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 16 }}>
         <KpiCard isMobile={isMobile} onClick={() => navigate("/progetti")}
           label={scope === "all" ? "Progetti attivi studio" : "Miei progetti attivi"}
           value={activeProjects} note="in corso" valueColor={T.ink} />
@@ -458,7 +453,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 
         {/* Task di oggi */}
         <Panel title="I miei task di oggi" isMobile={isMobile}>
@@ -471,18 +466,18 @@ export default function DashboardPage() {
 
           {/* Task scadute */}
           {overdueTasks.length > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `0.5px solid ${T.border}` }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.red,
+                fontFamily: "var(--font-label)",
+                fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.red,
               }}>
                 Task scadute
                 <span style={{
                   background: T.red, color: T.surface, borderRadius: '50%',
                   width: 16, height: 16, display: 'inline-flex',
                   alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontWeight: 600,
+                  fontSize: 10, fontWeight: 600,
                 }}>{overdueTasks.length}</span>
               </div>
               {overdueTasks.map(task => (
@@ -522,7 +517,7 @@ export default function DashboardPage() {
                   onClick={() => ev.project_id && navigate(`/progetti/${ev.project_id}`)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '9px 0', borderBottom: `0.5px solid ${T.border}`,
+                    padding: '10px 0', borderBottom: `0.5px solid ${T.border}`,
                     cursor: ev.project_id ? 'pointer' : 'default',
                     opacity: expired ? 0.75 : 1,
                   }}>
@@ -535,15 +530,15 @@ export default function DashboardPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
                       fontSize: 12, fontWeight: 600, color: expired ? T.red : T.ink,
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontFamily: "var(--font-ui)",
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {ev.tipo_pratica}
                       {ev.protocollo && <span style={{ fontWeight: 400, color: T.muted }}> · {ev.protocollo}</span>}
                     </div>
                     <div style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 9, color: T.muted, marginTop: 2,
+                      fontFamily: "var(--font-label)",
+                      fontSize: 10, color: T.muted, marginTop: 2,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {ev.projects?.name || '—'} · {ev.eventLabel}
@@ -551,10 +546,10 @@ export default function DashboardPage() {
                   </div>
                   {/* Data + stato */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color }}>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color }}>
                       {new Date(ev.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
                     </div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color, marginTop: 1 }}>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color, marginTop: 1 }}>
                       {expired ? 'SCADUTA' : daysLeft === 0 ? 'oggi' : `tra ${daysLeft}gg`}
                     </div>
                   </div>

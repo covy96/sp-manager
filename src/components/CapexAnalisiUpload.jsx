@@ -27,13 +27,13 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
   const showToast = useToast();
   const fileRef = useRef(null);
 
-  const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+  const mono = { fontFamily: "var(--font-label)" };
   const inputSt = {
-    width: "100%", padding: "7px 10px", boxSizing: "border-box",
+    width: "100%", padding: "8px 10px", boxSizing: "border-box",
     border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink,
-    fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: "none",
+    fontSize: 12, fontFamily: "var(--font-ui)", outline: "none",
   };
-  const labelSt = { ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 5 };
+  const labelSt = { ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 6 };
 
   const [phase, setPhase]     = useState("idle");   // idle | analyzing | review | saving
   const [analisi, setAnalisi] = useState(null);
@@ -95,21 +95,21 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
   // ── Stato: idle → bottone di caricamento ────────────────────────────
   if (phase === "idle") {
     return (
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 20 }}>
         <input ref={fileRef} type="file" accept=".pdf,.xlsx,.xls,.xlsm,application/pdf" onChange={onPick} style={{ display: "none" }} />
         <button
           onClick={() => fileRef.current?.click()}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%",
             border: `1px dashed ${T.navy}`, borderRadius: T.radius, background: T.navyLight,
-            padding: "14px 16px", cursor: "pointer",
+            padding: "16px 16px", cursor: "pointer",
           }}>
           <span style={{ fontSize: 15 }}>✦</span>
           <span style={{ ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: T.navy, fontWeight: 600 }}>
             Carica preventivo (PDF/Excel) · analisi AI
           </span>
         </button>
-        <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 6, textAlign: "center" }}>
+        <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 6, textAlign: "center" }}>
           L'AI estrae fornitore, categoria e importo. Rivedi e conferma prima di creare la voce.
         </div>
       </div>
@@ -119,11 +119,11 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
   // ── Stato: analyzing → spinner ──────────────────────────────────────
   if (phase === "analyzing") {
     return (
-      <div style={{ marginBottom: 18, border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: "18px 16px", textAlign: "center" }}>
+      <div style={{ marginBottom: 20, border: `1px solid ${T.navy}`, borderRadius: T.radius, background: T.navyLight, padding: "20px 16px", textAlign: "center" }}>
         <div style={{ ...mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", color: T.navy, fontWeight: 600 }}>
           Analisi del preventivo in corso…
         </div>
-        <div style={{ ...mono, fontSize: 9, color: T.muted, marginTop: 6 }}>
+        <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 6 }}>
           Lettura del documento ed estrazione dei dati. Può richiedere qualche secondo.
         </div>
       </div>
@@ -136,13 +136,13 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
   const saving = phase === "saving";
 
   return (
-    <div style={{ marginBottom: 18, border: `1px solid ${T.brass}`, borderRadius: T.radius, background: T.bg, padding: 16 }}>
+    <div style={{ marginBottom: 20, border: `1px solid ${T.brass}`, borderRadius: T.radius, background: T.bg, padding: 16 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 8 }}>
-        <div style={{ ...mono, fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: T.brass }}>
+        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.brass }}>
           ✦ Proposta AI dal preventivo{analisi?.file_name ? ` · ${analisi.file_name}` : ""}
         </div>
         {analisi?.confidence && (
-          <span style={{ ...mono, fontSize: 8, letterSpacing: "0.1em", textTransform: "uppercase", color: confColor, border: `1px solid ${confColor}`, borderRadius: T.radiusSm, padding: "2px 6px" }}>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: confColor, border: `1px solid ${confColor}`, borderRadius: T.radiusSm, padding: "2px 6px" }}>
             Affidabilità {analisi.confidence}
           </span>
         )}
@@ -179,7 +179,7 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
       {righe.length > 0 && (
         <div style={{ marginTop: 12, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, overflow: "hidden" }}>
           <button onClick={() => setShowRighe(s => !s)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "8px 10px", background: T.surface, border: "none", cursor: "pointer" }}>
-            <span style={{ ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted }}>
+            <span style={{ ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted }}>
               {righe.length} righe estratte
             </span>
             <span style={{ ...mono, fontSize: 11, color: T.muted }}>{showRighe ? "▾" : "▸"}</span>
@@ -187,9 +187,9 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
           {showRighe && (
             <div style={{ padding: "4px 0", maxHeight: 220, overflowY: "auto", background: T.surface }}>
               {righe.map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "5px 10px", borderTop: `0.5px solid ${T.border}` }}>
+                <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "6px 10px", borderTop: `0.5px solid ${T.border}` }}>
                   <span style={{ fontSize: 11, color: T.ink, flex: 1, minWidth: 0 }}>{r.descrizione || "—"}</span>
-                  {(r.quantita != null) && <span style={{ ...mono, fontSize: 9, color: T.muted }}>{r.quantita}{r.unita ? ` ${r.unita}` : ""}</span>}
+                  {(r.quantita != null) && <span style={{ ...mono, fontSize: 10, color: T.muted }}>{r.quantita}{r.unita ? ` ${r.unita}` : ""}</span>}
                   {(r.importo != null) && <span style={{ ...mono, fontSize: 10, color: T.ink }}>{currency(r.importo)}</span>}
                 </div>
               ))}
@@ -198,11 +198,11 @@ export default function CapexAnalisiUpload({ projectId, onCreated }) {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
         <button onClick={reset} disabled={saving} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 16px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
           Scarta
         </button>
-        <button onClick={handleCrea} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 18px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
+        <button onClick={handleCrea} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 20px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
           {saving ? "Creazione…" : "Crea voce CAPEX"}
         </button>
       </div>

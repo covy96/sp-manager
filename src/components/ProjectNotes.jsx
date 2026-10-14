@@ -238,22 +238,22 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
       <div
         onClick={() => setCollapsed((v) => !v)}
         style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "9px 14px",
+          display: "flex", alignItems: "center", gap: 8, padding: "10px 16px",
           borderBottom: collapsed ? "none" : `0.5px solid ${T.border}`, cursor: "pointer",
         }}
       >
         <span style={{ fontSize: 13 }}>📝</span>
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? T.ink : "#5c4a00" }}>
+        <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: isDark ? T.ink : "#5c4a00" }}>
           Note di progetto
         </span>
         {totalChecks > 0 && (
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>
+          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>
             {doneCount}/{totalChecks}
           </span>
         )}
         <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-          {saving && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: T.muted }}>salvo…</span>}
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>{collapsed ? "▸" : "▾"}</span>
+          {saving && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>salvo…</span>}
+          <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{collapsed ? "▸" : "▾"}</span>
         </span>
       </div>
 
@@ -261,7 +261,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
       {!collapsed && (
         <div style={{ padding: "8px 10px 10px" }}>
           {loading ? (
-            <div style={{ padding: "16px 6px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+            <div style={{ padding: "16px 6px", fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
               Caricamento…
             </div>
           ) : (
@@ -279,8 +279,8 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
                       style={{
                         position: "absolute", left: 24, top: -22, zIndex: 20,
                         background: isDark ? "#1c1c1e" : "#0e0e0d", color: "#fff",
-                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.02em",
-                        padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap",
+                        fontFamily: "var(--font-label)", fontSize: 9.5, letterSpacing: "0.02em",
+                        padding: "4px 8px", borderRadius: 6, whiteSpace: "nowrap",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.35)", pointerEvents: "none",
                         opacity: 0, transition: "opacity 0.12s",
                       }}
@@ -319,7 +319,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
                     placeholder={i === 0 ? "Scrivi una nota o una cosa da fare…" : ""}
                     style={{
                       flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none",
-                      fontFamily: "'Space Grotesk', sans-serif", fontSize: 13, lineHeight: 1.6,
+                      fontFamily: "var(--font-ui)", fontSize: 13, lineHeight: 1.6,
                       color: row.type === "check" && row.done ? T.muted : T.ink,
                       textDecoration: row.type === "check" && row.done ? "line-through" : "none",
                       padding: "2px 0",
@@ -352,7 +352,7 @@ export default function ProjectNotes({ projectId, studioId, currentMemberId, cur
                 }}
                 style={{
                   marginTop: 4, alignSelf: "flex-start", background: "none", border: "none", cursor: "pointer",
-                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, padding: "4px",
+                  fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, padding: "4px",
                 }}
               >
                 + aggiungi riga

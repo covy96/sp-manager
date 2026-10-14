@@ -24,7 +24,7 @@ export default function LinkedCommesseField({ selectedIds, commesseList, onChang
             <span key={id} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '4px 8px', borderRadius: 999, border: `1px solid ${T.borderMd}`,
-              background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif",
+              background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)",
             }}>
               {c ? commessaLabel(c) : "Commessa"}
               <button type="button" onClick={() => remove(id)} aria-label="Rimuovi commessa" style={{
@@ -36,7 +36,7 @@ export default function LinkedCommesseField({ selectedIds, commesseList, onChang
         })}
       </div>
       <select value="" onChange={e => add(e.target.value)} disabled={!available.length}
-        style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", outline: 'none' }}>
+        style={{ width: '100%', padding: '8px 12px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none' }}>
         <option value="">{available.length ? "+ Collega una commessa…" : "Nessuna altra commessa disponibile"}</option>
         {available.map(c => <option key={c.id} value={c.id}>{commessaLabel(c)}</option>)}
       </select>

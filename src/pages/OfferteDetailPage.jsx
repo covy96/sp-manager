@@ -284,9 +284,9 @@ export default function OfferteDetailPage() {
     await _doCreaNcommessa(false);
   };
 
-  const mono = { fontFamily:"'IBM Plex Mono', monospace" };
-  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"'Space Grotesk', sans-serif", outline:'none' };
-  const labelSt = { ...mono, fontSize:9, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
+  const mono = { fontFamily:"var(--font-label)" };
+  const inputSt = { width:'100%', padding:'8px 12px', boxSizing:'border-box', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.inputBg, color:T.inputText, fontSize:13, fontFamily:"var(--font-ui)", outline:'none' };
+  const labelSt = { ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6, display:'block' };
 
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240, ...mono, fontSize:11, color:T.muted }}>Caricamento...</div>;
   if (!offerta) return <div style={{ ...mono, fontSize:11, color:T.red }}>Offerta non trovata</div>;
@@ -297,7 +297,7 @@ export default function OfferteDetailPage() {
   const isDocDriven = !!(offerta?.documento && offerta.documento.sezioni);
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
       {docPanel && (
         <OffertaDocumentPanel
@@ -312,35 +312,35 @@ export default function OfferteDetailPage() {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, minWidth:0, flex:'1 1 auto' }}>
-          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'5px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', flexShrink:0 }}>← Offerte</button>
+          <button onClick={()=>navigate('/offerte')} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, padding:'6px 12px', ...mono, fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', flexShrink:0 }}>← Offerte</button>
           <div style={{ minWidth:0 }}>
             <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:2 }}>{offerta.numero_offerta}</div>
             <div style={{ fontSize:18, fontWeight:600, color:T.ink, letterSpacing:'-0.02em', overflow:'hidden', textOverflow:'ellipsis' }}>{offerta.nome_offerta}</div>
           </div>
-          <span style={{ ...mono, fontSize:9, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'3px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
+          <span style={{ ...mono, fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase', color:st.color, background:st.bg, padding:'4px 8px', borderRadius:2, flexShrink:0 }}>{st.label}</span>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>{isDocDriven ? 'Documento / versioni' : 'Documento offerta'}</button>
+          <button onClick={()=>setDocPanel(true)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>{isDocDriven ? 'Documento / versioni' : 'Documento offerta'}</button>
           {offerta.stato==='offerta' && canManage && <>
-            {!editing && !isDocDriven && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Modifica</button>}
-            <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Accetta →</button>
-            <button onClick={handleRifiuta} style={{ border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, background:'transparent', color:T.red, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Rifiuta</button>
+            {!editing && !isDocDriven && <button onClick={()=>setEditing(true)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Modifica</button>}
+            <button onClick={openAccetta} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Accetta →</button>
+            <button onClick={handleRifiuta} style={{ border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm, background:'transparent', color:T.red, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Rifiuta</button>
           </>}
           {offerta.stato==='accettata' && offerta.commessa_id && (
-            <button onClick={()=>navigate(`/commesse/${offerta.commessa_id}`)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Vai a commessa →</button>
+            <button onClick={()=>navigate(`/commesse/${offerta.commessa_id}`)} style={{ border:`0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background:'transparent', color:T.navy, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Vai a commessa →</button>
           )}
           {offerta.stato==='rifiutata' && canManage && (
-            <button onClick={handleRipristina} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 16px', cursor:'pointer' }}>Ripristina</button>
+            <button onClick={handleRipristina} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Ripristina</button>
           )}
-          {canManage && <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'7px 14px', cursor:'pointer' }}>🗑 Elimina</button>}
+          {canManage && <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>🗑 Elimina</button>}
         </div>
       </div>
 
       {/* Dati offerta */}
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius: T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding:'24px 28px' }}>
         {editing ? (
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
               <div>
                 <label style={labelSt}>N° Offerta</label>
                 <input type="text" value={form.numero_offerta} onChange={e=>setForm(p=>({...p,numero_offerta:e.target.value}))} style={inputSt}/>
@@ -375,7 +375,7 @@ export default function OfferteDetailPage() {
                       <button type="button" onClick={()=>setForm(p=>({...p,voci:p.voci.filter((_,j)=>j!==i)}))} style={{background:'none',border:'none',cursor:'pointer',color:T.red,fontSize:14,flexShrink:0,padding:'0 4px'}}>×</button>
                     </div>
                   ))}
-                  {(form.voci||[]).length===0 && <div style={{padding:'14px',textAlign:'center',...mono,fontSize:10,color:T.muted}}>Nessuna voce</div>}
+                  {(form.voci||[]).length===0 && <div style={{padding:'16px',textAlign:'center',...mono,fontSize:10,color:T.muted}}>Nessuna voce</div>}
                 </div>
                 {/* Preset template non ancora aggiunti */}
                 {vociTemplates.filter(t => !(form.voci||[]).some(v=>v.templateId===t.id)).length > 0 && (
@@ -391,7 +391,7 @@ export default function OfferteDetailPage() {
                 )}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
                   <button type="button" onClick={()=>setForm(p=>({...p,voci:[...(p.voci||[]),{id:`c${Date.now()}`,nome:'',prezzo:'',attiva:true}]}))}
-                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,...mono,fontSize:10,padding:'5px 12px',cursor:'pointer'}}>
+                    style={{border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,background:'transparent',color:T.muted,...mono,fontSize:10,padding:'6px 12px',cursor:'pointer'}}>
                     + Riga personalizzata
                   </button>
                 </div>
@@ -439,8 +439,8 @@ export default function OfferteDetailPage() {
                 <input type="text" value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))} style={inputSt}/>
               </div>
             </div>
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setEditing(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setEditing(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
               <button onClick={handleSave} disabled={saving} style={{ background:T.navy, border:'none', color:'#EEF1F6', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Salvataggio...':'Salva'}
               </button>
@@ -467,7 +467,7 @@ export default function OfferteDetailPage() {
               <div style={{ ...labelSt, marginBottom:8 }}>Voci offerta</div>
               <div style={{ border:`1px solid ${T.border}`, borderRadius:T.radiusSm, overflow:'hidden' }}>
                 {(Array.isArray(offerta.voci) && offerta.voci.length > 0 ? offerta.voci : [{ nome: offerta.nome_offerta||'Prestazione', prezzo: Number(offerta.importo_offerta_base)||0, attiva:true }]).map((v,i,arr) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', borderBottom:i<arr.length-1?`0.5px solid ${T.border}`:'none', background:v.attiva!==false?'transparent':T.surface2, opacity:v.attiva!==false?1:0.45 }}>
+                  <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px', borderBottom:i<arr.length-1?`0.5px solid ${T.border}`:'none', background:v.attiva!==false?'transparent':T.surface2, opacity:v.attiva!==false?1:0.45 }}>
                     <span style={{ fontSize:13, color:T.ink }}>{v.nome}</span>
                     <span style={{ ...mono, fontSize:13, fontWeight:600, color:T.navy }}>{currency(v.prezzo)}</span>
                   </div>
@@ -479,13 +479,13 @@ export default function OfferteDetailPage() {
                   const scF = Number(offerta.sconto_fisso)||0;
                   const label = [sc > 0 ? `${sc}%` : null, scF > 0 ? `−${currency(scF)}` : null].filter(Boolean).join(' + ');
                   return (
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 14px', borderTop:`0.5px solid ${T.border}`, background:T.bg }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 16px', borderTop:`0.5px solid ${T.border}`, background:T.bg }}>
                       <span style={{ ...mono, fontSize:10, color:T.muted }}>Sconto {label}</span>
                       <span style={{ ...mono, fontSize:12, color:T.red }}>−{currency(lordo - offerta.importo_offerta_base)}</span>
                     </div>
                   );
                 })()}
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', background:T.bg, borderTop:`1px solid ${T.border}` }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', background:T.bg, borderTop:`1px solid ${T.border}` }}>
                   <span style={{ ...mono, fontSize:10, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Totale</span>
                   <span style={{ ...mono, fontSize:16, fontWeight:700, color:T.navy }}>{currency(offerta.importo_offerta_base)}</span>
                 </div>
@@ -595,8 +595,8 @@ export default function OfferteDetailPage() {
                 })()}
               </div>
             </div>
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:14, borderTop:`0.5px solid ${T.border}` }}>
-              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 18px', cursor:'pointer' }}>Annulla</button>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:20, paddingTop:16, borderTop:`0.5px solid ${T.border}` }}>
+              <button onClick={()=>setAccettaModal(false)} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer' }}>Annulla</button>
               <button onClick={handleConfermaAccetta} disabled={saving} style={{ background:T.green, border:'none', color:'#fff', ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 20px', cursor:'pointer', opacity:saving?0.6:1 }}>
                 {saving?'Creazione...':'Crea commessa →'}
               </button>
@@ -618,15 +618,15 @@ export default function OfferteDetailPage() {
             </div>
 
             {/* Confronto valori */}
-            <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 14px', marginBottom:20, display:'flex', gap:20 }}>
+            <div style={{ background:T.bg, border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, padding:'12px 16px', marginBottom:20, display:'flex', gap:20 }}>
               <div>
-                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Valore offerta originale</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.muted }}>
                   €{Number(offerta.importo_offerta_base).toLocaleString('it-IT', { minimumFractionDigits:2 })}
                 </div>
               </div>
               <div style={{ borderLeft:`0.5px solid ${T.border}`, paddingLeft:20 }}>
-                <div style={{ ...mono, fontSize:8, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
+                <div style={{ ...mono, fontSize:10, color:T.muted, marginBottom:4, letterSpacing:'0.15em', textTransform:'uppercase' }}>Nuovo valore commessa</div>
                 <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>
                   {(() => {
                     const lordo = (accettaForm.voci||[]).filter(v=>v.attiva!==false).reduce((s,v)=>s+Number(v.prezzo||0),0);

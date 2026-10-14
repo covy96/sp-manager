@@ -29,10 +29,10 @@ function getStato(p, T) {
 function KpiCard({ label, value, note, color }) {
   const { T } = useTheme();
   return (
-    <div style={{ background: T.surface, border: `1px solid ${T.border}`, padding: '18px 20px', borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", marginBottom: 4 }}>{value}</div>
-      {note && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{note}</div>}
+    <div style={{ background: T.surface, border: `1px solid ${T.border}`, padding: '20px 20px', borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
+      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: color || T.ink, fontFamily: "var(--font-ui)", marginBottom: 4 }}>{value}</div>
+      {note && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{note}</div>}
     </div>
   );
 }
@@ -43,10 +43,10 @@ function SortBtn({ field, label, sortField, sortDesc, onSort }) {
   return (
     <button onClick={() => onSort(field)} style={{
       background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase',
+      fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
       color: active ? T.navy : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4,
     }}>
-      {label} {active && <span style={{ fontSize: 9 }}>{sortDesc ? '↓' : '↑'}</span>}
+      {label} {active && <span style={{ fontSize: 10 }}>{sortDesc ? '↓' : '↑'}</span>}
     </button>
   );
 }
@@ -139,27 +139,27 @@ export default function ProformaPage() {
     setSortField(field); setSortDesc(true);
   };
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
-  const tdSt = { padding: '9px 12px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
-  const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
+  const thSt = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '8px 12px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left', whiteSpace: 'nowrap' };
+  const tdSt = { padding: '10px 12px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "var(--font-ui)", verticalAlign: 'middle' };
+  const monoSt = { fontFamily: "var(--font-label)", fontSize: 11 };
 
   if (!permissions.canViewFinancials) return (
-    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"'IBM Plex Mono', monospace", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
+    <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: T.ink }}>Proforma</div>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.025em', color: T.ink }}>Proforma</div>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
           <select value={annoFiltro} onChange={e=>setAnnoFiltro(Number(e.target.value))}
-            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"'IBM Plex Mono', monospace", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
+            style={{ padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, cursor:'pointer', outline:'none', appearance:'auto' }}>
             <option value={0}>Tutti gli anni</option>
             {anniDisponibili.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
             <input type="checkbox" checked={mostraPagate} onChange={e => setMostraPagate(e.target.checked)} style={{ accentColor: T.navy, width: 13, height: 13 }} />
             Mostra anche pagate
           </label>
@@ -176,11 +176,11 @@ export default function ProformaPage() {
       {/* Tabella */}
       <div style={{ background: T.surface, border: `1px solid ${T.border}`, overflowX: 'auto', borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow }}>
         {loading ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>Caricamento...</div>
+          <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
         ) : error ? (
           <div style={{ padding: 24, color: T.red, fontSize: 13 }}>{error}</div>
         ) : filteredProforma.length === 0 ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
+          <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
             {mostraPagate ? "Nessuna proforma." : "Nessuna proforma da incassare."}
           </div>
         ) : (
@@ -214,7 +214,7 @@ export default function ProformaPage() {
                     <td style={{ ...tdSt, ...monoSt }}>{formatDate(p.data_creazione)}</td>
                     <td style={{ ...tdSt, ...monoSt, color: scaduta ? T.red : T.muted }}>{formatDate(p.data_scadenza)}</td>
                     <td style={tdSt}>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `1px solid ${stato.color}`, padding: '2px 7px', whiteSpace: 'nowrap', display: 'inline-block' }}>
+                      <span style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: stato.color, border: `1px solid ${stato.color}`, padding: '2px 8px', whiteSpace: 'nowrap', display: 'inline-block' }}>
                         {stato.label}
                       </span>
                     </td>

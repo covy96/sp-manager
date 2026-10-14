@@ -1,23 +1,23 @@
 import { useNavigate } from "react-router-dom";
 
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const mono = { fontFamily: "var(--font-label)" };
 
 const s = {
   page: { minHeight: "100vh", background: "#1c1c1e", padding: "40px 20px" },
   wrap: { maxWidth: 800, margin: "0 auto" },
   backBtn: {
     background: "none", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer",
-    color: "rgba(255,255,255,0.6)", padding: "7px 16px", marginBottom: 32,
+    color: "rgba(255,255,255,0.6)", padding: "8px 16px", marginBottom: 32,
     ...mono, fontSize: 12, letterSpacing: "0.05em",
     display: "inline-flex", alignItems: "center", gap: 6,
   },
   h1: { fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 8 },
   meta: { ...mono, fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 40 },
   body: { color: "rgba(255,255,255,0.75)", lineHeight: 1.9, fontSize: 14 },
-  h2: { fontSize: 17, fontWeight: 700, color: "#fff", marginTop: 36, marginBottom: 10 },
+  h2: { fontSize: 17, fontWeight: 700, color: "#fff", marginTop: 40, marginBottom: 10 },
   h3: { fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginTop: 20, marginBottom: 6 },
-  p: { marginBottom: 14 },
-  ul: { paddingLeft: 20, marginBottom: 14 },
+  p: { marginBottom: 16 },
+  ul: { paddingLeft: 20, marginBottom: 16 },
   li: { marginBottom: 6 },
   box: {
     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
@@ -27,12 +27,12 @@ const s = {
   link: { color: "#4f8ef7", textDecoration: "none" },
   em: { color: "rgba(255,255,255,0.9)" },
   badge: {
-    display: "inline-block", ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
     padding: "2px 8px", borderRadius: 3, background: "rgba(34,197,94,0.12)", color: "#4ade80",
     border: "1px solid rgba(34,197,94,0.2)", marginLeft: 8,
   },
   badgeNo: {
-    display: "inline-block", ...mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+    display: "inline-block", ...mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
     padding: "2px 8px", borderRadius: 3, background: "rgba(100,100,100,0.12)", color: "rgba(255,255,255,0.35)",
     border: "1px solid rgba(255,255,255,0.1)", marginLeft: 8,
   },
