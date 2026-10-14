@@ -71,42 +71,47 @@ function Divider() {
   const { T } = useTheme();
   return <div style={{ height: '0.5px', background: T.border, margin: '14px 0' }} />;
 }
-function SectionHeader({ title, action }) {
-  const { T } = useTheme();
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
-      {action}
-    </div>
-  );
-}
 function Panel({ children, style = {} }) {
   const { T } = useTheme();
   return <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: '16px 18px', boxShadow: T.shadow, ...style }}>{children}</div>;
 }
-function KpiCard({ label, value, color, onClick, hint }) {
+const TIPI_COSTO = ['Diritti', 'Trasferte', 'Marche da bollo', 'Altro'];
+const oggiISO = () => new Date().toISOString().slice(0, 10);
+
+function DatoCommessa({ label, value, mono, strong, color, onClick }) {
   const { T } = useTheme();
-  const [hover, setHover] = React.useState(false);
   return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
-        border: `1px solid ${onClick && hover ? T.borderMd : T.border}`,
-        borderRadius: T.radiusSm, padding: '12px 14px', minWidth: 0, overflow: 'hidden',
-        boxShadow: T.shadow, cursor: onClick ? 'pointer' : 'default',
-        transition: 'border-color 0.15s',
-      }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
-        {onClick && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 7, color: T.muted, opacity: 0.6 }}>↗</span>}
+    <div onClick={onClick} style={{ minWidth: 0, cursor: onClick ? 'pointer' : 'default' }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 4 }}>
+        {label}{onClick && <span style={{ opacity: 0.6 }}> ↗</span>}
       </div>
-      <div style={{ fontSize: 'clamp(13px, 3.5vw, 20px)', fontWeight: 600, letterSpacing: '-0.02em', color: color || T.ink, fontFamily: "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
+      <div style={{ fontSize: strong ? 17 : 14, fontWeight: strong ? 600 : 500, color: color || T.ink, fontFamily: mono ? "'IBM Plex Mono', monospace" : "'Space Grotesk', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
     </div>
   );
 }
+
+// Sezione compatta della colonna "da tenere d'occhio": riepilogo sempre visibile, dettaglio apribile.
+function MonitorSection({ title, summary, badge, badgeColor, action, footer, open, onToggle, children }) {
+  const { T } = useTheme();
+  return (
+    <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, minWidth: 0 }}>
+      <div onClick={onToggle} style={{ padding: '12px 14px', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>{title}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => action && e.stopPropagation()}>
+            {action}
+            {badge != null && <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: badgeColor || T.muted }}>{badge}</span>}
+            <span onClick={action ? onToggle : undefined} style={{ fontSize: 10, color: T.muted, cursor: 'pointer' }}>{open ? '▴' : '▾'}</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, marginTop: 4, fontFamily: "'IBM Plex Mono', monospace" }}>{summary}</div>
+        {footer}
+      </div>
+      {open && <div style={{ borderTop: `0.5px solid ${T.border}` }}>{children}</div>}
+    </div>
+  );
+}
+
 function RowMenu({ open, onOpen, onClose, items }) {
   const { T } = useTheme();
   const btnRef = React.useRef(null);
@@ -191,6 +196,13 @@ export default function CommessaDetailPage() {
   const [openMenuId, setOpenMenuId]       = useState(null);
   const [showCollaboratori, setShowCollaboratori] = useState(false);
   const [showCostiInterni, setShowCostiInterni]   = useState(false);
+  const [showRate, setShowRate]                   = useState(false);
+  const [showProforma, setShowProforma]           = useState(null); // null = aperta se ci sono proforma da incassare
+
+  // Inserimento rapido costi extra (sempre visibile)
+  const [quickCosto, setQuickCosto]   = useState({ tipo_costo: 'Altro', description: '', importo: '', data_costo: oggiISO() });
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [quickError, setQuickError]   = useState("");
 
   const [editOpen, setEditOpen]           = useState(false);
   const [editForm, setEditForm]           = useState({});
@@ -381,6 +393,8 @@ export default function CommessaDetailPage() {
   const residuo = importoBase - importoPagato;
   const totCostiExtra = costiExtra.reduce((s, c) => s + (Number(c.importo) || 0), 0);
   const totCollaboratori = collaboratori.reduce((s, c) => s + (Number(c.importo) || 0), 0);
+  const totCostiInterni = costiInterni.reduce((s, c) => s + (Number(c.importo) || 0), 0);
+  const proformaDaPagare = proforma.filter(p => !p.pagato);
 
   // mappe usando nomi originali: suddivisione_pagamento_ids, costo_extra_ids
   const proformaPerRata = useMemo(() => {
@@ -470,6 +484,22 @@ export default function CommessaDetailPage() {
       setPraticaPrompt(true);
     }
     skipPraticaPromptRef.current = false;
+  };
+
+  // Inserimento rapido: aggiunge il costo in lista senza ricaricare la pagina,
+  // così si possono inserire più costi di fila.
+  const handleQuickCosto = async e => {
+    e.preventDefault();
+    if (!quickCosto.importo) return;
+    setQuickError(""); setQuickSaving(true);
+    const tipo = quickCosto.tipo_costo || "Altro";
+    const { data: nuovo, error: iErr } = await supabase.from("costi_extra").insert({ commessa_id: commessaId, tipo_costo: tipo, description: quickCosto.description?.trim() || null, importo: Number(quickCosto.importo) || 0, data_costo: quickCosto.data_costo || oggiISO(), studio: studioId }).select("*").single();
+    setQuickSaving(false);
+    if (iErr) { setQuickError(iErr.message); return; }
+    setCostiExtra(prev => [...prev, nuovo]);
+    setQuickCosto(p => ({ ...p, description: '', importo: '' }));
+    showToast(`Costo extra aggiunto: ${currency(nuovo.importo)}`, "success");
+    if (tipo === "Diritti" && commessa?.project_id) setPraticaPrompt(true);
   };
 
   // Rate — usa campi originali: percentuale, importo_fisso, studio
@@ -694,29 +724,22 @@ export default function CommessaDetailPage() {
     <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 32, color: T.red, fontSize: 13 }}>{error || "Commessa non trovata."}</div>
   );
 
-  const thSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '6px 10px', borderBottom: `0.5px solid ${T.border}`, textAlign: 'left' };
-  const tdSt = { padding: '8px 10px', borderBottom: `0.5px solid ${T.border}`, fontSize: 12, color: T.ink, fontFamily: "'Space Grotesk', sans-serif", verticalAlign: 'middle' };
-  const monoSt = { fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0, width: '100%' }}>
 
-      {/* HEADER */}
-      <Panel>
+      {/* HEADER — dati commessa */}
+      <Panel style={{ padding: isMobile ? '14px 16px' : '18px 22px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
+          <div style={{ minWidth: 0, flex: '1 1 320px' }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, letterSpacing: '0.25em', textTransform: 'uppercase', marginBottom: 6 }}>{commessa.numero_offerta || "—"}</div>
-            <div style={{ fontSize: 20, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em', marginBottom: 4 }}>{commessa.nome_commessa || "Commessa senza nome"}</div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted }}>
-              {commessa.cliente || "—"}
-              {commessa.data_commessa && <span style={{ marginLeft: 12 }}>{new Date(commessa.data_commessa).toLocaleDateString('it-IT')}</span>}
-            </div>
+            <div style={{ fontSize: 22, fontWeight: 600, color: T.ink, letterSpacing: '-0.02em' }}>{commessa.nome_commessa || "Commessa senza nome"}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <BtnGhost onClick={() => navigate("/commesse")} style={{ fontSize: 10 }}>← Commesse</BtnGhost>
             {commessa.project_id && <BtnGhost onClick={() => navigate(`/progetti/${commessa.project_id}`)} style={{ fontSize: 10 }}>Progetto →</BtnGhost>}
             <div style={{ position: 'relative' }}>
-              <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `1px solid ${T.borderMd}`, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
+              <button onClick={() => setMenuOpen(p => !p)} style={{ background: 'none', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor: 'pointer', color: T.ink, width: 34, height: 34, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>···</button>
               {menuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 190, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
                   <button onClick={() => { setMenuOpen(false); if (offertaCollegataId) navigate(`/offerte/${offertaCollegataId}`, { state: { openDoc: true } }); else openEdit(); }} style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.ink }}>Modifica</button>
@@ -727,17 +750,19 @@ export default function CommessaDetailPage() {
             </div>
           </div>
         </div>
-      </Panel>
 
-      {/* KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 10 }}>
-        <KpiCard label="Importo Base" value={currency(importoBase)}
-          onClick={vociOfferta?.voci?.length > 0 ? () => setShowVociPopup(true) : undefined} />
-        <KpiCard label="Pagato"        value={currency(importoPagato)}  color={T.green} />
-        <KpiCard label="Residuo"       value={currency(residuo)}         color={residuo > 0 ? T.navy : T.muted} />
-        <KpiCard label="Costi Extra"   value={currency(totCostiExtra)}   color={T.muted} />
-        <KpiCard label="Collaboratori" value={currency(totCollaboratori)} color={T.muted} />
-      </div>
+        {/* Dati principali in evidenza */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))', gap: isMobile ? 12 : 18, marginTop: 16, paddingTop: 14, borderTop: `0.5px solid ${T.border}` }}>
+          <DatoCommessa label="Cliente" value={commessa.cliente || "—"} />
+          <DatoCommessa label="Data" value={commessa.data_commessa ? new Date(commessa.data_commessa).toLocaleDateString('it-IT') : "—"} mono />
+          <DatoCommessa label="Importo base" value={currency(importoBase)} mono strong
+            onClick={vociOfferta?.voci?.length > 0 ? () => setShowVociPopup(true) : undefined} />
+          <DatoCommessa label="Totale con extra" value={currency(importoBase + totCostiExtra)} mono strong color={T.navy} />
+        </div>
+        {commessa.note_amministrative && (
+          <div style={{ marginTop: 12, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{commessa.note_amministrative}</div>
+        )}
+      </Panel>
 
       {/* Popup breakdown voci offerta */}
       {showVociPopup && vociOfferta && (
@@ -800,300 +825,219 @@ export default function CommessaDetailPage() {
         </div>
       )}
 
-      {commessa.note_amministrative && (
-        <Panel><div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, lineHeight: 1.8 }}>{commessa.note_amministrative}</div></Panel>
-      )}
+      {/* ── CORPO: costi extra (operativo) + colonna monitoraggio ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.7fr) minmax(300px, 1fr)', gap: 14, alignItems: 'start' }}>
 
-      {/* PROFORMA / FATTURA */}
-      <Panel>
-        <SectionHeader title={isFattura ? "Fattura" : "Proforma"} action={
-          hasAnyRates
-            ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }}>+ Nuova</BtnPrimary>
-            : <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>crea prima la suddivisione pagamenti</span>
-                <BtnPrimary disabled style={{ opacity:0.5, cursor:'not-allowed' }}>+ Nuova</BtnPrimary>
+        {/* COSTI EXTRA — inserimento rapido sempre visibile */}
+        <Panel style={{ padding: isMobile ? '14px 14px' : '18px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: '-0.01em' }}>Costi extra</div>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>
+                {costiExtra.length} {costiExtra.length === 1 ? 'voce' : 'voci'} · {currency(totCostiExtra)}
               </div>
-        } />
-        {!hasAnyRates && (
-          <div onClick={() => { setRataStep("config"); setRataModal(true); }}
-            style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', marginBottom:14, cursor:'pointer',
-              background:T.redLight, border:`0.5px solid ${T.red}`, borderRadius: T.radiusSm }}>
-            <span style={{ fontSize:15 }}>⚠️</span>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:T.ink }}>Suddivisione pagamenti mancante</div>
-              <div style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, color:T.muted, marginTop:2 }}>Senza rate non puoi emettere {isFattura ? "fatture" : "proforma"}. Tocca per crearla.</div>
-            </div>
-            <span style={{ fontFamily:"'IBM Plex Mono', monospace", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:T.red, whiteSpace:'nowrap' }}>Crea rate →</span>
-          </div>
-        )}
-        {proforma.filter(p => !p.pagato).length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 8 }}>Da pagare</div>
-            <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['N°','Data','Importo','Note',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-              <tbody>
-                {proforma.filter(p => !p.pagato).map(p => (
-                  <tr key={p.id} onClick={() => setPreviewProforma(p)} style={{ cursor: 'pointer' }}>
-                    <td style={tdSt}><span style={monoSt}>{p.numero_proforma}</span></td>
-                    <td style={{ ...tdSt, ...monoSt }}>{p.data_creazione ? new Date(p.data_creazione).toLocaleDateString('it-IT') : '—'}</td>
-                    <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(p.importo_totale)}</td>
-                    <td style={{ ...tdSt, color: T.muted, fontSize: 11 }}>{p.note || '—'}</td>
-                    <td style={{ ...tdSt, textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                        <BtnPrimary onClick={() => openPagamentoProforma(p)} style={{ fontSize: 10, padding: '5px 10px' }}>Segna pagata</BtnPrimary>
-                        <RowMenu open={openMenuId === p.id} onOpen={() => setOpenMenuId(p.id)} onClose={() => setOpenMenuId(null)}
-                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) }]} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
             </div>
           </div>
-        )}
-        {proforma.filter(p => p.pagato).length > 0 && (
-          <div>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.green, marginBottom: 8 }}>Pagate</div>
-            <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['N°','Fattura','Data pag.','Importo',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-              <tbody>
-                {proforma.filter(p => p.pagato).map(p => (
-                  <tr key={p.id} onClick={() => setPreviewProforma(p)} style={{ cursor: 'pointer' }}>
-                    <td style={tdSt}><span style={monoSt}>{p.numero_proforma}</span></td>
-                    <td style={{ ...tdSt, ...monoSt }}>{p.numero_fattura || '—'}</td>
-                    <td style={{ ...tdSt, ...monoSt }}>{p.data_pagamento ? new Date(p.data_pagamento).toLocaleDateString('it-IT') : '—'}</td>
-                    <td style={{ ...tdSt, ...monoSt, fontWeight: 600, color: T.green }}>{currency(p.importo_totale)}</td>
-                    <td style={{ ...tdSt, textAlign: 'right' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                        <button onClick={() => { setSelectedProforma(p); setRimuoviModal(true); }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>annulla pag.</button>
-                        <RowMenu open={openMenuId === `paid-${p.id}`} onOpen={() => setOpenMenuId(`paid-${p.id}`)} onClose={() => setOpenMenuId(null)}
-                          items={[{ label: 'Modifica', onClick: () => openEditProforma(p) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) }]} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          </div>
-        )}
-        {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '24px 0', textAlign: 'center' }}>{isFattura ? "Nessuna fattura" : "Nessuna proforma"}</div>}
-      </Panel>
 
-      {/* GRID COSTI + RATE */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
-        <Panel>
-          <SectionHeader title="Costi Extra" action={<BtnPrimary onClick={() => { setCostoForm({}); setCostoError(""); setCostoModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }}>+ Aggiungi</BtnPrimary>} />
+          <form onSubmit={handleQuickCosto} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12, background: T.navyLight, borderRadius: T.radiusSm, marginBottom: 14 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {TIPI_COSTO.map(t => {
+                const sel = (quickCosto.tipo_costo || 'Altro') === t;
+                return (
+                  <button key={t} type="button" onClick={() => setQuickCosto(p => ({ ...p, tipo_costo: t }))}
+                    style={{ padding: '5px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: '0.04em',
+                      border: `1px solid ${sel ? T.navy : T.borderMd}`, background: sel ? T.navy : T.surface, color: sel ? T.bg : T.ink }}>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto', gap: 8 }}>
+              <Input value={quickCosto.description} onChange={e => setQuickCosto(p => ({ ...p, description: e.target.value }))} placeholder="Descrizione (opzionale)"
+                style={isMobile ? { gridColumn: '1 / -1' } : {}} />
+              <Input type="number" value={quickCosto.importo} onChange={e => setQuickCosto(p => ({ ...p, importo: e.target.value }))} placeholder="Importo €" required />
+              <Input type="date" value={quickCosto.data_costo} onChange={e => setQuickCosto(p => ({ ...p, data_costo: e.target.value }))} />
+              <BtnPrimary type="submit" disabled={quickSaving || !quickCosto.importo} style={isMobile ? { gridColumn: '1 / -1', borderRadius: T.radiusSm } : { borderRadius: T.radiusSm }}>
+                {quickSaving ? '...' : '+ Aggiungi'}
+              </BtnPrimary>
+            </div>
+            {quickError && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.red }}>{quickError}</div>}
+          </form>
+
           {costiExtra.length === 0
-            ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessun costo extra</div>
-            : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>{['Tipo','Importo','Stato',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {costiExtra.map(c => (
-                    <tr key={c.id}>
-                      <td style={tdSt}>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{c.tipo_costo || 'Altro'}</div>
-                        {c.description && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{c.description}</div>}
-                        {proformaPerCosto[c.id] && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy }}>pf {proformaPerCosto[c.id].numero_proforma}</div>}
-                      </td>
-                      <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(c.importo)}</td>
-                      <td style={{ padding:'8px 14px', fontSize:11, fontFamily:"'IBM Plex Mono', monospace" }}>
-                        {c.pagato ? (
-                          <span style={{ color:T.green, fontSize:9, letterSpacing:'0.1em' }}>✓ PAGATO</span>
-                        ) : (
-                          <span style={{ color:T.muted, fontSize:9, letterSpacing:'0.1em' }}>IN ATTESA</span>
-                        )}
-                      </td>
-                      <td style={tdSt}><RowMenu open={openMenuId === `costo-${c.id}`} onOpen={() => setOpenMenuId(`costo-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCosto(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCosto(c.id) }]} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot><tr><td style={{ ...tdSt, ...monoSt, fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</td><td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(totCostiExtra)}</td><td /></tr></tfoot>
-              </table></div>
-          }
-        </Panel>
-
-        <Panel>
-          <SectionHeader title="Suddivisione Pagamenti" action={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {hasAnyRates && !hasPaidRates && (
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>elimina le rate esistenti per modificare</span>
-              )}
-              {hasAnyRates && hasPaidRates && (
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>rate con pagamenti registrati</span>
-              )}
-              <BtnPrimary onClick={() => { setRataStep("config"); setRataModal(true); }} style={{ fontSize: 10, padding: '5px 12px' }} disabled={hasAnyRates}>+ Rate</BtnPrimary>
-            </div>
-          } />
-          {suddivisione.length === 0
-            ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '20px 0', textAlign: 'center' }}>Nessuna rata</div>
-            : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>{['Rata','Importo','Stato',''].map(h => <th key={h} style={thSt}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {suddivisione.map((r, i) => {
-                    const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
-                    const pf = proformaPerRata[r.id];
-                    return (
-                      <tr key={r.id}>
-                        <td style={tdSt}>
-                          <div style={{ fontSize: 12, fontWeight: 600 }}>Rata {r.numero_rata || i + 1}</div>
-                          {r.percentuale && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{pct(r.percentuale)}</div>}
-                          {pf && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.navy }}>pf {pf.numero_proforma}</div>}
-                        </td>
-                        <td style={{ ...tdSt, ...monoSt, fontWeight: 600 }}>{currency(imp)}</td>
-                        <td style={tdSt}>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: r.pagato ? T.green : T.muted }}>{r.pagato ? '✓ Pagata' : 'In attesa'}</span>
-                          {r.data_pagamento && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{new Date(r.data_pagamento).toLocaleDateString('it-IT')}</div>}
-                        </td>
-                        <td style={tdSt}>
-                          {r.pagato ? (
-                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, padding: '2px 8px' }}>—</span>
-                          ) : (
-                            <RowMenu open={openMenuId === `rata-${r.id}`} onOpen={() => setOpenMenuId(`rata-${r.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditRata(r) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteRata(r.id) }]} />
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table></div>
-          }
-        </Panel>
-      </div>
-
-      {/* ── COLLABORATORI + COSTI INTERNI affiancati ── */}
-      <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:14, marginTop:14 }}>
-
-        {/* COLLABORATORI ESTERNI */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, minWidth:0, overflow:'hidden' }}>
-          <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Collaboratori esterni</div>
-              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
-                {currency(totCollaboratori)} totale
-              </div>
-            </div>
-            <button onClick={()=>setShowCollaboratori(p=>!p)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'4px 10px' }}>
-              {showCollaboratori ? 'Chiudi ↑' : `Vedi (${collaboratori.length}) ↓`}
-            </button>
-          </div>
-
-          {showCollaboratori && (
-            <>
-              {collaboratori.length > 0 && (
-                <table style={{ width:'100%', borderCollapse:'collapse' }}>
-                  <thead><tr>{['Ruolo','Nome','Importo',''].map(h=><th key={h} style={thSt}>{h}</th>)}</tr></thead>
-                  <tbody>
-                    {collaboratori.map(c=>(
-                      <tr key={c.id}>
-                        <td style={{ ...tdSt, color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:11 }}>{c.ruolo||'—'}</td>
-                        <td style={{ ...tdSt, fontWeight:600, fontSize:12 }}>{c.nome_cognome}</td>
-                        <td style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontWeight:600, fontSize:12 }}>{currency(c.importo)}</td>
-                        <td style={tdSt}><RowMenu open={openMenuId===`collab-${c.id}`} onOpen={()=>setOpenMenuId(`collab-${c.id}`)} onClose={()=>setOpenMenuId(null)} items={[{label:'Modifica',onClick:()=>openEditCollab(c)},{label:'Elimina',danger:true,onClick:()=>handleDeleteCollab(c.id)}]}/></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot><tr><td colSpan={2} style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted }}>Totale</td><td style={{ ...tdSt, fontFamily:"'IBM Plex Mono',monospace", fontWeight:600 }}>{currency(totCollaboratori)}</td><td/></tr></tfoot>
-                </table>
-              )}
-              {collaboratori.length === 0 && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted, padding:'12px 16px', textAlign:'center' }}>Nessun collaboratore</div>}
-            </>
-          )}
-
-          {/* Form aggiungi collaboratore */}
-          <div style={{ padding:'10px 14px', borderTop:`0.5px solid ${T.border}` }}>
-            <form onSubmit={handleAddCollab} style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                <Input value={newCollab.ruolo} onChange={e=>setNewCollab(p=>({...p,ruolo:e.target.value}))} placeholder="Ruolo"/>
-                <Input value={newCollab.nome_cognome} onChange={e=>setNewCollab(p=>({...p,nome_cognome:e.target.value}))} placeholder="Nome e cognome" required/>
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <Input type="number" value={newCollab.importo} onChange={e=>setNewCollab(p=>({...p,importo:e.target.value}))} placeholder="Importo €" style={{ flex:1, minWidth:0 }}/>
-                <BtnPrimary type="submit" disabled={savingCollab} style={{ flexShrink:0 }}>+ Aggiungi</BtnPrimary>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        {/* COSTI INTERNI */}
-        <div style={{ background:T.surface, border:`0.5px solid ${T.border}`, minWidth:0, overflow:'hidden' }}>
-          <div style={{ padding:'12px 16px', borderBottom:`0.5px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Costi interni</div>
-              <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:2 }}>
-                {currency(costiInterni.reduce((s,c)=>s+Number(c.importo),0))} · solo per analisi
-              </div>
-            </div>
-            <button onClick={()=>setShowCostiInterni(p=>!p)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, cursor:'pointer', color:T.muted, fontFamily:"'IBM Plex Mono',monospace", fontSize:9, letterSpacing:'0.08em', textTransform:'uppercase', padding:'4px 10px' }}>
-              {showCostiInterni ? 'Chiudi ↑' : `Vedi (${costiInterni.length}) ↓`}
-            </button>
-          </div>
-
-          {showCostiInterni && (
-            <>
-              {costiInterni.length > 0 && (
-                <div>
-                  {costiInterni.map(c=>(
-                    <div key={c.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 14px', borderBottom:`0.5px solid ${T.border}` }}>
-                      <div>
-                        <div style={{ fontSize:12, color:T.ink, fontWeight:500 }}>{c.descrizione}</div>
-                        <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:9, color:T.muted, marginTop:1 }}>
-                          {c.nome_membro&&<span>{c.nome_membro} · </span>}
-                          {c.data&&new Date(c.data).toLocaleDateString('it-IT')}
-                        </div>
+            ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '18px 0', textAlign: 'center' }}>Nessun costo extra</div>
+            : <div>
+                {[...costiExtra].reverse().map(c => (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', borderBottom: `0.5px solid ${T.border}` }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{c.tipo_costo || 'Altro'}</span>
+                        {c.description && <span style={{ fontSize: 12, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.description}</span>}
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red }}>{currency(c.importo)}</span>
-                        <button onClick={()=>handleDeleteCostoInterno(c.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.muted, fontSize:16 }}>×</button>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted, marginTop: 2 }}>
+                        {c.data_costo ? new Date(c.data_costo).toLocaleDateString('it-IT') : '—'}
+                        {proformaPerCosto[c.id] && <span style={{ color: T.navy }}> · pf {proformaPerCosto[c.id].numero_proforma}</span>}
+                        {c.pagato ? <span style={{ color: T.green }}> · ✓ pagato</span> : <span> · in attesa</span>}
                       </div>
                     </div>
-                  ))}
-                  <div style={{ display:'flex', justifyContent:'flex-end', padding:'6px 14px', borderBottom:`0.5px solid ${T.border}` }}>
-                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted }}>Totale: </span>
-                    <span style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:12, fontWeight:600, color:T.red, marginLeft:8 }}>
-                      {currency(costiInterni.reduce((s,c)=>s+Number(c.importo),0))}
-                    </span>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: 'nowrap' }}>{currency(c.importo)}</div>
+                    <RowMenu open={openMenuId === `costo-${c.id}`} onOpen={() => setOpenMenuId(`costo-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCosto(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCosto(c.id) }]} />
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 4px 0' }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted }}>Totale</span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: T.ink }}>{currency(totCostiExtra)}</span>
+                </div>
+              </div>
+          }
+        </Panel>
+
+        {/* COLONNA MONITORAGGIO */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: T.muted, padding: '2px 4px' }}>Da tenere d'occhio</div>
+
+          {/* INCASSI + RATE */}
+          <MonitorSection title="Incassi" open={showRate || !hasAnyRates} onToggle={() => setShowRate(p => !p)}
+            summary={<span><span style={{ color: T.green }}>{currency(importoPagato)}</span><span style={{ color: T.muted, fontWeight: 400 }}> / {currency(importoBase)}</span></span>}
+            badge={hasAnyRates ? `${suddivisione.filter(r => r.pagato).length}/${suddivisione.length} rate` : 'no rate'}
+            badgeColor={hasAnyRates ? undefined : T.red}
+            footer={
+              <div style={{ height: 4, borderRadius: 2, background: T.border, overflow: 'hidden', marginTop: 8 }}>
+                <div style={{ height: '100%', width: `${importoBase > 0 ? Math.min(100, importoPagato / importoBase * 100) : 0}%`, background: T.green }} />
+              </div>
+            }>
+            {!hasAnyRates && (
+              <div onClick={() => { setRataStep("config"); setRataModal(true); }}
+                style={{ margin: '10px 14px', padding: '10px 12px', cursor: 'pointer', background: T.redLight, border: `0.5px solid ${T.red}`, borderRadius: T.radiusSm }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Suddivisione pagamenti mancante</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted, marginTop: 2 }}>Senza rate non puoi emettere {isFattura ? "fatture" : "proforma"}. Tocca per crearla →</div>
+              </div>
+            )}
+            {suddivisione.map((r, i) => {
+              const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
+              const pf = proformaPerRata[r.id];
+              return (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: r.pagato ? T.green : pf ? T.navy : T.borderMd }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? <span style={{ fontWeight: 400, color: T.muted }}> · {pct(r.percentuale)}</span> : null}</div>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: r.pagato ? T.green : T.muted }}>
+                      {r.pagato ? `pagata${r.data_pagamento ? ' ' + new Date(r.data_pagamento).toLocaleDateString('it-IT') : ''}` : pf ? <span style={{ color: T.navy }}>pf {pf.numero_proforma}</span> : 'in attesa'}
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(imp)}</span>
+                  {r.pagato
+                    ? <span style={{ width: 28 }} />
+                    : <RowMenu open={openMenuId === `rata-${r.id}`} onOpen={() => setOpenMenuId(`rata-${r.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditRata(r) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteRata(r.id) }]} />}
+                </div>
+              );
+            })}
+            {hasAnyRates && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: T.muted }}>
+                <span>Residuo</span><span style={{ color: residuo > 0 ? T.navy : T.muted, fontWeight: 600 }}>{currency(residuo)}</span>
+              </div>
+            )}
+          </MonitorSection>
+
+          {/* PROFORMA / FATTURE */}
+          <MonitorSection title={isFattura ? "Fatture" : "Proforma"} open={showProforma ?? proformaDaPagare.length > 0} onToggle={() => setShowProforma(p => !(p ?? proformaDaPagare.length > 0))}
+            summary={proformaDaPagare.length > 0
+              ? <span>{proformaDaPagare.length} da incassare <span style={{ color: T.muted, fontWeight: 400 }}>· {currency(proformaDaPagare.reduce((s, p) => s + (Number(p.importo_totale) || 0), 0))}</span></span>
+              : <span style={{ color: T.muted, fontWeight: 400 }}>{proforma.length === 0 ? (isFattura ? 'Nessuna fattura' : 'Nessuna proforma') : 'Tutte incassate'}</span>}
+            badge={proforma.length > 0 ? `${proforma.length}` : null}
+            action={hasAnyRates
+              ? <BtnPrimary onClick={() => { setProformaRateIds([]); setProformaCostiIds([]); setProformaForm({ numero_proforma: "", data_creazione: "", note: "" }); setProformaModal(true); }} style={{ fontSize: 9, padding: '4px 10px', borderRadius: T.radiusSm }}>+ Nuova</BtnPrimary>
+              : null}>
+            {proforma.length === 0 && <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: T.muted, padding: '12px 14px', textAlign: 'center' }}>{hasAnyRates ? (isFattura ? "Nessuna fattura" : "Nessuna proforma") : "Crea prima la suddivisione pagamenti"}</div>}
+            {[...proformaDaPagare, ...proforma.filter(p => p.pagato)].map(p => (
+              <div key={p.id} onClick={() => setPreviewProforma(p)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}`, cursor: 'pointer' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: T.ink }}>{p.numero_proforma}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: p.pagato ? T.green : T.muted }}>
+                    {p.pagato
+                      ? `✓ pagata${p.data_pagamento ? ' ' + new Date(p.data_pagamento).toLocaleDateString('it-IT') : ''}${p.numero_fattura ? ' · ft ' + p.numero_fattura : ''}`
+                      : (p.data_scadenza ? `scade ${new Date(p.data_scadenza).toLocaleDateString('it-IT')}` : 'da pagare')}
                   </div>
                 </div>
-              )}
-              {costiInterni.length === 0 && <div style={{ fontFamily:"'IBM Plex Mono',monospace", fontSize:11, color:T.muted, padding:'12px 16px', textAlign:'center' }}>Nessun costo interno</div>}
-            </>
-          )}
-
-          {/* Form aggiungi costo interno */}
-          <div style={{ padding:'10px 14px', borderTop:`0.5px solid ${T.border}` }}>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                <select value={newCostoInterno.team_member_id} onChange={e=>setNewCostoInterno(p=>({...p,team_member_id:e.target.value}))}
-                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}>
-                  <option value=''>— Membro —</option>
-                  {teamMembers.map(m=><option key={m.id} value={m.id}>{m.user_name||m.user_email}</option>)}
-                </select>
-                <input type='date' value={newCostoInterno.data} onChange={e=>setNewCostoInterno(p=>({...p,data:e.target.value}))}
-                  style={{ padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:11, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: p.pagato ? T.green : T.ink }}>{currency(p.importo_totale)}</span>
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {!p.pagato && <button onClick={() => openPagamentoProforma(p)} title="Segna pagata"
+                    style={{ background: 'none', border: `0.5px solid ${T.green}`, borderRadius: T.radiusSm, color: T.green, cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, padding: '3px 7px' }}>✓ pagata</button>}
+                  <RowMenu open={openMenuId === `pf-${p.id}`} onOpen={() => setOpenMenuId(`pf-${p.id}`)} onClose={() => setOpenMenuId(null)}
+                    items={[
+                      { label: 'Modifica', onClick: () => openEditProforma(p) },
+                      ...(p.pagato ? [{ label: 'Annulla pagamento', onClick: () => { setOpenMenuId(null); setSelectedProforma(p); setRimuoviModal(true); } }] : []),
+                      { label: 'Elimina', danger: true, onClick: () => handleDeleteProforma(p) },
+                    ]} />
+                </div>
               </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <input type='text' value={newCostoInterno.descrizione} onChange={e=>setNewCostoInterno(p=>({...p,descrizione:e.target.value}))}
-                  onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+            ))}
+          </MonitorSection>
+
+          {/* COLLABORATORI ESTERNI */}
+          <MonitorSection title="Collaboratori esterni" open={showCollaboratori} onToggle={() => setShowCollaboratori(p => !p)}
+            summary={currency(totCollaboratori)} badge={`${collaboratori.length}`}>
+            {collaboratori.map(c => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{c.nome_cognome}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>{c.ruolo || '—'}</div>
+                </div>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.ink }}>{currency(c.importo)}</span>
+                <RowMenu open={openMenuId === `collab-${c.id}`} onOpen={() => setOpenMenuId(`collab-${c.id}`)} onClose={() => setOpenMenuId(null)} items={[{ label: 'Modifica', onClick: () => openEditCollab(c) }, { label: 'Elimina', danger: true, onClick: () => handleDeleteCollab(c.id) }]} />
+              </div>
+            ))}
+            <form onSubmit={handleAddCollab} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <Input value={newCollab.ruolo} onChange={e => setNewCollab(p => ({ ...p, ruolo: e.target.value }))} placeholder="Ruolo" />
+                <Input value={newCollab.nome_cognome} onChange={e => setNewCollab(p => ({ ...p, nome_cognome: e.target.value }))} placeholder="Nome e cognome" required />
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Input type="number" value={newCollab.importo} onChange={e => setNewCollab(p => ({ ...p, importo: e.target.value }))} placeholder="Importo €" style={{ flex: 1, minWidth: 0 }} />
+                <BtnPrimary type="submit" disabled={savingCollab} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '7px 12px' }}>+</BtnPrimary>
+              </div>
+            </form>
+          </MonitorSection>
+
+          {/* COSTI INTERNI */}
+          <MonitorSection title="Costi interni · solo analisi" open={showCostiInterni} onToggle={() => setShowCostiInterni(p => !p)}
+            summary={currency(totCostiInterni)} badge={`${costiInterni.length}`}>
+            {costiInterni.map(c => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderBottom: `0.5px solid ${T.border}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: T.ink, fontWeight: 500 }}>{c.descrizione}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.muted }}>
+                    {c.nome_membro && <span>{c.nome_membro} · </span>}
+                    {c.data && new Date(c.data).toLocaleDateString('it-IT')}
+                  </div>
+                </div>
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600, color: T.red }}>{currency(c.importo)}</span>
+                <button onClick={() => handleDeleteCostoInterno(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 16 }}>×</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <select value={newCostoInterno.team_member_id} onChange={e => setNewCostoInterno(p => ({ ...p, team_member_id: e.target.value }))}
+                  style={{ padding: '7px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 11, fontFamily: "'IBM Plex Mono',monospace", outline: 'none', minWidth: 0 }}>
+                  <option value=''>— Membro —</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
+                </select>
+                <Input type="date" value={newCostoInterno.data} onChange={e => setNewCostoInterno(p => ({ ...p, data: e.target.value }))} />
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input type='text' value={newCostoInterno.descrizione} onChange={e => setNewCostoInterno(p => ({ ...p, descrizione: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddCostoInterno(); }}
                   placeholder='Descrizione spesa...'
-                  style={{ flex:'2 1 0', minWidth:0, padding:'7px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", outline:'none' }}/>
-                <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e=>setNewCostoInterno(p=>({...p,importo:e.target.value}))}
-                  onKeyDown={e=>{ if(e.key==='Enter') handleAddCostoInterno(); }}
+                  style={{ flex: '2 1 0', minWidth: 0, padding: '7px 10px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", outline: 'none' }} />
+                <input type='number' min={0} step={0.01} value={newCostoInterno.importo} onChange={e => setNewCostoInterno(p => ({ ...p, importo: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddCostoInterno(); }}
                   placeholder='€'
-                  style={{ flex:'1 1 0', minWidth:0, padding:'7px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.surface, color:T.ink, fontSize:12, fontFamily:"'IBM Plex Mono',monospace", outline:'none' }}/>
-                <button onClick={handleAddCostoInterno} disabled={savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo}
-                  style={{ background:T.navy, border:'none', color:'#EEF1F6', cursor:'pointer', padding:'0 14px', fontSize:18, opacity:savingCostoInt||!newCostoInterno.descrizione.trim()||!newCostoInterno.importo?0.4:1 }}>
-                  +
-                </button>
+                  style={{ flex: '1 1 0', minWidth: 0, padding: '7px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "'IBM Plex Mono',monospace", outline: 'none' }} />
+                <BtnPrimary onClick={handleAddCostoInterno} disabled={savingCostoInt || !newCostoInterno.descrizione.trim() || !newCostoInterno.importo} style={{ flexShrink: 0, borderRadius: T.radiusSm, padding: '7px 12px' }}>+</BtnPrimary>
               </div>
             </div>
-          </div>
+          </MonitorSection>
         </div>
-
       </div>
 
       {/* ════ MODALI ════ */}
