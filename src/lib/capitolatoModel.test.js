@@ -10,7 +10,7 @@ vi.mock("./supabase", () => ({ supabase: {} }));
 import {
   fmtNum, parseNum, parseMisura, qtaMisurazione, totaleRiga, totaleRigaEff,
   rigaFromVoce, defaultSommanoLabels, componiGruppi, ALFABETO_IT,
-  assistenzaPerc, assistenzaLabel,
+  assistenzaPerc, assistenzaLabel, applicaLayout, spostaVoce,
 } from "./capitolatoModel";
 
 describe("fmtNum", () => {
@@ -185,5 +185,52 @@ describe("ALFABETO_IT", () => {
     expect(ALFABETO_IT.includes("J")).toBe(false);
     expect(ALFABETO_IT.includes("K")).toBe(false);
     expect(ALFABETO_IT.join("")).toBe("ABCDEFGHILMNOPQRSTUVZ");
+  });
+});
+
+describe("disposizione libreria (riordino e spostamento tra sezioni)", () => {
+  const v = (id, cat, ordine, extra = {}) => ({ id, categoria_code: cat, categoria_nome: cat, codice: id, ordine, _layoutKey: `k:${cat}||${id}`, ...extra });
+  const base = [v("A01", "A", 1), v("A02", "A", 2), v("A03", "A", 3), v("B01", "B", 1), v("B02", "B", 2)];
+  const ids = (l, cat) => l.filter((x) => x.categoria_code === cat).map((x) => x.id);
+
+  it("senza layout lascia l'ordine base", () => {
+    expect(applicaLayout(base, []).map((x) => x.id)).toEqual(["A01", "A02", "A03", "B01", "B02"]);
+  });
+  it("applica sezione e ordine del layout conservando gli originali in _orig", () => {
+    const out = applicaLayout(base, [{ voce_key: "k:A||A01", categoria_code: "C", ordine: 0 }, { voce_key: "k:A||A03", categoria_code: "A", ordine: -1 }]);
+    expect(ids(out, "A")).toEqual(["A03", "A02"]);
+    const a01 = out.find((x) => x.id === "A01");
+    expect(a01.categoria_code).toBe("C");
+    expect(a01.categoria_nome).toBe("Costruzioni");
+    expect(a01._orig).toEqual({ categoria_code: "A", categoria_nome: "A", ordine: 1 });
+  });
+  it("sposta su/giù nella sezione e rinumera la sezione", () => {
+    const res = spostaVoce(base, "A03", { dir: -1 });
+    expect(ids(res.voci, "A")).toEqual(["A01", "A03", "A02"]);
+    expect(res.layout).toEqual([
+      { voce_key: "k:A||A01", categoria_code: "A", ordine: 0 },
+      { voce_key: "k:A||A03", categoria_code: "A", ordine: 1 },
+      { voce_key: "k:A||A02", categoria_code: "A", ordine: 2 },
+    ]);
+    expect(ids(res.voci, "B")).toEqual(["B01", "B02"]);
+  });
+  it("non sposta oltre i bordi della sezione", () => {
+    expect(spostaVoce(base, "A01", { dir: -1 })).toBeNull();
+    expect(spostaVoce(base, "B02", { dir: 1 })).toBeNull();
+  });
+  it("sposta in fondo a un'altra sezione", () => {
+    const res = spostaVoce(base, "A02", { cat: "B" });
+    expect(ids(res.voci, "A")).toEqual(["A01", "A03"]);
+    expect(ids(res.voci, "B")).toEqual(["B01", "B02", "A02"]);
+    expect(res.layout.map((l) => [l.voce_key, l.categoria_code, l.ordine])).toEqual([
+      ["k:B||B01", "B", 0], ["k:B||B02", "B", 1], ["k:A||A02", "B", 2],
+    ]);
+    const a02 = res.voci.find((x) => x.id === "A02");
+    expect(a02._orig.categoria_code).toBe("A");
+    expect(a02.categoria_nome).toBe("Demolizioni");
+  });
+  it("ignora lo spostamento nella stessa sezione o di voci inesistenti", () => {
+    expect(spostaVoce(base, "A01", { cat: "A" })).toBeNull();
+    expect(spostaVoce(base, "ZZ", { dir: 1 })).toBeNull();
   });
 });
