@@ -203,9 +203,11 @@ export function assistenzaLabel(a) {
 
 // ── I/O Supabase ───────────────────────────────────────────────────────────────
 // Libreria voci: template globale (studio null) + voci custom dello studio.
-// Una voce dello studio con stessa (categoria_code, codice) "oscura" quella globale
-// (pattern override: lo studio personalizza il testo base senza toccare il template).
-// Se l'override ha cambiato codice, override_of conserva la chiave della globale.
+// Una voce dello studio con override_of = "<categoria>||<codice>" di una globale la
+// "oscura" (pattern override: lo studio personalizza il testo base senza toccare il
+// template) e può cambiarne codice e sezione. Le altre voci dello studio hanno
+// identità propria (l'id): anche se usano un codice uguale a quello di una globale
+// non la nascondono, e due voci non si "mangiano" a vicenda.
 export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   let q = supabase
     .from("capitolato_voci")
@@ -217,19 +219,33 @@ export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   else q = q.is("studio", null);
   const { data, error } = await q;
   if (error) throw error;
+  return applicaLayout(componiLibreria(data || []), studioId ? await loadLayout(studioId) : []);
+}
 
-  const byKey = new Map();
-  const conGlobale = new Set(); // chiavi che esistono nel template globale
-  for (const v of data || []) {
-    const key = v.override_of || `${v.categoria_code}||${v.codice}`;
-    if (!v.studio) conGlobale.add(key);
-    const ex = byKey.get(key);
-    if (!ex || (v.studio && !ex.studio)) byKey.set(key, v); // la voce studio vince sulla globale
+// Righe di capitolato_voci → voci della libreria, ognuna con la sua _layoutKey
+// ("k:<chiave globale>" per globali e loro override, "id:<uuid>" per le voci dello
+// studio). Se più override puntano alla stessa globale vince il più recente.
+export function componiLibreria(rows) {
+  const globali = new Map();
+  for (const v of rows) if (!v.studio) globali.set(`${v.categoria_code}||${v.codice}`, v);
+  const override = new Map();
+  const proprie = [];
+  const piuRecente = (a, b) => String(a.updated_at || a.created_at || "") >= String(b.updated_at || b.created_at || "");
+  for (const v of rows) {
+    if (!v.studio) continue;
+    if (v.override_of && globali.has(v.override_of)) {
+      const ex = override.get(v.override_of);
+      if (!ex || piuRecente(v, ex)) override.set(v.override_of, v);
+    } else proprie.push({ ...v, _layoutKey: `id:${v.id}` });
   }
-  const voci = [...byKey.entries()].map(([key, v]) => ({
-    ...v, _layoutKey: conGlobale.has(key) ? `k:${key}` : `id:${v.id}`,
-  }));
-  return applicaLayout(voci, studioId ? await loadLayout(studioId) : []);
+  const voci = [...globali.entries()].map(([key, g]) => ({ ...(override.get(key) || g), _layoutKey: `k:${key}` }));
+  return ordinaLibreria([...voci, ...proprie]);
+}
+
+// Il codice è già usato da un'altra voce della stessa sezione?
+export function codiceDuplicato(voci, { id, categoria_code, codice }) {
+  const c = String(codice || "").trim().toLowerCase();
+  return !!c && voci.some((v) => v.id !== id && v.categoria_code === categoria_code && String(v.codice || "").trim().toLowerCase() === c);
 }
 
 // ── Disposizione della libreria (ordine + sezione per studio) ─────────────────
