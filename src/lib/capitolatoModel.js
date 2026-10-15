@@ -527,8 +527,9 @@ export async function createCapitolato(projectId, meta = {}) {
   return data;
 }
 
-// Salva meta + righe. Le righe vengono riscritte (delete+insert): il set è piccolo
-// e questo evita diff complessi mantenendo l'ordine.
+// Salva meta + righe. Le righe vengono riscritte: prima si inseriscono le nuove,
+// poi si cancellano le vecchie, così se l'inserimento fallisce il capitolato
+// salvato resta intatto (prima si cancellava per primo e un errore lo svuotava).
 export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
   const patch = { ...meta, updated_at: new Date().toISOString() };
   if (versioni !== undefined) patch.versioni = versioni;
@@ -538,16 +539,20 @@ export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
     .eq("id", capitolatoId);
   if (eMeta) throw eMeta;
 
-  const { error: eDel } = await supabase
+  const { data: vecchie, error: eOld } = await supabase
     .from("capitolato_righe")
-    .delete()
+    .select("id")
     .eq("capitolato_id", capitolatoId);
-  if (eDel) throw eDel;
+  if (eOld) throw eOld;
 
   if (righe.length) {
+    // voce_id è solo il collegamento alla libreria: se la voce è stata eliminata
+    // dalla libreria nel frattempo, la riga resta (è uno snapshot) ma scollegata,
+    // altrimenti la foreign key capitolato_righe_voce_id_fkey blocca il salvataggio
+    const esistenti = await vociEsistenti(righe.map((r) => r.voce_id).filter(Boolean));
     const payload = righe.map((r, i) => ({
       capitolato_id: capitolatoId,
-      voce_id: r.voce_id || null,
+      voce_id: r.voce_id && esistenti.has(r.voce_id) ? r.voce_id : null,
       categoria_code: r.categoria_code,
       categoria_nome: r.categoria_nome || "",
       codice: r.codice || "",
@@ -569,4 +574,19 @@ export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
     }
     if (eIns) throw eIns;
   }
+
+  const ids = (vecchie || []).map((r) => r.id);
+  if (ids.length) {
+    const { error: eDel } = await supabase.from("capitolato_righe").delete().in("id", ids);
+    if (eDel) throw eDel;
+  }
+}
+
+// Quali di questi id esistono ancora in capitolato_voci.
+async function vociEsistenti(ids) {
+  const unici = [...new Set(ids)];
+  if (!unici.length) return new Set();
+  const { data, error } = await supabase.from("capitolato_voci").select("id").in("id", unici);
+  if (error) throw error;
+  return new Set((data || []).map((v) => v.id));
 }
