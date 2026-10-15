@@ -214,12 +214,14 @@ export async function loadLibreria(studioId, { includiInattive = false } = {}) {
     .select("*")
     .order("categoria_code", { ascending: true })
     .order("ordine", { ascending: true });
-  if (!includiInattive) q = q.eq("attiva", true);
   if (studioId) q = q.or(`studio.is.null,studio.eq.${studioId}`);
   else q = q.is("studio", null);
   const { data, error } = await q;
   if (error) throw error;
-  return applicaLayout(componiLibreria(data || []), studioId ? await loadLayout(studioId) : []);
+  // le inattive si filtrano DOPO la composizione: un override disattivato
+  // (voce del template eliminata dallo studio) deve continuare a nascondere la globale
+  const voci = componiLibreria(data || []).filter((v) => includiInattive || v.attiva !== false);
+  return applicaLayout(voci, studioId ? await loadLayout(studioId) : []);
 }
 
 // Righe di capitolato_voci → voci della libreria, ognuna con la sua _layoutKey
@@ -372,7 +374,11 @@ export async function saveVoceLibreria(voce, studioId) {
       res = await supabase.from("capitolato_voci").insert(senza).select("*").single();
     }
   }
-  if (res.error) throw res.error;
+  if (res.error) {
+    // con la RLS un update/insert non permesso non scrive nulla: .single() lo segnala così
+    if (res.error.code === "PGRST116") throw new Error("la voce non è stata scritta (permessi sullo studio?)");
+    throw res.error;
+  }
   const data = res.data;
   if (!voce._layoutKey) return data;
   // riporta la disposizione effettiva (la voce resta dove l'utente l'ha messa)
@@ -385,10 +391,19 @@ export async function saveVoceLibreria(voce, studioId) {
   };
 }
 
-// Elimina una voce dello studio (le globali non sono eliminabili via RLS).
-export async function deleteVoceLibreria(id) {
-  const { error } = await supabase.from("capitolato_voci").delete().eq("id", id);
+// Elimina una voce dalla libreria dello studio. Le voci legate al template (globali
+// e loro override) non si cancellano: si disattivano con un override attiva=false,
+// così la globale resta nascosta e si possono ripristinare. Le voci create dallo
+// studio si cancellano davvero. Verifica che qualcosa sia stato scritto: con la RLS
+// un'operazione non permessa non dà errore ma tocca 0 righe.
+export async function deleteVoceLibreria(voce, studioId) {
+  if (voce.studio == null || voce._layoutKey?.startsWith("k:")) {
+    return saveVoceLibreria({ ...voce, attiva: false }, studioId);
+  }
+  const { data, error } = await supabase.from("capitolato_voci").delete().eq("id", voce.id).select("id");
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error("la voce non è stata eliminata (permessi sullo studio?)");
+  return null;
 }
 
 // Capitolato del progetto (il più recente non cancellato) + righe.
