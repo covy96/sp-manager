@@ -188,11 +188,10 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
 
   const salva = async () => {
     if (!d.codice.trim() || !d.titolo.trim()) { showToast("Codice e titolo obbligatori", "error"); return; }
-    // il controllo scatta solo se il codice è cambiato: voci già doppie si salvano lo stesso
+    // codice già usato nella sezione: si salva lo stesso (le voci non si identificano
+    // per codice), ma lo segnaliamo perché l'ordine tra le due resta ambiguo
     const codiceCambiato = !voce || d.codice.trim().toLowerCase() !== String(voce.codice || "").trim().toLowerCase();
-    if (codiceCambiato && codiceUsato?.({ id: voce?.id, categoria_code: voce ? voce.categoria_code : d.categoria_code, codice: d.codice })) {
-      showToast(`Il codice ${d.codice.trim()} è già usato in questa sezione`, "error"); return;
-    }
+    const doppio = codiceCambiato && codiceUsato?.({ id: voce?.id, categoria_code: voce ? voce.categoria_code : d.categoria_code, codice: d.codice });
     setSaving(true);
     try {
       const payload = voce
@@ -202,7 +201,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       if (!payload.sommano_labels || !payload.sommano_labels.length) payload.sommano_labels = defaultSommanoLabels(payload.unita, payload.tipo);
       const row = await saveVoceLibreria(payload, studioId);
       setD({ ...row }); setDirty(false); onSaved?.(row);
-      if (!nuova) showToast("Voce salvata", "success");
+      if (doppio) showToast(`Salvata. Attenzione: il codice ${d.codice.trim()} è usato anche da un'altra voce della sezione`, "warning");
+      else if (!nuova) showToast("Voce salvata", "success");
     } catch (e) { console.error(e); showToast("Errore nel salvataggio: " + (e.message || ""), "error"); }
     finally { setSaving(false); }
   };
