@@ -21,22 +21,37 @@ export default function RegolazioneCapitolatoPage() {
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [adding, setAdding] = useState(false);
+  const [mostraEliminate, setMostraEliminate] = useState(false);
+  const [inModifica, setInModifica] = useState(() => new Set()); // id delle voci con modifiche non salvate
 
+  // Il "Carico…" solo al primo caricamento: ai ricaricamenti successivi (voce
+  // aggiunta/eliminata) le schede restano montate e non perdono le modifiche in corso.
   const ricarica = async () => {
-    setLoading(true);
     try { setVoci(await loadLibreria(studioId, { includiInattive: true })); }
     catch (e) { console.error(e); showToast("Errore nel caricamento delle voci", "error"); }
     finally { setLoading(false); }
   };
+  const segnaModifica = (id, sporca) => setInModifica((prev) => {
+    if (prev.has(id) === sporca) return prev;
+    const n = new Set(prev); if (sporca) n.add(id); else n.delete(id); return n;
+  });
+  // avvisa prima di chiudere/ricaricare la pagina con modifiche non salvate
+  useEffect(() => {
+    if (!inModifica.size) return;
+    const h = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [inModifica.size]);
   useEffect(() => { if (studioId !== null) ricarica(); }, [studioId]); // eslint-disable-line
 
   const risultati = useMemo(() => {
     const q = norm(query.trim());
-    let l = voci;
+    let l = mostraEliminate ? voci.filter((v) => v.attiva === false) : voci.filter((v) => v.attiva !== false);
     if (catFilter) l = l.filter((v) => v.categoria_code === catFilter);
     if (q) l = l.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(v.descrizione).includes(q));
     return l;
-  }, [voci, query, catFilter]);
+  }, [voci, query, catFilter, mostraEliminate]);
+  const nEliminate = useMemo(() => voci.filter((v) => v.attiva === false).length, [voci]);
 
   const gruppi = useMemo(() => CAPITOLATO_CATEGORIE
     .map((c) => ({ cat: c, items: risultati.filter((v) => v.categoria_code === c.code) }))
@@ -48,24 +63,25 @@ export default function RegolazioneCapitolatoPage() {
     const filtered = prev.filter((v) => v.id !== row.id && !(row._layoutKey && v._layoutKey === row._layoutKey));
     return ordinaLibreria([...filtered, row]); // resta al suo posto (ordine per codice)
   });
-  const onDeleted = (id) => { ricarica(); };
+  const onDeleted = () => { ricarica(); };
 
   // Riordino e spostamento tra sezioni. L'ordine segue il codice: ↑↓ scambiano il
   // codice con la voce vicina, "Sposta in…" dà il primo codice libero della sezione
   // di destinazione. Durante una ricerca testuale è disattivato (le voci vicine
   // potrebbero essere nascoste).
-  const puoSpostare = !!studioId && !query.trim();
+  const puoSpostare = !!studioId && !query.trim() && !mostraEliminate;
   const sposta = async (id, { dir, cat }) => {
     const prima = voci;
+    const attive = voci.filter((v) => v.attiva !== false); // le eliminate non contano come vicine
     try {
       if (cat) {
-        const res = spostaVoce(voci, id, { cat });
+        const res = spostaVoce(attive, id, { cat });
         if (!res) return;
-        setVoci(res.voci);
+        setVoci(ordinaLibreria([...res.voci, ...voci.filter((v) => v.attiva === false)]));
         await saveLayout(studioId, res.layout);
         onSaved(await saveVoceLibreria(res.voce, studioId));
       } else {
-        const coppia = scambiaCodici(voci, id, dir);
+        const coppia = scambiaCodici(attive, id, dir);
         if (!coppia) return;
         for (const v of coppia) onSaved(await saveVoceLibreria(v, studioId));
       }
@@ -75,7 +91,7 @@ export default function RegolazioneCapitolatoPage() {
     }
   };
   const codiceSuggerito = (cat) => prossimoCodice(voci, cat);
-  const codiceUsato = (v) => codiceDuplicato(voci, v);
+  const codiceUsato = (v) => codiceDuplicato(voci.filter((x) => x.attiva !== false), v);
 
   const inputSt = { padding: "8px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "var(--font-ui)", outline: "none" };
 
@@ -97,6 +113,17 @@ export default function RegolazioneCapitolatoPage() {
         ))}
       </div>
 
+      {(inModifica.size > 0 || nEliminate > 0) && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 14, fontFamily: mono, fontSize: 11 }}>
+          <span style={{ color: T.red }}>{inModifica.size > 0 ? `Modifiche non salvate su ${inModifica.size} ${inModifica.size === 1 ? "voce" : "voci"}: premi Salva su ognuna` : ""}</span>
+          {nEliminate > 0 && (
+            <button onClick={() => setMostraEliminate((x) => !x)} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.muted, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 10, padding: "4px 10px", cursor: "pointer" }}>
+              {mostraEliminate ? "Torna alle voci" : `Voci eliminate (${nEliminate})`}
+            </button>
+          )}
+        </div>
+      )}
+
       {adding && (
         <VoceEditor nuova studioId={studioId} T={T} showToast={showToast} codiceSuggerito={codiceSuggerito} codiceUsato={codiceUsato}
           onSaved={() => { ricarica(); setAdding(false); showToast("Voce aggiunta", "success"); }}
@@ -111,7 +138,7 @@ export default function RegolazioneCapitolatoPage() {
         <div key={g.cat.code} style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
           {g.items.map((v, i) => (
-            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato}
+            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato} onDirty={segnaModifica}
               spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
           ))}
         </div>
@@ -130,7 +157,7 @@ function Chip({ T, active, children, ...rest }) {
 
 const CAT_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c]));
 
-function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito, codiceUsato }) {
+function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito, codiceUsato, onDirty }) {
   const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: codiceSuggerito?.("A") || "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
   const [d, setD] = useState(voce ? { ...voce } : blank);
   const [dirty, setDirty] = useState(!!nuova);
@@ -147,6 +174,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
   }, [voce]); // eslint-disable-line
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  const voceId = voce?.id;
+  useEffect(() => { if (voceId) onDirty?.(voceId, dirty); }, [voceId, dirty]); // eslint-disable-line
+  useEffect(() => () => { if (voceId) onDirty?.(voceId, false); }, [voceId]); // eslint-disable-line
 
   const set = (patch) => { setD((p) => ({ ...p, ...patch })); setDirty(true); };
   const setUnitaTipo = (patch) => {
@@ -158,7 +188,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
 
   const salva = async () => {
     if (!d.codice.trim() || !d.titolo.trim()) { showToast("Codice e titolo obbligatori", "error"); return; }
-    if (codiceUsato?.({ id: voce?.id, categoria_code: voce ? voce.categoria_code : d.categoria_code, codice: d.codice })) {
+    // il controllo scatta solo se il codice è cambiato: voci già doppie si salvano lo stesso
+    const codiceCambiato = !voce || d.codice.trim().toLowerCase() !== String(voce.codice || "").trim().toLowerCase();
+    if (codiceCambiato && codiceUsato?.({ id: voce?.id, categoria_code: voce ? voce.categoria_code : d.categoria_code, codice: d.codice })) {
       showToast(`Il codice ${d.codice.trim()} è già usato in questa sezione`, "error"); return;
     }
     setSaving(true);
@@ -175,12 +207,19 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
     finally { setSaving(false); }
   };
 
+  const eliminata = voce?.attiva === false;
   const elimina = async () => {
-    if (!voce?.id || isGlobale) return;
-    if (!window.confirm("Eliminare questa voce dello studio?")) return;
+    if (!voce?.id) return;
+    if (!window.confirm(`Eliminare la voce ${voce.codice || ""} dalla libreria?`)) return;
     setBusy(true);
-    try { await deleteVoceLibreria(voce.id); onDeleted?.(voce.id); }
+    try { await deleteVoceLibreria({ ...voce, _orig: voce._orig, _layoutKey: voce._layoutKey }, studioId); setDirty(false); onDeleted?.(voce.id); showToast("Voce eliminata", "success"); }
     catch (e) { console.error(e); showToast("Errore eliminazione: " + (e.message || ""), "error"); }
+    finally { setBusy(false); }
+  };
+  const ripristina = async () => {
+    setBusy(true);
+    try { onSaved?.(await saveVoceLibreria({ ...voce, attiva: true }, studioId)); showToast("Voce ripristinata", "success"); }
+    catch (e) { console.error(e); showToast("Errore nel ripristino: " + (e.message || ""), "error"); }
     finally { setBusy(false); }
   };
 
@@ -232,7 +271,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
         <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
-          {nuova ? "nuova voce" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
+          {nuova ? "nuova voce" : eliminata ? "voce eliminata" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
           {" · SOMMANO: " + (d.sommano_labels && d.sommano_labels.length ? d.sommano_labels.join(" / ") : defaultSommanoLabels(d.unita, d.tipo).join(" / "))}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -251,7 +290,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
             </>
           )}
           {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 16px", cursor: "pointer" }}>Annulla</button>}
-          {!nuova && !isGlobale && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Elimina</button>}
+          {eliminata && <button onClick={ripristina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Ripristina</button>}
+          {!nuova && !eliminata && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Elimina</button>}
           <button onClick={salva} disabled={saving || (!dirty && !nuova)} style={{ border: "none", background: T.navy, color: T.bg, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer", opacity: saving || (!dirty && !nuova) ? 0.5 : 1 }}>{saving ? "Salvo…" : nuova ? "Aggiungi" : "Salva"}</button>
         </div>
       </div>

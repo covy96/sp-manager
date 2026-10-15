@@ -273,3 +273,14 @@ describe("identità delle voci di libreria (niente voci che spariscono)", () => 
     expect(codiceDuplicato(voci, { id: "x", categoria_code: "H", codice: "G01" })).toBe(false);
   });
 });
+
+describe("voci eliminate (override disattivati)", () => {
+  it("un override disattivato continua a nascondere la globale", () => {
+    const out = componiLibreria([
+      { id: "g", studio: null, categoria_code: "A", codice: "A01", attiva: true },
+      { id: "o", studio: "S", categoria_code: "A", codice: "A01", override_of: "A||A01", attiva: false },
+    ]);
+    expect(out.map((v) => v.id)).toEqual(["o"]);
+    expect(out.filter((v) => v.attiva !== false)).toEqual([]);
+  });
+});
