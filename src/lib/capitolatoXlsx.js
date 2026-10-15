@@ -3,9 +3,10 @@
 // barra titolo navy, header grigio con celle unite (Dimensioni/IMPORTI), righe
 // voce su fondo grigio con bordi, MISURAZIONI/SOMMANO in corsivo, cella unitario
 // evidenziata (crema), formati numero/€, larghezze colonne, TOTALE e Riepilogo
-// con formule. Versione "impresa" (protetto=true): fogli protetti SENZA password,
-// modificabile solo la cella "unitario"; si sblocca da Revisione > Rimuovi
-// protezione foglio. Versione "modificabile" (protetto=false): nessuna protezione.
+// con formule. Versione "impresa" (protetto=true): fogli protetti, modificabile solo
+// la cella "unitario"; si sblocca da Revisione > Rimuovi protezione foglio, con la
+// password scelta all'export (se vuota, senza password). Versione "modificabile"
+// (protetto=false): nessuna protezione.
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
@@ -213,7 +214,7 @@ function scarica(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva", protetto = true }) {
+export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva", protetto = true, password = "" }) {
   const wb = new ExcelJS.Workbook();
   const gruppi = componiGruppi(righe);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
@@ -325,8 +326,13 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
 
   // Protezione fogli: tutto bloccato tranne le celle sbloccate (colonne G/H delle
   // righe SOMMANO/assistenza, dove l'impresa inserisce prezzi unitari e importi).
-  // Senza password: chi riceve il file la toglie e rimette da Revisione > Protezione foglio.
-  if (protetto) await Promise.all(wb.worksheets.map((ws) => ws.protect("", PROTECT)));
+  // L'hash della password (SHA-512, 100k giri) è lento nel browser: lo calcolo una
+  // volta sul primo foglio e copio la stessa protezione sugli altri.
+  if (protetto && wb.worksheets.length) {
+    const [primo, ...altri] = wb.worksheets;
+    await primo.protect(password || "", { ...PROTECT });
+    altri.forEach((ws) => { ws.sheetProtection = { ...primo.sheetProtection }; });
+  }
 
   const now = new Date();
   const pz = (n) => String(n).padStart(2, "0");
