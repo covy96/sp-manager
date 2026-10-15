@@ -3,7 +3,10 @@
 // barra titolo navy, header grigio con celle unite (Dimensioni/IMPORTI), righe
 // voce su fondo grigio con bordi, MISURAZIONI/SOMMANO in corsivo, cella unitario
 // evidenziata (crema), formati numero/€, larghezze colonne, TOTALE e Riepilogo
-// con formule. Il foglio è PROTETTO: si può modificare SOLO la cella "unitario".
+// con formule. Versione "impresa" (protetto=true): fogli protetti, modificabile solo
+// la cella "unitario"; si sblocca da Revisione > Rimuovi protezione foglio, con la
+// password scelta all'export (se vuota, senza password). Versione "modificabile"
+// (protetto=false): nessuna protezione.
 // ─────────────────────────────────────────────────────────────────────────────
 import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
@@ -16,7 +19,8 @@ const F_NUM = "#,##0.00", F_EUR = '#,##0.00" €"';
 const thin = { style: "thin", color: { argb: GRID } };
 const medium = { style: "medium", color: { argb: "FF404040" } };
 const box = { top: thin, left: thin, bottom: thin, right: thin };
-const PROTECT = { selectLockedCells: true, selectUnlockedCells: true, formatCells: false, insertRows: false, deleteRows: false };
+// opzioni ExcelJS: true = consentito anche col foglio protetto (allargare colonne/righe)
+const PROTECT = { selectLockedCells: true, selectUnlockedCells: true, formatColumns: true, formatRows: true };
 
 const dataIt = (iso) => {
   if (!iso) return "";
@@ -210,7 +214,7 @@ function scarica(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva" }) {
+export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva", protetto = true, password = "" }) {
   const wb = new ExcelJS.Workbook();
   const gruppi = componiGruppi(righe);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
@@ -322,12 +326,18 @@ export async function generaCapitolatoXlsx({ capitolato, righe, project, studio,
 
   // Protezione fogli: tutto bloccato tranne le celle sbloccate (colonne G/H delle
   // righe SOMMANO/assistenza, dove l'impresa inserisce prezzi unitari e importi).
-  wb.worksheets.forEach((ws) => { ws.sheetProtection = { sheet: true, ...PROTECT }; });
+  // L'hash della password (SHA-512, 100k giri) è lento nel browser: lo calcolo una
+  // volta sul primo foglio e copio la stessa protezione sugli altri.
+  if (protetto && wb.worksheets.length) {
+    const [primo, ...altri] = wb.worksheets;
+    await primo.protect(password || "", { ...PROTECT });
+    altri.forEach((ws) => { ws.sheetProtection = { ...primo.sheetProtection }; });
+  }
 
   const now = new Date();
   const pz = (n) => String(n).padStart(2, "0");
   const ts = `${now.getFullYear()}${pz(now.getMonth() + 1)}${pz(now.getDate())}_${pz(now.getHours())}${pz(now.getMinutes())}`;
-  const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}_${ts}.xlsx`;
+  const filename = `Capitolato_${String(nomeProgetto).replace(/[^\w\-]+/g, "_")}${protetto ? "" : "_modificabile"}_${ts}.xlsx`;
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   if (modo === "blob") return blob;

@@ -83,6 +83,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const [versioni, setVersioni] = useState([]);
   const [versioneAttiva, setVersioneAttiva] = useState(null);
   const [menuVer, setMenuVer] = useState(null);
+  const [xlsxMenu, setXlsxMenu] = useState(false); // scelta Excel protetto / modificabile
+  const [xlsxPwd, setXlsxPwd] = useState(""); // password per togliere la protezione (non salvata)
   const [view, setView] = useState("versioni"); // versioni | recap | edit
   const [importOpen, setImportOpen] = useState(false);
   const [importList, setImportList] = useState([]);
@@ -438,10 +440,11 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     catch (e) { console.error(e); showToast?.("Errore nella generazione del PDF", "error"); }
     finally { setBusy(false); }
   };
-  const handleXlsx = async () => {
+  const handleXlsx = async (protetto, password = "") => {
+    setXlsxMenu(false);
     if (!righe.length) { showToast?.("Aggiungi almeno una voce", "error"); return; }
     setBusy(true);
-    try { await generaCapitolatoXlsx(exportSnapshot()); }
+    try { await generaCapitolatoXlsx({ ...exportSnapshot(), protetto, password }); }
     catch (e) { console.error(e); showToast?.("Errore nell'export Excel", "error"); }
     finally { setBusy(false); }
   };
@@ -673,7 +676,26 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <button onClick={openImport} disabled={busy} style={{ ...btnGhost, padding: "6px 12px", opacity: busy ? 0.5 : 1 }}>⤵ Importa da progetto</button>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={handleXlsx} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel</button>
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => setXlsxMenu(m => !m)} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel ▾</button>
+                    {xlsxMenu && (
+                      <div style={{ position: "absolute", right: 0, bottom: "100%", marginBottom: 4, zIndex: 10, background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, overflow: "hidden", minWidth: 300 }}>
+                        <div style={{ padding: "10px 12px", borderBottom: `0.5px solid ${T.border}` }}>
+                          <div style={{ fontFamily: mono, fontSize: 11, color: T.ink }}>Per l'impresa (protetto)</div>
+                          <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.35 }}>Modificabili solo i prezzi. La password serve per Revisione › Rimuovi protezione foglio.</div>
+                          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                            <input type="password" value={xlsxPwd} onChange={e => setXlsxPwd(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleXlsx(true, xlsxPwd); }} placeholder="Password (facoltativa)" autoComplete="new-password"
+                              style={{ flex: 1, minWidth: 0, border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontSize: 12, padding: "6px 8px" }} />
+                            <button onClick={() => handleXlsx(true, xlsxPwd)} style={{ ...btnGhost, padding: "6px 10px" }}>Scarica</button>
+                          </div>
+                        </div>
+                        <button onClick={() => handleXlsx(false)} style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: "10px 12px" }}>
+                          <div style={{ fontFamily: mono, fontSize: 11, color: T.ink }}>Modificabile</div>
+                          <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.35 }}>Nessun blocco: tutte le celle sono libere.</div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button onClick={handlePdf} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>{busy ? "…" : "Stampa PDF"}</button>
                   {view === "recap"
                     ? <button onClick={() => setView("edit")} style={btnPrimary}>Modifica</button>
