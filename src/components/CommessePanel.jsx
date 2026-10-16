@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BodyPortal from "./BodyPortal";
 import { useTheme } from '../contexts/ThemeContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useEscKey } from '../hooks/useEscKey';
@@ -40,6 +41,7 @@ export default function CommessePanel({ commesse = [] }) {
           <span title={`${senzaImporto.length} commessa senza importo`} style={{ color:'#b45309', fontSize:12, lineHeight:1 }}>⚠</span>
         )}
       </button>
+      <BodyPortal>
 
       {modalOpen && (
         <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.5)', padding:16 }}>
@@ -92,6 +94,7 @@ export default function CommessePanel({ commesse = [] }) {
           </div>
         </div>
       )}
+      </BodyPortal>
     </>
   );
 }

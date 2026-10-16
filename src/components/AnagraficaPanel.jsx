@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import BodyPortal from "./BodyPortal";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
@@ -540,8 +541,8 @@ export default function AnagraficaPanel({ projectId, studioId }) {
   return (
     <>
       {widget}
-      {modal}
-      {copyModalEl}
+      <BodyPortal>{modal}</BodyPortal>
+      <BodyPortal>{copyModalEl}</BodyPortal>
     </>
   );
 }

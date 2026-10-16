@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { jsPDF } from "jspdf";
+import BodyPortal from "./BodyPortal";
 import autoTable from "jspdf-autotable";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -1432,5 +1433,5 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
     </div>
   );
 
-  return <>{widget}{modal}</>;
+  return <>{widget}<BodyPortal>{modal}</BodyPortal></>;
 }

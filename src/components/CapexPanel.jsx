@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
+import BodyPortal from "./BodyPortal";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
@@ -26,11 +28,12 @@ const EMPTY_PAG = { data_pagamento: new Date().toISOString().slice(0, 10), impor
 
 export default function CapexPanel({ projectId, studioId, projectName }) {
   const { T } = useTheme();
+  const isMobile = useIsMobile();
   const showToast = useToast();
 
   const mono = { fontFamily: "var(--font-label)" };
   const inputSt = {
-    width: '100%', padding: '8px 10px', boxSizing: 'border-box',
+    width: '100%', height: 36, padding: '0 10px', boxSizing: 'border-box',
     border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink,
     fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none',
   };
@@ -307,7 +310,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   const renderRigaPreventivo = (v, isExtra = false) => {
     const isDel = confirmDelete === v.id;
     return (
-      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
+      <div key={v.id} style={{ display: 'flex', alignItems: 'center', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: 12, rowGap: 10, padding: isMobile ? '12px' : '12px 16px', background: isExtra ? T.surface : T.bg, border: `1px solid ${T.border}`, borderRadius: T.radius, marginLeft: isExtra ? 24 : 0, borderLeft: isExtra ? `2px solid ${T.brass}` : `1px solid ${T.border}` }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {isExtra && <span style={{ ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: T.brass, border: `1px solid ${T.brass}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>Extra</span>}
@@ -316,7 +319,9 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
           {!isExtra && v.note && <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 4 }}>{v.note}</div>}
         </div>
-        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: T.ink, flexShrink: 0 }}>{currency(v.importo)}</div>
+        <div style={{ ...mono, fontSize: 13, fontWeight: 500, color: T.ink, flexShrink: 0, alignSelf: isMobile ? 'flex-start' : 'center' }}>{currency(v.importo)}</div>
+        {/* Azioni: su mobile vanno su una riga a parte, allineate a destra */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, ...(isMobile ? { flexBasis: '100%', justifyContent: 'flex-end' } : {}) }}>
         {/* toggle accettato */}
         <button onClick={() => toggleAccettato(v)} title={v.accettato ? "Accettato" : "Non accettato"} style={{
           display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${v.accettato ? T.green : T.borderMd}`,
@@ -339,6 +344,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
             </>
           )}
         </div>
+        </div>
       </div>
     );
   };
@@ -359,7 +365,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
             <button onClick={resetForm} style={{ border: 'none', background: 'none', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>✕ annulla extra</button>
           )}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.4fr 1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1.2fr 1.4fr 1fr 1fr', gap: 10, alignItems: 'end' }}>
           <div style={{ position: 'relative' }}>
             <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Categoria *</div>
             <input
@@ -497,11 +503,11 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                       )}
                       {/* form nuovo pagamento */}
                       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                        <div style={{ width: 140 }}>
+                        <div style={isMobile ? { flex: '1 1 40%', minWidth: 0 } : { width: 140 }}>
                           <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Data</div>
                           <input type="date" value={pagForm.data_pagamento} onChange={e => setPagForm(p => ({ ...p, data_pagamento: e.target.value }))} style={inputSt} />
                         </div>
-                        <div style={{ width: 120 }}>
+                        <div style={isMobile ? { flex: '1 1 40%', minWidth: 0 } : { width: 120 }}>
                           <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Importo (€)</div>
                           <input type="number" min="0" step="0.01" value={pagForm.importo} onChange={e => setPagForm(p => ({ ...p, importo: e.target.value }))} placeholder="0,00" style={{ ...inputSt, ...mono }} />
                         </div>
@@ -509,7 +515,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
                           <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 6 }}>Nota</div>
                           <input value={pagForm.note} onChange={e => setPagForm(p => ({ ...p, note: e.target.value }))} placeholder="Es. acconto" style={inputSt} />
                         </div>
-                        <button onClick={() => handleAddPagamento(v)} disabled={savingPag} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 16px', cursor: savingPag ? 'not-allowed' : 'pointer', opacity: savingPag ? 0.6 : 1, height: 33 }}>
+                        <button onClick={() => handleAddPagamento(v)} disabled={savingPag} style={{ background: T.navy, color: T.bg, border: 'none', borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 16px', cursor: savingPag ? 'not-allowed' : 'pointer', opacity: savingPag ? 0.6 : 1, height: 36 }}>
                           + Pagamento
                         </button>
                       </div>
@@ -629,8 +635,8 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
 
   // ── MODAL ────────────────────────────────────────────────────────
   const modal = modalOpen && (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: 16 }}>
-      <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, padding: 28, maxHeight: '90vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(14,14,13,0.5)', padding: isMobile ? 12 : 16 }}>
+      <div ref={modalScrollRef} style={{ width: '100%', maxWidth: 880, boxSizing: 'border-box', background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusLg, padding: isMobile ? 18 : 28, maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
@@ -639,7 +645,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {voci.length > 0 && (
-              <button onClick={exportXlsx} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer' }}>↓ Excel</button>
+              <button onClick={exportXlsx} style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>↓ Excel</button>
             )}
             <button onClick={() => { setModalOpen(false); resetForm(); setConfirmDelete(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
           </div>
@@ -667,7 +673,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   return (
     <>
       {widget}
-      {modal}
+      <BodyPortal>{modal}</BodyPortal>
     </>
   );
 }

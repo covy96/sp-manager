@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import BodyPortal from "./BodyPortal";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
@@ -472,6 +473,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
           ? <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, padding: "1px 6px" }}>{versCount}</span>
           : <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>+ Apri</span>}
       </button>
+      <BodyPortal>
 
       {open && (
         <div style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.62)", padding: 12 }}>
@@ -794,6 +796,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
           </div>
         </div>
       )}
+      </BodyPortal>
     </>
   );
 }
