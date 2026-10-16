@@ -419,6 +419,9 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  /* contesto di impilamento proprio: la barra non sale mai sopra i modali */
+  position: relative;
+  z-index: 0;
 }
 .pd-tools > button {
   height: 34px !important;
@@ -441,7 +444,6 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
     margin-right: -16px;
     padding: 2px 16px 4px;
     scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
   }
   .pd-tools::-webkit-scrollbar { display: none; }
 }
