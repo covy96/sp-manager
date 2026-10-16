@@ -80,6 +80,9 @@ const MENU_SECTIONS = [
   },
 ];
 
+// Altezza header mobile: safe-area iOS (notch / Dynamic Island) + 52px di barra
+const HEADER_H = 'calc(max(12px, env(safe-area-inset-top)) + 52px)';
+
 const PLAN_ORDER = { free:0, studio:1, pro:2 };
 
 class ErrorBoundary extends React.Component {
@@ -173,10 +176,11 @@ export default function MobileLayout({ session, children }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', minHeight:'100vh', background:T.bg, color:T.ink, fontFamily:"var(--font-ui)", transition:'background 0.2s, color 0.2s' }}>
 
-      {/* ── HEADER — altezza 52px + safe-area-inset-top per notch iOS ── */}
-      <header style={{ position:'sticky', top:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:52, paddingTop:'max(12px, env(safe-area-inset-top))', paddingBottom:10, paddingLeft:16, paddingRight:16, background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
+      {/* ── HEADER — fixed (non sticky): iOS 26 colora la status bar solo con
+           elementi fixed in cima; con sticky applica la sfumatura/blur sopra il nome ── */}
+      <header style={{ position:'fixed', top:0, left:0, right:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', height:HEADER_H, paddingTop:'max(12px, env(safe-area-inset-top))', paddingLeft:16, paddingRight:16, background:T.sidebarBg, boxShadow:'0 1px 0 rgba(0,0,0,0.15)' }}>
         <button onClick={()=>navigate('/dashboard')} style={{ background:'none', border:'none', cursor:'pointer', padding:0 }}>
-          <div style={{ fontSize:15, fontWeight:700, letterSpacing:'-0.02em', color:'#EEF1F6' }}>{studioName||'SP Manager'}</div>
+          <div style={{ fontSize:17, fontWeight:700, letterSpacing:'-0.02em', color:'#FFFFFF' }}>{studioName||'SP Manager'}</div>
         </button>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <button onClick={()=>setSearchOpen(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(238,241,246,0.7)', padding:8, minWidth:40, minHeight:40, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -193,7 +197,7 @@ export default function MobileLayout({ session, children }) {
               <>
                 {/* Backdrop — chiude il popup e blocca touch sull'app */}
                 <div onClick={()=>setSettingsOpen(false)} style={{ position:'fixed', inset:0, zIndex:49 }}/>
-              <div style={{ position:'fixed', top:'calc(max(12px, env(safe-area-inset-top)) + 58px)', right:8, left:8, maxWidth:360, margin:'0 auto', background:isDark?'#1c1c1e':'#ffffff', border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.6':'0.2'})`, borderRadius:14, maxHeight:'80vh', overflowY:'auto' }}>
+              <div style={{ position:'fixed', top:`calc(${HEADER_H} + 6px)`, right:8, left:8, maxWidth:360, margin:'0 auto', background:isDark?'#1c1c1e':'#ffffff', border:`0.5px solid ${T.borderMd}`, zIndex:50, boxShadow:`0 8px 24px rgba(0,0,0,${isDark?'0.6':'0.2'})`, borderRadius:14, maxHeight:'80vh', overflowY:'auto' }}>
                 {/* User info */}
                 <div style={{ padding:'16px 16px', borderBottom:`0.5px solid ${T.border}` }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -355,6 +359,9 @@ export default function MobileLayout({ session, children }) {
           </div>
         </div>
       )}
+
+      {/* Spazio occupato dall'header fixed */}
+      <div aria-hidden style={{ height:HEADER_H, flexShrink:0 }}/>
 
       {/* ── CONTENT ── */}
       <main style={{ flex:1, padding:'16px 16px 80px', overflowY:'auto', overflowX:'hidden', background:T.bg }}>
