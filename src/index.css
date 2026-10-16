@@ -410,3 +410,45 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
 .asm-seg > button { border-radius: 7px !important; }
 .asm-seg > button:active { transform: none !important; }
 .asm-seg-thumb { border-radius: 7px !important; }
+
+/* ── Schermata progetto: barra strumenti uniforme ─────────────────
+   I pannelli (Pratiche, Documenti, Capitolato…) hanno ciascuno il proprio
+   pulsante con stili inline diversi: qui li uniformiamo in "pillole"
+   della stessa altezza, su un'unica riga scorrevole su mobile. */
+.pd-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pd-tools > button {
+  height: 34px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  border: 0.5px solid var(--border-md) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 0.12s var(--ease-apple, ease), background 0.15s;
+}
+.pd-tools > button:hover { background: var(--navy-light) !important; }
+.pd-tools > button:active { transform: scale(0.97); }
+@media (max-width: 767px) {
+  .pd-tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 2px 16px 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pd-tools::-webkit-scrollbar { display: none; }
+}
+/* Righe task: evidenziazione al passaggio, azione "+" visibile solo in hover su desktop */
+.pd-row { transition: background 0.12s; }
+.pd-row:hover { background: rgba(118,118,128,0.08); }
+@media (hover: hover) {
+  .pd-row .pd-row-action { opacity: 0; transition: opacity 0.12s; }
+  .pd-row:hover .pd-row-action, .pd-row .pd-row-action:focus-visible, .pd-row .pd-row-action[aria-pressed="true"] { opacity: 1; }
+}

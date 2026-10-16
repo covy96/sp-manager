@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
@@ -15,6 +16,7 @@ import CapitolatoPanel from '../components/CapitolatoPanel';
 import DocumentiPanel from '../components/DocumentiPanel';
 import ProjectNotes from '../components/ProjectNotes';
 import LinkedCommesseField from '../components/LinkedCommesseField';
+import SlidingTabs from '../components/SlidingTabs';
 import { ProjectForm } from './ProjectsPage';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -33,6 +35,33 @@ function getInitials(name = "") {
 }
 
 const TASK_VISIBILITY_KEY = "projectDetailTaskVisibility";
+
+const MESI_BREVI = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+// "2026-10-17" → "17 ott" (anno solo se diverso da quello corrente)
+function formatShortDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number);
+  if (!y || !m || !d) return String(iso);
+  const sameYear = y === new Date().getFullYear();
+  return `${d} ${MESI_BREVI[m - 1]}${sameYear ? "" : ` ${y}`}`;
+}
+function formatEuro(n, compact = false) {
+  const v = Number(n) || 0;
+  if (compact && Math.abs(v) >= 10000) return `${(v / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 })}k €`;
+  return `${Math.round(v).toLocaleString("it-IT")} €`;
+}
+function todayIsoDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function ProgressBar({ perc, color, T }) {
+  return (
+    <div style={{ height: 4, background: T.borderMd, borderRadius: 2, marginTop: 8, overflow: 'hidden' }}>
+      <div style={{ height: 4, width: `${Math.max(0, Math.min(100, perc))}%`, background: color, borderRadius: 2, transition: 'width 0.3s' }} />
+    </div>
+  );
+}
 
 function sortTasksForColumn(tasks) {
   return [...tasks].sort((a, b) => {
@@ -180,13 +209,15 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     </div>
   );
 
-  // Su mobile: modal centrato fullscreen
-  if (isMobile) return (
+  // Su mobile: modal centrato fullscreen. Portal su <body>: le colonne hanno
+  // backdrop-filter, che altrimenti farebbe da riferimento al position:fixed.
+  if (isMobile) return createPortal(
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div ref={ref} onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding:20, maxHeight:'85vh', overflowY:'auto' }}>
         {formContent}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   // Desktop: dropdown assoluto
@@ -201,32 +232,67 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
   );
 }
 
+// ── PICCOLI ELEMENTI DELLE RIGHE ──────────────────────────────────
+function MemberAvatar({ name, size = 20 }) {
+  if (!name) return null;
+  return (
+    <span title={name} style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: avatarColor(name), color: '#fff',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "var(--font-ui)", fontSize: Math.round(size * 0.42), fontWeight: 700,
+    }}>{getInitials(name)}</span>
+  );
+}
+
+function DueChip({ task, T }) {
+  if (!task.data_pianificata) return null;
+  const today = todayIsoDate();
+  const overdue = task.status !== "completed" && task.data_pianificata < today;
+  const isToday = task.data_pianificata === today;
+  const color = overdue ? '#ff3b30' : isToday ? '#ff9500' : T.muted;
+  return (
+    <span title={task.data_pianificata} style={{ fontFamily: "var(--font-label)", fontSize: 10, color, flexShrink: 0, whiteSpace: 'nowrap' }}>
+      {isToday ? "Oggi" : formatShortDate(task.data_pianificata)}{task.ora_pianificata ? ` · ${String(task.ora_pianificata).slice(0,5)}` : ""}
+    </span>
+  );
+}
+
+function CheckCircle({ done, size, onClick, disabled, T }) {
+  return (
+    <button onClick={onClick} disabled={disabled} aria-label={done ? "Riapri" : "Completa"} style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0, padding: 0,
+      border: `1.5px solid ${done ? T.navy : T.borderHeavy}`,
+      background: done ? T.navy : 'transparent', color: '#fff',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size - 6, lineHeight: 1, cursor: 'pointer',
+    }}>{done ? "✓" : ""}</button>
+  );
+}
+
 // ── SUBTASK ROW ───────────────────────────────────────────────────
 function SubtaskRow({ task, teamMembers, categories, onToggle, onUpdateTask, onDeleteTask, isUpdating }) {
   const { T } = useTheme();
   const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
+  const assigned = task.assigned_member ? teamMembers.find(m => m.id === task.assigned_member) : null;
   return (
-    <div style={{
-      position: 'relative', marginLeft: 20,
-      display: 'flex', alignItems: 'flex-start', gap: 8,
-      padding: '6px 8px', background: T.bg,
-      border: `1px solid ${T.border}`,
-      opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
+    <div className="pd-row" style={{
+      position: 'relative', marginLeft: 26,
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '4px 8px', borderRadius: 8,
+      opacity: done ? 0.45 : isUpdating ? 0.5 : 1,
     }}>
-      <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
-        marginTop: 2, width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
-        border: `1px solid ${done ? T.navy : T.borderMd}`,
-        background: done ? T.navy : 'transparent',
-        cursor: 'pointer', padding: 0,
-      }} />
+      <CheckCircle done={done} size={14} onClick={() => onToggle(task)} disabled={isUpdating} T={T} />
       <button onClick={() => setPopupOpen(v => !v)} style={{
-        flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-        fontSize: 11, color: done ? T.muted : T.ink,
+        flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+        fontSize: 12, color: done ? T.muted : T.ink,
         textDecoration: done ? 'line-through' : 'none',
         fontFamily: "var(--font-ui)",
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>{task.title ?? task.name ?? "Subtask"}</button>
+      <DueChip task={task} T={T} />
+      <MemberAvatar name={assigned?.user_name || assigned?.user_email} size={18} />
       {popupOpen && <TaskEditPopup task={task} teamMembers={teamMembers} categories={categories} onSave={onUpdateTask} onDelete={onDeleteTask} onClose={() => setPopupOpen(false)} isSubtask />}
     </div>
   );
@@ -237,92 +303,97 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
   const { T } = useTheme();
   const done = task.status === "completed";
   const [popupOpen, setPopupOpen] = useState(false);
+  // Il campo "aggiungi subtask" resta nascosto finché non serve
+  const [addingSub, setAddingSub] = useState(false);
 
-  const assignedName = task.assigned_member ? (teamMembers.find(m => m.id === task.assigned_member)?.user_name || teamMembers.find(m => m.id === task.assigned_member)?.user_email) : null;
+  const assigned = task.assigned_member ? teamMembers.find(m => m.id === task.assigned_member) : null;
+  const assignedName = assigned?.user_name || assigned?.user_email || null;
+  const subDone = subtasks.filter(s => s.status === "completed").length;
 
   const inputSt = {
-    padding: '6px 10px', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface,
-    color: T.ink, fontSize: 11, fontFamily: "var(--font-ui)", outline: 'none',
+    height: 28, padding: '0 10px', border: `0.5px solid ${T.borderMd}`, borderRadius: 999, background: T.inputBg,
+    color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: 'none', boxSizing: 'border-box',
   };
   const miniBtn = {
-    width: 28, height: 28, flexShrink: 0, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
-    background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, flexShrink: 0, border: `0.5px solid ${T.borderMd}`, borderRadius: '50%',
+    background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
+  const priorityColor = { alta: '#ff3b30', media: '#ff9500', bassa: '#007aff' }[task.priority];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{
-        position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8,
-        padding: '8px 10px', background: T.surface, border: `1px solid ${T.border}`,
-        opacity: done ? 0.4 : isUpdating ? 0.5 : 1,
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div className="pd-row" style={{
+        position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 8px', borderRadius: 10,
+        opacity: done ? 0.45 : isUpdating ? 0.5 : 1,
         cursor: isUpdating ? 'not-allowed' : 'default',
       }}>
-        <button onClick={() => onToggle(task)} disabled={isUpdating} style={{
-          marginTop: 2, width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-          border: `1px solid ${done ? T.navy : T.borderMd}`,
-          background: done ? T.navy : 'transparent',
-          cursor: 'pointer', padding: 0,
-        }} />
+        <CheckCircle done={done} size={18} onClick={() => onToggle(task)} disabled={isUpdating} T={T} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {task.priority === "alta" && <span title="Alta priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#dc2626', flexShrink:0 }}/>}
-            {task.priority === "media" && <span title="Media priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#d97706', flexShrink:0 }}/>}
-            {task.priority === "bassa" && <span title="Bassa priorità" style={{ width:7, height:7, borderRadius:'50%', background:'#2563eb', flexShrink:0 }}/>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {priorityColor && <span title={`Priorità ${task.priority}`} style={{ width: 6, height: 6, borderRadius: '50%', background: priorityColor, flexShrink: 0 }}/>}
             <button onClick={() => setPopupOpen(v => !v)} style={{
-              flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, color: done ? T.muted : T.ink,
+              flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              fontSize: 13, color: done ? T.muted : T.ink,
               textDecoration: done ? 'line-through' : 'none',
               fontFamily: "var(--font-ui)", fontWeight: 600,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{task.title ?? task.name ?? "Task"}</button>
-            {task.is_recurring && (
-              <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:'1px 6px', flexShrink:0, opacity:0.7 }}>↻</span>
-            )}
-            {assignedName && (
-              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.05em', border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px', flexShrink: 0 }}>
-                {assignedName}
-              </span>
-            )}
-            {task.data_pianificata && (
-              <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, flexShrink: 0 }}>
-                {task.data_pianificata}{task.ora_pianificata ? ` ⏰ ${String(task.ora_pianificata).slice(0,5)}` : ""}
-              </span>
-            )}
           </div>
+          {(task.data_pianificata || task.is_recurring || subtasks.length > 0) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, marginLeft: priorityColor ? 12 : 0 }}>
+              <DueChip task={task} T={T} />
+              {task.is_recurring && <span title={`Ricorrente: ${task.recurrence_rule}`} style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.navy }}>↻ ricorrente</span>}
+              {subtasks.length > 0 && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>☰ {subDone}/{subtasks.length}</span>}
+            </div>
+          )}
         </div>
+        {!done && (
+          <button className="pd-row-action" aria-pressed={addingSub} onClick={() => setAddingSub(v => !v)} title="Aggiungi subtask" aria-label="Aggiungi subtask" style={{
+            width: 24, height: 24, borderRadius: '50%', border: 'none', background: addingSub ? T.navyLight : 'transparent',
+            color: addingSub ? T.navy : T.muted, cursor: 'pointer', fontSize: 15, lineHeight: 1, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>+</button>
+        )}
+        <MemberAvatar name={assignedName} size={22} />
         {popupOpen && <TaskEditPopup task={task} teamMembers={teamMembers} categories={categories} onSave={onUpdateTask} onDelete={onDeleteTask} onClose={() => setPopupOpen(false)} isSubtask={false} />}
       </div>
 
-      {!done && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {!done && (subtasks.length > 0 || addingSub) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingBottom: 4 }}>
           {subtasks.map(st => (
             <SubtaskRow key={st.id} task={st} teamMembers={teamMembers} categories={categories}
               onToggle={onToggle} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} isUpdating={isUpdating} />
           ))}
-          <div style={{ marginLeft: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="text" value={subtaskInput ?? ""} onChange={e => onSubtaskInputChange(task.id, e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onCreateSubtask(task); } }}
-              placeholder="Aggiungi subtask..." style={{ ...inputSt, flex: 1, minWidth: 0 }} />
-            <div style={miniBtn} aria-label="Assegna membro subtask" title={teamMembers.find(m=>m.id===(subtaskAssignment??currentMemberId))?.user_name || 'Assegna'}>
-              <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
-              <select value={subtaskAssignment ?? (currentMemberId ?? "")} onChange={e => onSubtaskAssignmentChange(task.id, e.target.value)}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
-                <option value="">Non assegnato</option>
-                {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
-              </select>
+          {addingSub && (
+            <div style={{ marginLeft: 26, display: 'flex', alignItems: 'center', gap: 6, padding: '2px 8px' }}>
+              <input type="text" autoFocus value={subtaskInput ?? ""} onChange={e => onSubtaskInputChange(task.id, e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); onCreateSubtask(task); }
+                  if (e.key === 'Escape') setAddingSub(false);
+                }}
+                placeholder="Nuova subtask…" style={{ ...inputSt, flex: 1, minWidth: 0 }} />
+              <div style={miniBtn} aria-label="Assegna membro subtask" title={teamMembers.find(m=>m.id===(subtaskAssignment??currentMemberId))?.user_name || 'Assegna'}>
+                <span style={{ pointerEvents: 'none', fontSize: 11 }}>👤</span>
+                <select value={subtaskAssignment ?? (currentMemberId ?? "")} onChange={e => onSubtaskAssignmentChange(task.id, e.target.value)}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
+                  <option value="">Non assegnato</option>
+                  {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
+                </select>
+              </div>
+              <div style={{ ...miniBtn, borderColor: subtaskDate ? T.navy : T.borderMd }}>
+                <span style={{ pointerEvents: 'none', fontSize: 11 }}>📅</span>
+                <input type="date" value={subtaskDate ?? ""} onChange={e => onSubtaskDateChange(task.id, e.target.value)}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+              </div>
+              <button onClick={() => onCreateSubtask(task)} disabled={isCreatingSubtask} aria-label="Aggiungi subtask" style={{
+                width: 28, height: 28, borderRadius: '50%', background: T.navy, color: '#fff',
+                border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 500,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>+</button>
             </div>
-            <div style={miniBtn}>
-              <span style={{ pointerEvents: 'none', fontSize: 12 }}>📅</span>
-              <input type="date" value={subtaskDate ?? ""} onChange={e => onSubtaskDateChange(task.id, e.target.value)}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
-            </div>
-            <button onClick={() => onCreateSubtask(task)} disabled={isCreatingSubtask} style={{
-              width: 28, height: 28, background: T.navy, color: T.bg,
-              border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 600,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>+</button>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -331,7 +402,7 @@ function TaskRow({ task, teamMembers, categories, subtasks, subtaskInput, subtas
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────
 export default function ProjectDetailPage() {
-  const { T } = useTheme();
+  const { T, isDark } = useTheme();
   const showToast = useToast();
   usePageTitleOnMount("Progetto");
   const isMobile = useIsMobile();
@@ -506,6 +577,37 @@ export default function ProjectDetailPage() {
   const backlogTasks = useMemo(() =>
     tasks.filter(t => !t.parent_task_id && !t.data_pianificata && (!hideCompletedTasks || t.status !== "completed"))
   , [hideCompletedTasks, tasks]);
+
+  // ── Indicatori dell'header ──────────────────────────────────────
+  const todayIso = todayIsoDate();
+  const taskStats = useMemo(() => {
+    const top = tasks.filter(t => !t.parent_task_id);
+    const done = top.filter(t => t.status === "completed").length;
+    return { done, total: top.length, perc: top.length ? (done / top.length) * 100 : 0 };
+  }, [tasks]);
+  const moneyStats = useMemo(() => {
+    const attive = commesseProgetto.filter(c => !c.archived);
+    const totale = attive.reduce((s, c) => s + Number(c.importo_offerta_base || 0), 0);
+    const incassato = attive.reduce((s, c) => s + Number(c._incassato ?? c.importo_incassato ?? 0), 0);
+    return { totale, incassato, perc: totale > 0 ? (incassato / totale) * 100 : 0 };
+  }, [commesseProgetto]);
+  const nextDeadline = useMemo(() => tasks
+    .filter(t => t.status !== "completed" && t.data_pianificata)
+    .sort((a, b) => String(a.data_pianificata).localeCompare(String(b.data_pianificata))
+      || String(a.ora_pianificata || "").localeCompare(String(b.ora_pianificata || "")))[0] ?? null
+  , [tasks]);
+  // Team assegnato + chi è online ora (anche se non assegnato)
+  const teamAvatars = useMemo(() => {
+    const onlineIds = new Set(othersPresent.map(p => p.id));
+    const list = (Array.isArray(project?.assigned_users) ? project.assigned_users : [])
+      .map(uid => teamMembers.find(tm => tm.id === uid))
+      .filter(Boolean)
+      .map(m => { const name = m.user_name || m.user_email || "?"; return { id: m.id, name, color: avatarColor(name), online: onlineIds.has(m.id) }; });
+    othersPresent.forEach(p => {
+      if (!list.some(a => a.id === p.id)) list.push({ id: p.id, name: p.name || "?", color: p.color || avatarColor(p.name || "?"), online: true });
+    });
+    return list.sort((a, b) => Number(b.online) - Number(a.online));
+  }, [project, teamMembers, othersPresent]);
 
   useEffect(() => {
     localStorage.setItem(TASK_VISIBILITY_KEY, hideCompletedTasks ? "hide-completed" : "show-all");
@@ -758,6 +860,9 @@ export default function ProjectDetailPage() {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', position: 'relative', overflow: 'hidden',
   };
+  const kicker = { fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: T.muted };
+  const statValue = { marginTop: 6, fontFamily: "var(--font-label)", fontSize: 15, fontWeight: 600, color: T.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+  const menuItem = (color) => ({ display: 'block', width: '100%', padding: '8px 12px', textAlign: 'left', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: "var(--font-ui)", fontSize: 13, color });
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240, fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
       Caricamento progetto...
@@ -768,72 +873,56 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      {/* PROJECT HEADER */}
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '20px 24px', marginBottom: 16 }}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          {/* Titolo + filtro */}
-          <div style={{ display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
-            <div style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.02em', color:T.ink }}>{project.name ?? "Progetto"}</div>
-            <select value={hideCompletedTasks ? "hide-completed" : "show-all"}
-              onChange={e => setHideCompletedTasks(e.target.value === "hide-completed")}
-              style={{ padding:'6px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:T.bg, color:T.ink, fontSize:11, fontFamily:"var(--font-label)", outline:'none', cursor:'pointer' }}>
-              <option value="show-all">Tutte le task</option>
-              <option value="hide-completed">Nascondi completate</option>
-            </select>
+      {/* PROJECT HEADER — titolo, team e indicatori chiave (stile schermata commessa) */}
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, padding: isMobile ? '16px' : '20px 24px', marginBottom: 16 }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={kicker}>
+              {[project.client, project.address].filter(Boolean).join(" · ") || "Progetto"}
+            </div>
+            <div style={{ marginTop: 6, fontSize: isMobile ? 22 : 26, fontWeight: 700, letterSpacing:'-0.02em', color: T.ink, lineHeight: 1.15 }}>
+              {project.name ?? "Progetto"}
+            </div>
           </div>
-          {/* Pulsanti + presenze */}
-          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-            {/* Avatar presenti in tempo reale */}
-            {othersPresent.length > 0 && (
-              <div style={{ display:'flex', alignItems:'center', gap:4, marginRight:4 }}>
-                {othersPresent.slice(0, 5).map(p => (
-                  <div key={p.id} title={p.name} style={{
-                    width:28, height:28, borderRadius:'50%',
-                    background: p.color || avatarColor(p.name||"?"),
-                    border:`2px solid ${T.surface}`,
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:"var(--font-ui)", fontSize:10, fontWeight:700,
-                    color:'#fff', flexShrink:0, cursor:'default',
+          <div style={{ display:'flex', alignItems:'center', gap:12, flexShrink: 0 }}>
+            {/* Chi sta guardando ora (presenza realtime) */}
+            {othersPresent.length > 0 && !isMobile && (
+              <span style={{ display:'flex', alignItems:'center', gap:6, fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
+                <span style={{ width:6, height:6, borderRadius:'50%', background:'#34c759' }}/>
+                {othersPresent.length === 1 ? `${othersPresent[0].name?.split(" ")[0]} sta guardando` : `${othersPresent.length} persone qui`}
+              </span>
+            )}
+            {/* Team assegnato (+ presenti non in team) */}
+            {(teamAvatars.length > 0) && (
+              <div style={{ display:'flex', alignItems:'center' }}>
+                {teamAvatars.slice(0, 5).map((a, i) => (
+                  <span key={a.id} title={a.online ? `${a.name} · online` : a.name} style={{
+                    position:'relative', width: 28, height: 28, borderRadius: '50%',
+                    background: a.color, border: `2px solid ${isDark ? '#28282f' : '#fff'}`, marginLeft: i > 0 ? -6 : 0,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily:"var(--font-ui)", fontSize: 10, fontWeight: 700, color: '#fff',
                   }}>
-                    {getInitials(p.name||"?")}
-                  </div>
+                    {getInitials(a.name)}
+                    {a.online && <span style={{ position:'absolute', right:-1, bottom:-1, width:8, height:8, borderRadius:'50%', background:'#34c759', border:`1.5px solid ${isDark ? '#28282f' : '#fff'}` }}/>}
+                  </span>
                 ))}
-                {othersPresent.length > 5 && (
-                  <div style={{ width:28, height:28, borderRadius:'50%', background:T.borderMd, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
-                    +{othersPresent.length - 5}
-                  </div>
+                {teamAvatars.length > 5 && (
+                  <span style={{ marginLeft:-8, width:28, height:28, borderRadius:'50%', background:T.borderMd, display:'inline-flex', alignItems:'center', justifyContent:'center', fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>
+                    +{teamAvatars.length - 5}
+                  </span>
                 )}
-                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginLeft:2 }}>
-                  {othersPresent.length === 1 ? `${othersPresent[0].name?.split(" ")[0]} sta guardando` : `${othersPresent.length} persone qui`}
-                </span>
               </div>
             )}
-            <PraticaEdiliziaPanel projectId={id} studioId={studioId} commesse={commesseProgetto.filter(c => !c.archived)} autoOpenForm={autoOpenPratica} openSignal={docOpenReq.type === "pratiche" ? docOpenReq.n : 0} />
-            <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
-            {isPro && permissions.canViewReportCantiere && (
-              <ReportCantierePanel
-                projectId={id}
-                studioId={studioId}
-                canManage={permissions.canManageReportCantiere}
-                openSignal={docOpenReq.type === "report" ? docOpenReq.n : 0}
-              />
-            )}
-            <AnagraficaPanel projectId={id} studioId={studioId} />
-            {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
-            <CapitolatoPanel projectId={id} studioId={studioId} project={project} openSignal={docOpenReq.type === "capitolati" ? docOpenReq.n : 0} />
-            <DocumentiPanel projectId={id} studioId={studioId} project={project} commesse={commesseProgetto} onOpen={openDoc} />
-            <CommessePanel commesse={commesseProgetto} />
             <div style={{ position: 'relative' }}>
-              <button onClick={() => setMenuOpen(p => !p)} style={{
+              <button onClick={() => setMenuOpen(p => !p)} aria-label="Altre azioni" style={{
                 border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.ink,
-                width: 34, height: 34, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>···</button>
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, width: 180, background: T.surface, border: `1px solid ${T.borderMd}`, zIndex: 30 }}>
-                  <button onClick={openEdit} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.ink, letterSpacing: '0.05em' }}>
-                    Modifica
-                  </button>
-                  <button onClick={handleArchiveProject} disabled={archiving} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted, letterSpacing: '0.05em' }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 6, width: 200, background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, boxShadow: T.shadowMd, zIndex: 30, overflow: 'hidden', padding: 4 }}>
+                  <button onClick={openEdit} style={menuItem(T.ink)}>Modifica progetto</button>
+                  <button onClick={() => { setMenuOpen(false); setBudgetInput(String(Number(project.budget_ore) || "")); setBudgetEditOpen(true); }} style={menuItem(T.ink)}>Budget ore</button>
+                  <button onClick={handleArchiveProject} disabled={archiving} style={menuItem(T.ink)}>
                     {archiving ? "Archiviazione..." : "Archivia progetto"}
                   </button>
                   <button onClick={async () => {
@@ -842,7 +931,7 @@ export default function ProjectDetailPage() {
                     const { error: dErr } = await supabase.rpc('elimina_progetto', { p_project_id: id });
                     if (dErr) { showToast('Errore: ' + dErr.message); return; }
                     navigate('/progetti');
-                  }} style={{ display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 11, color: T.red, letterSpacing: '0.05em' }}>
+                  }} style={menuItem(T.red)}>
                     Elimina progetto
                   </button>
                 </div>
@@ -851,75 +940,109 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Meta */}
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
-            <span style={{ marginRight: 6 }}>Cliente:</span>{project.client ?? "N/D"}
+        {/* Indicatori: avanzamento, ore, incassi, prossima scadenza */}
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `0.5px solid ${T.borderMd}`, display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, minmax(0, 1fr))', gap: isMobile ? 16 : 24 }}>
+          {/* Avanzamento task */}
+          <div style={{ minWidth: 0 }}>
+            <div style={kicker}>Avanzamento</div>
+            <div style={statValue}>
+              {taskStats.done}<span style={{ color: T.muted, fontWeight: 500 }}> / {taskStats.total} task</span>
+            </div>
+            <ProgressBar perc={taskStats.perc} color={T.navy} T={T} />
           </div>
-          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
-            <span style={{ marginRight: 6 }}>Indirizzo:</span>{project.address ?? "N/D"}
+
+          {/* Ore vs budget */}
+          {(() => {
+            const budget = Number(project.budget_ore) || 0;
+            const perc   = budget > 0 ? Math.min((totaleOreProgetto / budget) * 100, 100) : 0;
+            const over   = budget > 0 && totaleOreProgetto > budget;
+            const barColor = over ? '#ff3b30' : perc > 80 ? '#ff9500' : '#34c759';
+            return (
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...kicker, display:'flex', alignItems:'center', gap:8 }}>
+                  Ore
+                  {over && <span style={{ color:'#ff3b30', border:'0.5px solid #ff3b30', borderRadius:4, padding:'0 4px', letterSpacing:'0.08em' }}>Sforato</span>}
+                  <button onClick={() => { setBudgetInput(String(budget||"")); setBudgetEditOpen(v=>!v); }}
+                    style={{ marginLeft:'auto', background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.navy, letterSpacing:'0.04em', textTransform:'none' }}>
+                    {budget > 0 ? "Modifica" : "Imposta budget"}
+                  </button>
+                </div>
+                {budgetEditOpen ? (
+                  <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center', minWidth:0 }}>
+                    <input type="number" min="0" value={budgetInput} onChange={e=>setBudgetInput(e.target.value)}
+                      placeholder="Es. 120" autoFocus
+                      style={{ flex:'1 1 auto', minWidth:0, width:80, boxSizing:'border-box', padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.inputBg, color:T.ink, fontFamily:"var(--font-label)", fontSize:12, outline:'none' }}
+                      onKeyDown={e=>{ if(e.key==='Enter') handleSaveBudgetOre(); if(e.key==='Escape') setBudgetEditOpen(false); }}/>
+                    {!isMobile && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>ore</span>}
+                    <button onClick={handleSaveBudgetOre} style={{ flexShrink:0, padding:'4px 10px', background:T.navy, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, cursor:'pointer' }}>Salva</button>
+                    <button onClick={()=>setBudgetEditOpen(false)} aria-label="Annulla" style={{ flexShrink:0, padding:'4px 6px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:12 }}>×</button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ ...statValue, color: over ? '#ff3b30' : T.ink }}>
+                      {totaleOreProgetto.toLocaleString('it-IT', { maximumFractionDigits: 1 })}h
+                      {budget > 0 && <span style={{ color: T.muted, fontWeight: 500 }}> / {budget}h</span>}
+                    </div>
+                    {budget > 0 ? <ProgressBar perc={perc} color={barColor} T={T} /> : <div style={{ height: 4, marginTop: 8 }} />}
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Incassi dalle commesse collegate */}
+          <div style={{ minWidth: 0 }}>
+            <div style={kicker}>Incassato</div>
+            {moneyStats.totale > 0 ? (
+              <>
+                <div style={statValue}>
+                  <span style={{ color: '#34c759' }}>{formatEuro(moneyStats.incassato, isMobile)}</span>
+                  <span style={{ color: T.muted, fontWeight: 500 }}> / {formatEuro(moneyStats.totale, isMobile)}</span>
+                </div>
+                <ProgressBar perc={moneyStats.perc} color="#34c759" T={T} />
+              </>
+            ) : (
+              <div style={{ ...statValue, color: T.muted, fontWeight: 500 }}>Nessuna commessa</div>
+            )}
+          </div>
+
+          {/* Prossima scadenza tra i task aperti */}
+          <div style={{ minWidth: 0 }}>
+            <div style={kicker}>Prossima scadenza</div>
+            {nextDeadline ? (
+              <>
+                <div style={{ ...statValue, color: nextDeadline.data_pianificata < todayIso ? '#ff3b30' : T.ink }}>
+                  {formatShortDate(nextDeadline.data_pianificata)}
+                  {nextDeadline.ora_pianificata && <span style={{ color: T.muted, fontWeight: 500 }}> · {String(nextDeadline.ora_pianificata).slice(0,5)}</span>}
+                </div>
+                <div style={{ marginTop: 4, fontSize: 12, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {nextDeadline.title ?? nextDeadline.name}
+                </div>
+              </>
+            ) : (
+              <div style={{ ...statValue, color: T.muted, fontWeight: 500 }}>Nessuna</div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Budget ore vs consuntivo */}
-        {(() => {
-          const budget = Number(project.budget_ore) || 0;
-          const perc   = budget > 0 ? Math.min((totaleOreProgetto / budget) * 100, 100) : 0;
-          const over   = budget > 0 && totaleOreProgetto > budget;
-          const barColor = over ? '#dc2626' : perc > 80 ? '#d97706' : '#16a34a';
-          return (
-            <div style={{ marginTop: 10 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, letterSpacing:'0.1em', textTransform:'uppercase' }}>Ore</span>
-                <span style={{ fontFamily:"var(--font-label)", fontSize:10, color: over ? '#dc2626' : T.ink, fontWeight:600 }}>
-                  {totaleOreProgetto.toFixed(1)}h{budget > 0 ? ` / ${budget}h` : ""}
-                </span>
-                {over && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:'#dc2626', border:'0.5px solid #dc2626', borderRadius:2, padding:'1px 4px' }}>SFORATO</span>}
-                <button onClick={() => { setBudgetInput(String(budget||"")); setBudgetEditOpen(v=>!v); }}
-                  style={{ background:'none', border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textDecoration:'underline', marginLeft:'auto' }}>
-                  {budget > 0 ? "modifica budget" : "imposta budget"}
-                </button>
-              </div>
-              {budget > 0 && (
-                <div style={{ height:3, background:T.border, borderRadius:2, marginTop:4 }}>
-                  <div style={{ height:3, width:`${perc}%`, background:barColor, borderRadius:2, transition:'width 0.3s' }}/>
-                </div>
-              )}
-              {budgetEditOpen && (
-                <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center' }}>
-                  <input type="number" min="0" value={budgetInput} onChange={e=>setBudgetInput(e.target.value)}
-                    placeholder="Es. 120" autoFocus
-                    style={{ width:80, padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-label)", fontSize:11, outline:'none' }}
-                    onKeyDown={e=>{ if(e.key==='Enter') handleSaveBudgetOre(); if(e.key==='Escape') setBudgetEditOpen(false); }}/>
-                  <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>ore</span>
-                  <button onClick={handleSaveBudgetOre} style={{ padding:'4px 10px', background:T.navy, color:T.bg, border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, cursor:'pointer' }}>Salva</button>
-                  <button onClick={()=>setBudgetEditOpen(false)} style={{ padding:'4px 8px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:10 }}>×</button>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Team avatars */}
-        {Array.isArray(project.assigned_users) && project.assigned_users.length > 0 && (
-          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, letterSpacing: '0.15em' }}>TEAM</span>
-            {project.assigned_users.map((uid, i) => {
-              const m = teamMembers.find(tm => tm.id === uid);
-              if (!m) return null;
-              const name = m.user_name || m.user_email || "?";
-              const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
-              return (
-                <span key={uid} title={name} style={{
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: avatarColor(name), border: `1.5px solid ${T.surface}`, marginLeft: i > 0 ? -8 : 0,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 600, color: T.surface,
-                }}>{initials}</span>
-              );
-            })}
-          </div>
+      {/* STRUMENTI — tutti i pannelli del progetto in un'unica barra uniforme */}
+      <div className="pd-tools" style={{ marginBottom: 16 }}>
+        <PraticaEdiliziaPanel projectId={id} studioId={studioId} commesse={commesseProgetto.filter(c => !c.archived)} autoOpenForm={autoOpenPratica} openSignal={docOpenReq.type === "pratiche" ? docOpenReq.n : 0} />
+        <DocumentiPanel projectId={id} studioId={studioId} project={project} commesse={commesseProgetto} onOpen={openDoc} />
+        <CapitolatoPanel projectId={id} studioId={studioId} project={project} openSignal={docOpenReq.type === "capitolati" ? docOpenReq.n : 0} />
+        {isPro && permissions.canViewReportCantiere && (
+          <ReportCantierePanel
+            projectId={id}
+            studioId={studioId}
+            canManage={permissions.canManageReportCantiere}
+            openSignal={docOpenReq.type === "report" ? docOpenReq.n : 0}
+          />
         )}
+        <CommessePanel commesse={commesseProgetto} />
+        {isPro && <CapexPanel projectId={id} studioId={studioId} projectName={project?.name} />}
+        <AnagraficaPanel projectId={id} studioId={studioId} />
+        <OrePanel projectId={id} studioId={studioId} projectName={project?.name} />
       </div>
 
       {/* Note di progetto — bacheca condivisa del team */}
@@ -991,8 +1114,23 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
+      {/* BOARD — barra con filtro (segmented control) e nuova colonna */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.01em', color: T.ink }}>Attività</div>
+        <SlidingTabs
+          tabs={[{ key: "all", label: "Tutte" }, { key: "open", label: "Da fare" }]}
+          active={hideCompletedTasks ? "open" : "all"}
+          onChange={k => setHideCompletedTasks(k === "open")}
+        />
+        <button onClick={() => setAddColOpen(true)} style={{
+          marginLeft: 'auto', height: 32, padding: '0 14px', borderRadius: 999,
+          border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.navy, cursor: 'pointer',
+          fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.04em',
+        }}>+ Colonna</button>
+      </div>
+
       {/* KANBAN COLUMNS */}
-      {selectedServices.filter(s => !completedCategories[s]).length === 0 ? (
+      {selectedServices.filter(s => !completedCategories[s]).length === 0 && !addColOpen ? (
         <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.surface, padding: 48, textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>
           {selectedServices.length === 0
             ? "Nessun servizio selezionato per questo progetto."
@@ -1073,9 +1211,9 @@ export default function ProjectDetailPage() {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 style={{
-                  flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 calc((100vw - 220px - 56px - 20px) / 3)',
-                  minWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
-                  maxWidth: isMobile ? 'calc(100vw - 48px)' : 'calc((100vw - 220px - 56px - 20px) / 3)',
+                  flex: isMobile ? `0 0 calc(100vw - 48px)` : '1 0 300px',
+                  minWidth: isMobile ? 'calc(100vw - 48px)' : 300,
+                  maxWidth: isMobile ? 'calc(100vw - 48px)' : 460,
                   scrollSnapAlign: isMobile ? 'start' : 'none',
                   display: 'flex', flexDirection: 'column',
                   background: T.surface,
@@ -1091,43 +1229,51 @@ export default function ProjectDetailPage() {
                   cursor: 'default',
                 }}>
                 {/* Column header */}
-                <div style={{ flexShrink: 0, padding: 12, borderBottom: `0.5px solid ${T.border}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{ flexShrink: 0, padding: '14px 14px 12px', borderBottom: `0.5px solid ${T.borderMd}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {/* Drag handle */}
                     <span
                       draggable
                       onDragStart={(e) => { e.stopPropagation(); setDragColIdx(gi); setDragOverIdx(gi); }}
                       title="Trascina per riordinare"
-                      style={{ fontSize: 13, color: T.muted, cursor: 'grab', userSelect: 'none', flexShrink: 0, lineHeight: 1, touchAction: 'none' }}>
+                      style={{ fontSize: 13, color: T.muted, cursor: 'grab', userSelect: 'none', flexShrink: 0, lineHeight: 1, touchAction: 'none', opacity: 0.6 }}>
                       ⠿
                     </span>
-                    <input type="checkbox" checked={catDone} onChange={() => handleToggleCategory(group.category)}
-                      style={{ accentColor: T.navy, width: 13, height: 13 }} />
-                    <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 500, color: T.ink, letterSpacing: '0.05em', flex: 1 }}>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 11, fontWeight: 600, color: T.ink, letterSpacing: '0.08em', textTransform: 'uppercase', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {group.category === "__uncategorized__" ? "Generali" : group.category}
                     </span>
-                    <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '1px 6px' }}>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>
                       {group.completedCount}/{group.totalCount}
                     </span>
-                    {catDone && <span style={{ fontSize: 11, color: T.navy, fontWeight: 600 }}>✓</span>}
+                    <button onClick={() => handleToggleCategory(group.category)} title="Segna il servizio come completato (lo nasconde dalla board)"
+                      style={{ height: 24, padding: '0 8px', borderRadius: 999, border: `0.5px solid ${T.borderMd}`, background: 'transparent', color: T.muted, cursor: 'pointer', fontFamily: "var(--font-label)", fontSize: 10, flexShrink: 0 }}>
+                      ✓ Chiudi
+                    </button>
                   </div>
+                  <ProgressBar perc={group.totalCount ? (group.completedCount / group.totalCount) * 100 : 0} color={T.navy} T={T} />
                   {/* Add task input */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
                     <input ref={node => { inputRefs.current[group.category] = node; }}
                       type="text" value={newTaskInputs[group.category] ?? ""}
                       onChange={e => setNewTaskInputs(p => ({ ...p, [group.category]: e.target.value }))}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); createTaskForCategory(group.category); } }}
-                      placeholder="Aggiungi task..."
-                      style={{ ...inputSt, fontSize: 11 }} />
-                    <div style={miniBtn} title={teamMembers.find(m=>m.id===(newTaskAssignments[group.category]??teamMember?.id))?.user_name || 'Assegna'}>
-                      <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>
+                      placeholder="Nuovo task…"
+                      style={{ ...inputSt, fontSize: 12, height: 32, padding: '0 12px', borderRadius: 999, border: `0.5px solid ${T.borderMd}`, background: T.inputBg }} />
+                    <div style={{ ...miniBtn, borderRadius: '50%', borderColor: (newTaskAssignments[group.category] ?? teamMember?.id) ? T.borderMd : T.border }} title={teamMembers.find(m=>m.id===(newTaskAssignments[group.category]??teamMember?.id))?.user_name || 'Assegna'}>
+                      {(() => {
+                        const m = teamMembers.find(x => x.id === (newTaskAssignments[group.category] ?? teamMember?.id));
+                        const name = m?.user_name || m?.user_email;
+                        return name
+                          ? <span style={{ pointerEvents: 'none', width: 24, height: 24, borderRadius: '50%', background: avatarColor(name), color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{getInitials(name)}</span>
+                          : <span style={{ pointerEvents: 'none', fontSize: 12 }}>👤</span>;
+                      })()}
                       <select value={newTaskAssignments[group.category] ?? (teamMember?.id ?? "")} onChange={e => setNewTaskAssignments(p => ({ ...p, [group.category]: e.target.value }))}
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}>
                         <option value="">Non assegnato</option>
                         {teamMembers.map(m => <option key={m.id} value={m.id}>{m.user_name || m.user_email}</option>)}
                       </select>
                     </div>
-                    <div style={{ ...miniBtn, borderColor: newTaskDates[group.category] ? T.navy : T.border }}
+                    <div style={{ ...miniBtn, borderRadius: '50%', borderColor: newTaskDates[group.category] ? T.navy : T.borderMd }}
                       title={newTaskDates[group.category] ? `Data: ${newTaskDates[group.category]}` : "Imposta data"}>
                       <span style={{ pointerEvents: 'none', fontSize: 12 }}>📅</span>
                       <input type="date" value={newTaskDates[group.category] ?? ""} onChange={e => setNewTaskDates(p => ({ ...p, [group.category]: e.target.value }))}
@@ -1138,18 +1284,18 @@ export default function ProjectDetailPage() {
                         onChange={e => setNewTaskTimes(p => ({ ...p, [group.category]: e.target.value }))}
                         title="Ora (facoltativa): ti avviso a quest'ora"
                         style={{ width: 84, height: 32, flexShrink: 0, boxSizing: 'border-box', padding: '0 6px',
-                          border: `1px solid ${newTaskTimes[group.category] ? T.navy : T.border}`, borderRadius: T.radiusSm,
-                          background: T.surface, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, outline: 'none' }} />
+                          border: `0.5px solid ${newTaskTimes[group.category] ? T.navy : T.borderMd}`, borderRadius: 999,
+                          background: T.inputBg, color: T.ink, fontFamily: "var(--font-label)", fontSize: 11, outline: 'none' }} />
                     )}
-                    <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category}
-                      style={{ width: 32, height: 32, background: T.navy, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 600, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <button onClick={() => createTaskForCategory(group.category)} disabled={creatingCategory === group.category} aria-label="Aggiungi task"
+                      style={{ width: 32, height: 32, borderRadius: '50%', background: T.navy, color: '#fff', border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 500, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       +
                     </button>
                   </div>
                 </div>
 
                 {/* Task list */}
-                <div style={{ flex: isMobile ? '0 0 auto' : 1, overflowY: isMobile ? 'visible' : 'auto', padding: 10, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ flex: isMobile ? '0 0 auto' : 1, overflowY: isMobile ? 'visible' : 'auto', padding: 8, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {group.tasks.map(task => (
                     <TaskRow
                       key={task.id ?? `${group.category}-${task.title}`}
@@ -1229,7 +1375,7 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Colonna "Aggiungi colonna" — sempre in fondo */}
+          {/* Nuova colonna: si apre dal pulsante "+ Colonna" nella barra della board */}
           {addColOpen ? (
             <div style={{
               flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 220px',
@@ -1258,21 +1404,7 @@ export default function ProjectDetailPage() {
                 </button>
               </div>
             </div>
-          ) : (
-            <div onClick={() => setAddColOpen(true)} style={{
-              flex: isMobile ? `0 0 calc(100vw - 48px)` : '0 0 160px',
-              minWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
-              maxWidth: isMobile ? 'calc(100vw - 48px)' : '160px',
-              scrollSnapAlign: isMobile ? 'start' : 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
-              background: 'transparent', border: `0.5px dashed ${T.border}`, borderRadius: T.radiusSm,
-              cursor: 'pointer', padding: 20, gap: 8,
-              alignSelf: 'flex-start', minHeight: 80,
-            }}>
-              <span style={{ fontSize: 22, color: T.muted, lineHeight: 1 }}>+</span>
-              <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, textAlign:'center' }}>Aggiungi colonna</span>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>
