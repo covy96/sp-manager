@@ -162,6 +162,23 @@ export default function MobileLayout({ session, children }) {
   // Close menu on navigation
   useEffect(()=>{ setMenuOpen(false); }, [loc.pathname]);
 
+  // iOS 26 sceglie colore e sfumatura della status bar dallo sfondo di html/body:
+  // con lo sfondo chiaro mette testo scuro e una sfumatura grigia sopra l'header.
+  // Su mobile li coloriamo come l'header; il contenuto resta chiaro (div radice).
+  useEffect(()=>{
+    const html = document.documentElement, body = document.body;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = { html: html.style.backgroundColor, body: body.style.backgroundColor, meta: meta?.getAttribute('content') };
+    html.style.backgroundColor = T.sidebarBg;
+    body.style.backgroundColor = T.sidebarBg;
+    meta?.setAttribute('content', T.sidebarBg);
+    return ()=>{
+      html.style.backgroundColor = prev.html;
+      body.style.backgroundColor = prev.body;
+      if (meta && prev.meta) meta.setAttribute('content', prev.meta);
+    };
+  }, [T.sidebarBg]);
+
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/login"); };
   const handleResultClick = (item) => {
     clear(); setSearchOpen(false);
