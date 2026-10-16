@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
+import BodyPortal from "./BodyPortal";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
@@ -667,7 +668,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   return (
     <>
       {widget}
-      {modal}
+      <BodyPortal>{modal}</BodyPortal>
     </>
   );
 }

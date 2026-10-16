@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BodyPortal from "./BodyPortal";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
@@ -666,6 +667,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
           : <span style={{ ...mono, fontSize:10, color:T.muted }}>+ Aggiungi</span>
         }
       </button>
+      <BodyPortal>
 
       {/* ── MODAL LISTA ────────────────────────────────────────── */}
       {listOpen && (
@@ -1071,6 +1073,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
           </div>
         </div>
       )}
+      </BodyPortal>
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabase";
+import BodyPortal from "./BodyPortal";
 import { useTheme } from "../contexts/ThemeContext";
 import { formatOre } from "../lib/utils";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
@@ -239,6 +240,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
         </svg>
         {loading ? "…" : `${formatOre(totalOre)} h`}
       </button>
+      <BodyPortal>
 
       {/* Modal */}
       {open && (
@@ -347,6 +349,7 @@ export default function OrePanel({ projectId, studioId, projectName }) {
           </div>
         </div>
       )}
+      </BodyPortal>
     </>
   );
 }
