@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePageTitleOnMount } from "../hooks/usePageTitle";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useStudio } from "../hooks/useStudio";
@@ -208,13 +209,15 @@ function TaskEditPopup({ task, teamMembers, categories, onSave, onDelete, onClos
     </div>
   );
 
-  // Su mobile: modal centrato fullscreen
-  if (isMobile) return (
+  // Su mobile: modal centrato fullscreen. Portal su <body>: le colonne hanno
+  // backdrop-filter, che altrimenti farebbe da riferimento al position:fixed.
+  if (isMobile) return createPortal(
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:60, background:'rgba(14,14,13,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
       <div ref={ref} onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius: T.radiusSm, boxShadow:T.shadowLg, padding:20, maxHeight:'85vh', overflowY:'auto' }}>
         {formContent}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   // Desktop: dropdown assoluto
@@ -965,14 +968,14 @@ export default function ProjectDetailPage() {
                   </button>
                 </div>
                 {budgetEditOpen ? (
-                  <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center' }}>
+                  <div style={{ display:'flex', gap:6, marginTop:6, alignItems:'center', minWidth:0 }}>
                     <input type="number" min="0" value={budgetInput} onChange={e=>setBudgetInput(e.target.value)}
                       placeholder="Es. 120" autoFocus
-                      style={{ width:80, padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.inputBg, color:T.ink, fontFamily:"var(--font-label)", fontSize:12, outline:'none' }}
+                      style={{ flex:'1 1 auto', minWidth:0, width:80, boxSizing:'border-box', padding:'4px 8px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.inputBg, color:T.ink, fontFamily:"var(--font-label)", fontSize:12, outline:'none' }}
                       onKeyDown={e=>{ if(e.key==='Enter') handleSaveBudgetOre(); if(e.key==='Escape') setBudgetEditOpen(false); }}/>
-                    <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>ore</span>
-                    <button onClick={handleSaveBudgetOre} style={{ padding:'4px 10px', background:T.navy, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, cursor:'pointer' }}>Salva</button>
-                    <button onClick={()=>setBudgetEditOpen(false)} style={{ padding:'4px 6px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:12 }}>×</button>
+                    {!isMobile && <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted }}>ore</span>}
+                    <button onClick={handleSaveBudgetOre} style={{ flexShrink:0, padding:'4px 10px', background:T.navy, color:'#fff', border:'none', borderRadius:T.radiusSm, fontFamily:"var(--font-label)", fontSize:10, cursor:'pointer' }}>Salva</button>
+                    <button onClick={()=>setBudgetEditOpen(false)} aria-label="Annulla" style={{ flexShrink:0, padding:'4px 6px', background:'transparent', color:T.muted, border:'none', cursor:'pointer', fontFamily:"var(--font-label)", fontSize:12 }}>×</button>
                   </div>
                 ) : (
                   <>
