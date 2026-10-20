@@ -13,7 +13,6 @@ import {
   defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi, assistenzaPerc,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
-import { generaCapitolatoXlsx } from "../lib/capitolatoXlsx";
 
 const STUDIO_FIELDS =
   "name,indirizzo,città,cap,piva,report_header_name,report_header_text,report_logo_url,report_logo_size,report_footer_left,report_footer_center,report_footer_right,report_footer_font,report_body_font_enabled";
@@ -445,7 +444,11 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     setXlsxMenu(false);
     if (!righe.length) { showToast?.("Aggiungi almeno una voce", "error"); return; }
     setBusy(true);
-    try { await generaCapitolatoXlsx({ ...exportSnapshot(), protetto, password }); }
+    try {
+      // exceljs (~1 MB) caricato solo quando serve: prima finiva nel chunk della
+      // pagina progetto, scaricato in prefetch a ogni apertura dell'app.
+      const { generaCapitolatoXlsx } = await import("../lib/capitolatoXlsx");
+      await generaCapitolatoXlsx({ ...exportSnapshot(), protetto, password }); }
     catch (e) { console.error(e); showToast?.("Errore nell'export Excel", "error"); }
     finally { setBusy(false); }
   };
