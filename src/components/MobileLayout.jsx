@@ -121,18 +121,12 @@ export default function MobileLayout({ session, children }) {
 
   const [menuOpen, setMenuOpen]         = useState(false);
   const [searchOpen, setSearchOpen]     = useState(false);
-  const [studioName, setStudioName]     = useState('');
+  const studioName = studio?.name || ''; // già caricato da useStudio
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { query, setQuery, results, loading:searchLoading, clear } = useGlobalSearch(studioId);
   const searchRef   = useRef(null);
   const settingsRef = useRef(null);
-
-  useEffect(()=>{
-    if (!studioId) return;
-    supabase.from("studios").select("name").eq("id",studioId).single()
-      .then(({data})=>{ if(data?.name) setStudioName(data.name); });
-  },[studioId]);
 
   useEffect(()=>{
     function h(e) {

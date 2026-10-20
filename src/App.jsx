@@ -159,27 +159,15 @@ function ProtectedLayout({ session, children }) {
 
 function OnboardingGuard({ session, children }) {
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
+  // Riusa lo stato studio condiviso (stessa richiesta del layout) invece di
+  // una query team_members in più che bloccava il rendering della pagina.
+  const { studioId, loading } = useStudio();
+  const checking = !!session?.user?.id && loading;
 
   useEffect(() => {
-    if (!session?.user?.id) {
-      setChecking(false);
-      return;
-    }
-    const check = async () => {
-      const { data: tm } = await supabase
-        .from("team_members")
-        .select("id, studio")
-        .eq("user_account", session.user.id)
-        .maybeSingle();
-      const hasStudio = tm != null && tm.studio != null && tm.studio !== "";
-      setChecking(false);
-      if (!hasStudio) {
-        navigate("/onboarding", { replace: true });
-      }
-    };
-    check();
-  }, [session, navigate]);
+    if (!session?.user?.id || loading) return;
+    if (!studioId) navigate("/onboarding", { replace: true });
+  }, [session, loading, studioId, navigate]);
 
   if (checking) {
     return (

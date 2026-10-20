@@ -112,7 +112,7 @@ export default function AppLayout({ session, children }) {
   const [showMacShortcut, setShowMac]   = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [guideOpen, setGuideOpen]       = useState(false);
-  const [studioName, setStudioName]     = useState("");
+  const studioName = studio?.name || ""; // già caricato da useStudio
   const [studioList, setStudioList]         = useState([]);
   const [showStudioPicker, setShowStudioPicker] = useState(false);
   const [showAccountPicker, setShowAccountPicker] = useState(false);
@@ -132,13 +132,6 @@ export default function AppLayout({ session, children }) {
   const { query, setQuery, results, loading: searchLoading, clear } = useGlobalSearch(studioId);
   const [searchFocused, setSearchFocused] = useState(false);
   const showDropdown = searchFocused && query.length >= 3;
-
-  // Carica nome studio
-  useEffect(() => {
-    if (!studioId) return;
-    supabase.from("studios").select("name").eq("id", studioId).single()
-      .then(({ data }) => { if (data?.name) setStudioName(data.name); });
-  }, [studioId]);
 
   // Chiudi dropdown su click esterno (sospeso quando la guida controlla il menu)
   const guideControlsSettings = useRef(false);
