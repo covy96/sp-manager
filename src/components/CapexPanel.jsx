@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import * as XLSX from "xlsx";
 import BodyPortal from "./BodyPortal";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
@@ -258,7 +257,7 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   };
 
   // ── Export ───────────────────────────────────────────────────────────
-  const exportXlsx = () => {
+  const exportXlsx = async () => {
     const rows = [["Categoria", "Fornitore", "Data preventivo", "Importo", "Accettato", "Pagato", "Residuo", "Note"]];
     // voci principali seguite dai rispettivi extra
     voci.filter(v => !v.parent_id).forEach(v => {
@@ -278,6 +277,8 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
     rows.push(["", "", "Totale accettato", totaleAccettato]);
     rows.push(["", "", "Totale pagato", totalePagato]);
     rows.push(["", "", "Totale da pagare", totaleResiduo]);
+    // xlsx (~400 kB) caricato solo all'export, non con la pagina progetto
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "CAPEX");

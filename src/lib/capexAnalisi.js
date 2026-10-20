@@ -4,7 +4,6 @@
 // best-effort su Storage e chiama la Edge Function `analizza-preventivo` che
 // estrae i dati con Claude. Ritorna la riga `capex_analisi` salvata.
 // ─────────────────────────────────────────────────────────────────────────────
-import * as XLSX from "xlsx";
 import { supabase } from "./supabase";
 
 const STORAGE_BUCKET = "capex-preventivi";
@@ -30,7 +29,9 @@ function arrayBufferToBase64(buffer) {
 }
 
 // Excel → testo leggibile dal modello: un blocco CSV per ogni foglio.
-function xlsxToText(buffer) {
+// xlsx caricato solo quando serve (non con la pagina progetto).
+async function xlsxToText(buffer) {
+  const XLSX = await import("xlsx");
   const wb = XLSX.read(buffer, { type: "array" });
   return wb.SheetNames.map((nome) => {
     const csv = XLSX.utils.sheet_to_csv(wb.Sheets[nome], { blankrows: false });
@@ -73,7 +74,7 @@ export async function analizzaPreventivo(file, projectId) {
   if (!fileKind) throw new Error("Formato non supportato. Carica un PDF o un Excel.");
 
   const buffer = await readArrayBuffer(file);
-  const content = fileKind === "pdf" ? arrayBufferToBase64(buffer) : xlsxToText(buffer);
+  const content = fileKind === "pdf" ? arrayBufferToBase64(buffer) : await xlsxToText(buffer);
   if (!content) throw new Error("Il file sembra vuoto o illeggibile.");
 
   const storagePath = await archiviaFile(file, projectId);

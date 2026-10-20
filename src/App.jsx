@@ -207,9 +207,12 @@ export default function App({ session }) {
       import("./pages/TeamPage");
       import("./pages/settings/ProfiloPage");
     };
-    const ric = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
-    const id = ric(warm);
-    return () => (window.cancelIdleCallback || clearTimeout)(id);
+    // Aspetta qualche secondo: così il prefetch (~2 MB) non contende la rete
+    // con le query della prima pagina.
+    const ric = window.requestIdleCallback || ((fn) => setTimeout(fn, 0));
+    let idleId;
+    const t = setTimeout(() => { idleId = ric(warm); }, 4000);
+    return () => { clearTimeout(t); if (idleId != null) (window.cancelIdleCallback || clearTimeout)(idleId); };
   }, [session]);
 
   return (

@@ -274,102 +274,120 @@ export default function DashboardPage() {
         const memberId = studioMember?.id;
         const isAll = scope === "all";
 
-        // 1. Progetti attivi — filtrati per utente se scope=mine
-        let projQ = supabase.from("projects").select("*", { count: "exact", head: true })
-          .eq("studio", studioId).eq("archived", false);
-        if (!isAll && memberId) projQ = projQ.contains("assigned_users", [memberId]);
-        const { count: projCount } = await projQ;
-        setActiveProjects(projCount || 0);
-
-        // 2. Task aperti — filtrati per utente se scope=mine
-        let taskQ = supabase.from("tasks").select("*", { count: "exact", head: true })
-          .eq("studio", studioId).neq("status", "completed").is("parent_task_id", null).is("deleted_at", null);
-        if (!isAll && memberId) taskQ = taskQ.eq("assigned_member", memberId);
-        const { count: taskCount } = await taskQ;
-        setOpenTasks(taskCount || 0);
-
-        // 3. Ore settimana (sempre personali)
-        const mondayStr = getMonday(new Date()).toISOString().slice(0, 10);
-        if (memberId) {
-          const { data: times } = await supabase
-            .from("timesheet").select("hours")
-            .eq("team_member", memberId).is("deleted_at", null).gte("date", mondayStr);
-          setWeekHours((times || []).reduce((s, t) => s + (Number(t.hours) || 0), 0));
-        }
-
-        // 4. Credito da incassare (sempre tutto lo studio)
-        const { data: commesse } = await supabase
-          .from("commesse").select("id, importo_offerta_base").eq("studio", studioId).is("deleted_at", null);
-        const totalCommesse = (commesse || []).reduce((s, c) => s + (Number(c.importo_offerta_base) || 0), 0);
-        const commessaIds = (commesse || []).map(c => c.id);
-        const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);
-        const totalIncassato = Object.values(incassatoMap).reduce((s, v) => s + v, 0);
-        setCreditToCollect(totalCommesse - totalIncassato);
-
-        // 5. Task di oggi e scadute (sempre personali)
+        // Le query sono indipendenti: partono tutte insieme invece che una
+        // dopo l'altra (prima erano ~10 round-trip in fila prima di mostrare la pagina).
         const today = new Date().toISOString().split("T")[0];
-        if (memberId) {
-          const { data: allTodayTasks } = await supabase
-            .from("tasks").select("*, projects(name)")
-            .eq("studio", studioId).eq("assigned_member", memberId)
-            .eq("data_pianificata", today)
-            .neq("status", "completed")
-            .is("parent_task_id", null).is("deleted_at", null)
-            .order("created_at", { ascending: true });
-          setTodayTasks(allTodayTasks || []);
+        await Promise.all([
+          // 1. Progetti attivi — filtrati per utente se scope=mine
+          (async () => {
+            let projQ = supabase.from("projects").select("*", { count: "exact", head: true })
+              .eq("studio", studioId).eq("archived", false);
+            if (!isAll && memberId) projQ = projQ.contains("assigned_users", [memberId]);
+            const { count: projCount } = await projQ;
+            setActiveProjects(projCount || 0);
+          })(),
 
-          const { data: overdue } = await supabase
-            .from("tasks").select("*, projects(name)")
-            .eq("assigned_member", memberId).eq("studio", studioId)
-            .neq("status", "completed").lt("data_pianificata", today)
-            .is("parent_task_id", null).is("deleted_at", null).order("data_pianificata", { ascending: true });
-          setOverdueTasks(overdue || []);
-        }
+          // 2. Task aperti — filtrati per utente se scope=mine
+          (async () => {
+            let taskQ = supabase.from("tasks").select("*", { count: "exact", head: true })
+              .eq("studio", studioId).neq("status", "completed").is("parent_task_id", null).is("deleted_at", null);
+            if (!isAll && memberId) taskQ = taskQ.eq("assigned_member", memberId);
+            const { count: taskCount } = await taskQ;
+            setOpenTasks(taskCount || 0);
+          })(),
 
-        // 6b. Scadenze pratiche — prossimi 30 giorni
-        // Carica pratiche con scadenza manuale impostata dall'utente (campo scadenza nel JSON note)
-        { const { data: pratiche } = await supabase
-            .from("pratiche_edilizie")
-            .select("id, tipo_pratica, protocollo, note, project_id, projects(name)")
-            .eq("studio", studioId)
-            .not("note", "is", null);
+          // 3. Ore settimana (sempre personali)
+          (async () => {
+            if (!memberId) return;
+            const mondayStr = getMonday(new Date()).toISOString().slice(0, 10);
+            const { data: times } = await supabase
+              .from("timesheet").select("hours")
+              .eq("team_member", memberId).is("deleted_at", null).gte("date", mondayStr);
+            setWeekHours((times || []).reduce((s, t) => s + (Number(t.hours) || 0), 0));
+          })(),
 
-          const parseNoteLocal = (raw) => {
-            if (!raw) return null;
-            try { const p = JSON.parse(raw); return p?.scadenza || null; } catch { return null; }
-          };
+          // 4. Credito da incassare (sempre tutto lo studio)
+          (async () => {
+            const { data: commesse } = await supabase
+              .from("commesse").select("id, importo_offerta_base").eq("studio", studioId).is("deleted_at", null);
+            const totalCommesse = (commesse || []).reduce((s, c) => s + (Number(c.importo_offerta_base) || 0), 0);
+            const commessaIds = (commesse || []).map(c => c.id);
+            const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);
+            const totalIncassato = Object.values(incassatoMap).reduce((s, v) => s + v, 0);
+            setCreditToCollect(totalCommesse - totalIncassato);
+          })(),
 
-          const cutoff14 = new Date(); cutoff14.setDate(cutoff14.getDate() - 14);
-          const cutoff14Str = cutoff14.toISOString().slice(0,10);
+          // 5. Task di oggi (sempre personali)
+          (async () => {
+            if (!memberId) return;
+            const { data: allTodayTasks } = await supabase
+              .from("tasks").select("*, projects(name)")
+              .eq("studio", studioId).eq("assigned_member", memberId)
+              .eq("data_pianificata", today)
+              .neq("status", "completed")
+              .is("parent_task_id", null).is("deleted_at", null)
+              .order("created_at", { ascending: true });
+            setTodayTasks(allTodayTasks || []);
+          })(),
 
-          const eventi = [];
-          for (const p of (pratiche || [])) {
-            const scadenza = parseNoteLocal(p.note);
-            if (!scadenza?.data) continue;
-            if (scadenza.data < cutoff14Str) continue; // più vecchia di 14gg: ignora
-            eventi.push({
-              ...p,
-              eventLabel: scadenza.label || `Scadenza ${p.tipo_pratica}`,
-              eventDate: scadenza.data,
-              expired: scadenza.data < today,
-            });
-          }
-          eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
-          setScadenzePratiche(eventi);
-        }
+          // 5b. Task scadute (sempre personali)
+          (async () => {
+            if (!memberId) return;
+            const { data: overdue } = await supabase
+              .from("tasks").select("*, projects(name)")
+              .eq("assigned_member", memberId).eq("studio", studioId)
+              .neq("status", "completed").lt("data_pianificata", today)
+              .is("parent_task_id", null).is("deleted_at", null).order("data_pianificata", { ascending: true });
+            setOverdueTasks(overdue || []);
+          })(),
 
-        // 6. Task di domani (o lunedì se weekend) — sempre personali
-        if (memberId) {
-          const nwDay = getNextWorkday().toISOString().slice(0, 10);
-          const { data: tmTasks } = await supabase
-            .from("tasks").select("*, projects(name)")
-            .eq("studio", studioId).eq("assigned_member", memberId)
-            .eq("data_pianificata", nwDay)
-            .neq("status", "completed")
-            .is("parent_task_id", null).is("deleted_at", null)
-            .order("created_at", { ascending: true });
-          setTomorrowTasks(tmTasks || []);
-        }
+          // 6b. Scadenze pratiche — prossimi 30 giorni
+          // Carica pratiche con scadenza manuale impostata dall'utente (campo scadenza nel JSON note)
+          (async () => {
+            const { data: pratiche } = await supabase
+              .from("pratiche_edilizie")
+              .select("id, tipo_pratica, protocollo, note, project_id, projects(name)")
+              .eq("studio", studioId)
+              .not("note", "is", null);
+
+            const parseNoteLocal = (raw) => {
+              if (!raw) return null;
+              try { const p = JSON.parse(raw); return p?.scadenza || null; } catch { return null; }
+            };
+
+            const cutoff14 = new Date(); cutoff14.setDate(cutoff14.getDate() - 14);
+            const cutoff14Str = cutoff14.toISOString().slice(0,10);
+
+            const eventi = [];
+            for (const p of (pratiche || [])) {
+              const scadenza = parseNoteLocal(p.note);
+              if (!scadenza?.data) continue;
+              if (scadenza.data < cutoff14Str) continue; // più vecchia di 14gg: ignora
+              eventi.push({
+                ...p,
+                eventLabel: scadenza.label || `Scadenza ${p.tipo_pratica}`,
+                eventDate: scadenza.data,
+                expired: scadenza.data < today,
+              });
+            }
+            eventi.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+            setScadenzePratiche(eventi);
+          })(),
+
+          // 6. Task di domani (o lunedì se weekend) — sempre personali
+          (async () => {
+            if (!memberId) return;
+            const nwDay = getNextWorkday().toISOString().slice(0, 10);
+            const { data: tmTasks } = await supabase
+              .from("tasks").select("*, projects(name)")
+              .eq("studio", studioId).eq("assigned_member", memberId)
+              .eq("data_pianificata", nwDay)
+              .neq("status", "completed")
+              .is("parent_task_id", null).is("deleted_at", null)
+              .order("created_at", { ascending: true });
+            setTomorrowTasks(tmTasks || []);
+          })(),
+        ]);
       }
       setLoading(false);
     };
