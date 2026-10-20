@@ -9,6 +9,7 @@ import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
 import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
+import { duplicaOfferta } from "../lib/offertaDuplica";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -387,6 +388,16 @@ export default function OffertePage() {
     await loadData();
   };
 
+  const [duplicandoId, setDuplicandoId] = useState(null);
+  const handleDuplica = async (offerta) => {
+    if (duplicandoId) return;
+    setDuplicandoId(offerta.id);
+    const { data, error } = await duplicaOfferta(offerta, studioId);
+    setDuplicandoId(null);
+    if (error) { showToast('Errore duplicazione: ' + error, 'error'); return; }
+    navigate(`/offerte/${data.id}`, { state: { duplicata: true } });
+  };
+
   const handleElimina = async (offerta) => {
     if (!confirm(`Spostare "${offerta.nome_offerta}" nel cestino?`)) return;
     const { error } = await supabase.rpc('elimina_offerta', { p_offerta_id: offerta.id });
@@ -549,6 +560,11 @@ export default function OffertePage() {
                 <button onClick={()=>setDocOfferta(o)} title="Genera documento offerta" style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.navy}`, background:'transparent', color:T.navy, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', lineHeight:1 }}>
                   Doc
                 </button>
+                {canManage && (
+                  <button onClick={()=>handleDuplica(o)} disabled={!!duplicandoId} title="Duplica offerta: crea una copia modificabile con le stesse voci" style={{ flexShrink:0, padding:'8px 10px', border:`1px solid ${T.borderMd}`, background:'transparent', color:T.ink, borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:duplicandoId?'wait':'pointer', lineHeight:1, opacity:duplicandoId===o.id?0.5:1 }}>
+                    {duplicandoId===o.id ? '…' : 'Duplica'}
+                  </button>
+                )}
                 {o.stato==='offerta' && canManage && <>
                   <button onClick={()=>openAccetta(o)} style={{ flex:1, minWidth:0, padding:'8px 6px', border:'none', background:T.green, color:'#fff', borderRadius:T.radiusSm, ...mono, fontSize:10, letterSpacing:'0.05em', textTransform:'uppercase', cursor:'pointer', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Accetta

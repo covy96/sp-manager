@@ -8,6 +8,7 @@ import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
 import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
+import { duplicaOfferta } from "../lib/offertaDuplica";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -84,14 +85,34 @@ export default function OfferteDetailPage() {
 
   useEffect(()=>{ if(studioId) loadData(); },[id,studioId]);
 
-  // Apre automaticamente il documento se si arriva dalla commessa con "Modifica".
-  const openedDocRef = useRef(false);
+  // Apre automaticamente il documento se si arriva dalla commessa con "Modifica",
+  // o la modifica appena creata una copia con "Duplica".
+  const openedDocRef = useRef(null);
   useEffect(() => {
-    if (!openedDocRef.current && location.state?.openDoc && offerta) {
-      openedDocRef.current = true;
+    if (!offerta || offerta.id !== id || openedDocRef.current === id) return;
+    if (location.state?.openDoc) {
+      openedDocRef.current = id;
       setDocPanel(true);
+    } else if (location.state?.duplicata) {
+      openedDocRef.current = id;
+      showToast("Offerta duplicata: modifica la copia", "success");
+      if (offerta.documento?.sezioni) setDocPanel(true);
+      else setEditing(true);
     }
-  }, [location.state, offerta]);
+  }, [location.state, offerta, id]);
+
+  const [duplicando, setDuplicando] = useState(false);
+  const handleDuplica = async () => {
+    if (duplicando) return;
+    setDuplicando(true);
+    const { data, error } = await duplicaOfferta(offerta, studioId);
+    setDuplicando(false);
+    if (error) { showToast("Errore duplicazione: " + error, "error"); return; }
+    setEditing(false);
+    setDocPanel(false);
+    setLoading(true);
+    navigate(`/offerte/${data.id}`, { state: { duplicata: true } });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -332,6 +353,7 @@ export default function OfferteDetailPage() {
           {offerta.stato==='rifiutata' && canManage && (
             <button onClick={handleRipristina} style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>Ripristina</button>
           )}
+          {canManage && <button onClick={handleDuplica} disabled={duplicando} title="Crea una copia modificabile con le stesse voci" style={{ border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background:'transparent', color:T.ink, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:duplicando?'wait':'pointer', opacity:duplicando?0.6:1 }}>{duplicando ? 'Duplico…' : 'Duplica'}</button>}
           {canManage && <button onClick={handleElimina} style={{ border:`0.5px solid ${T.border}`, borderRadius: T.radiusSm, background:'transparent', color:T.muted, ...mono, fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', padding:'8px 16px', cursor:'pointer' }}>🗑 Elimina</button>}
         </div>
       </div>
