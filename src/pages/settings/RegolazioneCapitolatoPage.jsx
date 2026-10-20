@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
 import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { useToast } from "../../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
-import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria, codiceDuplicato } from "../../lib/capitolatoModel";
+import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria, codiceDuplicato, codiceCopia } from "../../lib/capitolatoModel";
 
 const mono = "var(--font-label)";
 const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -21,6 +22,7 @@ export default function RegolazioneCapitolatoPage() {
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [adding, setAdding] = useState(false);
+  const [copia, setCopia] = useState(null); // { dopo: id originale, dati: campi precompilati }
   const [mostraEliminate, setMostraEliminate] = useState(false);
   const [inModifica, setInModifica] = useState(() => new Set()); // id delle voci con modifiche non salvate
 
@@ -91,6 +93,14 @@ export default function RegolazioneCapitolatoPage() {
     }
   };
   const codiceSuggerito = (cat) => prossimoCodice(voci, cat);
+  // Duplica: apre sotto l'originale una nuova voce con gli stessi campi (quelli a
+  // schermo, anche se non ancora salvati) e il codice <codice>.1, da salvare con Aggiungi
+  const puoDuplicare = !!studioId && !mostraEliminate;
+  const duplica = (id, campi) => {
+    const attive = voci.filter((v) => v.attiva !== false);
+    const { categoria_code, categoria_nome, titolo, descrizione, unita, tipo, sommano_labels } = campi;
+    setCopia({ dopo: id, n: Date.now(), dati: { categoria_code, categoria_nome, titolo, descrizione, unita, tipo, sommano_labels: [...(sommano_labels || [])], codice: codiceCopia(attive, campi) } });
+  };
   const codiceUsato = (v) => codiceDuplicato(voci.filter((x) => x.attiva !== false), v);
 
   const inputSt = { padding: "8px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 13, fontFamily: "var(--font-ui)", outline: "none" };
@@ -138,8 +148,16 @@ export default function RegolazioneCapitolatoPage() {
         <div key={g.cat.code} style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>{g.cat.titoloPagina}</div>
           {g.items.map((v, i) => (
-            <VoceEditor key={v.id} voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato} onDirty={segnaModifica}
-              spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
+            <Fragment key={v.id}>
+              <VoceEditor voce={v} studioId={studioId} T={T} showToast={showToast} onSaved={onSaved} onDeleted={onDeleted} codiceUsato={codiceUsato} onDirty={segnaModifica}
+                onDuplica={puoDuplicare && v.attiva !== false ? (campi) => duplica(v.id, campi) : null}
+                spostamento={puoSpostare ? { primo: i === 0, ultimo: i === g.items.length - 1, onMove: (dir) => sposta(v.id, { dir }), onMoveCat: (cat) => sposta(v.id, { cat }) } : null} />
+              {copia?.dopo === v.id && (
+                <VoceEditor key={`copia-${copia.n}`} nuova copiaDi={v.codice} iniziale={copia.dati} studioId={studioId} T={T} showToast={showToast} codiceSuggerito={codiceSuggerito} codiceUsato={codiceUsato}
+                  onSaved={() => { ricarica(); setCopia(null); showToast("Voce duplicata", "success"); }}
+                  onCancel={() => setCopia(null)} />
+              )}
+            </Fragment>
           ))}
         </div>
       ))}
@@ -157,9 +175,19 @@ function Chip({ T, active, children, ...rest }) {
 
 const CAT_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c]));
 
-function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito, codiceUsato, onDirty }) {
+function VoceEditor({ voce, nuova, iniziale, copiaDi, onDuplica, studioId, T, showToast, onSaved, onDeleted, onCancel, spostamento, codiceSuggerito, codiceUsato, onDirty }) {
   const blank = { categoria_code: "A", categoria_nome: CAT_BY_CODE["A"]?.nome || "", codice: codiceSuggerito?.("A") || "", titolo: "", descrizione: "", unita: "a corpo", tipo: "singolo", sommano_labels: [] };
-  const [d, setD] = useState(voce ? { ...voce } : blank);
+  const isMobile = useIsMobile();
+  const [d, setD] = useState(voce ? { ...voce } : iniziale ? { ...blank, ...iniziale } : blank);
+  const codiceIniziale = useRef(iniziale?.codice);
+  // la copia appena aperta viene portata in vista, col titolo pronto da modificare
+  const boxRef = useRef(null);
+  const titoloRef = useRef(null);
+  useEffect(() => {
+    if (!iniziale) return;
+    boxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    titoloRef.current?.focus({ preventScroll: true });
+  }, []); // eslint-disable-line
   const [dirty, setDirty] = useState(!!nuova);
   // la voce può cambiare da fuori (codice scambiato con ↑↓, spostamento): riallinea
   // il form; con modifiche in corso aggiorna solo codice e identità, così un
@@ -227,15 +255,15 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
   const lbl = { fontFamily: mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
 
   return (
-    <div style={{ border: `1px solid ${dirty ? T.navy : T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 8, background: T.surface }}>
-      <div style={{ display: "grid", gridTemplateColumns: nuova ? "70px 90px 1fr 110px 130px" : "70px 1fr 110px 130px", gap: 8, alignItems: "end" }}>
+    <div ref={boxRef} style={{ border: `1px solid ${dirty ? T.navy : T.border}`, borderRadius: T.radiusSm, padding: 12, marginBottom: 8, background: T.surface }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : nuova ? "70px 90px 1fr 110px 130px" : "70px 1fr 110px 130px", gap: 8, alignItems: "end" }}>
         {nuova && (
           <div>
             <div style={lbl}>Cat.</div>
             <select value={d.categoria_code} onChange={(e) => {
               const cat = e.target.value;
               // codice ancora quello suggerito (o vuoto) → suggerisci quello della nuova sezione
-              const auto = !d.codice || d.codice === codiceSuggerito?.(d.categoria_code);
+              const auto = !d.codice || d.codice === codiceSuggerito?.(d.categoria_code) || d.codice === codiceIniziale.current;
               set({ categoria_code: cat, ...(auto ? { codice: codiceSuggerito?.(cat) || "" } : {}) });
             }} style={{ ...inp, width: "100%" }}>
               {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
@@ -246,9 +274,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
           <div style={lbl}>Codice</div>
           <input value={d.codice} onChange={(e) => set({ codice: e.target.value })} style={{ ...inp, width: "100%" }} />
         </div>
-        <div>
+        <div style={isMobile ? { gridColumn: "1 / -1" } : undefined}>
           <div style={lbl}>Titolo</div>
-          <input value={d.titolo} onChange={(e) => set({ titolo: e.target.value })} style={{ ...inp, width: "100%" }} />
+          <input ref={titoloRef} value={d.titolo} onChange={(e) => set({ titolo: e.target.value })} style={{ ...inp, width: "100%" }} />
         </div>
         <div>
           <div style={lbl}>Unità</div>
@@ -269,12 +297,12 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
         <textarea value={d.descrizione} onChange={(e) => set({ descrizione: e.target.value })} rows={Math.max(2, String(d.descrizione || "").split("\n").length)}
           style={{ ...inp, width: "100%", resize: "vertical", lineHeight: 1.4 }} />
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
         <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
-          {nuova ? "nuova voce" : eliminata ? "voce eliminata" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
+          {copiaDi != null ? `copia di ${copiaDi || "voce"}` : nuova ? "nuova voce" : eliminata ? "voce eliminata" : isGlobale ? "template globale — modificando crei la versione dello studio" : "voce dello studio"}
           {" · SOMMANO: " + (d.sommano_labels && d.sommano_labels.length ? d.sommano_labels.join(" / ") : defaultSommanoLabels(d.unita, d.tipo).join(" / "))}
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginLeft: "auto" }}>
           {spostamento && (
             <>
               <button title={dirty ? "Salva prima di spostare" : "Sposta su"} onClick={() => spostamento.onMove(-1)} disabled={dirty || spostamento.primo}
@@ -289,6 +317,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
               </select>
             </>
           )}
+          {onDuplica && <button onClick={() => onDuplica(d)} title="Crea una nuova voce partendo da questa"
+            style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Duplica</button>}
           {nuova && <button onClick={onCancel} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 16px", cursor: "pointer" }}>Annulla</button>}
           {eliminata && <button onClick={ripristina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.ink, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Ripristina</button>}
           {!nuova && !eliminata && <button onClick={elimina} disabled={busy} style={{ border: `0.5px solid ${T.borderMd}`, background: "transparent", color: T.red, borderRadius: T.radiusSm, fontFamily: mono, fontSize: 11, padding: "8px 12px", cursor: "pointer" }}>Elimina</button>}
