@@ -279,6 +279,17 @@ export function prossimoCodice(voci, cat) {
   return `${cat}${String(max + 1).padStart(2, "0")}`;
 }
 
+// Codice per la copia di una voce: <codice>.1 (o il primo .n libero), così nella
+// libreria ordinata per codice la copia sta subito dopo l'originale (A03 < A03.1 < A04).
+export function codiceCopia(voci, voce) {
+  const base = String(voce.codice || "").trim();
+  if (!base) return prossimoCodice(voci, voce.categoria_code);
+  for (let n = 1; ; n++) {
+    const c = `${base}.${n}`;
+    if (!codiceDuplicato(voci, { categoria_code: voce.categoria_code, codice: c })) return c;
+  }
+}
+
 // Le frecce ↑↓ scambiano il codice con la voce vicina (l'ordine segue il codice).
 // Ritorna le due voci con il codice nuovo, o null se non c'è una vicina.
 export function scambiaCodici(voci, id, dir) {
