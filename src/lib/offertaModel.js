@@ -211,3 +211,58 @@ export function vociAttive(s, doc) {
     }))
     .filter(g => g.voci.length > 0);
 }
+
+// ── Duplicazione offerta ─────────────────────────────────────────────────────
+// Propone il numero successivo partendo da quello dell'offerta originale:
+// incrementa l'ultimo gruppo di cifre che non sia un anno (es. "2026/014" →
+// "2026/015", "15/2026" → "16/2026"), mantenendo gli zeri iniziali e saltando
+// i numeri già usati nello studio.
+export function prossimoNumeroOfferta(numero, esistenti = []) {
+  const base = String(numero || "").trim();
+  const usati = new Set(esistenti.map((n) => String(n || "").trim().toLowerCase()));
+  const gruppi = [...base.matchAll(/\d+/g)];
+  if (gruppi.length === 0) {
+    let k = 2, cand = base ? `${base}-2` : "OFF.1";
+    while (usati.has(cand.toLowerCase())) cand = `${base}-${++k}`;
+    return cand;
+  }
+  const nonAnni = gruppi.filter((g) => !/^(19|20)\d\d$/.test(g[0]));
+  const g = (nonAnni.length ? nonAnni : gruppi).at(-1);
+  const prima = base.slice(0, g.index), dopo = base.slice(g.index + g[0].length);
+  let n = Number(g[0]);
+  let cand;
+  do {
+    n += 1;
+    cand = prima + String(n).padStart(g[0].length, "0") + dopo;
+  } while (usati.has(cand.toLowerCase()));
+  return cand;
+}
+
+// Campi che identificano la singola offerta o il suo esito: non si copiano.
+const CAMPI_NON_DUPLICABILI = [
+  "id", "created_at", "updated_at", "created_date", "updated_date",
+  "created_by", "deleted_at", "commessa_id",
+];
+
+// Costruisce la riga da inserire per la copia di un'offerta: stesse voci,
+// sconti, cliente, progetto e documento; nuovo numero, data di oggi e stato
+// "offerta" (da decidere), con lo storico documento ripartito da una versione.
+export function datiDuplicaOfferta(offerta, numeriEsistenti = [], oggi = new Date().toISOString().slice(0, 10)) {
+  const copia = { ...offerta };
+  CAMPI_NON_DUPLICABILI.forEach((k) => { delete copia[k]; });
+  copia.numero_offerta = prossimoNumeroOfferta(offerta.numero_offerta, numeriEsistenti);
+  copia.nome_offerta = `${(offerta.nome_offerta || "").trim()} (copia)`.trim();
+  copia.data_offerta = oggi;
+  copia.stato = "offerta";
+  copia.archived = false;
+  copia.voci = Array.isArray(offerta.voci) ? offerta.voci.map((v) => ({ ...v })) : [];
+  const doc = offerta.documento && typeof offerta.documento === "object" ? offerta.documento : null;
+  if (doc && Object.keys(doc).length > 0) {
+    copia.documento = JSON.parse(JSON.stringify(doc));
+    if ("data" in copia.documento) copia.documento.data = oggi;
+    copia.documento_versioni = [{ n: 1, ts: new Date().toISOString(), doc: copia.documento }];
+  } else {
+    copia.documento_versioni = [];
+  }
+  return copia;
+}
