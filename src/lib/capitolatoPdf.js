@@ -11,6 +11,7 @@ import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pd
 import {
   CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_SOTTOTITOLO, CAPITOLATO_NOTA_IVA,
 } from "./capitolatoTemplate";
+import { isRich, parseRich, wrapRuns, rgb } from "./richText";
 import { componiGruppi, totaleRigaEff, qtaMisurazione, fmtNum, parseNum, parseMisura, IMPIANTI_ASSISTENZA, assistenzaBasi, assistenzaPerc } from "./capitolatoModel";
 
 registerGroteskaFonts();
@@ -257,7 +258,14 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       const tot = isAssist ? "" : totaleRigaEff(r); // importo/quantità calcolati nell'Excel
 
       reg(7);
-      const descLines = pdf.splitTextToSize(r.descrizione || "", DESC_W);
+      // descrizione: testo semplice come sempre; se formattata, a capo per parole
+      // mantenendo grassetto/corsivo/colore di ogni pezzo
+      const ricca = isRich(r.descrizione);
+      const fontRun = (run) => { if (run.b) bold(7); else if (run.i) ital(7); else reg(7); };
+      const descLines = ricca
+        ? wrapRuns(parseRich(r.descrizione), DESC_W, (t, run) => { fontRun(run); return pdf.getTextWidth(t); })
+        : pdf.splitTextToSize(r.descrizione || "", DESC_W);
+      reg(7);
       const titLines = pdf.splitTextToSize((r.titolo || "").toUpperCase(), DESC_W);
       const titH = titLines.length * 3.7 + 2.2;
       ensure(titH + descLines.length * 3.1 + 16);
@@ -279,7 +287,17 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
       // descrizione (nero) — un'unica cella (niente linee tra le righe di testo)
       reg(7); pdf.setTextColor(20, 20, 20);
       const descTop = y;
-      descLines.forEach((ln) => { pdf.text(ln, X.desig + 1.5, y + 2.2); y += 3.1; });
+      descLines.forEach((ln) => {
+        if (ricca) {
+          let x = X.desig + 1.5;
+          ln.forEach((seg) => {
+            fontRun(seg);
+            if (seg.color) pdf.setTextColor(...rgb(seg.color)); else pdf.setTextColor(20, 20, 20);
+            pdf.text(seg.text, x, y + 2.2); x += seg.w;
+          });
+        } else pdf.text(ln, X.desig + 1.5, y + 2.2);
+        y += 3.1;
+      });
       y += 0.8;
       vBody(descTop, y - descTop); hL(y);
 

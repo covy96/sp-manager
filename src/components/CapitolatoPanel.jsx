@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import BodyPortal from "./BodyPortal";
+import RichTextEditor, { RichText } from "./RichTextEditor";
+import { richToPlain } from "../lib/richText";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
@@ -167,7 +169,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     const usateIds = new Set(righe.map((r) => r.voce_id).filter(Boolean));
     let list = libreria;
     if (catFilter) list = list.filter((v) => v.categoria_code === catFilter);
-    if (q) list = list.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(v.descrizione).includes(q));
+    if (q) list = list.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
     return list.slice(0, 80).map((v) => ({ ...v, _added: usateIds.has(v.id) }));
   }, [libreria, query, catFilter, righe]);
 
@@ -637,7 +639,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                           <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{v.categoria_code}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, marginTop: 2 }}>{v.titolo}</div>
-                        <div style={{ fontSize: 10, color: T.muted, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.descrizione}</div>
+                        <RichText value={v.descrizione} style={{ fontSize: 10, color: T.muted, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", whiteSpace: "normal" }} />
                       </button>
                     ))}
                   </div>
@@ -767,8 +769,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
               </div>
               <div>
                 <div style={labelSt}>Descrizione</div>
-                <textarea value={nuova.descrizione} onChange={(e) => setNuova((n) => ({ ...n, descrizione: e.target.value }))} rows={3}
-                  style={{ ...inputSt, width: "100%", resize: "vertical", lineHeight: 1.35 }} />
+                <RichTextEditor T={T} value={nuova.descrizione} onChange={(v) => setNuova((n) => ({ ...n, descrizione: v }))} minRows={3}
+                  style={{ ...inputSt, width: "100%", lineHeight: 1.35 }} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
@@ -838,11 +840,8 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
               {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </div>
-          <textarea value={r.descrizione} onChange={(e) => onPatch({ descrizione: e.target.value })}
-            rows={Math.max(2, String(r.descrizione || "").split("\n").length)}
-            style={{ width: "100%", boxSizing: "border-box", fontSize: 10.5, color: T.muted, marginTop: 4, background: "transparent", border: `1px solid transparent`, borderRadius: T.radiusSm, outline: "none", resize: "vertical", fontFamily: "var(--font-ui)", lineHeight: 1.35, padding: "2px 4px" }}
-            onFocus={(e) => (e.target.style.borderColor = T.borderMd)}
-            onBlur={(e) => (e.target.style.borderColor = "transparent")} />
+          <RichTextEditor T={T} compact minRows={1} value={r.descrizione} onChange={(v) => onPatch({ descrizione: v })}
+            style={{ width: "100%", boxSizing: "border-box", fontSize: 10.5, color: T.muted, marginTop: 4, background: "transparent", border: `1px solid transparent`, borderRadius: T.radiusSm, outline: "none", fontFamily: "var(--font-ui)", lineHeight: 1.35, padding: "2px 4px" }} focusStyle={{ borderColor: T.borderMd }} />
         </div>
         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
           <button title="Su" onClick={() => onMove(-1)} style={iconBtn(T)}>↑</button>
