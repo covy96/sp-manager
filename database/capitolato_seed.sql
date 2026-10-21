@@ -154,135 +154,135 @@ Rif. tav. 02 in allegato$cap$, $cap$mq$cap$, $cap$singolo$cap$, $cap$["SOMMANO m
 Rif. tav. 02 in allegato$cap$, $cap$mq$cap$, $cap$singolo$cap$, $cap$["SOMMANO mq"]$cap$::jsonb, 31),
   (NULL, $cap$C$cap$, $cap$Costruzioni$cap$, $cap$C32$cap$, $cap$SPOSTAMENTO PASSAVIVANDE ESISTENTE$cap$, $cap$Spostamento del passavivande esistente mediante rimozione della vetrata, chiusura parziale dell'apertura esistente e realizzazione della nuova porzione di apertura secondo progetto. Compresi adeguamenti murari, ripristino delle superfici con intonaco e rasatura, rimontaggio della vetrata esistente nella nuova posizione, carico, trasporto e smaltimento dei materiali di risulta, nonché ogni onere necessario per dare l'opera finita a regola d'arte.
 Rif. tav. 02 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMMANO a corpo"]$cap$::jsonb, 32),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D01$cap$, $cap$PRT_01 - PORTA A DOPPIO SCORRIMENTO - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio scorrimento, comprensiva di ante, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D01$cap$, $cap$PRT_01 - PORTA A DOPPIO SCORRIMENTO - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio scorrimento, comprensiva di ante, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 90 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 1),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D02$cap$, $cap$PRT_01 - PORTA A DOPPIO SCORRIMENTO - 160 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio scorrimento, comprensiva di ante, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D02$cap$, $cap$PRT_01 - PORTA A DOPPIO SCORRIMENTO - 160 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio scorrimento, comprensiva di ante, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 160 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 2),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D03$cap$, $cap$PRT_02 - PORTA BATTENTE - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a destra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D03$cap$, $cap$PRT_02 - PORTA BATTENTE - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a destra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 90 x 210 cm
 Rif. tav. 05 in allegato
 Bagno disabili$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 3),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D04$cap$, $cap$PRT_03 - PORTA BATTENTE - 70 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D04$cap$, $cap$PRT_03 - PORTA BATTENTE - 70 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 70 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 4),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D05$cap$, $cap$PRT_04 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D05$cap$, $cap$PRT_04 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 5),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D06$cap$, $cap$PRT_05 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D06$cap$, $cap$PRT_05 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 6),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D07$cap$, $cap$PRT_06 - PORTA A DOPPIO BATTENTE BLINDATA - 100 x 225 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio battente blindata, comprensiva di ante, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D07$cap$, $cap$PRT_06 - PORTA A DOPPIO BATTENTE BLINDATA - 100 x 225 cm$cap$, $cap$Fornitura e posa in opera di porta a doppio battente blindata, comprensiva di ante, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 100 x 225 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 7),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D08$cap$, $cap$PRT_07 - PORTA BATTENTE BLINDATA - 100 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D08$cap$, $cap$PRT_07 - PORTA BATTENTE BLINDATA - 100 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 100 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 8),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D09$cap$, $cap$PRT_08 - PORTA BATTENTE FILOMURO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente a filomuro, comprensiva di anta, telaio/controtelaio a scomparsa, coprifili, ferramenta, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D09$cap$, $cap$PRT_08 - PORTA BATTENTE FILOMURO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente a filomuro, comprensiva di anta, telaio/controtelaio a scomparsa, coprifili, ferramenta, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 9),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D10$cap$, $cap$SE_01 - SERRAMENTO CON APERTURA A GHIGLIOTTINA$cap$, $cap$Fornitura e posa in opera di serramento esterno con apertura a ghigliottina (scorrimento verticale), comprensivo di telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte. Anta a ghigliottina 61,5 x 194 cm.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D10$cap$, $cap$SE_01 - SERRAMENTO CON APERTURA A GHIGLIOTTINA$cap$, $cap$Fornitura e posa in opera di serramento esterno con apertura a ghigliottina (scorrimento verticale), comprensivo di telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte. Anta a ghigliottina 61,5 x 194 cm.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 194 x 290 cm
 Rif. tav. 05b in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 10),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D11$cap$, $cap$SE_02 - SERRAMENTO FISSO CON PORTA A BATTENTE$cap$, $cap$Fornitura e posa in opera di serramento esterno fisso comprensivo di porzione mobile con porta a battente, telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D11$cap$, $cap$SE_02 - SERRAMENTO FISSO CON PORTA A BATTENTE$cap$, $cap$Fornitura e posa in opera di serramento esterno fisso comprensivo di porzione mobile con porta a battente, telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 200 x 290 cm
 Dimensioni porta: 90 x 224 cm
 Rif. tav. 05b in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 11),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D12$cap$, $cap$SE_03 - SERRAMENTO FISSO$cap$, $cap$Fornitura e posa in opera di serramento esterno fisso, comprensivo di telaio, controtelaio, vetrocamera, guarnizioni e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D12$cap$, $cap$SE_03 - SERRAMENTO FISSO$cap$, $cap$Fornitura e posa in opera di serramento esterno fisso, comprensivo di telaio, controtelaio, vetrocamera, guarnizioni e accessori. Compresi fissaggi, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 200 x 290 cm
 Rif. tav. 05b in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 12),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D13$cap$, $cap$PRT_01 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D13$cap$, $cap$PRT_01 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta, serratura e accessori - apertura a sinistra. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 13),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D14$cap$, $cap$PRT_02 - PORTA A SCORRIMENTO - 70 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento, comprensiva di anta, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D14$cap$, $cap$PRT_02 - PORTA A SCORRIMENTO - 70 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento, comprensiva di anta, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 70 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 14),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D15$cap$, $cap$PRT_03 - PORTA A SCORRIMENTO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento, comprensiva di anta, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D15$cap$, $cap$PRT_03 - PORTA A SCORRIMENTO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento, comprensiva di anta, telaio/controtelaio, sistema di scorrimento, coprifili, ferramenta e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 15),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D16$cap$, $cap$PRT_04 - PORTA BATTENTE FILOMURO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente a filomuro, comprensiva di anta, telaio/controtelaio a scomparsa, coprifili, ferramenta, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D16$cap$, $cap$PRT_04 - PORTA BATTENTE FILOMURO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente a filomuro, comprensiva di anta, telaio/controtelaio a scomparsa, coprifili, ferramenta, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 16),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D17$cap$, $cap$PRT_05 - PORTA BATTENTE BLINDATA - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D17$cap$, $cap$PRT_05 - PORTA BATTENTE BLINDATA - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata, comprensiva di anta, telaio/controtelaio, coprifili, ferramenta di sicurezza, serratura e accessori. Compresi fissaggi, guarnizioni, sigillature, regolazioni e ogni onere per dare l'opera installata e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 90 x 210 cm
 Rif. tav. 05 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 17),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D18$cap$, $cap$P_01 - PORTA A BATTENTE BLINDATA - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata - CLASSE DI SICUREZZA 3 - comprensiva di serramento, copriprofilo e adattamento per installazione serratura con sistema NUKI, maniglia da definire
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D18$cap$, $cap$P_01 - PORTA A BATTENTE BLINDATA - 90 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente blindata - CLASSE DI SICUREZZA 3 - comprensiva di serramento, copriprofilo e adattamento per installazione serratura con sistema NUKI, maniglia da definire
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 90 x 210 cm
 Rif. tav. 10 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 18),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D19$cap$, $cap$P_02 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente - comprensiva di serramento, copriprofilo e serratura - pannello in MDF con abbattimento acustico 30 dB
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D19$cap$, $cap$P_02 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente - comprensiva di serramento, copriprofilo e serratura - pannello in MDF con abbattimento acustico 30 dB
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 10 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 19),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D20$cap$, $cap$P_03 - PORTA A SCORRIMENTO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento - comprensiva di serramento, copriprofilo e serratura - pannello da definire
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D20$cap$, $cap$P_03 - PORTA A SCORRIMENTO - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a scorrimento - comprensiva di serramento, copriprofilo e serratura - pannello da definire
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 10 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 20),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D21$cap$, $cap$P_04 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente - comprensiva di serramento, copriprofilo e serratura - pannello da definire
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D21$cap$, $cap$P_04 - PORTA BATTENTE - 80 x 210 cm$cap$, $cap$Fornitura e posa in opera di porta a battente - comprensiva di serramento, copriprofilo e serratura - pannello da definire
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
 Dimensioni: 80 x 210 cm
 Rif. tav. 10 in allegato$cap$, $cap$$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano", "POSA - sommano"]$cap$::jsonb, 21),
-  (NULL, $cap$D$cap$, $cap$Abaco porte$cap$, $cap$D22$cap$, $cap$SE_04 - SOVRALUCE CUCINA - 90 x 215 cm$cap$, $cap$Rimozione del sovraluce esistente e fornitura e posa in opera di nuovo sovraluce, completo di telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni, ripristini necessari e ogni onere per dare l'opera finita e perfettamente funzionante a regola d'arte.
+  (NULL, $cap$D$cap$, $cap$Abaco Porte e Serramenti$cap$, $cap$D22$cap$, $cap$SE_04 - SOVRALUCE CUCINA - 90 x 215 cm$cap$, $cap$Rimozione del sovraluce esistente e fornitura e posa in opera di nuovo sovraluce, completo di telaio, controtelaio, vetrocamera, guarnizioni, ferramenta e accessori. Compresi fissaggi, sigillature, regolazioni, ripristini necessari e ogni onere per dare l'opera finita e perfettamente funzionante a regola d'arte.
 AZIENDA XXX
 CODICE XXX
 Finitura da definire in fase di progettazione
@@ -483,15 +483,15 @@ Rif. tav. 09 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMM
   (NULL, $cap$G$cap$, $cap$Meccanico$cap$, $cap$G08$cap$, $cap$IMPIANTO ESTRAZIONE FORZATA$cap$, $cap$Fornitura e posa in opera di ventola motorizzata per estrazione d'aria forzata 12 V/h tramite impianto canalizzato.$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMMANO a corpo"]$cap$::jsonb, 8),
   (NULL, $cap$G$cap$, $cap$Meccanico$cap$, $cap$G09$cap$, $cap$CANNA FUMARIA$cap$, $cap$Rimozione della tubazione flessibile esistente all'interno della canna fumaria e risanamento mediante intubamento con guaina termoindurente tipo Furanflex o equivalente, dimensionata secondo le verifiche in opera. Compresi adattamenti, raccordi, terminali, opere accessorie, trasporto e conferimento a discarica dei materiali di risulta, eventuale impianto provvisorio di estrazione durante le lavorazioni e rilascio delle certificazioni di conformità, per dare l'opera eseguita a regola d'arte.
 Rif. tav. 09 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMMANO a corpo"]$cap$::jsonb, 9),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H01$cap$, $cap$PROFILO OTTONE$cap$, $cap$Fornitura e posa in opera di profili in ottone a pavimento in corrispondenza dei cambi di pavimentazione (parquet/piastrelle), compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H01$cap$, $cap$PROFILO OTTONE$cap$, $cap$Fornitura e posa in opera di profili in ottone a pavimento in corrispondenza dei cambi di pavimentazione (parquet/piastrelle), compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano ml", "POSA - sommano ml"]$cap$::jsonb, 1),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H02$cap$, $cap$PARQUET$cap$, $cap$Parquet Berti Pavimenti Legno 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H02$cap$, $cap$PARQUET$cap$, $cap$Parquet Berti Pavimenti Legno 
 Rovere spazzolato verniciato 2 strati
 Dim. Lung. 550/880, Largh. 120, sp. 13 mm
 Posa: spina ungherese 60°
 
 Rif. tav. 05 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq +30% sfrido", "POSA - sommano mq"]$cap$::jsonb, 2),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H03$cap$, $cap$GRES R10$cap$, $cap$Gres R10
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H03$cap$, $cap$GRES R10$cap$, $cap$Gres R10
 Casalgrande
 unicolore grigio cenere scura R10
 Dim. 30 x 30 cm
@@ -499,179 +499,179 @@ sp. 8 mm
 Posa: lineare
 
 Rif. tav. 05 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq + 5% sfrido", "POSA - sommano mq"]$cap$::jsonb, 3),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H04$cap$, $cap$PAV_01 - XXX$cap$, $cap$Pavimentazione in piastrelle in gres
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H04$cap$, $cap$PAV_01 - XXX$cap$, $cap$Pavimentazione in piastrelle in gres
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 4),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H05$cap$, $cap$ZOCCOLINO LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno grezzo, compresi taglio, fissaggio, stuccatura dei giunti e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H05$cap$, $cap$ZOCCOLINO LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno grezzo, compresi taglio, fissaggio, stuccatura dei giunti e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - ml", "POSA - ml"]$cap$::jsonb, 5),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H06$cap$, $cap$SGUSCIA$cap$, $cap$Fornitura e posa in opera di sguscia integrata
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H06$cap$, $cap$SGUSCIA$cap$, $cap$Fornitura e posa in opera di sguscia integrata
 paraspigoli
 
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - ml", "POSA - ml"]$cap$::jsonb, 6),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H07$cap$, $cap$ZERBINO$cap$, $cap$Zerbino da definire in fase di progettoDimensioni: 102.5 x 60 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H07$cap$, $cap$ZERBINO$cap$, $cap$Zerbino da definire in fase di progettoDimensioni: 102.5 x 60 cm
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura: incassato nel pavimento
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 7),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H08$cap$, $cap$PARASPIGOLI$cap$, $cap$Fornitura e posa in opera di paraspigoli, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H08$cap$, $cap$PARASPIGOLI$cap$, $cap$Fornitura e posa in opera di paraspigoli, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["sommano a corpo"]$cap$::jsonb, 8),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H09$cap$, $cap$SOGLIE$cap$, $cap$Fornitura e posa in opera di soglie in corrispondenza dei cambi di pavimentazione, compresi taglio a misura, posa, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H09$cap$, $cap$SOGLIE$cap$, $cap$Fornitura e posa in opera di soglie in corrispondenza dei cambi di pavimentazione, compresi taglio a misura, posa, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["sommano a corpo"]$cap$::jsonb, 9),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H10$cap$, $cap$PAV_01 - SPC - CLAP!REAL TAGLIO UNGHERESE$cap$, $cap$Fornitura e posa in opera di pavimento in SPC con strato di finitura in legno 100% naturale, formato con taglio 60° per spina di pesce ungherese
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H10$cap$, $cap$PAV_01 - SPC - CLAP!REAL TAGLIO UNGHERESE$cap$, $cap$Fornitura e posa in opera di pavimento in SPC con strato di finitura in legno 100% naturale, formato con taglio 60° per spina di pesce ungherese
 Azienda: DECO DECKING
 Tipologia: CLAP!REAL
 Dimensioni: Lung. 680, Largh. 127, sp. 7 mm
 Posatura: spina ungherese 60°
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 10),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H11$cap$, $cap$PAV_02 - PIASTRELLA GLOCAL XXX - 80 x 80 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres Glocal XXX - 80 x 80 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H11$cap$, $cap$PAV_02 - PIASTRELLA GLOCAL XXX - 80 x 80 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres Glocal XXX - 80 x 80 cm
 Azienda: MIRAGE
 Tipologia: GLOCAL
 Dimensioni: 80 x 80 cm
 Posatura: lineare
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 11),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H12$cap$, $cap$PAV_03 - PIASTRELLA xxx - 60 x 60 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres XXX - 60 x 60 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H12$cap$, $cap$PAV_03 - PIASTRELLA xxx - 60 x 60 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres XXX - 60 x 60 cm
 Azienda: 
 Tipologia: 
 Dimensioni: 60 x 60 cm
 Posatura: lineare
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 12),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H13$cap$, $cap$PIASTRELLA GLOCAL GC10 - 80 x 80 cm$cap$, $cap$Posa in opera di piastrelle in gres 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H13$cap$, $cap$PIASTRELLA GLOCAL GC10 - 80 x 80 cm$cap$, $cap$Posa in opera di piastrelle in gres 
 MIRAGE
 GLOCAL GINGER GC10 
 DIMENSIONI: 80 x 80 cm
 SPESSORE: 9 mm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano mq"]$cap$::jsonb, 13),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H14$cap$, $cap$PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, Green Lux e white Lux
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H14$cap$, $cap$PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, Green Lux e white Lux
 MARAZZI
 LUME - GREEN AND WHITE LUX
 DIMENSIONI: 6 x 24 cm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano mq"]$cap$::jsonb, 14),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H15$cap$, $cap$ZOCCOLINO IN LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno, tinto sikkens G4.05.81
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H15$cap$, $cap$ZOCCOLINO IN LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno, tinto sikkens G4.05.81
 AZIENDA
 MODELLO 
 DIMENSIONI: 
 SPESSORE: 
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano ml", "POSA - sommano ml"]$cap$::jsonb, 15),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H16$cap$, $cap$ZOCCOLINO IN PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di zoccolino in piastrella in gres Lume Caramel Lux
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H16$cap$, $cap$ZOCCOLINO IN PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di zoccolino in piastrella in gres Lume Caramel Lux
 MARAZZI
 LUME CARAMEL LUX 
 DIMENSIONI: 6 x 24 cm
 SPESSORE: 10 mm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano ml"]$cap$::jsonb, 16),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H17$cap$, $cap$PARASPIGOLI E ANGOLARI$cap$, $cap$Fornitura e posa in opera di paraspigoli e angolari dove necessario, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H17$cap$, $cap$PARASPIGOLI E ANGOLARI$cap$, $cap$Fornitura e posa in opera di paraspigoli e angolari dove necessario, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$singolo$cap$, $cap$["sommano - ml"]$cap$::jsonb, 17),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H18$cap$, $cap$GRES AREA VENDITA$cap$, $cap$Fornitura e posa in opera di pavimentazione in Gres, comprensivo di preparazione superficie, colla e stucco. 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H18$cap$, $cap$GRES AREA VENDITA$cap$, $cap$Fornitura e posa in opera di pavimentazione in Gres, comprensivo di preparazione superficie, colla e stucco. 
 
 Mod. Mirage, Glocal, 80x80 cm, sp. 9mm
 colore da definire
 
 Rif. tav. 08 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq + 15% sfrido", "POSA - sommano mq"]$cap$::jsonb, 18),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I01$cap$, $cap$TINTA ROSSA - DA DEFINIRE$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta rossa (colore/RAL da definire) su nicchie ed elementi verticali come da progetto. Compresi preparazione e rasatura del supporto, applicazione a più mani e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I01$cap$, $cap$TINTA ROSSA - DA DEFINIRE$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta rossa (colore/RAL da definire) su nicchie ed elementi verticali come da progetto. Compresi preparazione e rasatura del supporto, applicazione a più mani e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 1),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I02$cap$, $cap$Piastrella fino h 180 - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in smalto lavabile bianco a tutt'altezza
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I02$cap$, $cap$Piastrella fino h 180 - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in smalto lavabile bianco a tutt'altezza
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 2),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I03$cap$, $cap$TINTA BIANCA da h 180 - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in smalto lavabile bianco a tutt'altezza
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I03$cap$, $cap$TINTA BIANCA da h 180 - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in smalto lavabile bianco a tutt'altezza
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 3),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I04$cap$, $cap$PIASTRELLA A - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in XXX
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I04$cap$, $cap$PIASTRELLA A - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in XXX
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 4),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I05$cap$, $cap$PIASTRELLA B - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in XXX
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I05$cap$, $cap$PIASTRELLA B - da definire$cap$, $cap$Posa in opera di nuovo rivestimenti in XXX
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 5),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I06$cap$, $cap$CARTA DA PARATI$cap$, $cap$Fornitura e posa in opera di rivestimento in carta da parati (tipo e decoro da definire), compresa la preparazione del supporto, il collante specifico, l'allineamento dei teli e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I06$cap$, $cap$CARTA DA PARATI$cap$, $cap$Fornitura e posa in opera di rivestimento in carta da parati (tipo e decoro da definire), compresa la preparazione del supporto, il collante specifico, l'allineamento dei teli e ogni onere per dare l'opera finita a regola d'arte.
 AZIENDA XXX
 TIPOLOGIA XXX
 Dimensioni: da definire
 Posa: come da progetto
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 6),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I07$cap$, $cap$SOF_01 - TINTA BIANCA$cap$, $cap$AZIENDA
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I07$cap$, $cap$SOF_01 - TINTA BIANCA$cap$, $cap$AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 11 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 7),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I08$cap$, $cap$RIV_01 - RIVESTIMENTO DA DEFINIRE$cap$, $cap$Rivestimenti in XXX
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I08$cap$, $cap$RIV_01 - RIVESTIMENTO DA DEFINIRE$cap$, $cap$Rivestimenti in XXX
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 11 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 8),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I09$cap$, $cap$RIVESTIMENTO IN PIASTRELLA$cap$, $cap$Fornitura e posa in opera di nuovo rivestimenti in piastrella a tutt'altezza
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I09$cap$, $cap$RIVESTIMENTO IN PIASTRELLA$cap$, $cap$Fornitura e posa in opera di nuovo rivestimenti in piastrella a tutt'altezza
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 SFRIDO DA AGGIUNGERE
 Rif. tav. 11 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 9),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I10$cap$, $cap$TINTA SIKKENS - G4.05.81$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta Sikkens G4.05.81
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I10$cap$, $cap$TINTA SIKKENS - G4.05.81$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta Sikkens G4.05.81
 AZIENDA
 TIPOLOGIA
 COLORE: Sikkens G4.05.81
 Posatura
 Rif. tav. 08 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 10),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I11$cap$, $cap$TINTA SMALTO LAVABILE SIKKENS - G4.05.81$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta a smalto lavabile Sikkens G4.05.81 - Blackspash cucina
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I11$cap$, $cap$TINTA SMALTO LAVABILE SIKKENS - G4.05.81$cap$, $cap$Fornitura e posa in opera di rivestimento a parete in tinta a smalto lavabile Sikkens G4.05.81 - Blackspash cucina
 AZIENDA
 TIPOLOGIA: smalto lavabile
 COLORE: Sikkens G4.05.81
 Posatura
 Rif. tav. 08 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 11),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I12$cap$, $cap$PIASTRELLE GRES 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, caramel Lux e white Lux
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I12$cap$, $cap$PIASTRELLE GRES 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, caramel Lux e white Lux
 MARAZZI
 LUME - CARAMEL AND WHITE LUX
 DIMENSIONI: 6 x 24 cm
 POSA: LINEARE ALTERNATE - come da disegno
 Rif. tav. 08 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano mq"]$cap$::jsonb, 12),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I13$cap$, $cap$GRES 20x20$cap$, $cap$Fornitura e posa in. Opera di gres Marazzi, Sistem C Città Bianco 20x20, stucco Keracolor ff113 grigio cemento, posa lineare fino h 2 m
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I13$cap$, $cap$GRES 20x20$cap$, $cap$Fornitura e posa in. Opera di gres Marazzi, Sistem C Città Bianco 20x20, stucco Keracolor ff113 grigio cemento, posa lineare fino h 2 m
 Posatura
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 13),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I14$cap$, $cap$SMALTO BIANCO$cap$, $cap$Fornitura e posa in opera di smalto lavabile bianco.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I14$cap$, $cap$SMALTO BIANCO$cap$, $cap$Fornitura e posa in opera di smalto lavabile bianco.
 
 Da h 200 a soffitto
 
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$singolo$cap$, $cap$["sommano mq"]$cap$::jsonb, 14),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I15$cap$, $cap$SMALTO BEIGE$cap$, $cap$Fornitura e posa in opera di smalto - RAL da definire
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I15$cap$, $cap$SMALTO BEIGE$cap$, $cap$Fornitura e posa in opera di smalto - RAL da definire
 
 tutta altezza
 
 
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$singolo$cap$, $cap$["sommano mq"]$cap$::jsonb, 15),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I16$cap$, $cap$PITTURA DECORATIVA$cap$, $cap$Pittura decorativa per interni effetto sabbiato opaco - RAL da definire
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I16$cap$, $cap$PITTURA DECORATIVA$cap$, $cap$Pittura decorativa per interni effetto sabbiato opaco - RAL da definire
 
 tutta altezza
 
 
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$singolo$cap$, $cap$["sommano mq"]$cap$::jsonb, 16),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I17$cap$, $cap$PIASTRELLE FORMATO 10x10 BIANCHE CON DECORO$cap$, $cap$Fornitura e posa in opera di piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, con decorazioni color Giallo Babouche 223. Compresi preparazione del supporto, colla e stucco Keracolor FF 113 Grigio Cemento, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I17$cap$, $cap$PIASTRELLE FORMATO 10x10 BIANCHE CON DECORO$cap$, $cap$Fornitura e posa in opera di piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, con decorazioni color Giallo Babouche 223. Compresi preparazione del supporto, colla e stucco Keracolor FF 113 Grigio Cemento, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 6 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 17),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I18$cap$, $cap$PIASTRELLE 10x10 BIANCHE CON FUGA GIALLA$cap$, $cap$Fornitura e posa in opera di piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, con fuga colorata (Fugabella, colore da definire). Compresi preparazione del supporto, colla e stucco Keracolor, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte. Posa fino a H 200 cm.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I18$cap$, $cap$PIASTRELLE 10x10 BIANCHE CON FUGA GIALLA$cap$, $cap$Fornitura e posa in opera di piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, con fuga colorata (Fugabella, colore da definire). Compresi preparazione del supporto, colla e stucco Keracolor, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte. Posa fino a H 200 cm.
 Rif. tav. 6 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 18),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I19$cap$, $cap$TINTA GIALLA PARETE$cap$, $cap$Fornitura e posa in opera di pittura murale colore Farrow & Ball Giallo Babouche 223, a tutt'altezza o sopra il rivestimento in piastrelle. Compresi preparazione del supporto, applicazione a più mani e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I19$cap$, $cap$TINTA GIALLA PARETE$cap$, $cap$Fornitura e posa in opera di pittura murale colore Farrow & Ball Giallo Babouche 223, a tutt'altezza o sopra il rivestimento in piastrelle. Compresi preparazione del supporto, applicazione a più mani e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 6 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 19),
-  (NULL, $cap$I$cap$, $cap$Rivestimenti$cap$, $cap$I20$cap$, $cap$PIASTRELLE FORMATO 10x10 GIALLE SU STRUTTURA IN LEGNO$cap$, $cap$Fornitura e posa in opera di rivestimento in piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, verniciate con finitura Farrow & Ball Babouche 223 e decorate con motivo grafico bianco, su struttura in legno di noce Tanganica. Compresi preparazione del supporto, adesivo, stuccatura con Keracolor FF 113, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$I$cap$, $cap$Rivestimenti a parete$cap$, $cap$I20$cap$, $cap$PIASTRELLE FORMATO 10x10 GIALLE SU STRUTTURA IN LEGNO$cap$, $cap$Fornitura e posa in opera di rivestimento in piastrelle Marazzi Sistem C - Città bianco, dim. 10x10 cm, verniciate con finitura Farrow & Ball Babouche 223 e decorate con motivo grafico bianco, su struttura in legno di noce Tanganica. Compresi preparazione del supporto, adesivo, stuccatura con Keracolor FF 113, tagli, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 6 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 20),
   (NULL, $cap$L$cap$, $cap$Controsoffitti$cap$, $cap$L01$cap$, $cap$CASSETTONI IN ALLUMINIO$cap$, $cap$Fornitura e posa in opera di controsoffitto a cassettoni in alluminio, compresi orditura di sostegno, elementi modulari, tagli, fissaggi, allineamenti e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 20 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 1),

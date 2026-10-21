@@ -23,9 +23,9 @@ export const CAPITOLATO_CATEGORIE_TUTTE = [
   },
   {
     "code": "D",
-    "nome": "Abaco porte",
-    "nomeIndice": "Abaco porte e serramenti",
-    "titoloPagina": "D) ABACO PORTE"
+    "nome": "Abaco Porte e Serramenti",
+    "nomeIndice": "Abaco Porte e Serramenti",
+    "titoloPagina": "D) ABACO PORTE E SERRAMENTI"
   },
   {
     "code": "E",
@@ -47,15 +47,15 @@ export const CAPITOLATO_CATEGORIE_TUTTE = [
   },
   {
     "code": "H",
-    "nome": "Pavimenti",
-    "nomeIndice": "Pavimenti",
-    "titoloPagina": "H) PAVIMENTI"
+    "nome": "Pavimentazioni",
+    "nomeIndice": "Pavimentazioni",
+    "titoloPagina": "H) PAVIMENTAZIONI"
   },
   {
     "code": "I",
-    "nome": "Rivestimenti",
-    "nomeIndice": "Rivestimenti",
-    "titoloPagina": "I) RIVESTIMENTI"
+    "nome": "Rivestimenti a parete",
+    "nomeIndice": "Rivestimenti a parete",
+    "titoloPagina": "I) RIVESTIMENTI A PARETE"
   },
   {
     "code": "L",
