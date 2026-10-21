@@ -7,7 +7,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
 import { useToast } from "../contexts/ToastContext";
-import { CAPITOLATO_CATEGORIE } from "../lib/capitolatoTemplate";
+import { CAPITOLATO_CATEGORIE, codiceVisibile, letteraCategoria } from "../lib/capitolatoTemplate";
 import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
@@ -169,7 +169,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     const usateIds = new Set(righe.map((r) => r.voce_id).filter(Boolean));
     let list = libreria;
     if (catFilter) list = list.filter((v) => v.categoria_code === catFilter);
-    if (q) list = list.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
+    if (q) list = list.filter((v) => norm(v.codice).includes(q) || norm(codiceVisibile(v.codice, v.categoria_code)).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
     return list.slice(0, 80).map((v) => ({ ...v, _added: usateIds.has(v.id) }));
   }, [libreria, query, catFilter, righe]);
 
@@ -618,7 +618,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
                       <button onClick={() => setCatFilter("")} style={{ ...chip(T, catFilter === "") }}>Tutte</button>
                       {catConVoci.map((c) => (
-                        <button key={c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome} style={{ ...chip(T, catFilter === c.code) }}>{c.code}</button>
+                        <button key={c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome} style={{ ...chip(T, catFilter === c.code) }}>{c.lettera}</button>
                       ))}
                     </div>
                     <button onClick={openNuovaVoce} style={{ ...btnGhost, width: "100%", marginTop: 8, padding: "8px 10px", borderStyle: "dashed" }}>+ Nuova voce (non in libreria)</button>
@@ -635,8 +635,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         onMouseEnter={(e) => { if (!v._added) e.currentTarget.style.borderColor = T.navy; }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                          <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 600 }}>{v.codice}</span>
-                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{v.categoria_code}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 600 }}>{codiceVisibile(v.codice, v.categoria_code)}</span>
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{letteraCategoria(v.categoria_code)}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, marginTop: 2 }}>{v.titolo}</div>
                         <RichText value={v.descrizione} style={{ fontSize: 10, color: T.muted, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", whiteSpace: "normal" }} />
@@ -777,7 +777,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <div style={labelSt}>Categoria (mega voce) *</div>
                   <select value={nuova.categoria_code} onChange={(e) => setNuova((n) => ({ ...n, categoria_code: e.target.value }))} style={{ ...inputSt, width: "100%", cursor: "pointer" }}>
                     <option value="">— scegli —</option>
-                    {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.code}) {c.nomeIndice || c.nome}</option>)}
+                    {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.lettera}) {c.nomeIndice || c.nome}</option>)}
                   </select>
                 </div>
                 <div>
@@ -858,7 +858,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
                     return (
                       <button key={c.code} onClick={() => { if (!cur) onMoveCat(c.code); setCatMenu(false); }}
                         style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: cur ? T.navyLight : "none", border: "none", cursor: cur ? "default" : "pointer", fontFamily: mono, fontSize: 11, color: cur ? T.navy : T.ink, padding: "8px 12px" }}>
-                        <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{c.code}</span>
+                        <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{c.lettera}</span>
                         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nomeIndice || c.nome}</span>
                         {cur ? <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span> : null}
                       </button>

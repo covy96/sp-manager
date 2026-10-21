@@ -4,7 +4,7 @@
 // Condiviso da CapitolatoPanel, capitolatoPdf e capitolatoXlsx.
 // ─────────────────────────────────────────────────────────────────────────────
 import { supabase } from "./supabase";
-import { CAPITOLATO_CATEGORIE } from "./capitolatoTemplate";
+import { CAPITOLATO_CATEGORIE, CAPITOLATO_CATEGORIE_TUTTE, CAPITOLATO_CATEGORIE_RIMOSSE } from "./capitolatoTemplate";
 
 // Alfabeto italiano (senza J, K, W, X, Y): la numerazione di categoria salta
 // quelle lettere, come nel file base (… H, I, L, M …).
@@ -113,7 +113,8 @@ export function totaleRigaEff(riga) {
 // lettere in sequenza (A, B, C…) saltando eventuali categorie mancanti; le voci
 // prendono un codice progressivo <lettera><nn>. Usato da UI, PDF ed Excel.
 export function componiGruppi(righe) {
-  const presenti = CAPITOLATO_CATEGORIE
+  // anche le sezioni tolte dalla libreria: i capitolati vecchi che le usano le stampano ancora
+  const presenti = CAPITOLATO_CATEGORIE_TUTTE
     .map((cat) => ({ cat, items: righe.filter((r) => r.categoria_code === cat.code) }))
     .filter((g) => g.items.length > 0);
   return presenti.map((g, gi) => {
@@ -221,7 +222,8 @@ export async function loadLibreria(studioId, { includiInattive = false } = {}) {
   // le inattive si filtrano DOPO la composizione: un override disattivato
   // (voce del template eliminata dallo studio) deve continuare a nascondere la globale
   const voci = componiLibreria(data || []).filter((v) => includiInattive || v.attiva !== false);
-  return applicaLayout(voci, studioId ? await loadLayout(studioId) : []);
+  return applicaLayout(voci, studioId ? await loadLayout(studioId) : [])
+    .filter((v) => !CAPITOLATO_CATEGORIE_RIMOSSE.includes(v.categoria_code)); // sezioni tolte (M, O)
 }
 
 // Righe di capitolato_voci → voci della libreria, ognuna con la sua _layoutKey

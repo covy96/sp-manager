@@ -2,7 +2,7 @@
 // Rigenerare con lo script di estrazione se cambia il file base.
 // I sottotitoli della premessa (es. ALLESTIMENTO CANTIERE) sono righe brevi in maiuscolo.
 
-export const CAPITOLATO_CATEGORIE = [
+export const CAPITOLATO_CATEGORIE_TUTTE = [
   {
     "code": "A",
     "nome": "Opere provvisionali",
@@ -106,6 +106,42 @@ export const CAPITOLATO_CATEGORIE = [
     "titoloPagina": "S) OPERE ESTERNE"
   }
 ];
+
+// Sezioni tolte dalla libreria (2026-10): restano in CAPITOLATO_CATEGORIE_TUTTE solo
+// perché i capitolati già compilati che le usano continuino a stamparle.
+export const CAPITOLATO_CATEGORIE_RIMOSSE = ["M", "O"];
+
+// Sezioni attive. `code` resta la chiave salvata nel database; `lettera` è la
+// lettera mostrata, riassegnata in sequenza senza buchi (A…L, M = Allestimenti…).
+const LETTERE_IT = "ABCDEFGHILMNOPQRSTUVZ".split("");
+export const CAPITOLATO_CATEGORIE = CAPITOLATO_CATEGORIE_TUTTE
+  .filter((c) => !CAPITOLATO_CATEGORIE_RIMOSSE.includes(c.code))
+  .map((c, i) => {
+    const lettera = LETTERE_IT[i] || c.code;
+    const nome = c.titoloPagina.split(") ").slice(1).join(") ") || c.nomeIndice.toUpperCase();
+    return { ...c, lettera, titoloPagina: `${lettera}) ${nome}` };
+  });
+
+const LETTERA_BY_CODE = Object.fromEntries(CAPITOLATO_CATEGORIE.map((c) => [c.code, c.lettera]));
+export const letteraCategoria = (code) => LETTERA_BY_CODE[code] || code;
+
+// I codici voce della libreria sono salvati con la lettera originale (es. N03 per
+// Allestimenti): a video si mostrano con la lettera nuova (M03) e si riconvertono
+// prima di salvare.
+export function codiceVisibile(codice, cat) {
+  const s = String(codice || "");
+  const l = letteraCategoria(cat);
+  if (!cat || l === cat) return s;
+  const m = new RegExp(`^${cat}(\\d+)$`, "i").exec(s.trim());
+  return m ? `${l}${m[1]}` : s;
+}
+export function codiceInterno(codice, cat) {
+  const s = String(codice || "");
+  const l = letteraCategoria(cat);
+  if (!cat || l === cat) return s;
+  const m = new RegExp(`^${l}(\\d+)$`, "i").exec(s.trim());
+  return m ? `${cat}${m[1]}` : s;
+}
 
 export const CAPITOLATO_PREMESSA = [
   "Nel presente computo metrico a voci di capitolato estese sono descritte nel dettaglio le opere necessarie per l'esecuzione dei lavori.",
