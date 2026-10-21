@@ -47,9 +47,9 @@ export const CAPITOLATO_CATEGORIE_TUTTE = [
   },
   {
     "code": "H",
-    "nome": "Pavimenti",
-    "nomeIndice": "Pavimenti",
-    "titoloPagina": "H) PAVIMENTI"
+    "nome": "Pavimentazioni",
+    "nomeIndice": "Pavimentazioni",
+    "titoloPagina": "H) PAVIMENTAZIONI"
   },
   {
     "code": "I",

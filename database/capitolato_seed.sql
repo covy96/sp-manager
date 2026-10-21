@@ -483,15 +483,15 @@ Rif. tav. 09 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMM
   (NULL, $cap$G$cap$, $cap$Meccanico$cap$, $cap$G08$cap$, $cap$IMPIANTO ESTRAZIONE FORZATA$cap$, $cap$Fornitura e posa in opera di ventola motorizzata per estrazione d'aria forzata 12 V/h tramite impianto canalizzato.$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMMANO a corpo"]$cap$::jsonb, 8),
   (NULL, $cap$G$cap$, $cap$Meccanico$cap$, $cap$G09$cap$, $cap$CANNA FUMARIA$cap$, $cap$Rimozione della tubazione flessibile esistente all'interno della canna fumaria e risanamento mediante intubamento con guaina termoindurente tipo Furanflex o equivalente, dimensionata secondo le verifiche in opera. Compresi adattamenti, raccordi, terminali, opere accessorie, trasporto e conferimento a discarica dei materiali di risulta, eventuale impianto provvisorio di estrazione durante le lavorazioni e rilascio delle certificazioni di conformità, per dare l'opera eseguita a regola d'arte.
 Rif. tav. 09 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["SOMMANO a corpo"]$cap$::jsonb, 9),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H01$cap$, $cap$PROFILO OTTONE$cap$, $cap$Fornitura e posa in opera di profili in ottone a pavimento in corrispondenza dei cambi di pavimentazione (parquet/piastrelle), compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H01$cap$, $cap$PROFILO OTTONE$cap$, $cap$Fornitura e posa in opera di profili in ottone a pavimento in corrispondenza dei cambi di pavimentazione (parquet/piastrelle), compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano ml", "POSA - sommano ml"]$cap$::jsonb, 1),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H02$cap$, $cap$PARQUET$cap$, $cap$Parquet Berti Pavimenti Legno 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H02$cap$, $cap$PARQUET$cap$, $cap$Parquet Berti Pavimenti Legno 
 Rovere spazzolato verniciato 2 strati
 Dim. Lung. 550/880, Largh. 120, sp. 13 mm
 Posa: spina ungherese 60°
 
 Rif. tav. 05 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq +30% sfrido", "POSA - sommano mq"]$cap$::jsonb, 2),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H03$cap$, $cap$GRES R10$cap$, $cap$Gres R10
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H03$cap$, $cap$GRES R10$cap$, $cap$Gres R10
 Casalgrande
 unicolore grigio cenere scura R10
 Dim. 30 x 30 cm
@@ -499,79 +499,79 @@ sp. 8 mm
 Posa: lineare
 
 Rif. tav. 05 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq + 5% sfrido", "POSA - sommano mq"]$cap$::jsonb, 3),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H04$cap$, $cap$PAV_01 - XXX$cap$, $cap$Pavimentazione in piastrelle in gres
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H04$cap$, $cap$PAV_01 - XXX$cap$, $cap$Pavimentazione in piastrelle in gres
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 4),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H05$cap$, $cap$ZOCCOLINO LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno grezzo, compresi taglio, fissaggio, stuccatura dei giunti e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H05$cap$, $cap$ZOCCOLINO LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno grezzo, compresi taglio, fissaggio, stuccatura dei giunti e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - ml", "POSA - ml"]$cap$::jsonb, 5),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H06$cap$, $cap$SGUSCIA$cap$, $cap$Fornitura e posa in opera di sguscia integrata
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H06$cap$, $cap$SGUSCIA$cap$, $cap$Fornitura e posa in opera di sguscia integrata
 paraspigoli
 
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - ml", "POSA - ml"]$cap$::jsonb, 6),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H07$cap$, $cap$ZERBINO$cap$, $cap$Zerbino da definire in fase di progettoDimensioni: 102.5 x 60 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H07$cap$, $cap$ZERBINO$cap$, $cap$Zerbino da definire in fase di progettoDimensioni: 102.5 x 60 cm
 AZIENDA
 TIPOLOGIA
 Dimensioni:
 Posatura: incassato nel pavimento
 Rif. tav. 09 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 7),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H08$cap$, $cap$PARASPIGOLI$cap$, $cap$Fornitura e posa in opera di paraspigoli, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H08$cap$, $cap$PARASPIGOLI$cap$, $cap$Fornitura e posa in opera di paraspigoli, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["sommano a corpo"]$cap$::jsonb, 8),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H09$cap$, $cap$SOGLIE$cap$, $cap$Fornitura e posa in opera di soglie in corrispondenza dei cambi di pavimentazione, compresi taglio a misura, posa, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H09$cap$, $cap$SOGLIE$cap$, $cap$Fornitura e posa in opera di soglie in corrispondenza dei cambi di pavimentazione, compresi taglio a misura, posa, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$a corpo$cap$, $cap$singolo$cap$, $cap$["sommano a corpo"]$cap$::jsonb, 9),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H10$cap$, $cap$PAV_01 - SPC - CLAP!REAL TAGLIO UNGHERESE$cap$, $cap$Fornitura e posa in opera di pavimento in SPC con strato di finitura in legno 100% naturale, formato con taglio 60° per spina di pesce ungherese
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H10$cap$, $cap$PAV_01 - SPC - CLAP!REAL TAGLIO UNGHERESE$cap$, $cap$Fornitura e posa in opera di pavimento in SPC con strato di finitura in legno 100% naturale, formato con taglio 60° per spina di pesce ungherese
 Azienda: DECO DECKING
 Tipologia: CLAP!REAL
 Dimensioni: Lung. 680, Largh. 127, sp. 7 mm
 Posatura: spina ungherese 60°
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 10),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H11$cap$, $cap$PAV_02 - PIASTRELLA GLOCAL XXX - 80 x 80 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres Glocal XXX - 80 x 80 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H11$cap$, $cap$PAV_02 - PIASTRELLA GLOCAL XXX - 80 x 80 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres Glocal XXX - 80 x 80 cm
 Azienda: MIRAGE
 Tipologia: GLOCAL
 Dimensioni: 80 x 80 cm
 Posatura: lineare
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 11),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H12$cap$, $cap$PAV_03 - PIASTRELLA xxx - 60 x 60 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres XXX - 60 x 60 cm
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H12$cap$, $cap$PAV_03 - PIASTRELLA xxx - 60 x 60 cm$cap$, $cap$Fornitura e posa in opera di piastrella gres XXX - 60 x 60 cm
 Azienda: 
 Tipologia: 
 Dimensioni: 60 x 60 cm
 Posatura: lineare
 SFRIDO DA AGGIUNGERE
 Rif. tav. 10 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano mq", "POSA - sommano mq"]$cap$::jsonb, 12),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H13$cap$, $cap$PIASTRELLA GLOCAL GC10 - 80 x 80 cm$cap$, $cap$Posa in opera di piastrelle in gres 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H13$cap$, $cap$PIASTRELLA GLOCAL GC10 - 80 x 80 cm$cap$, $cap$Posa in opera di piastrelle in gres 
 MIRAGE
 GLOCAL GINGER GC10 
 DIMENSIONI: 80 x 80 cm
 SPESSORE: 9 mm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano mq"]$cap$::jsonb, 13),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H14$cap$, $cap$PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, Green Lux e white Lux
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H14$cap$, $cap$PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di piastrelle in gres Lume, Green Lux e white Lux
 MARAZZI
 LUME - GREEN AND WHITE LUX
 DIMENSIONI: 6 x 24 cm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$mq$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano mq"]$cap$::jsonb, 14),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H15$cap$, $cap$ZOCCOLINO IN LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno, tinto sikkens G4.05.81
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H15$cap$, $cap$ZOCCOLINO IN LEGNO$cap$, $cap$Fornitura e posa in opera di zoccolino in legno, tinto sikkens G4.05.81
 AZIENDA
 MODELLO 
 DIMENSIONI: 
 SPESSORE: 
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["FORNITURA - sommano ml", "POSA - sommano ml"]$cap$::jsonb, 15),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H16$cap$, $cap$ZOCCOLINO IN PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di zoccolino in piastrella in gres Lume Caramel Lux
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H16$cap$, $cap$ZOCCOLINO IN PIASTRELLA 6 x 24 cm$cap$, $cap$Posa in opera di zoccolino in piastrella in gres Lume Caramel Lux
 MARAZZI
 LUME CARAMEL LUX 
 DIMENSIONI: 6 x 24 cm
 SPESSORE: 10 mm
 POSA: LINEARE
 Rif. tav. 07 in allegato$cap$, $cap$ml$cap$, $cap$fornitura_posa$cap$, $cap$["POSA - sommano ml"]$cap$::jsonb, 16),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H17$cap$, $cap$PARASPIGOLI E ANGOLARI$cap$, $cap$Fornitura e posa in opera di paraspigoli e angolari dove necessario, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H17$cap$, $cap$PARASPIGOLI E ANGOLARI$cap$, $cap$Fornitura e posa in opera di paraspigoli e angolari dove necessario, compresi taglio a misura, fissaggio, sigillature e ogni onere per dare l'opera finita a regola d'arte.
 Rif. tav. 05 in allegato$cap$, $cap$ml$cap$, $cap$singolo$cap$, $cap$["sommano - ml"]$cap$::jsonb, 17),
-  (NULL, $cap$H$cap$, $cap$Pavimenti$cap$, $cap$H18$cap$, $cap$GRES AREA VENDITA$cap$, $cap$Fornitura e posa in opera di pavimentazione in Gres, comprensivo di preparazione superficie, colla e stucco. 
+  (NULL, $cap$H$cap$, $cap$Pavimentazioni$cap$, $cap$H18$cap$, $cap$GRES AREA VENDITA$cap$, $cap$Fornitura e posa in opera di pavimentazione in Gres, comprensivo di preparazione superficie, colla e stucco. 
 
 Mod. Mirage, Glocal, 80x80 cm, sp. 9mm
 colore da definire
