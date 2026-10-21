@@ -5,7 +5,7 @@ import { richToPlain } from "../../lib/richText";
 import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
-import { CAPITOLATO_CATEGORIE } from "../../lib/capitolatoTemplate";
+import { CAPITOLATO_CATEGORIE, codiceVisibile, codiceInterno } from "../../lib/capitolatoTemplate";
 import { loadLibreria, saveVoceLibreria, deleteVoceLibreria, defaultSommanoLabels, spostaVoce, saveLayout, scambiaCodici, prossimoCodice, ordinaLibreria, codiceDuplicato } from "../../lib/capitolatoModel";
 
 const mono = "var(--font-label)";
@@ -50,7 +50,7 @@ export default function RegolazioneCapitolatoPage() {
     const q = norm(query.trim());
     let l = mostraEliminate ? voci.filter((v) => v.attiva === false) : voci.filter((v) => v.attiva !== false);
     if (catFilter) l = l.filter((v) => v.categoria_code === catFilter);
-    if (q) l = l.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
+    if (q) l = l.filter((v) => norm(v.codice).includes(q) || norm(codiceVisibile(v.codice, v.categoria_code)).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
     return l;
   }, [voci, query, catFilter, mostraEliminate]);
   const nEliminate = useMemo(() => voci.filter((v) => v.attiva === false).length, [voci]);
@@ -111,7 +111,7 @@ export default function RegolazioneCapitolatoPage() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
         <Chip T={T} active={catFilter === ""} onClick={() => setCatFilter("")}>Tutte</Chip>
         {CAPITOLATO_CATEGORIE.map((c) => (
-          <Chip key={c.code} T={T} active={catFilter === c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome}>{c.code}</Chip>
+          <Chip key={c.code} T={T} active={catFilter === c.code} onClick={() => setCatFilter(catFilter === c.code ? "" : c.code)} title={c.nome}>{c.lettera}</Chip>
         ))}
       </div>
 
@@ -187,6 +187,9 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
   };
 
   const isGlobale = voce && voce.studio == null;
+  // il codice si salva con la lettera originale della sezione, a video con quella nuova
+  const catCodice = voce ? voce.categoria_code : d.categoria_code;
+  const codiceVis = codiceVisibile(d.codice, catCodice);
 
   const salva = async () => {
     if (!d.codice.trim() || !d.titolo.trim()) { showToast("Codice e titolo obbligatori", "error"); return; }
@@ -203,7 +206,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       if (!payload.sommano_labels || !payload.sommano_labels.length) payload.sommano_labels = defaultSommanoLabels(payload.unita, payload.tipo);
       const row = await saveVoceLibreria(payload, studioId);
       setD({ ...row }); setDirty(false); onSaved?.(row);
-      if (doppio) showToast(`Salvata. Attenzione: il codice ${d.codice.trim()} è usato anche da un'altra voce della sezione`, "warning");
+      if (doppio) showToast(`Salvata. Attenzione: il codice ${codiceVis.trim()} è usato anche da un'altra voce della sezione`, "warning");
       else if (!nuova) showToast("Voce salvata", "success");
     } catch (e) { console.error(e); showToast("Errore nel salvataggio: " + (e.message || ""), "error"); }
     finally { setSaving(false); }
@@ -212,7 +215,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
   const eliminata = voce?.attiva === false;
   const elimina = async () => {
     if (!voce?.id) return;
-    if (!window.confirm(`Eliminare la voce ${voce.codice || ""} dalla libreria?`)) return;
+    if (!window.confirm(`Eliminare la voce ${codiceVisibile(voce.codice, voce.categoria_code)} dalla libreria?`)) return;
     setBusy(true);
     try { await deleteVoceLibreria({ ...voce, _orig: voce._orig, _layoutKey: voce._layoutKey }, studioId); setDirty(false); onDeleted?.(voce.id); showToast("Voce eliminata", "success"); }
     catch (e) { console.error(e); showToast("Errore eliminazione: " + (e.message || ""), "error"); }
@@ -240,13 +243,13 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
               const auto = !d.codice || d.codice === codiceSuggerito?.(d.categoria_code);
               set({ categoria_code: cat, ...(auto ? { codice: codiceSuggerito?.(cat) || "" } : {}) });
             }} style={{ ...inp, width: "100%" }}>
-              {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.lettera}</option>)}
             </select>
           </div>
         )}
         <div>
           <div style={lbl}>Codice</div>
-          <input value={d.codice} onChange={(e) => set({ codice: e.target.value })} style={{ ...inp, width: "100%" }} />
+          <input value={codiceVis} onChange={(e) => set({ codice: codiceInterno(e.target.value, catCodice) })} style={{ ...inp, width: "100%" }} />
         </div>
         <div>
           <div style={lbl}>Titolo</div>
@@ -287,7 +290,7 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
                 onChange={(e) => e.target.value && spostamento.onMoveCat(e.target.value)}
                 style={{ ...inp, fontFamily: mono, fontSize: 10, padding: "6px 6px", cursor: dirty ? "default" : "pointer", opacity: dirty ? 0.35 : 1 }}>
                 <option value="">Sposta in…</option>
-                {CAPITOLATO_CATEGORIE.filter((c) => c.code !== voce.categoria_code).map((c) => <option key={c.code} value={c.code}>{c.code}) {c.nome}</option>)}
+                {CAPITOLATO_CATEGORIE.filter((c) => c.code !== voce.categoria_code).map((c) => <option key={c.code} value={c.code}>{c.lettera}) {c.nome}</option>)}
               </select>
             </>
           )}
