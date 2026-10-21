@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePageTitleOnMount } from "../../hooks/usePageTitle";
+import RichTextEditor from "../../components/RichTextEditor";
+import { richToPlain } from "../../lib/richText";
 import { useStudio } from "../../hooks/useStudio";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
@@ -48,7 +50,7 @@ export default function RegolazioneCapitolatoPage() {
     const q = norm(query.trim());
     let l = mostraEliminate ? voci.filter((v) => v.attiva === false) : voci.filter((v) => v.attiva !== false);
     if (catFilter) l = l.filter((v) => v.categoria_code === catFilter);
-    if (q) l = l.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(v.descrizione).includes(q));
+    if (q) l = l.filter((v) => norm(v.codice).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
     return l;
   }, [voci, query, catFilter, mostraEliminate]);
   const nEliminate = useMemo(() => voci.filter((v) => v.attiva === false).length, [voci]);
@@ -266,8 +268,8 @@ function VoceEditor({ voce, nuova, studioId, T, showToast, onSaved, onDeleted, o
       </div>
       <div style={{ marginTop: 8 }}>
         <div style={lbl}>Descrizione</div>
-        <textarea value={d.descrizione} onChange={(e) => set({ descrizione: e.target.value })} rows={Math.max(2, String(d.descrizione || "").split("\n").length)}
-          style={{ ...inp, width: "100%", resize: "vertical", lineHeight: 1.4 }} />
+        <RichTextEditor T={T} value={d.descrizione} onChange={(v) => set({ descrizione: v })}
+          style={{ ...inp, width: "100%", lineHeight: 1.4 }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
         <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>

@@ -12,6 +12,7 @@ import ExcelJS from "exceljs";
 import { CAPITOLATO_CATEGORIE, CAPITOLATO_PREMESSA, CAPITOLATO_TITOLO, CAPITOLATO_NOTA_IVA } from "./capitolatoTemplate";
 import { componiGruppi, totaleRigaEff, qtaMisurazione, parseNum, parseMisura, IMPIANTI_ASSISTENZA, assistenzaBasi, assistenzaPerc } from "./capitolatoModel";
 import { urlToBase64, imageSize } from "./pdfCommon";
+import { isRich, parseRich, richToPlain, argb } from "./richText";
 
 const NAVY = "FF1F3864", HEADER = "FFD6DCE4", TITLE = "FFEEF1F6", ZONE = "FFF5F6F9", CREAM = "FFFFF7D6", GRID = "FFBFBFBF";
 const FONT = "Groteska-Book";
@@ -32,9 +33,21 @@ const numOrBlank = (v) => { const n = parseNum(v); return Number.isFinite(n) && 
 // I campi misura possono contenere espressioni ("=3,45+2,4"): valuta e mostra il numero.
 const misOrBlank = (v) => { const n = parseMisura(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 const nlines = (txt, cpl = 44) => {
-  const s = String(txt || "");
+  const s = richToPlain(txt || "");
   return Math.max(1, s.split("\n").reduce((n, p) => n + Math.max(1, Math.ceil((p.length || 1) / cpl)), 0));
 };
+
+// Descrizione formattata (grassetto/corsivo/colore) → rich text ExcelJS; il testo
+// semplice resta una stringa.
+function descValue(txt, sz = 8) {
+  if (!isRich(txt)) return txt || "";
+  const runs = parseRich(txt);
+  if (!runs.length) return "";
+  return { richText: runs.map((r) => ({
+    text: r.text,
+    font: { name: r.i && !r.b ? "Groteska-BookItalic" : FONT, size: sz, bold: r.b, italic: r.i, ...(r.color ? { color: { argb: argb(r.color) } } : {}) },
+  })) };
+}
 
 // stile su una cella ExcelJS
 function st(cell, { b = false, i = false, sz = 8, color, fill, align, wrap, num, border, unlock, vtop } = {}) {
@@ -115,7 +128,7 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
       ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
       const desc = it.descrizione || `Assistenze murarie e oneri connessi — ${impNomi}.`;
       setRow([
-        C("", { border: box }), C(desc, { sz: 8, wrap: true, border: box }),
+        C("", { border: box }), C(descValue(desc), { sz: 8, wrap: true, border: box }),
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
         C("", { border: box }), C("", { border: box }), C("", { border: box }),
       ], Math.max(20, nlines(desc, 44) * 11.5 + 6));
@@ -150,7 +163,7 @@ function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
     ], Math.max(15, nlines((it.titolo || "").toUpperCase(), 40) * 12 + 4));
     // descrizione + NOTE (celle centrali senza riempimento, bianche)
     const descRow = setRow([
-      C("", { border: box }), C(it.descrizione || "", { sz: 8, wrap: true, border: box }),
+      C("", { border: box }), C(descValue(it.descrizione), { sz: 8, wrap: true, border: box }),
       C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }), C("", { border: box, num: F_NUM }),
       C("", { border: box, num: F_NUM }), C("NOTE: ", { sz: 8, color: "FF808080", border: box, vtop: true, align: "left" }), C("", { border: box }),
     ], Math.max(22, nlines(it.descrizione || "", 44) * 11.5 + 6));
