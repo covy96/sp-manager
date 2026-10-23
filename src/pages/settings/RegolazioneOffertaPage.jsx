@@ -5,8 +5,8 @@ import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import {
-  SEZIONI, BLOCCHI_FISSI, MODALITA_PAGAMENTO, INQUADRAMENTO,
-  RATE_C_DEFAULT, DEFAULTS_BASE,
+  BLOCCHI_FISSI, MODALITA_PAGAMENTO, INQUADRAMENTO,
+  RATE_C_DEFAULT, DEFAULTS_BASE, sezioniBase,
 } from "../../lib/offertaTemplate";
 
 const mono = { fontFamily: "var(--font-label)" };
@@ -114,6 +114,27 @@ export default function RegolazioneOffertaPage() {
     const sez = o.sezioni?.[sid] || {};
     return { ...o, sezioni: { ...(o.sezioni || {}), [sid]: { ...sez, vociExtra: (sez.vociExtra || []).filter((_, i) => i !== idx) } } };
   });
+  // Sezioni create dallo studio: titolo + modo prezzo in ov.sezioniCustom, voci in ov.sezioni[id].vociExtra.
+  const tutteSez = sezioniBase(ov);
+  const addSezione = () => {
+    const id = `cs${Date.now().toString(36)}`;
+    setOv(o => ({ ...o, sezioniCustom: [...(Array.isArray(o.sezioniCustom) ? o.sezioniCustom : []), { id, titolo: "", modoPrezzo: "voci" }] }));
+    setSezOpen(s => ({ ...s, [id]: true }));
+  };
+  const setSezCustom = (id, patch) => setOv(o => ({ ...o, sezioniCustom: (o.sezioniCustom || []).map(c => c.id === id ? { ...c, ...patch } : c) }));
+  const removeSezione = (id) => {
+    if (!confirm("Eliminare questa sezione e le sue voci? Sparirà anche dalle offerte che la usano.")) return;
+    setOv(o => {
+      const { [id]: _, ...sezioni } = o.sezioni || {};
+      const d = o.defaults || {};
+      return {
+        ...o,
+        sezioniCustom: (o.sezioniCustom || []).filter(c => c.id !== id),
+        sezioni,
+        defaults: Array.isArray(d.sezioniAttive) ? { ...d, sezioniAttive: d.sezioniAttive.filter(x => x !== id) } : d,
+      };
+    });
+  };
   // Riordina le voci di una sezione salvando l'ordine completo degli id.
   const moveVoce = (sid, ord, pos, dir) => {
     const j = pos + dir;
@@ -223,7 +244,7 @@ export default function RegolazioneOffertaPage() {
             <div>
               <div style={labelSt}>Prestazioni attive di default</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
-                {SEZIONI.map(s => (
+                {tutteSez.map(s => (
                   <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", ...mono, fontSize: 11, color: T.ink }}>
                     <Check checked={(getDefault("sezioniAttive") || []).includes(s.id)} onChange={() => toggleInArray("sezioniAttive", s.id)} /> {s.titolo}
                   </label>
@@ -279,14 +300,18 @@ export default function RegolazioneOffertaPage() {
         <Header id="voci" titolo="Sezioni e voci" sub="Riordina (▲▼), testi, prezzo fisso o a cadauno, aggiungi/nascondi voci" />
         {open.voci && (
           <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-            {SEZIONI.map(sez => {
+            {tutteSez.map(sez => {
               const so = getSez(sez.id);
               const isOpen = sezOpen[sez.id];
+              const cs = sez.custom ? (ov.sezioniCustom || []).find(c => c.id === sez.id) : null;
               return (
                 <div key={sez.id} style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm }}>
                   <div onClick={() => setSezOpen(s => ({ ...s, [sez.id]: !s[sez.id] }))}
                     style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", cursor: "pointer" }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>{sez.titolo}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: cs && !cs.titolo ? T.muted : T.ink }}>
+                      {cs && !cs.titolo ? "Nuova sezione" : sez.titolo}
+                      {cs && <span style={{ ...mono, fontSize: 8.5, letterSpacing: "0.1em", color: T.navy, marginLeft: 8, fontWeight: 400 }}>AGGIUNTA</span>}
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span style={{ ...mono, fontSize: 10, color: T.muted }}>{sez.modoPrezzo === "voci" ? "prezzo per voce" : "forfait"}</span>
                       <span style={{ color: T.muted, fontSize: 11 }}>{isOpen ? "▲" : "▼"}</span>
@@ -294,6 +319,16 @@ export default function RegolazioneOffertaPage() {
                   </div>
                   {isOpen && (
                     <div style={{ padding: "10px 12px", borderTop: `0.5px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
+                      {cs && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <input value={cs.titolo || ""} onChange={e => setSezCustom(cs.id, { titolo: e.target.value })} placeholder="Titolo sezione (es. CONSULENZA ENERGETICA)" autoFocus={!cs.titolo} style={{ ...inputSt, flex: "1 1 220px", fontWeight: 600 }} />
+                          <select value={sez.modoPrezzo} onChange={e => setSezCustom(cs.id, { modoPrezzo: e.target.value })} style={{ ...inputSt, width: 160, fontSize: 10.5, cursor: "pointer" }}>
+                            <option value="voci">Prezzo per voce</option>
+                            <option value="forfait">Forfait</option>
+                          </select>
+                          <button onClick={() => removeSezione(cs.id)} style={{ ...mono, fontSize: 10, background: "none", border: "none", color: T.red, cursor: "pointer", padding: 0 }}>elimina sezione</button>
+                        </div>
+                      )}
                       {sez.modoPrezzo === "forfait" && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ ...mono, fontSize: 10, color: T.muted }}>Prezzo forfait default</span>
@@ -398,6 +433,7 @@ export default function RegolazioneOffertaPage() {
                 </div>
               );
             })}
+            <button onClick={addSezione} style={{ ...mono, fontSize: 10, border: `0.5px solid ${T.navy}`, borderRadius: T.radiusSm, background: "transparent", color: T.navy, padding: "8px 14px", cursor: "pointer", alignSelf: "flex-start", marginTop: 4 }}>+ Nuova sezione</button>
           </div>
         )}
       </div>

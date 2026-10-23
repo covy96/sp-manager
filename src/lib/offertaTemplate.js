@@ -373,13 +373,24 @@ export const DEFAULTS_BASE = {
   blocchiAttivi: BLOCCHI_IDS_DEFAULT,
 };
 
+// Sezioni create dallo studio in Regolazione offerta (ov.sezioniCustom): partono
+// vuote e le loro voci sono vociExtra, come per le sezioni di default.
+export function sezioniCustom(ov) {
+  const arr = Array.isArray(ov?.sezioniCustom) ? ov.sezioniCustom : [];
+  return arr.filter(c => c && c.id).map(c => {
+    const titolo = (c.titolo || "").trim() || "NUOVA SEZIONE";
+    return { id: c.id, titolo, titoloTabella: titolo, modoPrezzo: c.modoPrezzo === "voci" ? "voci" : "forfait", custom: true, gruppi: [] };
+  });
+}
+export const sezioniBase = (ov) => [...SEZIONI, ...sezioniCustom(ov)];
+
 export function resolveTemplate(studio) {
   const ov = (studio && typeof studio.offerta_template === "object" && studio.offerta_template) || {};
   const ovSez = ov.sezioni || {};
   const ovBloc = ov.blocchi || {};
 
   // Sezioni: override testo/label + prezzoDefault, filtro voci nascoste, vociExtra in coda
-  const SEZ = SEZIONI.map(s => {
+  const SEZ = sezioniBase(ov).map(s => {
     const o = ovSez[s.id] || {};
     const oVoci = o.voci || {};
     let gruppi = s.gruppi.map(g => ({
