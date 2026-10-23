@@ -107,6 +107,7 @@ const SettingsClientiPage = lazyWithRetry(() => import("./pages/settings/Clienti
 const SettingsProgettiArchiviatiPage = lazyWithRetry(() => import("./pages/settings/ProgettiArchiviatiPage"));
 const SettingsCommesseArchiviatePage = lazyWithRetry(() => import("./pages/settings/CommesseArchiviatePage"));
 const NotifichePage = lazyWithRetry(() => import("./pages/settings/NotifichePage"));
+const OutlookPage = lazyWithRetry(() => import("./pages/settings/OutlookPage"));
 const ReportImpostazioniPage = lazyWithRetry(() => import("./pages/settings/ReportImpostazioniPage"));
 const PianoPage = lazyWithRetry(() => import("./pages/settings/PianoPage"));
 const ProfiloStudioPage = lazyWithRetry(() => import("./pages/settings/ProfiloStudioPage"));
@@ -483,6 +484,14 @@ export default function App({ session }) {
         element={
           <ProtectedLayout session={session}>
             <OnboardingGuard session={session}><SettingsCommesseArchiviatePage /></OnboardingGuard>
+          </ProtectedLayout>
+        }
+      />
+      <Route
+        path="/impostazioni/outlook"
+        element={
+          <ProtectedLayout session={session}>
+            <OnboardingGuard session={session}><OutlookPage /></OnboardingGuard>
           </ProtectedLayout>
         }
       />
