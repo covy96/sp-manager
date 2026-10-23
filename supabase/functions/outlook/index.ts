@@ -1,3 +1,4 @@
+// @ts-nocheck — contiene una copia JS (non tipizzata) di src/lib/mailDates.js e mailMatch.js
 // supabase/functions/outlook/index.ts
 // Collegamento della casella Outlook (Microsoft 365 o outlook.com) di un utente
 // ad ASM tramite Microsoft Graph, in SOLA LETTURA.
@@ -7,14 +8,22 @@
 //    la funzione va deployata con --no-verify-jwt e l'utente è ricavato dallo
 //    state firmato). Scambia il code, salva i token e torna all'app.
 //  - POST { action, … }    → chiamate dall'app con il JWT dell'utente:
-//    status | auth-url | messages | message | disconnect.
+//    status | auth-url | messages | message | disconnect | settings | sync.
+//  - POST { action: "sync-all" } con Authorization: Bearer CRON_SECRET →
+//    lettura automatica per tutti gli utenti con auto_sync attivo (pg_cron).
+//
+// Lettura automatica: le mail nuove vengono abbinate a un progetto con regole
+// (contatti, nome, indirizzo, cliente) e le date trovate nel testo diventano
+// attività in calendario. Ogni mail elaborata finisce in outlook_mail_items:
+// creata | collegata | da_rivedere | ignorata.
 //
 // I token NON arrivano mai al browser: stanno in outlook_connections (RLS senza
 // policy → leggibile solo dal service role) e sono cifrati AES-GCM con
 // OUTLOOK_TOKEN_KEY.
 //
 // Secret richiesti: MS_CLIENT_ID, MS_CLIENT_SECRET, OUTLOOK_TOKEN_KEY
-// (opzionale MS_TENANT, default "common" = account di lavoro + personali).
+// (opzionale MS_TENANT, default "common" = account di lavoro + personali;
+// CRON_SECRET, lo stesso di check-scadenze, per la lettura automatica).
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -25,6 +34,7 @@ const CLIENT_ID     = Deno.env.get('MS_CLIENT_ID') ?? '';
 const CLIENT_SECRET = Deno.env.get('MS_CLIENT_SECRET') ?? '';
 const TOKEN_KEY     = Deno.env.get('OUTLOOK_TOKEN_KEY') ?? '';
 const TENANT        = Deno.env.get('MS_TENANT') || 'common';
+const CRON_SECRET   = Deno.env.get('CRON_SECRET') ?? '';
 
 const AUTHORITY    = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0`;
 const GRAPH        = 'https://graph.microsoft.com/v1.0';
@@ -147,6 +157,272 @@ async function graph(token: string, pathOrUrl: string, extraHeaders: Record<stri
 
 const LIST_FIELDS = 'id,subject,from,toRecipients,receivedDateTime,bodyPreview,isRead,hasAttachments,webLink,conversationId';
 
+// <shared> — generato da scripts/inline-outlook-shared.mjs, non modificare a mano
+// ── src/lib/mailDates.js ──
+// Riconosce date e orari nel testo di una mail (italiano), senza servizi
+// esterni: serve a precompilare un'attività in calendario. È solo un aiuto,
+// l'utente rivede sempre data e ora prima di salvare.
+
+const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+const MESI_RE = MESI.map(m => m.slice(0, 3) + `(?:${m.slice(3)})?`).join("|");
+const GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+
+const pad = n => String(n).padStart(2, "0");
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const strip = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+function validDate(y, m, d) {
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d ? dt : null;
+}
+
+// Anno mancante: la prossima occorrenza a partire dal giorno di riferimento
+function withYear(m, d, ref) {
+  let dt = validDate(ref.getFullYear(), m, d);
+  if (dt && dt < new Date(ref.getFullYear(), ref.getMonth(), ref.getDate())) dt = validDate(ref.getFullYear() + 1, m, d);
+  return dt;
+}
+
+const fullYear = y => (y < 100 ? 2000 + y : y);
+
+// Orario subito dopo la data (entro pochi caratteri): "alle 10:30", "ore 9", "h 15.00"
+const TIME_AFTER = /^[^\n\d]{0,20}?(?:ore|alle|h\.?|dalle)?\s*([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\b/i;
+const TIME_ANY = /\b(?:ore|alle|dalle|h\.?)\s*([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\b|\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/gi;
+
+function timeNear(text, from) {
+  const m = TIME_AFTER.exec(text.slice(from, from + 30));
+  if (!m) return null;
+  // Senza "ore/alle" un numero nudo (es. "12 2026") non è un orario
+  const hasKeyword = /ore|alle|dalle|h/i.test(m[0].replace(/\d.*/, ""));
+  if (!m[2] && !hasKeyword) return null;
+  return `${pad(m[1])}:${m[2] ?? "00"}`;
+}
+
+/**
+ * @param {string} text testo della mail (oggetto + corpo)
+ * @param {Date} ref data di ricezione, per "domani", giorni della settimana e anno mancante
+ * @returns {{date: string, time: string|null, match: string}[]} senza duplicati, in ordine di apparizione
+ */
+function findMailDates(text, ref = new Date()) {
+  if (!text) return [];
+  const src = strip(text);
+  const found = [];
+  const add = (dt, index, len) => {
+    if (!dt) return;
+    found.push({ date: iso(dt), time: timeNear(src, index + len), match: text.slice(index, index + len), index });
+  };
+
+  // 12/11/2026, 12-11-26, 12.11.2026, 12/11
+  for (const m of src.matchAll(/\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b/g)) {
+    const d = +m[1], mo = +m[2];
+    if (!m[3] && m[0].includes(".")) continue; // "10.30" è un orario
+    add(m[3] ? validDate(fullYear(+m[3]), mo, d) : withYear(mo, d, ref), m.index, m[0].length);
+  }
+  // 12 novembre (2026), 3 nov
+  for (const m of src.matchAll(new RegExp(`\\b(\\d{1,2})\\s+(${MESI_RE})\\.?(?:\\s+(\\d{4}))?\\b`, "gi"))) {
+    const mo = MESI.findIndex(x => x.startsWith(m[2].toLowerCase().slice(0, 3))) + 1;
+    add(m[3] ? validDate(+m[3], mo, +m[1]) : withYear(mo, +m[1], ref), m.index, m[0].length);
+  }
+  // oggi, domani, dopodomani
+  for (const m of src.matchAll(/\b(oggi|dopodomani|domani)\b/gi)) {
+    const off = { oggi: 0, domani: 1, dopodomani: 2 }[m[1].toLowerCase()];
+    add(new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + off), m.index, m[0].length);
+  }
+  // lunedì / martedi prossimo… (se non è già seguito da una data esplicita)
+  for (const m of src.matchAll(new RegExp(`\\b(${GIORNI.map(strip).join("|")})(?!\\s+\\d)`, "gi"))) {
+    const wd = GIORNI.map(strip).indexOf(m[1].toLowerCase());
+    const diff = ((wd - ref.getDay() + 7) % 7) || 7;
+    add(new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + diff), m.index, m[0].length);
+  }
+
+  found.sort((a, b) => a.index - b.index);
+  const seen = new Set();
+  return found.filter(f => {
+    const k = `${f.date}|${f.time}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).map(({ index, ...f }) => f); // eslint-disable-line no-unused-vars
+}
+
+// Primo orario citato nel testo, se non ce n'è uno vicino alla data
+function firstTime(text) {
+  TIME_ANY.lastIndex = 0;
+  const m = TIME_ANY.exec(strip(text || ""));
+  if (!m) return null;
+  return m[1] ? `${pad(m[1])}:${m[2] ?? "00"}` : `${pad(m[3])}:${m[4]}`;
+}
+
+// ── src/lib/mailMatch.js ──
+// Abbina una mail a un progetto con regole semplici (nessun servizio esterno):
+// indirizzi email dei contatti del progetto, nome, indirizzo e cliente citati
+// nell'oggetto o nel testo. Se il risultato non è netto, restituisce null e
+// la mail va nella lista "Da rivedere".
+
+function normText(s) {
+  return ` ${String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `;
+}
+
+const has = (hay, needle) => needle.trim().length >= 4 && hay.includes(needle);
+
+// Prima parte dell'indirizzo ("Via Roma 12, Milano" → "via roma 12")
+const street = (addr) => normText(String(addr ?? "").split(",")[0]);
+
+// Toglie RE:/R:/FW:/I:/Fwd: dall'oggetto
+function cleanSubject(s) {
+  return String(s ?? "").replace(/^(\s*(re|r|fw|fwd|i|inoltra)\s*:\s*)+/i, "").trim();
+}
+
+/**
+ * @param {{subject?: string, body?: string, participants?: string[]}} mail
+ * @param {{id: string, name?: string, client?: string, address?: string}[]} projects
+ * @param {{project_id: string, email?: string}[]} contacts
+ * @returns {{projectId: string|null, reason: string, candidates: {id: string, score: number, why: string[]}[]}}
+ */
+function matchProject(mail, projects, contacts = []) {
+  const subject = normText(cleanSubject(mail.subject));
+  const body = normText(mail.body);
+  const people = new Set((mail.participants ?? []).map(e => String(e).trim().toLowerCase()).filter(Boolean));
+
+  const emailsByProject = {};
+  for (const c of contacts) {
+    const e = String(c.email ?? "").trim().toLowerCase();
+    if (e) (emailsByProject[c.project_id] ??= new Set()).add(e);
+  }
+
+  const candidates = [];
+  for (const p of projects) {
+    let score = 0;
+    const why = [];
+    const emails = emailsByProject[p.id];
+    if (emails && [...people].some(e => emails.has(e))) { score += 10; why.push("contatto del progetto"); }
+    const name = normText(p.name);
+    if (has(subject, name)) { score += 8; why.push("nome nell'oggetto"); }
+    else if (has(body, name)) { score += 4; why.push("nome nel testo"); }
+    const st = street(p.address);
+    if (/\d/.test(st) || st.trim().split(" ").length >= 3) {
+      if (has(subject, st) || has(body, st)) { score += 6; why.push("indirizzo"); }
+    }
+    const client = normText(p.client);
+    if (has(subject, client) || has(body, client)) { score += 3; why.push("cliente"); }
+    if (score > 0) candidates.push({ id: p.id, score, why });
+  }
+  candidates.sort((a, b) => b.score - a.score);
+
+  const [best, second] = candidates;
+  if (!best) return { projectId: null, reason: "nessun progetto riconosciuto", candidates };
+  if (best.score < 8) return { projectId: null, reason: "progetto incerto", candidates };
+  if (second && best.score - second.score < 4) return { projectId: null, reason: "più progetti possibili", candidates };
+  return { projectId: best.id, reason: best.why.join(", "), candidates };
+}
+// </shared>
+
+// ── Lettura automatica ───────────────────────────────────────────────
+const FIRST_SYNC_DAYS = 3;
+const SYNC_MAX = 50;
+const dayOf = (iso: string) => iso.slice(0, 10);
+
+async function syncUser(conn: { user_id: string; email: string | null; last_sync_at: string | null }) {
+  const token = await accessTokenFor(conn.user_id);
+  if (!token) return { processed: 0 };
+
+  // Studio e membro dell'utente (per i progetti e l'assegnazione delle attività)
+  const { data: members } = await admin.from('team_members')
+    .select('id, studio, user_name, user_email').eq('user_account', conn.user_id)
+    .not('studio', 'is', null).order('created_at', { ascending: false }).limit(1);
+  const tm = members?.[0];
+  if (!tm) return { processed: 0 };
+
+  // Un po' di sovrapposizione con il giro precedente (le mail già viste vengono
+  // saltate): copre quelle consegnate in ritardo rispetto a receivedDateTime.
+  const startedAt = new Date().toISOString();
+  const since = conn.last_sync_at
+    ? new Date(new Date(conn.last_sync_at).getTime() - 15 * 60_000).toISOString()
+    : new Date(Date.now() - FIRST_SYNC_DAYS * 86400_000).toISOString();
+  const q = new URLSearchParams({
+    $filter: `receivedDateTime gt ${since}`,
+    $orderby: 'receivedDateTime asc',
+    $top: String(SYNC_MAX),
+    $select: `${LIST_FIELDS},ccRecipients,body`,
+  });
+  const data = await graph(token, `/me/mailFolders/inbox/messages?${q}`, { Prefer: 'outlook.body-content-type="text"' });
+  const own = (conn.email || '').toLowerCase();
+  const mails = (data.value ?? []).filter((m: any) => (m.from?.emailAddress?.address || '').toLowerCase() !== own);
+  const lastSeen = data.value?.length ? data.value[data.value.length - 1].receivedDateTime : null;
+
+  if (mails.length) {
+    const { data: done } = await admin.from('outlook_mail_items')
+      .select('message_id').eq('user_id', conn.user_id).in('message_id', mails.map((m: any) => m.id));
+    const doneIds = new Set((done ?? []).map((d: any) => d.message_id));
+    const todo = mails.filter((m: any) => !doneIds.has(m.id));
+
+    const { data: projects } = await admin.from('projects')
+      .select('id, name, client, address').eq('studio', tm.studio).eq('archived', false);
+    const projIds = (projects ?? []).map((p: any) => p.id);
+    const { data: pcs } = projIds.length
+      ? await admin.from('project_contacts').select('project_id, global_contacts(email)').in('project_id', projIds)
+      : { data: [] };
+    const contacts = (pcs ?? []).map((c: any) => ({ project_id: c.project_id, email: c.global_contacts?.email }));
+
+    for (const m of todo) {
+      const body = String(m.body?.content || '').slice(0, 20000);
+      const participants = [m.from, ...(m.toRecipients ?? []), ...(m.ccRecipients ?? [])]
+        .map((r: any) => r?.emailAddress?.address).filter(Boolean)
+        .filter((e: string) => e.toLowerCase() !== own);
+      const match = matchProject({ subject: m.subject, body, participants }, projects ?? [], contacts);
+      const received = new Date(m.receivedDateTime);
+      const dates = findMailDates(`${m.subject || ''}\n${body}`, received)
+        .filter((d: any) => d.date >= dayOf(m.receivedDateTime));
+      const when = dates[0] ?? null;
+      const time = when ? (when.time || null) : null;
+
+      const item: Record<string, unknown> = {
+        user_id: conn.user_id, studio: tm.studio, message_id: m.id, conversation_id: m.conversationId ?? null,
+        received_at: m.receivedDateTime, subject: m.subject ?? null,
+        from_email: m.from?.emailAddress?.address ?? null, from_name: m.from?.emailAddress?.name ?? null,
+        web_link: m.webLink ?? null, preview: m.bodyPreview ?? null,
+        project_id: match.projectId, suggested_date: when?.date ?? null, suggested_time: time,
+        reason: match.reason,
+      };
+
+      if (match.projectId && when) {
+        // Stessa conversazione, stesso giorno: è una risposta, non un nuovo appuntamento
+        const { data: dup } = m.conversationId
+          ? await admin.from('outlook_mail_items').select('id').eq('user_id', conn.user_id)
+              .eq('conversation_id', m.conversationId).eq('status', 'creata').eq('suggested_date', when.date).limit(1)
+          : { data: [] };
+        if (dup?.length) {
+          item.status = 'collegata';
+          item.reason = `${match.reason}; attività già creata da questa conversazione`;
+        } else {
+          const from = m.from?.emailAddress;
+          const note = [`Da mail di ${from?.name || from?.address || '?'} del ${received.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}: ${m.subject || ''}`, m.webLink].filter(Boolean).join('\n');
+          const { data: task, error } = await admin.from('tasks').insert({
+            project_id: match.projectId, title: cleanSubject(m.subject) || 'Da mail', categoria: null, status: 'todo',
+            assigned_member: tm.id, assigned_to_name: tm.user_name || tm.user_email || null,
+            data_pianificata: when.date, ora_pianificata: time, note, order: 0, studio: tm.studio,
+          }).select('id').single();
+          if (error) { item.status = 'da_rivedere'; item.reason = `errore creazione attività: ${error.message}`; }
+          else { item.status = 'creata'; item.task_id = task.id; }
+        }
+      } else if (match.projectId) {
+        item.status = 'collegata';
+      } else if (when) {
+        item.status = 'da_rivedere';
+        item.project_id = match.candidates[0]?.score >= 4 ? match.candidates[0].id : null; // suggerimento
+      } else {
+        item.status = 'ignorata';
+      }
+      await admin.from('outlook_mail_items').upsert(item, { onConflict: 'user_id,message_id', ignoreDuplicates: true });
+    }
+  }
+
+  // Se la pagina era piena riprende dall'ultima mail vista, altrimenti da quando è partito questo giro
+  const next = (data.value?.length ?? 0) >= SYNC_MAX && lastSeen ? lastSeen : startedAt;
+  await admin.from('outlook_connections').update({ last_sync_at: next }).eq('user_id', conn.user_id);
+  return { processed: mails.length };
+}
+
 // ── Callback OAuth (GET) ─────────────────────────────────────────────
 async function handleCallback(url: URL) {
   const state = await readState(url.searchParams.get('state') || '').catch(() => null);
@@ -185,6 +461,18 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization') || '';
     const jwt = authHeader.replace(/^Bearer\s+/i, '');
+
+    // Chiamata del cron: lettura automatica per tutti gli utenti che l'hanno attivata
+    if (CRON_SECRET && jwt === CRON_SECRET) {
+      const { data: conns } = await admin.from('outlook_connections').select('user_id, email, last_sync_at').eq('auto_sync', true);
+      const results = [];
+      for (const c of conns ?? []) {
+        try { results.push({ user: c.user_id, ...(await syncUser(c)) }); }
+        catch (e) { console.error('Sync Outlook', c.user_id, e); results.push({ user: c.user_id, error: (e as Error).message }); }
+      }
+      return json({ ok: true, results });
+    }
+
     const authClient = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await authClient.auth.getUser(jwt);
     if (!user) return json({ error: 'Non autenticato' }, 401);
@@ -193,8 +481,18 @@ serve(async (req) => {
     const action = body.action as string;
 
     if (action === 'status') {
-      const { data } = await admin.from('outlook_connections').select('email, created_at').eq('user_id', user.id).maybeSingle();
-      return json({ connected: !!data, email: data?.email ?? null, since: data?.created_at ?? null });
+      const { data } = await admin.from('outlook_connections').select('email, created_at, auto_sync, last_sync_at').eq('user_id', user.id).maybeSingle();
+      return json({
+        connected: !!data, email: data?.email ?? null, since: data?.created_at ?? null,
+        autoSync: !!data?.auto_sync, lastSyncAt: data?.last_sync_at ?? null,
+      });
+    }
+
+    if (action === 'settings') {
+      const patch: Record<string, unknown> = {};
+      if (typeof body.autoSync === 'boolean') patch.auto_sync = body.autoSync;
+      if (Object.keys(patch).length) await admin.from('outlook_connections').update(patch).eq('user_id', user.id);
+      return json({ ok: true });
     }
 
     if (action === 'auth-url') {
@@ -221,6 +519,11 @@ serve(async (req) => {
 
     const token = await accessTokenFor(user.id);
     if (!token) return json({ error: 'Outlook non collegato', notConnected: true }, 404);
+
+    if (action === 'sync') {
+      const { data: conn } = await admin.from('outlook_connections').select('user_id, email, last_sync_at').eq('user_id', user.id).single();
+      return json(await syncUser(conn));
+    }
 
     if (action === 'messages') {
       // Pagina successiva: accettiamo solo nextLink di Graph sulla casella dell'utente

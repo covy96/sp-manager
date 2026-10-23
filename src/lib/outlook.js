@@ -34,3 +34,8 @@ export const listOutlookMessages = ({ search, addresses, next, top } = {}) =>
   call("messages", { search, addresses, next, top });
 
 export const getOutlookMessage = (id) => call("message", { id }).then(d => d.message);
+
+export const setOutlookAutoSync = (autoSync) => call("settings", { autoSync });
+
+// Controlla subito le mail nuove (stessa logica del giro automatico ogni 15 minuti)
+export const syncOutlookNow = () => call("sync");

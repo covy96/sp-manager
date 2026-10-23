@@ -8,10 +8,11 @@ import { useToast } from "../../contexts/ToastContext";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { findMailDates, firstTime } from "../../lib/mailDates";
+import { cleanSubject } from "../../lib/mailMatch";
 import BodyPortal from "../../components/BodyPortal";
 import {
   outlookStatus, connectOutlook, disconnectOutlook,
-  listOutlookMessages, getOutlookMessage,
+  listOutlookMessages, getOutlookMessage, setOutlookAutoSync, syncOutlookNow,
 } from "../../lib/outlook";
 
 const fmtDate = (iso) => {
@@ -27,7 +28,7 @@ const recipients = (list) => (list ?? []).map(r => r.emailAddress?.name || r.ema
 
 // "Metti a calendario": crea un'attività (tasks.data_pianificata, la stessa del
 // Calendario ASM) precompilata con oggetto e date trovate nel testo della mail.
-function CalendarForm({ msg, onDone }) {
+function CalendarForm({ msg, onDone, initialProjectId = "", onCreated }) {
   const { T } = useTheme();
   const showToast = useToast();
   const { studioId, teamMember } = useStudio();
@@ -35,10 +36,10 @@ function CalendarForm({ msg, onDone }) {
   const suggestions = findMailDates(text, new Date(msg.receivedDateTime));
   const pick = suggestions[0];
 
-  const [title, setTitle]     = useState(msg.subject || "");
+  const [title, setTitle]     = useState(cleanSubject(msg.subject));
   const [date, setDate]       = useState(pick?.date || "");
   const [time, setTime]       = useState(pick?.time || (pick ? firstTime(text) : null) || "");
-  const [projectId, setProjectId] = useState("");
+  const [projectId, setProjectId] = useState(initialProjectId || "");
   const [projects, setProjects]   = useState([]);
   const [saving, setSaving]   = useState(false);
 
@@ -53,14 +54,15 @@ function CalendarForm({ msg, onDone }) {
     setSaving(true);
     const from = msg.from?.emailAddress;
     const note = [`Da mail di ${from?.name || from?.address || "?"} del ${new Date(msg.receivedDateTime).toLocaleDateString("it-IT")}: ${msg.subject || ""}`, msg.webLink].filter(Boolean).join("\n");
-    const { error } = await supabase.from("tasks").insert({
+    const { data: task, error } = await supabase.from("tasks").insert({
       project_id: projectId || null, title: title.trim(), categoria: null, status: "todo",
       assigned_member: teamMember?.id || null, assigned_to_name: teamMember?.user_name || teamMember?.user_email || null,
       data_pianificata: date, ora_pianificata: time || null, note, order: 0, studio: studioId || null,
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) { showToast("Errore: " + error.message, "error"); return; }
     showToast("Aggiunta al calendario", "success");
+    onCreated?.(task.id, projectId || null);
     onDone();
   };
 
@@ -102,11 +104,11 @@ function CalendarForm({ msg, onDone }) {
   );
 }
 
-function MessageModal({ id, onClose }) {
+function MessageModal({ id, onClose, initialProjectId, onCreated }) {
   const { T } = useTheme();
   const [msg, setMsg] = useState(null);
   const [error, setError] = useState("");
-  const [showCal, setShowCal] = useState(false);
+  const [showCal, setShowCal] = useState(!!onCreated);
   useBodyScrollLock(true);
   useEscKey(onClose);
 
@@ -140,7 +142,7 @@ function MessageModal({ id, onClose }) {
           {msg && (
             <div style={{ padding: "12px 20px", borderTop: `0.5px solid ${T.borderMd}` }}>
               {showCal
-                ? <CalendarForm msg={msg} onDone={() => setShowCal(false)} />
+                ? <CalendarForm msg={msg} initialProjectId={initialProjectId} onCreated={onCreated} onDone={() => setShowCal(false)} />
                 : (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                     <button type="button" onClick={() => setShowCal(true)} style={{ padding: "8px 14px", borderRadius: T.radiusSm, border: "none", background: T.navy, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📅 Metti a calendario</button>
@@ -152,6 +154,135 @@ function MessageModal({ id, onClose }) {
         </div>
       </div>
     </BodyPortal>
+  );
+}
+
+const STATI = [
+  { key: "da_rivedere", label: "Da rivedere" },
+  { key: "creata",      label: "In calendario" },
+  { key: "collegata",   label: "Collegate" },
+];
+
+// Lettura automatica: interruttore, "Controlla ora" e cosa è stato fatto con
+// le mail (attività create, mail collegate ai progetti, casi da rivedere).
+function AutoMailPanel({ status, onStatusChange }) {
+  const { T } = useTheme();
+  const showToast = useToast();
+  const [items, setItems]       = useState([]);
+  const [projects, setProjects] = useState({});
+  const [tab, setTab]           = useState("da_rivedere");
+  const [syncing, setSyncing]   = useState(false);
+  const [review, setReview]     = useState(null); // item aperto per "Metti a calendario"
+
+  const loadItems = useCallback(async () => {
+    const { data } = await supabase.from("outlook_mail_items")
+      .select("*").neq("status", "ignorata").order("received_at", { ascending: false }).limit(100);
+    setItems(data ?? []);
+    const ids = [...new Set((data ?? []).map(i => i.project_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: ps } = await supabase.from("projects").select("id,name").in("id", ids);
+      setProjects(Object.fromEntries((ps ?? []).map(p => [p.id, p.name])));
+    }
+  }, []);
+  useEffect(() => { loadItems(); }, [loadItems]);
+
+  const toggle = async () => {
+    const v = !status.autoSync;
+    onStatusChange({ ...status, autoSync: v });
+    try { await setOutlookAutoSync(v); }
+    catch (e) { onStatusChange({ ...status, autoSync: !v }); showToast(e.message, "error"); }
+  };
+
+  const syncNow = async () => {
+    setSyncing(true);
+    try {
+      const r = await syncOutlookNow();
+      showToast(r.processed ? `Controllate ${r.processed} mail nuove` : "Nessuna mail nuova", "success");
+      onStatusChange({ ...status, lastSyncAt: new Date().toISOString() });
+      await loadItems();
+    } catch (e) { showToast(e.message, "error"); }
+    finally { setSyncing(false); }
+  };
+
+  const setItem = async (item, patch) => {
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, ...patch } : i));
+    const { error } = await supabase.from("outlook_mail_items").update(patch).eq("id", item.id);
+    if (error) { showToast("Errore: " + error.message, "error"); loadItems(); }
+  };
+
+  const card = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow };
+  const label = { fontFamily: "var(--font-label)", fontSize: 10, color: T.muted };
+  const small = (primary) => ({ padding: "6px 12px", borderRadius: T.radiusSm, border: primary ? "none" : `1px solid ${T.borderMd}`, background: primary ? T.navy : "transparent", color: primary ? "#fff" : T.ink, fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0 });
+  const shown = items.filter(i => i.status === tab);
+  const count = (k) => items.filter(i => i.status === k).length;
+  const fmtDay = (d, t) => d ? `${new Date(d + "T00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}${t ? ` · ${t}` : ""}` : null;
+
+  return (
+    <>
+      <div style={{ ...card, padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Lettura automatica</div>
+            <div style={{ ...label, lineHeight: 1.5 }}>
+              Ogni 15 minuti ASM legge le mail nuove, riconosce il progetto (contatti in Anagrafica, nome, indirizzo, cliente) e mette in calendario le date che trova.
+            </div>
+          </div>
+          <button type="button" role="switch" aria-checked={!!status.autoSync} onClick={toggle}
+            style={{ position: "relative", width: 44, height: 26, borderRadius: 13, background: status.autoSync ? T.navy : T.muted, border: "none", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
+            <span style={{ position: "absolute", top: 3, left: status.autoSync ? 21 : 3, width: 20, height: 20, borderRadius: "50%", background: T.surface, transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+          </button>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 12, borderTop: `0.5px solid ${T.border}` }}>
+          <span style={label}>{status.lastSyncAt ? `Ultimo controllo: ${new Date(status.lastSyncAt).toLocaleString("it-IT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : "Mai controllate"}</span>
+          <button type="button" disabled={syncing} onClick={syncNow} style={{ ...small(false), opacity: syncing ? 0.6 : 1 }}>{syncing ? "Controllo…" : "Controlla ora"}</button>
+        </div>
+      </div>
+
+      <div style={card}>
+        <div style={{ display: "flex", gap: 4, padding: "10px 12px", borderBottom: `0.5px solid ${T.border}`, overflowX: "auto" }}>
+          {STATI.map(s => (
+            <button key={s.key} type="button" onClick={() => setTab(s.key)}
+              style={{ padding: "6px 12px", borderRadius: 999, border: "none", background: tab === s.key ? T.navyLight : "transparent", color: tab === s.key ? T.navy : T.muted, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+              {s.label}{count(s.key) ? ` · ${count(s.key)}` : ""}
+            </button>
+          ))}
+        </div>
+        {shown.length === 0 && (
+          <div style={{ padding: "24px 0", textAlign: "center", ...label, fontSize: 11 }}>
+            {tab === "da_rivedere" ? "Niente da rivedere" : tab === "creata" ? "Nessuna attività creata dalle mail" : "Nessuna mail collegata ai progetti"}
+          </div>
+        )}
+        {shown.map(i => (
+          <div key={i.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "12px 20px", borderBottom: `0.5px solid ${T.border}`, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.subject || "(nessun oggetto)"}</div>
+              <div style={{ ...label, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {i.from_name || i.from_email} · {fmtDate(i.received_at)}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                {i.project_id && <span style={{ padding: "2px 8px", borderRadius: 999, background: T.navyLight, color: T.navy, fontSize: 10, fontWeight: 600 }}>{tab === "da_rivedere" ? "Forse: " : ""}{projects[i.project_id] || "Progetto"}</span>}
+                {fmtDay(i.suggested_date, i.suggested_time) && <span style={{ padding: "2px 8px", borderRadius: 999, border: `1px solid ${T.borderMd}`, color: T.ink, fontSize: 10 }}>📅 {fmtDay(i.suggested_date, i.suggested_time)}</span>}
+                {tab === "da_rivedere" && i.reason && <span style={{ ...label }}>{i.reason}</span>}
+              </div>
+            </div>
+            {tab === "da_rivedere" ? (
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" onClick={() => setItem(i, { status: "ignorata" })} style={small(false)}>Ignora</button>
+                <button type="button" onClick={() => setReview(i)} style={small(true)}>Metti a calendario</button>
+              </div>
+            ) : i.web_link && (
+              <a href={i.web_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: T.navy, textDecoration: "none", flexShrink: 0 }}>Apri ↗</a>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {review && (
+        <MessageModal id={review.message_id} initialProjectId={review.project_id || ""}
+          onCreated={(taskId, projectId) => { setItem(review, { status: "creata", task_id: taskId, project_id: projectId }); setReview(null); }}
+          onClose={() => setReview(null)} />
+      )}
+    </>
   );
 }
 
@@ -233,6 +364,8 @@ export default function OutlookPage() {
           ? <button disabled={busy} onClick={handleDisconnect} style={btn(false)}>Scollega</button>
           : <button disabled={busy} onClick={handleConnect} style={btn(true)}>{busy ? "Apertura…" : "Collega Outlook"}</button>)}
       </div>
+
+      {status?.connected && <AutoMailPanel status={status} onStatusChange={setStatus} />}
 
       {error && !status?.connected && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red }}>{error}</div>}
 

@@ -45,7 +45,23 @@ supabase functions deploy outlook --no-verify-jwt
 senza il token Supabase: la funzione verifica da sola l'utente (JWT per le chiamate
 dall'app, state firmato per il ritorno da Microsoft).
 
-## 5. Uso
+## 5. Lettura automatica
+
+1. Esegui `database/outlook_auto_sync.sql` nel SQL Editor.
+2. Verifica che il secret `CRON_SECRET` esista (è lo stesso usato da check-scadenze).
+3. Esegui `supabase/setup-cron-outlook.sql` sostituendo `CAMBIA_QUESTA_STRINGA` con il valore di `CRON_SECRET`.
+4. In ASM → Posta Outlook attiva **Lettura automatica**.
+
+Regole (gratuite, nessuna AI): una mail è abbinata a un progetto se il mittente o un
+destinatario è un contatto del progetto in Anagrafica, se il nome del progetto è
+nell'oggetto, o se nel testo ci sono indirizzo e cliente. Se il progetto è sicuro e
+nel testo c'è una data futura, l'attività viene creata in calendario; se manca uno
+dei due la mail va in "Da rivedere" (o "Collegate" se c'è solo il progetto).
+
+Se modifichi `src/lib/mailDates.js` o `src/lib/mailMatch.js`, rigenera la copia
+dentro la funzione con `node scripts/inline-outlook-shared.mjs` e ripubblicala.
+
+## 6. Uso
 
 Impostazioni → **Posta Outlook** → **Collega Outlook**. Da una mail aperta,
 **Metti a calendario** crea un'attività nel Calendario ASM con le date e gli orari
