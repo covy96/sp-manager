@@ -799,7 +799,7 @@ export default function OffertaDocumentPanel({
                                 {v.nomeApp && (
                                   <span style={{ display: "inline-block", ...mono, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.08em", color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 5, padding: "1px 6px", marginBottom: 4 }}>{v.nomeApp}</span>
                                 )}
-                                <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
+                                <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5, whiteSpace: "pre-line" }}>
                                   {pulisci(compilaTesto(v.testo, vc.campi))}
                                 </div>
                                 {vc.attiva && <CampiTesto testo={v.testo} valori={vc.campi} onChange={(k, val) => setCampoVoce(sez.id, v.id, k, val)} inputSt={inputSt} />}

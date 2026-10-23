@@ -113,7 +113,9 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     const tokens = [];
     segs.forEach((seg) => {
       setF(seg.bold ? "bold" : "book");
-      seg.text.split(/(\s+)/).filter(t => t !== "").forEach((t) => {
+      // "\n" = a capo scritto dall'utente: diventa un token di interruzione riga.
+      seg.text.replace(/\r\n?/g, "\n").split(/(\n|[^\S\n]+)/).filter(t => t !== "").forEach((t) => {
+        if (t === "\n") { tokens.push({ brk: true }); return; }
         tokens.push({ text: t, bold: seg.bold, space: /^\s+$/.test(t), w: pdf.getTextWidth(t) });
       });
     });
@@ -123,6 +125,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     let cur = [], curW = 0;
     const trimTrailing = () => { while (cur.length && cur[cur.length - 1].space) { curW -= cur[cur.length - 1].w; cur.pop(); } };
     tokens.forEach((tok) => {
+      if (tok.brk) { trimTrailing(); lines.push({ toks: cur, w: curW, hard: true }); cur = []; curW = 0; return; }
       if (tok.space) { if (cur.length) { cur.push(tok); curW += tok.w; } return; }
       if (curW + tok.w > maxW && cur.length) { trimTrailing(); lines.push({ toks: cur, w: curW }); cur = [tok]; curW = tok.w; }
       else { cur.push(tok); curW += tok.w; }
@@ -132,7 +135,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
     // 3) Rende ogni riga; giustifica tutte tranne l'ultima.
     lines.forEach((ln, idx) => {
       ensure(lineH);
-      const isLast = idx === lines.length - 1;
+      const isLast = idx === lines.length - 1 || ln.hard; // riga chiusa da un a capo: non giustificata
       const spaces = ln.toks.filter(t => t.space).length;
       const extra = (justify && !isLast && spaces > 0) ? Math.max(0, (maxW - ln.w) / spaces) : 0;
       let cx = x;

@@ -132,8 +132,10 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
       // Con Groteska il grassetto è una famiglia dedicata (Groteska Bold):
       // usiamo quel font e disattiviamo il flag bold per evitare il faux-bold.
       const font = useGroteska ? (isBold ? FONT_BOLD : FONT_BODY) : (extraFont || FONT_BODY);
-      return new TextRun({ text: seg.text, bold: useGroteska ? false : isBold, font, ...rest });
-    });
+      // Gli a capo scritti dall'utente diventano interruzioni di riga nel Word.
+      return seg.text.replace(/\r\n?/g, "\n").split("\n").map((text, i) =>
+        new TextRun({ text, ...(i > 0 ? { break: 1 } : {}), bold: useGroteska ? false : isBold, font, ...rest }));
+    }).flat();
   };
 
   const P = (testo, opts = {}) => {
@@ -463,6 +465,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
 
   // ── Documento ─────────────────────────────────────────────────────────────
   const doc = new Document({
+    // Righe chiuse da un a capo manuale non vengono stirate dalla giustificazione.
+    compatibility: { doNotExpandShiftReturn: true },
     ...(embedFonts.length ? { fonts: embedFonts } : {}),
     styles: {
       default: {
