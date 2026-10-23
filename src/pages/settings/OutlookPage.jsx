@@ -7,7 +7,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
-import { findMailDates, firstTime } from "../../lib/mailDates";
+import { findMailDates, firstTime, stripQuoted } from "../../lib/mailDates";
 import { cleanSubject } from "../../lib/mailMatch";
 import BodyPortal from "../../components/BodyPortal";
 import {
@@ -32,7 +32,7 @@ function CalendarForm({ msg, onDone, initialProjectId = "", onCreated }) {
   const { T } = useTheme();
   const showToast = useToast();
   const { studioId, teamMember } = useStudio();
-  const text = `${msg.subject || ""}\n${msg.body?.content || ""}`;
+  const text = `${msg.subject || ""}\n${stripQuoted(msg.body?.content)}`;
   const suggestions = findMailDates(text, new Date(msg.receivedDateTime));
   const pick = suggestions[0];
 
@@ -224,7 +224,7 @@ function AutoMailPanel({ status, onStatusChange }) {
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Lettura automatica</div>
             <div style={{ ...label, lineHeight: 1.5 }}>
-              Ogni 15 minuti ASM legge le mail nuove, riconosce il progetto (contatti in Anagrafica, nome, indirizzo, cliente) e mette in calendario le date che trova.
+              Ogni 15 minuti ASM legge le mail nuove, riconosce il progetto (nome, contatti in Anagrafica, indirizzo, cliente) e mette in calendario gli appuntamenti con data e ora.
             </div>
           </div>
           <button type="button" role="switch" aria-checked={!!status.autoSync} onClick={toggle}

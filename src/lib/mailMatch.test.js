@@ -45,6 +45,28 @@ describe("matchProject", () => {
   });
 });
 
+describe("nome del progetto", () => {
+  const ps = [
+    { id: "w1", name: "WOOLRICH MILANO", client: "Woolrich", address: "Corso Venezia 2, Milano" },
+    { id: "w2", name: "WOOLRICH", client: "Woolrich", address: "" },
+    { id: "c8", name: "CANOVA 8", client: "Privato", address: "Via Canova 8, Milano" },
+  ];
+  const cs = [{ project_id: "c8", email: "michele@impresa.it" }];
+
+  it("il nome nell'oggetto vince su un contatto di un altro progetto", () => {
+    const r = matchProject({ subject: "Percorsi di esodo WOOLRICH MILANO", body: "", participants: ["michele@impresa.it"] }, ps, cs);
+    expect(r.projectId).toBe("w1");
+  });
+
+  it("parole in ordine diverso o separate", () => {
+    expect(matchProject({ subject: "Milano - Woolrich: verbale", body: "", participants: [] }, ps, cs).projectId).toBe("w1");
+  });
+
+  it("solo il contatto, senza nome: usa il contatto", () => {
+    expect(matchProject({ subject: "Domanda", body: "", participants: ["michele@impresa.it"] }, ps, cs).projectId).toBe("c8");
+  });
+});
+
 describe("cleanSubject", () => {
   it("toglie i prefissi di risposta e inoltro", () => {
     expect(cleanSubject("RE: R: Fwd: Sopralluogo")).toBe("Sopralluogo");

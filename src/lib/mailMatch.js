@@ -9,6 +9,10 @@ export function normText(s) {
 
 const has = (hay, needle) => needle.trim().length >= 4 && hay.includes(needle);
 
+// Parole che da sole non identificano un progetto
+const STOP = new Set(["via", "viale", "piazza", "corso", "largo", "del", "della", "dei", "delle", "di", "da", "per", "the", "and", "srl", "spa", "snc", "progetto", "lavori", "nuovo", "nuova"]);
+const nameWords = (name) => normText(name).trim().split(" ").filter(w => w.length >= 2 && !STOP.has(w) && !(w.length < 3 && !/\d/.test(w)));
+
 // Prima parte dell'indirizzo ("Via Roma 12, Milano" → "via roma 12")
 const street = (addr) => normText(String(addr ?? "").split(",")[0]);
 
@@ -34,15 +38,31 @@ export function matchProject(mail, projects, contacts = []) {
     if (e) (emailsByProject[c.project_id] ??= new Set()).add(e);
   }
 
+  // Il nome del progetto vale se tutte le sue parole significative compaiono
+  // (in qualsiasi ordine): "Woolrich Milano" riconosce "WOOLRICH - Milano".
+  const nameHits = {};
+  for (const p of projects) {
+    const words = nameWords(p.name);
+    if (!words.length) continue;
+    if (words.every(w => subject.includes(` ${w} `))) nameHits[p.id] = { where: "subject", words };
+    else if (words.every(w => body.includes(` ${w} `))) nameHits[p.id] = { where: "body", words };
+  }
+  // Se "Woolrich" e "Woolrich Milano" corrispondono entrambi, vale il più specifico
+  for (const [id, hit] of Object.entries(nameHits)) {
+    const moreSpecific = Object.entries(nameHits).some(([other, h]) =>
+      other !== id && h.where === hit.where && h.words.length > hit.words.length && hit.words.every(w => h.words.includes(w)));
+    if (moreSpecific) delete nameHits[id];
+  }
+
   const candidates = [];
   for (const p of projects) {
     let score = 0;
     const why = [];
+    const hit = nameHits[p.id];
+    if (hit?.where === "subject") { score += 12; why.push("nome nell'oggetto"); }
+    else if (hit?.where === "body") { score += 5; why.push("nome nel testo"); }
     const emails = emailsByProject[p.id];
-    if (emails && [...people].some(e => emails.has(e))) { score += 10; why.push("contatto del progetto"); }
-    const name = normText(p.name);
-    if (has(subject, name)) { score += 8; why.push("nome nell'oggetto"); }
-    else if (has(body, name)) { score += 4; why.push("nome nel testo"); }
+    if (emails && [...people].some(e => emails.has(e))) { score += 8; why.push("contatto del progetto"); }
     const st = street(p.address);
     if (/\d/.test(st) || st.trim().split(" ").length >= 3) {
       if (has(subject, st) || has(body, st)) { score += 6; why.push("indirizzo"); }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findMailDates, firstTime } from "./mailDates";
+import { findMailDates, firstTime, stripQuoted } from "./mailDates";
 
 // Venerdì 23 ottobre 2026
 const REF = new Date(2026, 9, 23, 9, 0);
@@ -38,6 +38,27 @@ describe("findMailDates", () => {
 
   it("toglie i duplicati", () => {
     expect(findMailDates("12/11/2026 ... confermo 12/11/2026", REF)).toHaveLength(1);
+  });
+});
+
+describe("numeri che sembrano date", () => {
+  it("ignora telefoni e codici con più parti", () => {
+    expect(findMailDates("Tel. 02.12.34.56 o 333-12-34-567, ore 10", REF)).toEqual([]);
+  });
+});
+
+describe("stripQuoted", () => {
+  it("taglia la cronologia di Outlook", () => {
+    const t = "Ok per me il 4/11 alle 10\n\nDa: Mario Rossi <m@r.it>\nInviato: giovedì 22 ottobre 2026 09:15\nOggetto: sopralluogo";
+    expect(stripQuoted(t).trim()).toBe("Ok per me il 4/11 alle 10");
+    expect(findMailDates(stripQuoted(t), REF)).toHaveLength(1);
+  });
+  it("taglia 'Il giorno … ha scritto' e le righe citate", () => {
+    expect(stripQuoted("Confermo\nIl giorno gio 22 ott 2026 alle 10:15 Mario ha scritto:\n> vediamoci").trim()).toBe("Confermo");
+    expect(stripQuoted("Va bene\n> il 5/11 alle 9").trim()).toBe("Va bene");
+  });
+  it("lascia stare il testo senza citazioni", () => {
+    expect(stripQuoted("ciao")).toBe("ciao");
   });
 });
 

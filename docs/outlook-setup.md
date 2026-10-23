@@ -52,10 +52,11 @@ dall'app, state firmato per il ritorno da Microsoft).
 3. Esegui `supabase/setup-cron-outlook.sql` sostituendo `CAMBIA_QUESTA_STRINGA` con il valore di `CRON_SECRET`.
 4. In ASM → Posta Outlook attiva **Lettura automatica**.
 
-Regole (gratuite, nessuna AI): una mail è abbinata a un progetto se il mittente o un
-destinatario è un contatto del progetto in Anagrafica, se il nome del progetto è
-nell'oggetto, o se nel testo ci sono indirizzo e cliente. Se il progetto è sicuro e
-nel testo c'è una data futura, l'attività viene creata in calendario; se manca uno
+Regole (gratuite, nessuna AI): una mail è abbinata a un progetto se il nome del
+progetto è nell'oggetto (vince sugli altri criteri), se il mittente o un destinatario
+è un contatto del progetto in Anagrafica, o se nel testo ci sono indirizzo e cliente.
+Se il progetto è sicuro e nel testo c'è un appuntamento con data E ora, l'attività
+viene creata in calendario; se manca uno
 dei due la mail va in "Da rivedere" (o "Collegate" se c'è solo il progetto).
 
 Se modifichi `src/lib/mailDates.js` o `src/lib/mailMatch.js`, rigenera la copia

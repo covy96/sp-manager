@@ -37,6 +37,16 @@ function timeNear(text, from) {
   return `${pad(m[1])}:${m[2] ?? "00"}`;
 }
 
+// Taglia la cronologia citata sotto la risposta ("Da: … Inviato: …",
+// "Il giorno … ha scritto:", "-----Messaggio originale-----", righe con ">"):
+// le sue date/ore sono quelle delle mail precedenti, non appuntamenti.
+const QUOTE_START = /^\s*(?:-{2,}\s*(?:messaggio originale|original message|messaggio inoltrato|forwarded message)|(?:da|from)\s*:\s.+|il giorno .+ ha scritto\s*:?|on .+ wrote\s*:?|>.*)\s*$/im;
+export function stripQuoted(text) {
+  const s = String(text ?? "");
+  const m = QUOTE_START.exec(s);
+  return m ? s.slice(0, m.index) : s;
+}
+
 /**
  * @param {string} text testo della mail (oggetto + corpo)
  * @param {Date} ref data di ricezione, per "domani", giorni della settimana e anno mancante
@@ -52,7 +62,7 @@ export function findMailDates(text, ref = new Date()) {
   };
 
   // 12/11/2026, 12-11-26, 12.11.2026, 12/11
-  for (const m of src.matchAll(/\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b/g)) {
+  for (const m of src.matchAll(/(?<![\d./-])(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?(?![\d]|[./-]\d)/g)) {
     const d = +m[1], mo = +m[2];
     if (!m[3] && m[0].includes(".")) continue; // "10.30" è un orario
     add(m[3] ? validDate(fullYear(+m[3]), mo, d) : withYear(mo, d, ref), m.index, m[0].length);

@@ -198,6 +198,16 @@ function timeNear(text, from) {
   return `${pad(m[1])}:${m[2] ?? "00"}`;
 }
 
+// Taglia la cronologia citata sotto la risposta ("Da: … Inviato: …",
+// "Il giorno … ha scritto:", "-----Messaggio originale-----", righe con ">"):
+// le sue date/ore sono quelle delle mail precedenti, non appuntamenti.
+const QUOTE_START = /^\s*(?:-{2,}\s*(?:messaggio originale|original message|messaggio inoltrato|forwarded message)|(?:da|from)\s*:\s.+|il giorno .+ ha scritto\s*:?|on .+ wrote\s*:?|>.*)\s*$/im;
+function stripQuoted(text) {
+  const s = String(text ?? "");
+  const m = QUOTE_START.exec(s);
+  return m ? s.slice(0, m.index) : s;
+}
+
 /**
  * @param {string} text testo della mail (oggetto + corpo)
  * @param {Date} ref data di ricezione, per "domani", giorni della settimana e anno mancante
@@ -213,7 +223,7 @@ function findMailDates(text, ref = new Date()) {
   };
 
   // 12/11/2026, 12-11-26, 12.11.2026, 12/11
-  for (const m of src.matchAll(/\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b/g)) {
+  for (const m of src.matchAll(/(?<![\d./-])(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?(?![\d]|[./-]\d)/g)) {
     const d = +m[1], mo = +m[2];
     if (!m[3] && m[0].includes(".")) continue; // "10.30" è un orario
     add(m[3] ? validDate(fullYear(+m[3]), mo, d) : withYear(mo, d, ref), m.index, m[0].length);
@@ -265,6 +275,10 @@ function normText(s) {
 
 const has = (hay, needle) => needle.trim().length >= 4 && hay.includes(needle);
 
+// Parole che da sole non identificano un progetto
+const STOP = new Set(["via", "viale", "piazza", "corso", "largo", "del", "della", "dei", "delle", "di", "da", "per", "the", "and", "srl", "spa", "snc", "progetto", "lavori", "nuovo", "nuova"]);
+const nameWords = (name) => normText(name).trim().split(" ").filter(w => w.length >= 2 && !STOP.has(w) && !(w.length < 3 && !/\d/.test(w)));
+
 // Prima parte dell'indirizzo ("Via Roma 12, Milano" → "via roma 12")
 const street = (addr) => normText(String(addr ?? "").split(",")[0]);
 
@@ -290,15 +304,31 @@ function matchProject(mail, projects, contacts = []) {
     if (e) (emailsByProject[c.project_id] ??= new Set()).add(e);
   }
 
+  // Il nome del progetto vale se tutte le sue parole significative compaiono
+  // (in qualsiasi ordine): "Woolrich Milano" riconosce "WOOLRICH - Milano".
+  const nameHits = {};
+  for (const p of projects) {
+    const words = nameWords(p.name);
+    if (!words.length) continue;
+    if (words.every(w => subject.includes(` ${w} `))) nameHits[p.id] = { where: "subject", words };
+    else if (words.every(w => body.includes(` ${w} `))) nameHits[p.id] = { where: "body", words };
+  }
+  // Se "Woolrich" e "Woolrich Milano" corrispondono entrambi, vale il più specifico
+  for (const [id, hit] of Object.entries(nameHits)) {
+    const moreSpecific = Object.entries(nameHits).some(([other, h]) =>
+      other !== id && h.where === hit.where && h.words.length > hit.words.length && hit.words.every(w => h.words.includes(w)));
+    if (moreSpecific) delete nameHits[id];
+  }
+
   const candidates = [];
   for (const p of projects) {
     let score = 0;
     const why = [];
+    const hit = nameHits[p.id];
+    if (hit?.where === "subject") { score += 12; why.push("nome nell'oggetto"); }
+    else if (hit?.where === "body") { score += 5; why.push("nome nel testo"); }
     const emails = emailsByProject[p.id];
-    if (emails && [...people].some(e => emails.has(e))) { score += 10; why.push("contatto del progetto"); }
-    const name = normText(p.name);
-    if (has(subject, name)) { score += 8; why.push("nome nell'oggetto"); }
-    else if (has(body, name)) { score += 4; why.push("nome nel testo"); }
+    if (emails && [...people].some(e => emails.has(e))) { score += 8; why.push("contatto del progetto"); }
     const st = street(p.address);
     if (/\d/.test(st) || st.trim().split(" ").length >= 3) {
       if (has(subject, st) || has(body, st)) { score += 6; why.push("indirizzo"); }
@@ -343,7 +373,7 @@ async function syncUser(conn: { user_id: string; email: string | null; last_sync
     $filter: `receivedDateTime gt ${since}`,
     $orderby: 'receivedDateTime asc',
     $top: String(SYNC_MAX),
-    $select: `${LIST_FIELDS},ccRecipients,body`,
+    $select: `${LIST_FIELDS},ccRecipients,body,uniqueBody`,
   });
   const data = await graph(token, `/me/mailFolders/inbox/messages?${q}`, { Prefer: 'outlook.body-content-type="text"' });
   const own = (conn.email || '').toLowerCase();
@@ -371,10 +401,13 @@ async function syncUser(conn: { user_id: string; email: string | null; last_sync
         .filter((e: string) => e.toLowerCase() !== own);
       const match = matchProject({ subject: m.subject, body, participants }, projects ?? [], contacts);
       const received = new Date(m.receivedDateTime);
-      const dates = findMailDates(`${m.subject || ''}\n${body}`, received)
+      // Date solo dal testo nuovo della mail, senza la cronologia citata
+      const fresh = stripQuoted(String(m.uniqueBody?.content || body)).slice(0, 20000);
+      const dates = findMailDates(`${m.subject || ''}\n${fresh}`, received)
         .filter((d: any) => d.date >= dayOf(m.receivedDateTime));
-      const when = dates[0] ?? null;
-      const time = when ? (when.time || null) : null;
+      // Conta solo un appuntamento preciso: data E ora (es. "il 4/11 alle 10:30")
+      const when = dates.find((d: any) => d.time) ?? null;
+      const time = when?.time ?? null;
 
       const item: Record<string, unknown> = {
         user_id: conn.user_id, studio: tm.studio, message_id: m.id, conversation_id: m.conversationId ?? null,
