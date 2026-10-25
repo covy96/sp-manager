@@ -454,3 +454,100 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
   .pd-row .pd-row-action { opacity: 0; transition: opacity 0.12s; }
   .pd-row:hover .pd-row-action, .pd-row .pd-row-action:focus-visible, .pd-row .pd-row-action[aria-pressed="true"] { opacity: 1; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   BETA — DASHBOARD "GLASSY"
+   Card di vetro smerigliato sopra uno sfondo caldo sfocato.
+   Il vetro vive solo dentro .glass-dash: nessun modale fixed qui dentro
+   (su iOS backdrop-filter rompe i figli position:fixed, vedi BodyPortal).
+═══════════════════════════════════════════════════════════════ */
+.glass-dash {
+  --glass-accent: #F2762E;
+  --glass-bg: rgba(255,255,255,0.46);
+  --glass-bg-hover: rgba(255,255,255,0.58);
+  --glass-edge: rgba(255,255,255,0.70);
+  --glass-sheen: inset 0 1px 0 rgba(255,255,255,0.75);
+  --glass-shadow: 0 10px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.06);
+  --glass-shadow-hover: 0 22px 50px rgba(60,40,20,0.16), 0 4px 12px rgba(60,40,20,0.08);
+  position: relative;
+  isolation: isolate;
+  margin: -28px;
+  padding: 28px;
+  min-height: calc(100% + 56px);
+}
+.glass-dash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 45% at 12% 8%,  rgba(242,118,46,0.30) 0%, transparent 70%),
+    radial-gradient(35% 40% at 88% 18%, rgba(217,201,138,0.45) 0%, transparent 70%),
+    radial-gradient(45% 50% at 75% 92%, rgba(19,49,92,0.20) 0%, transparent 70%),
+    radial-gradient(40% 40% at 20% 85%, rgba(205,160,120,0.35) 0%, transparent 70%),
+    linear-gradient(160deg, #efe9e2 0%, #e6e2dc 45%, #dfe3ea 100%);
+}
+html.dark .glass-dash {
+  --glass-bg: rgba(40,36,34,0.45);
+  --glass-bg-hover: rgba(52,46,42,0.55);
+  --glass-edge: rgba(255,255,255,0.10);
+  --glass-sheen: inset 0 1px 0 rgba(255,255,255,0.08);
+  --glass-shadow: 0 10px 40px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.25);
+  --glass-shadow-hover: 0 22px 50px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.30);
+}
+html.dark .glass-dash::before {
+  background:
+    radial-gradient(40% 45% at 12% 8%,  rgba(242,118,46,0.22) 0%, transparent 70%),
+    radial-gradient(35% 40% at 88% 18%, rgba(217,201,138,0.14) 0%, transparent 70%),
+    radial-gradient(45% 50% at 75% 92%, rgba(74,158,255,0.14) 0%, transparent 70%),
+    radial-gradient(40% 40% at 20% 85%, rgba(160,100,60,0.20) 0%, transparent 70%),
+    linear-gradient(160deg, #17130f 0%, #121014 50%, #0e1118 100%);
+}
+@media (max-width: 767px) {
+  .glass-dash { margin: -16px; padding: 16px; min-height: calc(100vh - 60px); }
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--glass-edge);
+  border-radius: 20px;
+  box-shadow: var(--glass-sheen), var(--glass-shadow);
+  transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-spring), background 0.2s ease;
+}
+/* Sollevamento al passaggio, come whileHover={{ y: -5 }} */
+@media (hover: hover) {
+  .glass-card.glass-lift:hover {
+    transform: translateY(-5px);
+    background: var(--glass-bg-hover);
+    box-shadow: var(--glass-sheen), var(--glass-shadow-hover);
+  }
+}
+.glass-card.glass-lift:active { transform: scale(0.98); }
+
+/* Chip icona colorata in alto a sinistra della card */
+.glass-chip {
+  width: 34px; height: 34px;
+  border-radius: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-sheen);
+}
+
+/* Righe dentro le card: separatore leggero, evidenziazione morbida */
+.glass-row { border-bottom: 0.5px solid rgba(120,100,80,0.14); }
+html.dark .glass-row { border-bottom-color: rgba(255,255,255,0.07); }
+.glass-row:last-child { border-bottom: none; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-card { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--surface); }
+}
+
+/* Entrata morbida delle card, una dopo l'altra */
+.glass-dash .glass-card { animation: asm-fade-in 0.6s var(--ease-spring) both; }
+.glass-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.glass-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.glass-stagger > *:nth-child(4) { animation-delay: 180ms; }
