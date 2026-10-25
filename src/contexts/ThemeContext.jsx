@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 const LIGHT = {
   // Sfondi
   bg:           '#e8eaf0',
-  surface:      'rgba(255,255,255,0.72)',
-  surface2:     'rgba(255,255,255,0.55)',
+  surface:      'rgba(255,255,255,0.58)',
+  surface2:     'rgba(255,255,255,0.45)',
   surface3:     'rgba(255,255,255,0.40)',
   // Testo
   ink:          '#1a1a1e',
@@ -17,7 +17,7 @@ const LIGHT = {
   navyLight:    'rgba(19,49,92,0.10)',
   brass:        '#D9C98A',
   // Bordi (vetro)
-  border:       'rgba(255,255,255,0.6)',
+  border:       'rgba(255,255,255,0.7)',
   borderMd:     'rgba(0,0,0,0.10)',
   borderHeavy:  'rgba(0,0,0,0.18)',
   // Stati
@@ -44,21 +44,21 @@ const LIGHT = {
   glassBg:      'rgba(248,249,252,0.98)',
   glassBorder:  'rgba(255,255,255,0.85)',
   glassSheen:   'rgba(255,255,255,0.25)',
-  shadow:       '0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)',
-  shadowMd:     '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+  shadow:       'inset 0 1px 0 rgba(255,255,255,0.7), 0 8px 32px rgba(19,49,92,0.08), 0 1px 4px rgba(19,49,92,0.05)',
+  shadowMd:     'inset 0 1px 0 rgba(255,255,255,0.7), 0 16px 44px rgba(19,49,92,0.14), 0 2px 8px rgba(19,49,92,0.06)',
   shadowLg:     '0 20px 60px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.08)',
-  radius:       '14px',
+  radius:       '18px',
   radiusSm:     '10px',
   radiusLg:     '20px',
   blur:         'blur(20px)',
-  blurSm:       'blur(12px)',
+  blurSm:       'blur(20px) saturate(160%)',
 };
 
 // ── PALETTE DARK — macOS Liquid Glass Dark ────────────────────────
 const DARK = {
   bg:           '#0f0f14',
-  surface:      'rgba(40,40,50,0.75)',
-  surface2:     'rgba(50,50,62,0.65)',
+  surface:      'rgba(36,40,52,0.58)',
+  surface2:     'rgba(46,50,64,0.52)',
   surface3:     'rgba(35,35,45,0.55)',
   ink:          '#f0f0f5',
   ink60:        'rgba(240,240,245,0.6)',
@@ -89,14 +89,14 @@ const DARK = {
   glassBg:      'rgba(28,28,38,0.98)',
   glassBorder:  'rgba(255,255,255,0.12)',
   glassSheen:   'rgba(255,255,255,0.06)',
-  shadow:       '0 4px 24px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.20)',
+  shadow:       'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.20)',
   shadowMd:     '0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25)',
   shadowLg:     '0 20px 60px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.30)',
-  radius:       '14px',
+  radius:       '18px',
   radiusSm:     '10px',
   radiusLg:     '20px',
   blur:         'blur(20px)',
-  blurSm:       'blur(12px)',
+  blurSm:       'blur(20px) saturate(160%)',
 };
 
 // ── CONTEXT ───────────────────────────────────────────────────────

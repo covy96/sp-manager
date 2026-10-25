@@ -375,14 +375,14 @@ export default function MobileLayout({ session, children }) {
       <div aria-hidden style={{ height:HEADER_H, flexShrink:0 }}/>
 
       {/* ── CONTENT ── */}
-      <main style={{ flex:1, padding:'16px 16px 80px', overflowY:'auto', overflowX:'hidden', background:T.bg }}>
+      <main className="asm-glass-bg" style={{ flex:1, padding:'16px 16px 80px', overflowY:'auto', overflowX:'hidden' }}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
       </main>
 
       {/* ── TAB BAR ── */}
-      <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:40, height:64, background:T.surface, borderTop:`0.5px solid ${T.border}`, display:'flex', alignItems:'stretch', paddingBottom:'env(safe-area-inset-bottom)', transition:'background 0.2s, border-color 0.2s' }}>
+      <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:40, height:64, background:T.surface, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, borderTop:`0.5px solid ${T.border}`, display:'flex', alignItems:'stretch', paddingBottom:'env(safe-area-inset-bottom)', transition:'background 0.2s, border-color 0.2s' }}>
         {TAB_ITEMS.map(item=>{
           const isActive = item.path ? loc.pathname.startsWith(item.path) : menuOpen;
           return (

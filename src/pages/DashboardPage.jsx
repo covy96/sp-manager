@@ -466,7 +466,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="glass-dash" style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-label)",
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: 240, fontFamily: "var(--font-label)",
         fontSize: 11, color: T.muted, letterSpacing: '0.1em',
       }}>
         Caricamento dashboard...
@@ -514,7 +515,7 @@ export default function DashboardPage() {
         <KpiCard isMobile={isMobile} onClick={() => navigate("/timesheet")}
           label="Ore questa settimana"
           value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.ink}
-          icon="clock" accent="#F2762E" />
+          icon="clock" accent="var(--glass-accent-2)" />
         <KpiCard isMobile={isMobile} onClick={() => navigate("/scrivania")}
           label={scope === "all" ? "Task da completare studio" : "Miei task aperti"}
           value={openTasks} note="aperti" valueColor={T.red}
@@ -532,7 +533,7 @@ export default function DashboardPage() {
       <div className="glass-stagger" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 18 }}>
 
         {/* Task di oggi */}
-        <Panel title="I miei task di oggi" icon="sun" accent="#F2762E" count={todayTasks.length} isMobile={isMobile}>
+        <Panel title="I miei task di oggi" icon="sun" accent="var(--glass-accent-2)" count={todayTasks.length} isMobile={isMobile}>
           {todayTasks.length === 0
             ? <EmptyState label="Nessun task per oggi" />
             : todayTasks.map(task => (
@@ -577,7 +578,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Scadenze pratiche */}
-      <Panel title="Scadenzario pratiche" icon="calendar" accent="#b45309" count={scadenzePratiche.length} isMobile={isMobile}>
+      <Panel title="Scadenzario pratiche" icon="calendar" accent={T.navy} count={scadenzePratiche.length} isMobile={isMobile}>
         {scadenzePratiche.length === 0 ? (
           <EmptyState label="Nessuna scadenza impostata" />
         ) : (

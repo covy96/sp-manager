@@ -457,56 +457,53 @@ h1, h2 { letter-spacing: -0.02em; line-height: 1.15; }
 
 /* ═══════════════════════════════════════════════════════════════
    BETA — DASHBOARD "GLASSY"
-   Card di vetro smerigliato sopra uno sfondo caldo sfocato.
-   Il vetro vive solo dentro .glass-dash: nessun modale fixed qui dentro
-   (su iOS backdrop-filter rompe i figli position:fixed, vedi BodyPortal).
+   Card di vetro smerigliato sopra uno sfondo blu sfocato.
+   Niente modali fixed dentro una .glass-card: su iOS backdrop-filter
+   rompe i figli position:fixed (i modali passano da BodyPortal).
 ═══════════════════════════════════════════════════════════════ */
-.glass-dash {
-  --glass-accent: #F2762E;
+/* Variabili vetro: valgono in tutta l'app */
+:root {
+  --glass-accent: #13315C;
+  --glass-accent-2: #3E7BD6;
   --glass-bg: rgba(255,255,255,0.46);
-  --glass-bg-hover: rgba(255,255,255,0.58);
+  --glass-bg-hover: rgba(255,255,255,0.60);
   --glass-edge: rgba(255,255,255,0.70);
   --glass-sheen: inset 0 1px 0 rgba(255,255,255,0.75);
-  --glass-shadow: 0 10px 40px rgba(60,40,20,0.10), 0 2px 8px rgba(60,40,20,0.06);
-  --glass-shadow-hover: 0 22px 50px rgba(60,40,20,0.16), 0 4px 12px rgba(60,40,20,0.08);
-  position: relative;
-  isolation: isolate;
-  margin: -28px;
-  padding: 28px;
-  min-height: calc(100% + 56px);
+  --glass-shadow: 0 10px 40px rgba(19,49,92,0.10), 0 2px 8px rgba(19,49,92,0.06);
+  --glass-shadow-hover: 0 22px 50px rgba(19,49,92,0.16), 0 4px 12px rgba(19,49,92,0.08);
 }
-.glass-dash::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(40% 45% at 12% 8%,  rgba(242,118,46,0.30) 0%, transparent 70%),
-    radial-gradient(35% 40% at 88% 18%, rgba(217,201,138,0.45) 0%, transparent 70%),
-    radial-gradient(45% 50% at 75% 92%, rgba(19,49,92,0.20) 0%, transparent 70%),
-    radial-gradient(40% 40% at 20% 85%, rgba(205,160,120,0.35) 0%, transparent 70%),
-    linear-gradient(160deg, #efe9e2 0%, #e6e2dc 45%, #dfe3ea 100%);
-}
-html.dark .glass-dash {
-  --glass-bg: rgba(40,36,34,0.45);
-  --glass-bg-hover: rgba(52,46,42,0.55);
+html.dark {
+  --glass-accent: #4a9eff;
+  --glass-accent-2: #4a9eff;
+  --glass-bg: rgba(36,40,52,0.45);
+  --glass-bg-hover: rgba(46,52,68,0.55);
   --glass-edge: rgba(255,255,255,0.10);
   --glass-sheen: inset 0 1px 0 rgba(255,255,255,0.08);
   --glass-shadow: 0 10px 40px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.25);
   --glass-shadow-hover: 0 22px 50px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.30);
 }
-html.dark .glass-dash::before {
-  background:
-    radial-gradient(40% 45% at 12% 8%,  rgba(242,118,46,0.22) 0%, transparent 70%),
-    radial-gradient(35% 40% at 88% 18%, rgba(217,201,138,0.14) 0%, transparent 70%),
-    radial-gradient(45% 50% at 75% 92%, rgba(74,158,255,0.14) 0%, transparent 70%),
-    radial-gradient(40% 40% at 20% 85%, rgba(160,100,60,0.20) 0%, transparent 70%),
-    linear-gradient(160deg, #17130f 0%, #121014 50%, #0e1118 100%);
+
+/* Sfondo sfocato blu dietro le pagine: è quello che fa "leggere" il vetro.
+   Sta sul <main> dei layout; il main scorre, lo sfondo resta fermo. */
+.asm-glass-bg {
+  background-color: #e6ebf3 !important;
+  background-image:
+    radial-gradient(42% 48% at 8% 6%,   rgba(62,123,214,0.30) 0%, transparent 70%),
+    radial-gradient(38% 42% at 92% 14%, rgba(19,49,92,0.22) 0%, transparent 70%),
+    radial-gradient(48% 52% at 78% 96%, rgba(91,155,213,0.30) 0%, transparent 70%),
+    radial-gradient(40% 44% at 18% 88%, rgba(19,49,92,0.14) 0%, transparent 70%) !important;
 }
-@media (max-width: 767px) {
-  .glass-dash { margin: -16px; padding: 16px; min-height: calc(100vh - 60px); }
+html.dark .asm-glass-bg {
+  background-color: #0d1017 !important;
+  background-image:
+    radial-gradient(42% 48% at 8% 6%,   rgba(74,158,255,0.18) 0%, transparent 70%),
+    radial-gradient(38% 42% at 92% 14%, rgba(19,49,92,0.45) 0%, transparent 70%),
+    radial-gradient(48% 52% at 78% 96%, rgba(74,158,255,0.12) 0%, transparent 70%),
+    radial-gradient(40% 44% at 18% 88%, rgba(40,70,140,0.25) 0%, transparent 70%) !important;
 }
+
+/* Dashboard: solo contenitore per l'entrata in sequenza */
+.glass-dash { position: relative; }
 
 .glass-card {
   background: var(--glass-bg);
