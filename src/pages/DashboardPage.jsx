@@ -45,69 +45,121 @@ function getNextWorkday() {
 
 // ── SUB-COMPONENTS ────────────────────────────────────────────────
 
-function KpiCard({ label, value, note, valueColor, isMobile, onClick }) {
-  const { T } = useTheme();
-  const [hover, setHover] = useState(false);
-  const clickable = typeof onClick === "function";
+// Icone stile lucide (tratto 2px), inline per non aggiungere dipendenze
+const ICONS = {
+  folder: <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />,
+  clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
+  check: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>,
+  euro: <><path d="M4 10h12" /><path d="M4 14h9" /><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></>,
+  arrow: <path d="M5 12h14M12 5l7 7-7 7" />,
+};
+
+function Icon({ name, size = 16, color }) {
   return (
-    <div
-      onClick={onClick}
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-      onMouseEnter={() => clickable && setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-      background: T.surface,
-      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
-      border: `1px solid ${hover ? T.borderMd : T.border}`,
-      borderRadius: T.radius,
-      padding: isMobile ? '12px 16px' : '20px 20px',
-      boxShadow: hover ? (T.shadowMd ?? T.shadow) : T.shadow,
-      minWidth: 0,
-      cursor: clickable ? 'pointer' : 'default',
-      transition: 'transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease',
-      transform: hover ? 'translateY(-2px)' : 'none',
-    }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color || "currentColor"}
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICONS[name]}
+    </svg>
+  );
+}
+
+function IconChip({ name, color }) {
+  return (
+    <span className="glass-chip" style={{ background: `color-mix(in srgb, ${color} 16%, transparent)`, color }}>
+      <Icon name={name} size={16} />
+    </span>
+  );
+}
+
+// Anello di avanzamento (come le card obiettivo dello stile "glassy")
+function Ring({ value, size = 56, stroke = 5, color = "var(--glass-accent)" }) {
+  const { T } = useTheme();
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }} aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={T.borderMd} strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)}
+          style={{ transition: 'stroke-dashoffset 0.8s var(--ease-spring)' }} />
+      </svg>
       <div style={{
-        fontFamily: "var(--font-label)",
-        fontSize: 10, letterSpacing: isMobile ? '0.08em' : '0.2em',
-        textTransform: 'uppercase', color: T.muted, marginBottom: 8,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>{label}</div>
-      <div style={{
-        fontSize: isMobile ? 22 : 32, fontWeight: 600,
-        letterSpacing: '-0.03em', lineHeight: 1,
-        color: valueColor || T.ink,
-        fontFamily: "var(--font-ui)",
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>{value}</div>
-      <div style={{
-        fontFamily: "var(--font-label)",
-        fontSize: 10, color: T.muted, marginTop: 6,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      }}>{note}</div>
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size < 50 ? 10 : 12, fontWeight: 600, color: T.ink, fontFamily: "var(--font-ui)",
+      }}>{pct}%</div>
     </div>
   );
 }
 
-function Panel({ title, children, isMobile }) {
+function KpiCard({ label, value, note, valueColor, isMobile, onClick, icon, accent, ring }) {
+  const { T } = useTheme();
+  const clickable = typeof onClick === "function";
+  return (
+    <div
+      className={`glass-card${clickable ? ' glass-lift' : ''}`}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      style={{
+        padding: isMobile ? '14px 14px' : '20px 22px',
+        minWidth: 0,
+        cursor: clickable ? 'pointer' : 'default',
+        display: 'flex', flexDirection: 'column', gap: isMobile ? 10 : 14,
+      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        {icon && <IconChip name={icon} color={accent || T.navy} />}
+        {ring != null && !isMobile
+          ? <Ring value={ring} size={44} stroke={4} />
+          : clickable && <span style={{ color: T.muted, opacity: 0.7 }}><Icon name="arrow" size={14} /></span>}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize: isMobile ? 12 : 13, color: T.muted, marginBottom: 6,
+          fontFamily: "var(--font-ui)",
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{label}</div>
+        <div style={{
+          fontSize: isMobile ? 22 : 30, fontWeight: 700,
+          letterSpacing: '-0.03em', lineHeight: 1,
+          color: valueColor || T.ink,
+          fontFamily: "var(--font-ui)",
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{value}</div>
+        <div style={{
+          fontFamily: "var(--font-label)",
+          fontSize: 10, color: T.muted, marginTop: 8,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{note}</div>
+      </div>
+    </div>
+  );
+}
+
+function Panel({ title, icon, accent, count, children, isMobile }) {
   const { T } = useTheme();
   return (
-    <div style={{
-      background: T.surface,
-      backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm,
-      border: `1px solid ${T.border}`,
-      borderRadius: T.radius,
-      padding: isMobile ? '16px 16px' : '20px 24px',
-      boxShadow: T.shadow,
-    }}>
-      <div style={{
-        fontSize: isMobile ? 12 : 13, fontWeight: 600,
-        letterSpacing: '-0.01em', color: T.ink,
-        marginBottom: 16,
-        fontFamily: "var(--font-ui)",
-      }}>{title}</div>
+    <div className="glass-card" style={{ padding: isMobile ? '16px 16px' : '22px 24px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        {icon && <IconChip name={icon} color={accent || T.navy} />}
+        <div style={{
+          flex: 1, minWidth: 0,
+          fontSize: isMobile ? 14 : 15, fontWeight: 600,
+          letterSpacing: '-0.01em', color: T.ink,
+          fontFamily: "var(--font-ui)",
+        }}>{title}</div>
+        {count > 0 && (
+          <span style={{
+            fontFamily: "var(--font-label)", fontSize: 10, color: T.muted,
+            background: 'var(--glass-bg)', border: '1px solid var(--glass-edge)',
+            borderRadius: 99, padding: '3px 9px',
+          }}>{count}</span>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -133,9 +185,9 @@ function TaskRow({ task, onToggle, overdue }) {
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '8px 0',
-        borderBottom: `0.5px solid ${T.border}`,
+        padding: '10px 0',
       }}
+      className="glass-row"
     >
       {/* Toggle button */}
       <button
@@ -242,6 +294,7 @@ export default function DashboardPage() {
   const [openTasks, setOpenTasks]             = useState(0);
   const [weekHours, setWeekHours]             = useState(0);
   const [creditToCollect, setCreditToCollect] = useState(0);
+  const [incassatoPct, setIncassatoPct]       = useState(null);
 
   const [todayTasks, setTodayTasks]       = useState([]);
   const [overdueTasks, setOverdueTasks]   = useState([]);
@@ -315,6 +368,7 @@ export default function DashboardPage() {
             const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);
             const totalIncassato = Object.values(incassatoMap).reduce((s, v) => s + v, 0);
             setCreditToCollect(totalCommesse - totalIncassato);
+            setIncassatoPct(totalCommesse > 0 ? (totalIncassato / totalCommesse) * 100 : null);
           })(),
 
           // 5. Task di oggi (sempre personali)
@@ -411,7 +465,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{
+      <div className="glass-dash" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         height: 240, fontFamily: "var(--font-label)",
         fontSize: 11, color: T.muted, letterSpacing: '0.1em',
@@ -422,7 +476,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 16 }}>
+    <div className="glass-dash" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? 12 : 18 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
@@ -453,28 +507,33 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 16 }}>
+      <div className="glass-stagger" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? 12 : 18 }}>
         <KpiCard isMobile={isMobile} onClick={() => navigate("/progetti")}
           label={scope === "all" ? "Progetti attivi studio" : "Miei progetti attivi"}
-          value={activeProjects} note="in corso" valueColor={T.ink} />
+          value={activeProjects} note="in corso" valueColor={T.ink}
+          icon="folder" accent={T.navy} />
         <KpiCard isMobile={isMobile} onClick={() => navigate("/timesheet")}
           label="Ore questa settimana"
-          value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.navy} />
+          value={`${formatOre(weekHours)} h`} note="dall'inizio settimana" valueColor={T.ink}
+          icon="clock" accent="var(--glass-accent-2)" />
         <KpiCard isMobile={isMobile} onClick={() => navigate("/scrivania")}
           label={scope === "all" ? "Task da completare studio" : "Miei task aperti"}
-          value={openTasks} note="aperti" valueColor={T.red} />
+          value={openTasks} note="aperti" valueColor={T.red}
+          icon="check" accent={T.red} />
         {permissions.canViewFinancials && (
           <KpiCard isMobile={isMobile} onClick={() => navigate("/proforma")}
             label="Credito da incassare"
-            value={currency(creditToCollect)} note="da commesse - proforma" valueColor={T.green} />
+            value={currency(creditToCollect)}
+            note={incassatoPct != null ? `incassato ${Math.round(incassatoPct)}% delle commesse` : "da commesse - proforma"}
+            valueColor={T.green} icon="euro" accent={T.green} ring={incassatoPct} />
         )}
       </div>
 
       {/* Two columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+      <div className="glass-stagger" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 18 }}>
 
         {/* Task di oggi */}
-        <Panel title="I miei task di oggi" isMobile={isMobile}>
+        <Panel title="I miei task di oggi" icon="sun" accent="var(--glass-accent-2)" count={todayTasks.length} isMobile={isMobile}>
           {todayTasks.length === 0
             ? <EmptyState label="Nessun task per oggi" />
             : todayTasks.map(task => (
@@ -506,7 +565,7 @@ export default function DashboardPage() {
         </Panel>
 
         {/* Task di domani / lunedì */}
-        <Panel title={`Le mie task di ${nextWorkdayLabel}`} isMobile={isMobile}>
+        <Panel title={`Le mie task di ${nextWorkdayLabel}`} icon="calendar" accent={T.navy} count={tomorrowTasks.length} isMobile={isMobile}>
           {tomorrowTasks.length === 0 ? (
             <EmptyState label={`Nessuna task pianificata per ${nextWorkdayLabel.toLowerCase()}`} />
           ) : (
@@ -519,7 +578,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Scadenze pratiche */}
-      <Panel title="Scadenzario pratiche" isMobile={isMobile}>
+      <Panel title="Scadenzario pratiche" icon="calendar" accent={T.navy} count={scadenzePratiche.length} isMobile={isMobile}>
         {scadenzePratiche.length === 0 ? (
           <EmptyState label="Nessuna scadenza impostata" />
         ) : (
@@ -531,11 +590,11 @@ export default function DashboardPage() {
               const warning  = !expired && daysLeft <= 14 && !urgent;
               const color    = expired ? T.red : urgent ? T.red : warning ? '#b45309' : T.muted;
               return (
-                <div key={`${ev.id}-${ev.eventLabel}`}
+                <div key={`${ev.id}-${ev.eventLabel}`} className="glass-row"
                   onClick={() => ev.project_id && navigate(`/progetti/${ev.project_id}`)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 0', borderBottom: `0.5px solid ${T.border}`,
+                    padding: '10px 0',
                     cursor: ev.project_id ? 'pointer' : 'default',
                     opacity: expired ? 0.75 : 1,
                   }}>

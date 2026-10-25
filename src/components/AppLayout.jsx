@@ -717,7 +717,7 @@ export default function AppLayout({ session, children }) {
         </header>
 
         {/* Content */}
-        <main style={{ flex:1, padding:'28px', overflowY:'auto', background:T.bg, transition:'background 0.2s', backgroundImage: isDark ? 'radial-gradient(ellipse at 20% 10%, rgba(74,158,255,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(120,80,220,0.04) 0%, transparent 60%)' : 'radial-gradient(ellipse at 20% 10%, rgba(29,106,255,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(120,80,220,0.04) 0%, transparent 60%)' }}>
+        <main className="asm-glass-bg" style={{ flex:1, padding:'28px', overflowY:'auto' }}>
           {children}
         </main>
       </div>
