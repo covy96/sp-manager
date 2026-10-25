@@ -530,7 +530,7 @@ export default function RegolazioneOffertaPage() {
       </div>
 
       {/* ── Barra salvataggio ──────────────────────────────────────────────── */}
-      <div style={{ position: "sticky", bottom: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "12px 0", background: T.bg }}>
+      <div style={{ position: "sticky", bottom: 12, zIndex: 5, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 12px", background: T.surface, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadowMd }}>
         <button onClick={resetTutto} style={{ background: "none", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, ...mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: T.muted, padding: "10px 16px", cursor: "pointer" }}>Ripristina default</button>
         {dirty && !saving && <span style={{ ...mono, fontSize: 10, color: T.red, marginLeft: "auto" }}>Modifiche non salvate</span>}
         <button onClick={salva} disabled={saving} style={{ background: T.navy, color: T.bg, border: "none", borderRadius: T.radiusSm, ...mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", padding: "10px 28px", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1 }}>
