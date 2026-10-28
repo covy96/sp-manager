@@ -10,12 +10,15 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { formatOre } from "../lib/utils";
+import { ExportCsvModal, ReportFatturaModal, toLocalISO } from "../components/ReportExportModals";
 
 const MONTHS = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const DAYS   = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 
 // ── HELPERS DATE ─────────────────────────────────────────────────
-function toISO(d) { return d.toISOString().slice(0,10); }
+// Data locale: toISOString (UTC) in Italia spostava il range di un giorno
+// (ottobre diventava 30/09 – 30/10)
+function toISO(d) { return toLocalISO(d); }
 
 function getMonthRange(year, month) {
   return { start: toISO(new Date(year,month,1)), end: toISO(new Date(year,month+1,0)) };
@@ -38,11 +41,6 @@ function formatWeekLabel(monday) {
   const sun = new Date(monday); sun.setDate(monday.getDate()+6);
   const fmtShort = d => d.toLocaleDateString('it-IT',{day:'numeric',month:'short'});
   return `${fmtShort(monday)} – ${fmtShort(sun)}`;
-}
-
-function csvEscape(v) {
-  const s = String(v??"");
-  return s.includes(",")||s.includes('"')||s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
 }
 
 // ── UI ────────────────────────────────────────────────────────────
@@ -78,7 +76,7 @@ export default function ReportPage() {
   const monoSt = { fontFamily:"var(--font-label)", fontSize:11 };
   const tooltipSt = { contentStyle:{ background:T.surface, border:`0.5px solid ${T.borderMd}`, borderRadius:0, fontFamily:"var(--font-label)", fontSize:11, color:T.ink }, formatter: v => formatOre(v) };
   const axisSt = { tick:{ fill:T.muted, fontSize:10, fontFamily:"var(--font-label)" }, axisLine:false, tickLine:false };
-  const { studioId, loading:studioLoading } = useStudio();
+  const { studioId, teamMember, loading:studioLoading } = useStudio();
   const permissions = usePermissions();
   const { plan } = usePlan();
   const isMobile = useIsMobile();
@@ -93,6 +91,10 @@ export default function ReportPage() {
 
   // Vista
   const [view, setView] = useState("progetto"); // "progetto" | "cliente" | "utente"
+
+  // Modali export
+  const [showExport, setShowExport]   = useState(false);
+  const [showFattura, setShowFattura] = useState(false);
 
   // Popup barra trend
   const [barPopup, setBarPopup] = useState(null); // { label, users:[{name,hours}], x, y }
@@ -250,16 +252,6 @@ export default function ReportPage() {
     setBarPopup({ label: data.label, users, x: cx, y: cy });
   };
 
-  // ── EXPORT CSV ───────────────────────────────────────────────
-  const exportCsv = () => {
-    const headers=["data","progetto","utente","ore","note"];
-    const lines=[headers.join(","),...rows.map(r=>[csvEscape(r.date),csvEscape(projName(r)),csvEscape(userName(r)),csvEscape(r.hours),csvEscape(r.notes||r.note)].join(","))];
-    const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download=`report-${range.start}-${range.end}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  };
-
   if (!studioLoading && !permissions.canViewReport) return (
     <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:32, textAlign:'center', fontFamily:"var(--font-label)", fontSize:11, color:T.muted }}>Non hai i permessi per accedere a questa sezione.</div>
   );
@@ -284,7 +276,7 @@ export default function ReportPage() {
       <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding: isMobile ? '12px 16px' : '12px 20px', display:'flex', flexDirection:'column', gap:10, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow }}>
 
         {/* Riga 1: toggle + esporta */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
           {/* Toggle mese/settimana */}
           <SlidingTabs
             tabs={[{ key:"month", label:"Mensile" }, { key:"week", label:"Settimanale" }]}
@@ -292,10 +284,15 @@ export default function ReportPage() {
             onChange={setMode}
           />
 
-          {/* Esporta */}
-          <button onClick={exportCsv} style={{ background:T.navy, border:'none', cursor:'pointer', color:T.bg, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase' }}>
-            Esporta CSV
-          </button>
+          {/* Report per fattura + Esporta */}
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end', width: isMobile ? '100%' : 'auto' }}>
+            <button onClick={()=>setShowFattura(true)} style={{ background:T.navyLight, border:`1px solid ${T.navyLight}`, borderRadius:T.radiusSm, cursor:'pointer', color:T.navy, padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', whiteSpace:'nowrap', flex: isMobile ? 1 : 'none' }}>
+              Report per fattura
+            </button>
+            <button onClick={()=>setShowExport(true)} style={{ background:T.navy, border:'none', borderRadius:T.radiusSm, cursor:'pointer', color:'#fff', padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', whiteSpace:'nowrap', flex: isMobile ? 1 : 'none' }}>
+              Esporta CSV
+            </button>
+          </div>
         </div>
 
         {/* Riga 2: navigazione periodo */}
@@ -457,6 +454,19 @@ export default function ReportPage() {
         <div style={{ border:`1px solid ${T.border}`, borderRadius: T.radiusSm, background:T.surface, padding:16, color:T.red, fontFamily:"var(--font-label)", fontSize:11 }}>
           {error}
         </div>
+      )}
+
+      {showFattura && (
+        <ReportFatturaModal studioId={studioId} teamMember={teamMember} projectMap={projectMap} onClose={()=>setShowFattura(false)}/>
+      )}
+      {showExport && (
+        <ExportCsvModal
+          studioId={studioId}
+          projectMap={projectMap}
+          memberMap={memberMap}
+          initial={{ kind: mode, weekRef, year: selectedYear, month: selectedMonth }}
+          onClose={()=>setShowExport(false)}
+        />
       )}
 
       {/* ── POPUP DETTAGLIO BARRA ── */}
