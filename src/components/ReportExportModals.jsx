@@ -141,7 +141,7 @@ export function ReportFatturaModal({ studioId, teamMember, projectMap, onClose }
     let alive = true;
     const { start, end } = monthRange(year, month);
     setLoading(true); setError("");
-    supabase.from("timesheet").select("project_id,project_name,project_client,hours")
+    supabase.from("timesheet").select("*")
       .eq("studio", studioId).eq("team_member", teamMember.id).is("deleted_at", null)
       .gte("date", start).lte("date", end)
       .then(({ data, error: e }) => {
