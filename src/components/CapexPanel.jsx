@@ -216,6 +216,15 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
   };
 
   const toggleAccettato = async (v) => {
+    // Togliere l'accettazione chiede conferma: i pagamenti registrati restano
+    // salvati e ricompaiono se il preventivo viene accettato di nuovo.
+    if (v.accettato) {
+      const nPag = pagamenti.filter(p => p.voce_id === v.id).length;
+      const nome = v.parent_id ? (v.note || "Extra") : (v.fornitore || "questo preventivo");
+      const msg = `Togliere "${nome}" dagli accettati?`
+        + (nPag > 0 ? `\n\nHa ${nPag} pagament${nPag === 1 ? "o registrato" : "i registrati"} (${currency(pagatoByVoce[v.id] || 0)}): non verranno cancellati, ma non saranno conteggiati finché il preventivo non viene accettato di nuovo.` : "");
+      if (!window.confirm(msg)) return;
+    }
     const { error } = await supabase.from("capex_voci").update({ accettato: !v.accettato, updated_at: new Date().toISOString() }).eq("id", v.id);
     if (error) { showToast("Errore: " + error.message); return; }
     setVoci(prev => prev.map(x => x.id === v.id ? { ...x, accettato: !x.accettato } : x));
@@ -485,7 +494,12 @@ export default function CapexPanel({ projectId, studioId, projectName }) {
 
                   {isOpen && (
                     <div style={{ borderTop: `0.5px solid ${T.border}`, padding: '12px', background: T.surface }}>
-                      <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>Registro pagamenti</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+                        <div style={{ ...mono, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted }}>Registro pagamenti</div>
+                        <button onClick={() => toggleAccettato(v)} title="Riporta il preventivo tra quelli non accettati" style={{ border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: 'transparent', color: T.muted, ...mono, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px', cursor: 'pointer', flexShrink: 0 }}>
+                          ↺ Togli da accettati
+                        </button>
+                      </div>
                       {pags.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
                           {pags.map(p => (
