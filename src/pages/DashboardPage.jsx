@@ -359,10 +359,16 @@ export default function DashboardPage() {
             setWeekHours((times || []).reduce((s, t) => s + (Number(t.hours) || 0), 0));
           })(),
 
-          // 4. Credito da incassare (sempre tutto lo studio)
+          // 4. Credito da incassare (sempre tutto lo studio): stesso valore di
+          // "Da incassare" in Statistiche › Commesse, anno corrente
           (async () => {
-            const { data: commesse } = await supabase
-              .from("commesse").select("id, importo_offerta_base").eq("studio", studioId).is("deleted_at", null);
+            const { data: tutte } = await supabase
+              .from("commesse").select("id, importo_offerta_base, data_commessa, created_at").eq("studio", studioId).is("deleted_at", null);
+            const annoCorrente = new Date().getFullYear();
+            const commesse = (tutte || []).filter(c => {
+              const d = c.data_commessa || c.created_at;
+              return d && new Date(d).getFullYear() === annoCorrente;
+            });
             const totalCommesse = (commesse || []).reduce((s, c) => s + (Number(c.importo_offerta_base) || 0), 0);
             const commessaIds = (commesse || []).map(c => c.id);
             const incassatoMap = await calcolaIncassato(commessaIds, studioId, supabase);

@@ -488,7 +488,7 @@ export default function OffertePage() {
       <div style={{ display:'grid', gridTemplateColumns:isMobile ? '1fr 1fr' : 'repeat(5,1fr)', gap: 16 }}>
         {[
           { label:'Totale',      value:totaleAnno,  sub:currency(valTotale),    color:T.ink,   filtro:'tutti'     },
-          { label:'In corso',    value:nOfferte,    sub:currency(valOfferte),   color:T.ink,   filtro:'offerta'   },
+          { label:'In attesa',   value:nOfferte,    sub:currency(valOfferte),   color:T.ink,   filtro:'offerta'   },
           { label:'Accettate',   value:nAccettate,  sub:currency(valAccettate), color:T.green, filtro:'accettata' },
           { label:'Rifiutate',   value:nRifiutate,  sub:currency(valRifiutate), color:T.muted, filtro:'rifiutata' },
           { label:'Tasso accettazione', value: totaleAnno>0?`${Math.round((nAccettate/totaleAnno)*100)}%`:'—', sub:'', color:T.navy, filtro:null },
