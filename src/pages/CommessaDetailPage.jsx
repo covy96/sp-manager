@@ -258,6 +258,7 @@ export default function CommessaDetailPage() {
   const [offertaCollegataId, setOffertaCollegataId] = useState(null); // id offerta collegata (per "Modifica")
   const [showVociPopup, setShowVociPopup] = useState(false);
   const [altreCommesseData, setAltreCommesseData] = useState({});
+  const [altreProforma, setAltreProforma] = useState([]); // proforma delle altre commesse del progetto
 
   const [editProformaModal, setEditProformaModal] = useState(false);
   const [editProformaData, setEditProformaData]   = useState(null);
@@ -358,9 +359,23 @@ export default function CommessaDetailPage() {
         altreData[ac.id] = { suddivisione: rate ?? [], costiExtra: costi ?? [] };
       }
       setAltreCommesseData(altreData);
+      // Proforma delle altre commesse: servono per bloccare voci già fatturate da lì
+      const altreIds = (altreComm ?? []).map(ac => ac.id);
+      if (altreIds.length) {
+        const [{ data: apDirect }, { data: apLinked }] = await Promise.all([
+          supabase.from("proforma").select("id, suddivisione_pagamento_ids, costo_extra_ids").in("commessa_id", altreIds).is("deleted_at", null),
+          supabase.from("proforma").select("id, suddivisione_pagamento_ids, costo_extra_ids").overlaps("commessa_ids", altreIds).is("deleted_at", null),
+        ]);
+        const apMap = new Map();
+        [...(apDirect || []), ...(apLinked || [])].forEach(p => apMap.set(p.id, p));
+        setAltreProforma(Array.from(apMap.values()));
+      } else {
+        setAltreProforma([]);
+      }
     } else {
       setAltreCommesse([]);
       setAltreCommesseData({});
+      setAltreProforma([]);
     }
 
     setLoading(false);
@@ -410,12 +425,19 @@ export default function CommessaDetailPage() {
     return map;
   }, [proforma]);
 
-  const rateGiaUsate = useMemo(() => new Set(Object.keys(proformaPerRata)), [proformaPerRata]);
+  // Voci già in una proforma/fattura, di questa commessa o delle altre del progetto
+  const rateGiaUsate = useMemo(() => new Set([
+    ...Object.keys(proformaPerRata),
+    ...altreProforma.flatMap(p => p.suddivisione_pagamento_ids || []),
+  ]), [proformaPerRata, altreProforma]);
 
   // Business logic rate
   const hasAnyRates  = suddivisione.length > 0;
   const hasPaidRates = suddivisione.some(r => r.pagato);
-  const costiGiaUsati = useMemo(() => new Set(Object.keys(proformaPerCosto)), [proformaPerCosto]);
+  const costiGiaUsati = useMemo(() => new Set([
+    ...Object.keys(proformaPerCosto),
+    ...altreProforma.flatMap(p => p.costo_extra_ids || []),
+  ]), [proformaPerCosto, altreProforma]);
 
   const importoProformaSelezionata = useMemo(() => {
     const fromRate = suddivisione
@@ -1191,12 +1213,13 @@ export default function CommessaDetailPage() {
               <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: '8px 12px', maxHeight: 160, overflowY: 'auto' }}>
                 {suddivisione.map((r, i) => {
                   const imp = r.importo_fisso || (importoBase * (Number(r.percentuale) || 0) / 100);
-                  const used = rateGiaUsate.has(r.id);
+                  const used = r.pagato || rateGiaUsate.has(r.id);
                   return (
                     <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaRateIds.includes(r.id)} disabled={used} onChange={() => setProformaRateIds(p => p.includes(r.id) ? p.filter(x => x !== r.id) : [...p, r.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
                       <span style={{ fontSize: 12, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? ` — ${pct(r.percentuale)}` : ''}</span>
                       <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(imp)}</span>
+                    {used && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: r.pagato ? T.green : T.muted, whiteSpace: 'nowrap' }}>{r.pagato ? '✓ pagata' : 'già in proforma'}</span>}
                     </label>
                   );
                 })}
@@ -1207,12 +1230,13 @@ export default function CommessaDetailPage() {
             <div><FieldLabel>Costi extra da includere</FieldLabel>
               <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusSm, background: T.bg, padding: '8px 12px', maxHeight: 130, overflowY: 'auto' }}>
                 {costiExtra.map(c => {
-                  const used = costiGiaUsati.has(c.id);
+                  const used = c.pagato || costiGiaUsati.has(c.id);
                   return (
                     <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.4 : 1 }}>
                       <input type="checkbox" checked={proformaCostiIds.includes(c.id)} disabled={used} onChange={() => setProformaCostiIds(p => p.includes(c.id) ? p.filter(x => x !== c.id) : [...p, c.id])} style={{ accentColor: T.navy, width: 13, height: 13 }} />
                       <span style={{ fontSize: 12, color: T.ink }}>{c.tipo_costo || '—'}{c.description ? ` — ${c.description}` : ''}</span>
                       <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginLeft: 'auto' }}>{currency(c.importo)}</span>
+                    {used && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: c.pagato ? T.green : T.muted, whiteSpace: 'nowrap' }}>{c.pagato ? '✓ pagato' : 'già in proforma'}</span>}
                     </label>
                   );
                 })}
@@ -1229,7 +1253,7 @@ export default function CommessaDetailPage() {
                 </div>
                 {acData.suddivisione.map(r => {
                   const checked = proformaRateIds.includes(r.id);
-                  const used = rateGiaUsate.has(r.id);
+                  const used = r.pagato || rateGiaUsate.has(r.id);
                   return (
                     <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.5 : 1 }}>
                       <input type="checkbox" checked={checked} disabled={used}
@@ -1238,20 +1262,22 @@ export default function CommessaDetailPage() {
                       <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
                         {r.label || (r.numero_rata != null ? `Rata ${r.numero_rata}` : '—')} — {r.importo_fisso ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(r.importo_fisso) : `${r.percentuale ?? '?'}%`}
                       </span>
+                    {used && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: r.pagato ? T.green : T.muted, whiteSpace: 'nowrap' }}>{r.pagato ? '✓ pagata' : 'già in proforma'}</span>}
                     </label>
                   );
                 })}
                 {acData.costiExtra.map(ce => {
                   const checked = proformaCostiIds.includes(ce.id);
-                  const used = costiGiaUsati.has(ce.id);
+                  const used = ce.pagato || costiGiaUsati.has(ce.id);
                   return (
                     <label key={ce.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', cursor: used ? 'not-allowed' : 'pointer', opacity: used ? 0.5 : 1 }}>
                       <input type="checkbox" checked={checked} disabled={used}
                         onChange={e => setProformaCostiIds(p => e.target.checked ? [...p, ce.id] : p.filter(x => x !== ce.id))}
                         style={{ accentColor: T.navy }} />
                       <span style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.ink }}>
-                        {ce.descrizione} — {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(ce.importo)}
+                        {ce.tipo_costo || '—'}{ce.description ? ` — ${ce.description}` : ''} — {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(ce.importo)}
                       </span>
+                    {used && <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: ce.pagato ? T.green : T.muted, whiteSpace: 'nowrap' }}>{ce.pagato ? '✓ pagato' : 'già in proforma'}</span>}
                     </label>
                   );
                 })}
