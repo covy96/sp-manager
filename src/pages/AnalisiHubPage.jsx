@@ -52,13 +52,13 @@ const PALETTE = [
 
 const OFFERTA_TABS = [
   { key: "tutte",     label: "Tutte"     },
-  { key: "offerta",   label: "In corso"  },
+  { key: "offerta",   label: "In attesa" },
   { key: "accettata", label: "Accettate" },
   { key: "rifiutata", label: "Rifiutate" },
 ];
 
 const STATI = {
-  offerta:   { label: "In corso",  color: "#854d0e", bg: "rgba(253,230,138,0.25)" },
+  offerta:   { label: "In attesa", color: "#854d0e", bg: "rgba(253,230,138,0.25)" },
   accettata: { label: "Accettata", color: "#1a6b3c", bg: "rgba(134,239,172,0.20)" },
   rifiutata: { label: "Rifiutata", color: "#b91c1c", bg: "rgba(252,165,165,0.20)" },
 };
@@ -193,7 +193,7 @@ function TabOfferte({ offerte, commessaByNumero, vociTemplate, T, navigate, anno
         <KpiCard label="Tutte"     value={nTot}              T={T} active={ofTab === "tutte"}     onClick={() => setOfTab("tutte")} />
         <KpiCard label="Accettate" value={nAcc}              T={T} active={ofTab === "accettata"} onClick={() => setOfTab("accettata")} />
         <KpiCard label="Rifiutate" value={nRif}              T={T} active={ofTab === "rifiutata"} onClick={() => setOfTab("rifiutata")} />
-        <KpiCard label="In corso"  value={nCorso}            T={T} active={ofTab === "offerta"}   onClick={() => setOfTab("offerta")} />
+        <KpiCard label="In attesa" value={nCorso}            T={T} active={ofTab === "offerta"}   onClick={() => setOfTab("offerta")} />
         <KpiCard label="Valore"    value={currency(totVal)}  T={T} />
         <KpiCard label="Conv. %"   value={`${pct(nAcc, nTot)}%`} T={T} />
       </div>
@@ -1276,7 +1276,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
 
       {/* Sottotitolo con i conteggi */}
       <div style={{ ...mono, fontSize: 10, color: T.muted }}>
-        {stats.nTot} offerte · <span style={{ color: STATI.accettata.color }}>{stats.nAcc} accettate</span> · <span style={{ color: STATI.rifiutata.color }}>{stats.nRif} rifiutate</span> · <span style={{ color: STATI.offerta.color }}>{stats.nCorso} in corso</span>
+        {stats.nTot} offerte · <span style={{ color: STATI.accettata.color }}>{stats.nAcc} accettate</span> · <span style={{ color: STATI.rifiutata.color }}>{stats.nRif} rifiutate</span> · <span style={{ color: STATI.offerta.color }}>{stats.nCorso} in attesa</span>
       </div>
 
       {/* KPI medie e tassi */}
@@ -1324,7 +1324,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
             ["Offerto (totale)", stats.valTot, stats.nTot, T.ink],
             ["Accettato",        stats.valAcc, stats.nAcc, STATI.accettata.color],
             ["Perso (rifiutate)", stats.valRif, stats.nRif, STATI.rifiutata.color],
-            ["In corso",         stats.valCorso, stats.nCorso, STATI.offerta.color],
+            ["In attesa",        stats.valCorso, stats.nCorso, STATI.offerta.color],
           ].map(([lab, val, n, col], i) => (
             <div key={lab} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderBottom: i < 3 ? `0.5px solid ${T.border}` : "none" }}>
               <div style={{ width: 9, height: 9, borderRadius: "50%", background: col, flexShrink: 0 }} />
@@ -1400,7 +1400,7 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 8 }}>Conversione = accettate / offerte totali del periodo (incluse quelle in corso). I periodi senza offerte non compaiono.</div>
+          <div style={{ ...mono, fontSize: 10, color: T.muted, marginTop: 8 }}>Conversione = accettate / offerte totali del periodo (incluse quelle in attesa). I periodi senza offerte non compaiono.</div>
         </div>
       </Panel>
 

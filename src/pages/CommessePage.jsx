@@ -366,7 +366,7 @@ export default function CommessePage() {
         <div>
           <div style={{fontSize: 26,fontWeight: 700,letterSpacing: '-0.025em',color:T.ink}}>Commesse</div>
           <div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,marginTop:2}}>
-            {commesseFiltrate.length} commesse · {currency(commesseFiltrate.reduce((s,c)=>s+(Number(c.importo_offerta_base)||0),0))} totale offerte
+            {commesseFiltrate.length} commesse attive
           </div>
         </div>
         <div style={{display:'flex',alignItems:'stretch',gap:8,flexWrap:'wrap'}}>
