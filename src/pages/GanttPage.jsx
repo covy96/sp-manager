@@ -21,12 +21,48 @@ const IMPRESA_COLORS = [
   '#92400e','#1e40af','#6b21a8','#0f766e',
 ];
 
+const impKey = v => (v || '').trim();
+
+// Mappa impresa → colore, stabile: parte dai colori già salvati sulle
+// lavorazioni (il più usato per ogni impresa) e assegna alle imprese
+// nuove il primo colore della palette non ancora usato.
+function buildImpresaColorMap(lavorazioni) {
+  const order = [];
+  const counts = {};
+  (lavorazioni || []).forEach(l => {
+    const k = impKey(l.operatore);
+    if (!k) return;
+    if (!counts[k]) { counts[k] = {}; order.push(k); }
+    if (l.colore) counts[k][l.colore] = (counts[k][l.colore] || 0) + 1;
+  });
+  const map = {};
+  const used = new Set();
+  // 1) colori salvati: ogni impresa tiene il suo, senza doppioni tra imprese
+  order.forEach(k => {
+    const ranked = Object.entries(counts[k]).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+    const c = ranked.find(col => !used.has(col));
+    if (c) { map[k] = c; used.add(c); }
+  });
+  // 2) imprese senza colore salvato (o in conflitto): primo colore libero
+  order.forEach(k => { if (!map[k]) colorForImpresa(k, map); });
+  return map;
+}
+
 function colorForImpresa(impresa, map, fallback) {
-  if (!impresa) return fallback || '#13315C';
-  if (map[impresa]) return map[impresa];
-  const idx = Object.keys(map).length % IMPRESA_COLORS.length;
-  map[impresa] = IMPRESA_COLORS[idx];
-  return map[impresa];
+  const k = impKey(impresa);
+  if (!k) return fallback || '#13315C';
+  if (map[k]) return map[k];
+  const used = new Set(Object.values(map));
+  const free = IMPRESA_COLORS.find(c => !used.has(c));
+  map[k] = free || IMPRESA_COLORS[Object.keys(map).length % IMPRESA_COLORS.length];
+  return map[k];
+}
+
+// Colore da mostrare per una lavorazione: sempre quello della sua impresa
+function lavColor(lav, map, fallback) {
+  const k = impKey(lav.operatore);
+  if (k && map[k]) return map[k];
+  return lav.colore || fallback || '#13315C';
 }
 
 // ── DATE HELPERS ──────────────────────────────────────────────────
@@ -170,10 +206,9 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   const W    = totalDays * dayW;
 
   // Mappa colori imprese
-  const cMap = {};
-  valid.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, cMap, '#13315C'); });
-  const getColor = l => l.colore || (l.operatore ? (cMap[l.operatore] || '#13315C') : '#13315C');
-  const uniqueImprese = [...new Set(valid.map(l => l.operatore).filter(Boolean))];
+  const cMap = buildImpresaColorMap(valid);
+  const getColor = l => lavColor(l, cMap, '#13315C');
+  const uniqueImprese = Object.keys(cMap);
 
   const dX = iso => diffDays(chartStart, parseDate(iso)) * dayW;
 
@@ -680,9 +715,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 
   // Mappa impresa → colore (calcolata dai dati)
   const impresaColorMap = useMemo(() => {
-    const map = {};
-    lavorazioni.forEach(l => { if (l.operatore) colorForImpresa(l.operatore, map, T.navy); });
-    return map;
+    return buildImpresaColorMap(lavorazioni);
   }, [lavorazioni]);
 
   // Altezze cumulative righe per allineamento chart
@@ -800,7 +833,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       project_id: project.id,
       version_id: version?.id || null,
       descrizione: newRow.descrizione.trim(),
-      operatore: newRow.operatore || null,
+      operatore: impKey(newRow.operatore) || null,
       data_inizio: dataInizio || null,
       data_fine: newRow.data_fine || null,
       durata_giorni: Number(newRow.durata_giorni) || 7,
@@ -833,6 +866,8 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       updated.durata_giorni = diffDays(lav.data_inizio, value) + 1;
     }
     if (field === 'operatore') {
+      value = impKey(value);
+      updated.operatore = value || null;
       const map = {...impresaColorMap};
       updated.colore = value ? colorForImpresa(value, map, T.navy) : T.navy;
     }
@@ -1128,7 +1163,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           const barX  = dateToX(lav.data_inizio);
           const barW  = Math.max(Number(lav.durata_giorni||1)*dayW, 8);
           const pct   = Number(lav.percentuale_completamento)||0;
-          const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+          const color = lavColor(lav, impresaColorMap, T.navy);
           return (
             <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH,zIndex:4}}>
               <div
@@ -1218,7 +1253,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                 <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
               </div>
               {lavorazioni.map((lav,i)=>{
-                const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+                const color = lavColor(lav, impresaColorMap, T.navy);
                 return (
                   <div key={lav.id} style={{height:getRowH(i),display:'flex',alignItems:'center',gap:6,padding:'0 8px',borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,boxSizing:'border-box'}}>
                     <span style={{width:7,height:7,borderRadius:'50%',background:color,flexShrink:0}}/>
@@ -1239,7 +1274,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           /* ── VISTA TABELLA — card editabili ── */
           <div style={{display:'flex',flexDirection:'column',gap:10}}>
             {lavorazioni.map((lav,i)=>{
-              const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+              const color = lavColor(lav, impresaColorMap, T.navy);
               return (
                 <div key={lav.id} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:T.radius,boxShadow:T.shadow,padding:12,display:'flex',flexDirection:'column',gap:10}}>
                   {/* Riga titolo */}
@@ -1430,7 +1465,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               <div style={{position:'absolute',left:0,right:0,top:(rowDragState.dragOverIdx < lavorazioni.length ? getRowTop(rowDragState.dragOverIdx) : newRowTop)-1,height:2,background:T.navy,zIndex:20,pointerEvents:'none',borderRadius:1}}/>
             )}
             {lavorazioni.map((lav,i)=>{
-              const color = lav.colore || (lav.operatore ? colorForImpresa(lav.operatore, {...impresaColorMap}, T.navy) : T.navy);
+              const color = lavColor(lav, impresaColorMap, T.navy);
               const isDragging = rowDragState?.groupIds?.has(lav.id);
               return (
                 <div key={lav.id}
