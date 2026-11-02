@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from "../lib/supabase";
 import * as XLSX from "xlsx";
+import GanttRegistroModal from "../components/GanttRegistroModal";
 
 const ROW_H       = 44;
 const COL = { drag:20, attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
@@ -706,6 +707,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [onlyChart, setOnlyChart] = useState(() => window.innerWidth < 768);
   const [rowDragState, setRowDragState] = useState(null);
   const [impresaSuggest, setImpresaSuggest] = useState(null); // { rowId: string|'new' }
+  // Registro voci: lavorazioni salvate dallo studio, riusabili in tutti i Gantt
+  const [registro, setRegistro] = useState([]);
+  const [registroError, setRegistroError] = useState(false);
+  const [showRegistro, setShowRegistro] = useState(false);
+  const [voceSuggest, setVoceSuggest] = useState(false);
   const chartRef     = useRef(null);
   const leftRef      = useRef(null);
   const rowDivsRef   = useRef([]);
@@ -768,6 +774,80 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   }, [studioId, project.id, version?.id]);
 
   useEffect(()=>{ loadData(); }, [loadData]);
+
+  const loadRegistro = useCallback(async () => {
+    const { data, error } = await supabase.from("gantt_voci_registro").select("*")
+      .eq("studio", studioId).order("descrizione", { ascending: true });
+    setRegistroError(!!error);
+    setRegistro(error ? [] : (data ?? []));
+  }, [studioId]);
+
+  useEffect(()=>{ loadRegistro(); }, [loadRegistro]);
+
+  // Voci del registro che corrispondono a quanto si sta scrivendo nella nuova riga
+  const voceOptions = useMemo(() => {
+    const q = newRow.descrizione.trim().toLowerCase();
+    if (!q) return [];
+    return registro.filter(v => (v.descrizione||'').toLowerCase().includes(q) && (v.descrizione||'').toLowerCase() !== q).slice(0, 8);
+  }, [registro, newRow.descrizione]);
+
+  const pickVoce = (v) => {
+    setNewRow(p => {
+      const durata = Number(v.durata_giorni) || 7;
+      return { ...p, descrizione: v.descrizione, operatore: v.operatore || p.operatore,
+        durata_giorni: durata, data_fine: toISO(addDays(parseDate(p.data_inizio), durata - 1)) };
+    });
+    setVoceSuggest(false);
+  };
+
+  // Aggiunge al Gantt le voci scelte dal registro
+  const handleAddFromRegistro = async (voci, { startDate, inSequenza }) => {
+    const map = {...impresaColorMap};
+    let start = startDate || toISO(new Date());
+    let prevId = null;
+    let order = lavorazioni.length;
+    for (const v of voci) {
+      const durata = Math.max(1, Number(v.durata_giorni) || 7);
+      const fine = toISO(addDays(parseDate(start), durata - 1));
+      const payload = {
+        studio: studioId,
+        project_id: project.id,
+        version_id: version?.id || null,
+        descrizione: v.descrizione,
+        operatore: v.operatore || null,
+        data_inizio: start,
+        data_fine: fine,
+        durata_giorni: durata,
+        colore: v.operatore ? colorForImpresa(v.operatore, map, T.navy) : T.navy,
+        order: order++,
+        percentuale_completamento: 0,
+        dipendenza_id: inSequenza ? prevId : null,
+      };
+      const { data, error } = await supabase.from("lavorazioni_gantt").insert(payload).select().single();
+      if (error) {
+        showToast("Errore nell'aggiunta di \"" + v.descrizione + "\": " + error.message, "error");
+        await loadData();
+        return false;
+      }
+      prevId = data?.id ?? null;
+      if (inSequenza) start = nextWorkingDay(fine);
+    }
+    showToast(voci.length === 1 ? "Lavorazione aggiunta" : `${voci.length} lavorazioni aggiunte`, "success");
+    await loadData();
+    return true;
+  };
+
+  const registroModal = showRegistro && (
+    <GanttRegistroModal
+      studioId={studioId}
+      registro={registro}
+      registroError={registroError}
+      reloadRegistro={loadRegistro}
+      lavorazioni={lavorazioni}
+      onAdd={handleAddFromRegistro}
+      onClose={() => setShowRegistro(false)}
+    />
+  );
 
   // Misura l'altezza reale di ogni riga dopo il render (per allineamento chart)
   useEffect(() => {
@@ -1241,8 +1321,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             />
             <button onClick={()=>exportExcel(lavorazioni,project.name)} style={mBtn}>Excel</button>
             <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={mBtn}>PDF</button>
+            <button onClick={()=>setShowRegistro(true)} style={{...mBtn,color:T.navy}}>Registro voci</button>
           </div>
         </div>
+        {registroModal}
 
         {onlyChart ? (
           /* ── VISTA GRAFICO — colonna nomi sticky + chart scrollabile ── */
@@ -1349,12 +1431,28 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 
             {/* Card nuova lavorazione */}
             <div style={{background:T.navyLight,border:`1px dashed ${T.borderMd}`,borderRadius:T.radius,padding:12,display:'flex',flexDirection:'column',gap:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,position:'relative'}}>
                 <span style={{width:10,height:10,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
                 <input value={newRow.descrizione}
-                  onChange={e=>setNewRow(p=>({...p,descrizione:e.target.value}))}
+                  onChange={e=>{setNewRow(p=>({...p,descrizione:e.target.value}));setVoceSuggest(true);}}
+                  onFocus={()=>setVoceSuggest(true)}
+                  onBlur={()=>setTimeout(()=>setVoceSuggest(false),150)}
                   placeholder="+ Nuova lavorazione..."
                   style={{flex:1,minWidth:0,border:'none',background:'transparent',color:T.ink,fontSize:15,fontWeight:600,fontFamily:"var(--font-ui)",outline:'none',padding:0}}/>
+                {voceSuggest && voceOptions.length>0 && (
+                  <div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:1000,marginTop:2,background:T.glassBg,border:`0.5px solid ${T.borderMd}`,borderRadius:8,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:220,maxHeight:220,overflowY:'auto'}}>
+                    <div style={{padding:'6px 10px 2px',fontFamily:"var(--font-label)",fontSize:9,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Dal registro</div>
+                    {voceOptions.map(v=>(
+                      <div key={v.id} onMouseDown={e=>{e.preventDefault();pickVoce(v);}}
+                        style={{padding:'10px 12px',cursor:'pointer',color:T.ink,fontFamily:"var(--font-ui)",fontSize:13,display:'flex',justifyContent:'space-between',gap:8}}
+                        onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
+                        onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                        <span style={{fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.descrizione}</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,whiteSpace:'nowrap'}}>{[v.operatore,`${v.durata_giorni||7} gg`].filter(Boolean).join(' · ')}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                 <div style={{position:'relative'}}>
@@ -1416,6 +1514,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
+      {registroModal}
 
       {/* Toolbar */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
@@ -1426,6 +1525,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           {project.client&&<div style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted}}>{project.client}</div>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {/* Registro voci */}
+          <button onClick={()=>setShowRegistro(true)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.navy,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+            Registro voci
+          </button>
           {/* Export */}
           <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
@@ -1554,13 +1657,29 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               {/* Drag handle vuoto */}
               <div style={{borderRight:`0.5px solid ${T.border}`}}/>
               {/* Descrizione */}
-              <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`}}>
+              <div style={{padding:'0 8px',display:'flex',alignItems:'center',gap:6,borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:T.muted,flexShrink:0}}/>
                 <input value={newRow.descrizione}
-                  onChange={e=>setNewRow(p=>({...p,descrizione:e.target.value}))}
-                  onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); handleSaveNew(); } }}
+                  onChange={e=>{setNewRow(p=>({...p,descrizione:e.target.value}));setVoceSuggest(true);}}
+                  onFocus={()=>setVoceSuggest(true)}
+                  onBlur={()=>setTimeout(()=>setVoceSuggest(false),150)}
+                  onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); setVoceSuggest(false); handleSaveNew(); } }}
                   placeholder="+ Nuova lavorazione..."
                   style={{...inputSt,fontSize:12,fontFamily:"var(--font-ui)",color:T.muted}}/>
+                {voceSuggest && voceOptions.length>0 && (
+                  <div style={{position:'absolute',top:'100%',left:0,right:0,zIndex:1000,marginTop:2,background:T.glassBg,border:`0.5px solid ${T.borderMd}`,borderRadius:8,boxShadow:'0 4px 12px rgba(0,0,0,0.12)',minWidth:220,maxHeight:220,overflowY:'auto'}}>
+                    <div style={{padding:'6px 10px 2px',fontFamily:"var(--font-label)",fontSize:9,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Dal registro</div>
+                    {voceOptions.map(v=>(
+                      <div key={v.id} onMouseDown={e=>{e.preventDefault();pickVoce(v);}}
+                        style={{padding:'7px 10px',cursor:'pointer',color:T.ink,fontFamily:"var(--font-ui)",fontSize:11,display:'flex',justifyContent:'space-between',gap:8}}
+                        onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
+                        onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                        <span style={{fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.descrizione}</span>
+                        <span style={{fontFamily:"var(--font-label)",fontSize:10,color:T.muted,whiteSpace:'nowrap'}}>{[v.operatore,`${v.durata_giorni||7} gg`].filter(Boolean).join(' · ')}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {/* Impresa nuova riga — autocomplete custom */}
               <div style={{padding:'0 6px',display:'flex',alignItems:'center',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
