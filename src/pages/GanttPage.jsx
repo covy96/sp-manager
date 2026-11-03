@@ -8,6 +8,32 @@ import { useToast } from '../contexts/ToastContext';
 import { supabase } from "../lib/supabase";
 import * as XLSX from "xlsx";
 import GanttRegistroModal from "../components/GanttRegistroModal";
+import BodyPortal from "../components/BodyPortal";
+
+// Riposiziona le lavorazioni indicate in base alla data di inizio: ognuna va
+// subito prima della prima voce che inizia dopo di lei. Le altre restano
+// nell'ordine attuale (così il riordino manuale tra voci non toccate resta).
+function placeByDate(list, movedIds) {
+  const moved = new Set(movedIds);
+  const rest = list.filter(l => !moved.has(l.id));
+  const toPlace = list.filter(l => moved.has(l.id))
+    .sort((a, b) => (a.data_inizio || '9999').localeCompare(b.data_inizio || '9999'));
+  for (const m of toPlace) {
+    let idx = m.data_inizio ? rest.findIndex(l => l.data_inizio && l.data_inizio > m.data_inizio) : -1;
+    if (idx < 0) idx = rest.length;
+    rest.splice(idx, 0, m);
+  }
+  return rest.map((l, i) => ({ ...l, order: i }));
+}
+
+// Id della lavorazione e di tutte quelle che ne dipendono (anche indirettamente)
+function withDependents(id, list) {
+  const out = [id];
+  for (let k = 0; k < out.length; k++) {
+    list.forEach(l => { if (l.dipendenza_id === out[k] && !out.includes(l.id)) out.push(l.id); });
+  }
+  return out;
+}
 
 const ROW_H       = 44;
 const COL = { drag:20, attivita:160, impresa:90, dipende:90, inizio:95, fine:95, durata:55, del:30 };
@@ -713,6 +739,10 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [showRegistro, setShowRegistro] = useState(false);
   const [voceSuggest, setVoceSuggest] = useState(false);
   const chartRef     = useRef(null);
+  // Scorrimento verticale sincronizzato: si scorre sia dall'elenco sia dal grafico
+  const syncScroll = (from, to) => {
+    if (from && to && Math.abs(to.scrollTop - from.scrollTop) > 1) to.scrollTop = from.scrollTop;
+  };
   const leftRef      = useRef(null);
   const rowDivsRef   = useRef([]);
   const [measuredHeights, setMeasuredHeights] = useState([]);
@@ -763,17 +793,55 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     });
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (reposition) => {
     const q = supabase.from("lavorazioni_gantt").select("*")
       .eq("studio", studioId).eq("project_id", project.id)
       .is("deleted_at", null);
     if (version?.id) q.eq("version_id", version.id);
     const { data } = await q.order("order", {ascending:true});
-    setLavorazioni(data??[]);
+    let list = data ?? [];
+    // Le voci con date nuove/cambiate si spostano da sole nella posizione giusta
+    const ids = (typeof reposition === 'function' ? reposition(list) : reposition) || [];
+    if (ids.length) {
+      const sorted = placeByDate(list, ids);
+      const prevOrder = Object.fromEntries(list.map(l => [l.id, l.order]));
+      const changed = sorted.filter(l => prevOrder[l.id] !== l.order);
+      list = sorted;
+      if (changed.length) {
+        await Promise.all(changed.map(l =>
+          supabase.from('lavorazioni_gantt').update({ order: l.order }).eq('id', l.id)
+        ));
+      }
+    }
+    setLavorazioni(list);
     setLoading(false);
   }, [studioId, project.id, version?.id]);
 
   useEffect(()=>{ loadData(); }, [loadData]);
+
+  // Tooltip delle barre: al passaggio del mouse (desktop) o al tocco (mobile)
+  const [barTip, setBarTip] = useState(null); // { id, x, y, pinned }
+  const tipRef = useRef(null);
+  const tipPos = (x, y) => {
+    const w = 260, vw = window.innerWidth;
+    const left = Math.max(8, Math.min(x + 14, vw - w - 8));
+    const top = y > 140 ? y - 12 : y + 24;
+    return { left, top, transform: y > 140 ? 'translateY(-100%)' : 'none' };
+  };
+  // Segue il mouse senza ri-renderizzare tutto il grafico
+  const placeTip = (x, y) => {
+    const el = tipRef.current; if (!el) return;
+    const p = tipPos(x, y);
+    el.style.left = p.left + 'px'; el.style.top = p.top + 'px'; el.style.transform = p.transform;
+  };
+  useEffect(() => {
+    if (!barTip?.pinned) return;
+    const t = setTimeout(() => setBarTip(null), 4000);
+    const close = () => setBarTip(null);
+    document.addEventListener('pointerdown', close);
+    window.addEventListener('scroll', close, true);
+    return () => { clearTimeout(t); document.removeEventListener('pointerdown', close); window.removeEventListener('scroll', close, true); };
+  }, [barTip?.pinned, barTip?.id, barTip?.x]);
 
   const loadRegistro = useCallback(async () => {
     const { data, error } = await supabase.from("gantt_voci_registro").select("*")
@@ -806,6 +874,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     let start = startDate || toISO(new Date());
     let prevId = null;
     let order = lavorazioni.length;
+    const addedIds = [];
     for (const v of voci) {
       const durata = Math.max(1, Number(v.durata_giorni) || 7);
       const fine = toISO(addDays(parseDate(start), durata - 1));
@@ -830,10 +899,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         return false;
       }
       prevId = data?.id ?? null;
+      if (prevId) addedIds.push(prevId);
       if (inSequenza) start = nextWorkingDay(fine);
     }
     showToast(voci.length === 1 ? "Lavorazione aggiunta" : `${voci.length} lavorazioni aggiunte`, "success");
-    await loadData();
+    await loadData(addedIds);
     return true;
   };
 
@@ -849,8 +919,9 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     />
   );
 
-  // Misura l'altezza reale di ogni riga dopo il render (per allineamento chart)
-  useEffect(() => {
+  // Misura l'altezza reale di ogni riga dopo il render (per allineamento chart).
+  // Le voci lunghe vanno a capo: la riga cresce e la barra resta allineata.
+  const measureRows = useCallback(() => {
     rowDivsRef.current.forEach(div => {
       if (!div) return;
       const ta = div.querySelector('textarea.desc-ta');
@@ -866,6 +937,16 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       prev.length === heights.length && heights.every((h, i) => h === prev[i]) ? prev : heights
     );
   }, [lavorazioni]);
+
+  useEffect(() => {
+    measureRows();
+    // Rimisura quando cambia la larghezza o finiscono di caricare i font
+    let raf = 0;
+    const again = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measureRows); };
+    document.fonts?.ready?.then(again);
+    window.addEventListener('resize', again);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', again); };
+  }, [measureRows, onlyChart, isMobile]);
 
   // Range: la settimana prima della lavorazione più antica (o 2 settimane fa se non ci sono dati)
   const startDate = useMemo(() => {
@@ -922,12 +1003,12 @@ function ProjectGantt({ project, studioId, onBack, version }) {
       percentuale_completamento: 0,
       dipendenza_id: newRow.dipendenza_id || null,
     };
-    const { error } = await supabase.from("lavorazioni_gantt").insert(payload).select();
+    const { data: inserted, error } = await supabase.from("lavorazioni_gantt").insert(payload).select().single();
     if (error) {
       showToast("Errore nel salvataggio della lavorazione: " + error.message, "error");
     } else {
       setNewRow({ descrizione:'', operatore:'', dipendenza_id:'', data_inizio: toISO(new Date()), data_fine: toISO(addDays(new Date(), 6)), durata_giorni:7 });
-      await loadData();
+      await loadData(inserted?.id ? [inserted.id] : []);
     }
     setSavingNew(false);
   };
@@ -977,6 +1058,12 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         }
       };
       await propagate(lav.id, updated.data_fine);
+      // Riposiziona per data la voce (se è cambiato l'inizio) e le sue dipendenti
+      await loadData(list => {
+        const ids = withDependents(lav.id, list);
+        return field === 'data_inizio' ? ids : ids.slice(1);
+      });
+      return;
     }
 
     await loadData();
@@ -1091,7 +1178,11 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           }
         };
         await propagate(lav.id, delta);
-        loadData();
+        setBarTip(null);
+        loadData(list => withDependents(lav.id, list));
+      } else if (Math.abs(ev.clientX - startX) < 6) {
+        // Tocco senza trascinare: mostra che voce è
+        setBarTip({ id: lav.id, x: ev.clientX, y: ev.clientY, pinned: ev.pointerType !== 'mouse' });
       }
     };
     document.addEventListener("pointermove",onMove);
@@ -1124,7 +1215,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           supabase.from("lavorazioni_gantt").update({data_inizio:u.data_inizio, data_fine:u.data_fine}).eq("id", u.id)
         ));
       }
-      loadData();
+      loadData(Object.keys(updates));
     };
     document.addEventListener("pointermove",onMove);
     document.addEventListener("pointerup",onUp);
@@ -1248,6 +1339,9 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             <div key={lav.id} style={{position:'absolute',top:rTop,left:0,right:0,height:rH,zIndex:4}}>
               <div
                 onPointerDown={e=>onBarMouseDown(e,lav)}
+                onPointerEnter={e=>{ if(e.pointerType==='mouse') setBarTip({id:lav.id,x:e.clientX,y:e.clientY}); }}
+                onPointerMove={e=>{ if(e.pointerType==='mouse') placeTip(e.clientX,e.clientY); }}
+                onPointerLeave={e=>{ if(e.pointerType==='mouse') setBarTip(t=>t&&t.id===lav.id&&!t.pinned?null:t); }}
                 style={{
                   position:'absolute', left:barX, top:rH*0.18, height:rH*0.64,
                   width:barW, background:color, cursor:'grab', borderRadius:4,
@@ -1257,12 +1351,6 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               >
                 {/* Progress */}
                 <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${pct}%`,background:'rgba(255,255,255,0.3)',pointerEvents:'none'}}/>
-                {/* Label */}
-                {barW>60&&(
-                  <div style={{position:'absolute',left:8,top:0,height:'100%',display:'flex',alignItems:'center',fontFamily:"var(--font-ui)",fontSize:12,fontWeight:600,color:'white',whiteSpace:'nowrap',pointerEvents:'none',maxWidth:barW-24,overflow:'hidden',textOverflow:'ellipsis'}}>
-                    {lav.descrizione}
-                  </div>
-                )}
                 {/* Date sotto la barra */}
                 <div style={{position:'absolute',top:'100%',left:0,marginTop:2,fontFamily:"var(--font-label)",fontSize:10,color:T.muted,whiteSpace:'nowrap',pointerEvents:'none'}}>
                   {fmtDate(lav.data_inizio)} → {fmtDate(lav.data_fine)}
@@ -1273,6 +1361,29 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             </div>
           );
         })}
+
+        {/* Tooltip barra: che voce è */}
+        {barTip && (()=>{
+          const lav = lavorazioni.find(l=>l.id===barTip.id);
+          if (!lav) return null;
+          const color = lavColor(lav, impresaColorMap, T.navy);
+          const pct = Number(lav.percentuale_completamento)||0;
+          return (
+            <BodyPortal>
+              <div ref={tipRef} style={{position:'fixed',...tipPos(barTip.x,barTip.y),zIndex:3000,width:'max-content',maxWidth:260,pointerEvents:'none',
+                background:T.glassBg,border:`0.5px solid ${T.borderMd}`,borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,0.18)',padding:'9px 11px',fontFamily:"var(--font-ui)"}}>
+                <div style={{display:'flex',gap:7,alignItems:'flex-start'}}>
+                  <span style={{width:8,height:8,borderRadius:'50%',background:color,flexShrink:0,marginTop:5}}/>
+                  <span style={{fontSize:13,fontWeight:600,color:T.ink,lineHeight:1.35,whiteSpace:'normal',overflowWrap:'anywhere'}}>{lav.descrizione||'—'}</span>
+                </div>
+                <div style={{marginTop:4,paddingLeft:15,fontFamily:"var(--font-label)",fontSize:10,color:T.muted,lineHeight:1.5}}>
+                  {lav.operatore&&<div>{lav.operatore}</div>}
+                  <div>{fmtDate(lav.data_inizio)} → {fmtDate(lav.data_fine)} · {lav.durata_giorni} gg{pct?` · ${pct}%`:''}</div>
+                </div>
+              </div>
+            </BodyPortal>
+          );
+        })()}
 
         {/* Riga nuova — preview barra */}
         <div style={{position:'absolute',top:newRowTop,left:0,right:0,height:ROW_H,background:`${T.navyLight}cc`}}>
@@ -1289,7 +1400,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   // LAYOUT MOBILE — toolbar compatta + toggle Grafico / Tabella
   // ══════════════════════════════════════════════════════════════════
   if (isMobile) {
-    const NAME_W = 116;
+    const NAME_W = 132;
     const mBtn = {background:'none',border:`0.5px solid ${T.borderMd}`,borderRadius:T.radiusSm,cursor:'pointer',color:T.muted,padding:'7px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.06em',textTransform:'uppercase',minHeight:36,whiteSpace:'nowrap'};
     const mLabel = {fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted,marginBottom:4,display:'block'};
     const mInput = {width:'100%',boxSizing:'border-box',padding:'9px 10px',border:`1px solid ${T.border}`,borderRadius:8,background:T.surface2,color:T.ink,fontSize:13,fontFamily:"var(--font-label)",outline:'none'};
@@ -1330,24 +1441,26 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           /* ── VISTA GRAFICO — colonna nomi sticky + chart scrollabile ── */
           <div style={{display:'flex',border:`1px solid ${T.border}`,borderRadius:T.radiusSm,background:T.surface,height:'70vh',minHeight:360,overflow:'hidden'}}>
             {/* Colonna nomi (sincronizzata) */}
-            <div ref={leftRef} style={{width:NAME_W,flexShrink:0,overflowY:'hidden',borderRight:`0.5px solid ${T.border}`,position:'relative'}}>
+            <div ref={leftRef} className="no-scrollbar" onScroll={e=>syncScroll(e.currentTarget, chartRef.current)} style={{width:NAME_W,flexShrink:0,overflowY:'auto',overflowX:'hidden',borderRight:`0.5px solid ${T.border}`,position:'relative',overscrollBehavior:'contain'}}>
               <div style={{height:52,position:'sticky',top:0,zIndex:11,background:T.bg,borderBottom:`0.5px solid ${T.border}`,display:'flex',alignItems:'flex-end',padding:'0 8px 6px',boxSizing:'border-box'}}>
                 <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
               </div>
               {lavorazioni.map((lav,i)=>{
                 const color = lavColor(lav, impresaColorMap, T.navy);
                 return (
-                  <div key={lav.id} style={{height:getRowH(i),display:'flex',alignItems:'center',gap:6,padding:'0 8px',borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,boxSizing:'border-box'}}>
+                  <div key={lav.id} ref={el => { rowDivsRef.current[i] = el; }}
+                    style={{minHeight:ROW_H,display:'flex',alignItems:'center',gap:6,padding:'6px 8px',borderBottom:`0.5px solid ${T.border}`,background:i%2===0?T.surface:T.surface2,boxSizing:'border-box'}}>
                     <span style={{width:7,height:7,borderRadius:'50%',background:color,flexShrink:0}}/>
-                    <span style={{fontSize:11,fontWeight:600,color:T.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:"var(--font-ui)"}}>{lav.descrizione||'—'}</span>
+                    <span style={{fontSize:11,fontWeight:600,color:T.ink,lineHeight:1.3,whiteSpace:'normal',overflowWrap:'anywhere',fontFamily:"var(--font-ui)"}}>{lav.descrizione||'—'}</span>
                   </div>
                 );
               })}
               <div style={{height:ROW_H,borderBottom:`0.5px solid ${T.border}`,background:T.navyLight}}/>
+              <div style={{height:Math.max(0,totalH-newRowTop-ROW_H)+8}}/>
             </div>
             {/* Chart */}
             <div ref={chartRef}
-              onScroll={e=>{ if(leftRef.current) leftRef.current.scrollTop=e.target.scrollTop; }}
+              onScroll={e=>syncScroll(e.currentTarget, leftRef.current)}
               style={{flex:1,minWidth:0,overflowX:'auto',overflowY:'auto',position:'relative'}}>
               {chartBody}
             </div>
@@ -1562,7 +1675,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             ))}
           </div>
           {/* Righe */}
-          <div ref={leftRef} style={{flex:1,overflowY:'hidden',position:'relative'}}>
+          <div ref={leftRef} className="no-scrollbar" onScroll={e=>syncScroll(e.currentTarget, chartRef.current)} style={{flex:1,overflowY:'auto',overflowX:'hidden',position:'relative',overscrollBehavior:'contain'}}>
             {/* Linea di inserimento durante il drag */}
             {rowDragState && (
               <div style={{position:'absolute',left:0,right:0,top:(rowDragState.dragOverIdx < lavorazioni.length ? getRowTop(rowDragState.dragOverIdx) : newRowTop)-1,height:2,background:T.navy,zIndex:20,pointerEvents:'none',borderRadius:1}}/>
@@ -1740,13 +1853,15 @@ function ProjectGantt({ project, studioId, onBack, version }) {
                   style={{background:T.navy,border:'none',cursor:'pointer',color:T.bg,width:22,height:22,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',borderRadius:2,opacity:savingNew||!newRow.descrizione.trim()?0.4:1}}>+</button>
               </div>
             </div>
+            {/* Spazio in fondo: l'elenco può scorrere quanto il grafico */}
+            <div style={{height:Math.max(0,totalH-newRowTop-ROW_H)+12}}/>
           </div>
         </div>
         )}
 
         {/* RIGHT — chart */}
         <div ref={chartRef}
-          onScroll={e=>{ if(leftRef.current) leftRef.current.scrollTop=e.target.scrollTop; }}
+          onScroll={e=>syncScroll(e.currentTarget, leftRef.current)}
           style={{flex:1,overflowX:'auto',overflowY:'auto',position:'relative'}}>
           {chartBody}
         </div>
