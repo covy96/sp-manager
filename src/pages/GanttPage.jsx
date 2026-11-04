@@ -40,6 +40,7 @@ const COL = { drag:20, attivita:160, impresa:90, dipende:90, inizio:95, fine:95,
 const LEFT_W = Object.values(COL).reduce((s,v)=>s+v, 0); // = 635
 const DAY_W_WEEK  = 28;
 const DAY_W_MONTH = 12;
+const HDR_H = 72; // altezza header calendario: mesi 26 + n° settimana 20 + giorni 26
 
 // Colori per impresa — assegnati automaticamente
 const IMPRESA_COLORS = [
@@ -119,6 +120,13 @@ function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('it-IT',{day:'numeric',month:'short'});
 }
+// Numero settimana ISO 8601 (lunedì primo giorno, settimana 1 = quella con il primo giovedì)
+function getISOWeek(d) {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7)); // giovedì della stessa settimana
+  const jan4 = new Date(date.getFullYear(), 0, 4);
+  return 1 + Math.round(((date - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
+}
 function getMondayOf(d) {
   const date = d instanceof Date ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : new Date(d);
   const day = date.getDay();
@@ -177,12 +185,12 @@ function buildTimeHeaders(startDate, totalDays, dayW) {
       curMonth=mKey; curMonthStart=i;
     }
     if (wKey!==curWeek) {
-      if (curWeek!==null) weeks.push({label:curWeek, width:(i-curWeekStart)*dayW, date:addDays(startDate,curWeekStart)});
+      if (curWeek!==null) { const wd=addDays(startDate,curWeekStart); weeks.push({label:curWeek, width:(i-curWeekStart)*dayW, date:wd, num:getISOWeek(wd)}); }
       curWeek=wKey; curWeekStart=i;
     }
   }
   months.push({label:curMonth, width:(totalDays-curMonthStart)*dayW});
-  weeks.push({label:curWeek, width:(totalDays-curWeekStart)*dayW, date:addDays(startDate,curWeekStart)});
+  { const wd=addDays(startDate,curWeekStart); weeks.push({label:curWeek, width:(totalDays-curWeekStart)*dayW, date:wd, num:getISOWeek(wd)}); }
   return {months, weeks};
 }
 
@@ -275,7 +283,7 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
     for (let i = 0; i < totalDays; i++) {
       const d = addDays(chartStart, i);
       if (d.getDay() === 1 || i === 0) {
-        weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="var(--font-label)" font-size="9" fill="#999">${d.getDate()}</text>`;
+        weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="var(--font-label)" font-size="9" fill="#999"><tspan font-weight="700" fill="#13315C">S${getISOWeek(d)}</tspan> · ${d.getDate()}</text>`;
       }
     }
   }
@@ -1234,7 +1242,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     <div style={{width:totalW,minWidth:'100%',position:'relative'}}>
 
       {/* Header temporale sticky */}
-      <div style={{height:52,position:'sticky',top:0,zIndex:10,background:T.bg,borderBottom:`0.5px solid ${T.border}`}}>
+      <div style={{height:HDR_H,position:'sticky',top:0,zIndex:10,background:T.bg,borderBottom:`0.5px solid ${T.border}`}}>
         {/* Mesi */}
         <div style={{height:26,display:'flex',borderBottom:`0.5px solid ${T.border}`}}>
           {timeHeaders.months.map((m,i)=>{
@@ -1246,6 +1254,18 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               </div>
             );
           })}
+        </div>
+        {/* Numero settimana (ISO) */}
+        <div style={{height:20,display:'flex',borderBottom:`0.5px solid ${T.border}`}}>
+          {timeHeaders.weeks.map((w,i)=>(
+            <div key={i} title={`Settimana ${w.num}`} style={{width:w.width,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',borderRight:`0.5px solid ${T.border}`,overflow:'hidden',background:T.bg}}>
+              {w.width>=18 && (
+                <span style={{fontFamily:"var(--font-label)",fontSize:9,fontWeight:600,letterSpacing:'0.04em',color:T.ink,whiteSpace:'nowrap'}}>
+                  {w.width>=40?`SETT. ${w.num}`:w.num}
+                </span>
+              )}
+            </div>
+          ))}
         </div>
         {/* Settimane */}
         <div style={{height:26,display:'flex'}}>
@@ -1442,7 +1462,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           <div style={{display:'flex',border:`1px solid ${T.border}`,borderRadius:T.radiusSm,background:T.surface,height:'70vh',minHeight:360,overflow:'hidden'}}>
             {/* Colonna nomi (sincronizzata) */}
             <div ref={leftRef} className="no-scrollbar" onScroll={e=>syncScroll(e.currentTarget, chartRef.current)} style={{width:NAME_W,flexShrink:0,overflowY:'auto',overflowX:'hidden',borderRight:`0.5px solid ${T.border}`,position:'relative',overscrollBehavior:'contain'}}>
-              <div style={{height:52,position:'sticky',top:0,zIndex:11,background:T.bg,borderBottom:`0.5px solid ${T.border}`,display:'flex',alignItems:'flex-end',padding:'0 8px 6px',boxSizing:'border-box'}}>
+              <div style={{height:HDR_H,position:'sticky',top:0,zIndex:11,background:T.bg,borderBottom:`0.5px solid ${T.border}`,display:'flex',alignItems:'flex-end',padding:'0 8px 6px',boxSizing:'border-box'}}>
                 <span style={{fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',color:T.muted}}>Lavorazione</span>
               </div>
               {lavorazioni.map((lav,i)=>{
@@ -1669,7 +1689,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
         {!onlyChart && (
         <div style={{width:LEFT_W,flexShrink:0,borderRight:`0.5px solid ${T.border}`,display:'flex',flexDirection:'column'}}>
           {/* Header colonne */}
-          <div style={{height:52,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
+          <div style={{height:HDR_H,borderBottom:`0.5px solid ${T.border}`,display:'grid',gridTemplateColumns:`${COL.drag}px ${COL.attivita}px ${COL.impresa}px ${COL.dipende}px ${COL.inizio}px ${COL.fine}px ${COL.durata}px ${COL.del}px`,background:T.bg,flexShrink:0}}>
             {['','Attività','Impresa','Dipende da','Inizio','Fine','Durata',''].map((h,i)=>(
               <div key={i} style={{padding:'0 10px',display:'flex',alignItems:'center',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.2em',textTransform:'uppercase',color:T.muted,borderRight:i<7?`0.5px solid ${T.border}`:'none'}}>{h}</div>
             ))}
