@@ -334,6 +334,14 @@ export const MODALITA_PAGAMENTO = [
   { id: "C", testo: testoRateC(RATE_C_DEFAULT), rate: true },
 ];
 
+// Testo di un'opzione di pagamento (A/B) nel documento: usa il testo scritto
+// nella compilazione dell'offerta (pagamento.testi[id]) se presente, altrimenti
+// quello di base del template.
+export function testoOpzionePagamento(o, pagamento) {
+  const t = pagamento?.testi?.[o.id];
+  return (typeof t === "string" && t.trim()) ? t : o.testo;
+}
+
 export const PAGAMENTO_CHIUSURA = "Pagamenti per rimessa diretta a mezzo di bonifico bancario o assegno bancario.";
 
 // ── Testi di contorno ────────────────────────────────────────────────────────

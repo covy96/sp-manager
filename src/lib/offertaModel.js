@@ -111,7 +111,7 @@ export function documentoDefault(offerta = {}, tpl = DEFAULT_TEMPLATE) {
     inquadramento: { attivo: !!DEFAULTS.inquadramentoAttivo, campi: campiVuoti(INQUADRAMENTO.testo), testoLibero: "" },
     sezioni,
     blocchi,
-    pagamento: { opzioni: [...(DEFAULTS.opzioniPagamento || [])], testoLibero: "", rateC: RATE_C_DEFAULT.map(r => ({ ...r })) },
+    pagamento: { opzioni: [...(DEFAULTS.opzioniPagamento || [])], testoLibero: "", testi: {}, rateC: RATE_C_DEFAULT.map(r => ({ ...r })) },
     sconto: Number(offerta.sconto) || 0,
     scontoFisso: Number(offerta.sconto_fisso) || 0,
   };
