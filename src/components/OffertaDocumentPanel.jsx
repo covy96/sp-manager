@@ -5,7 +5,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useEscKey } from "../hooks/useEscKey";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import {
-  resolveTemplate, estraiCampi, compilaTesto,
+  resolveTemplate, estraiCampi, compilaTesto, testoOpzionePagamento,
 } from "../lib/offertaTemplate";
 import {
   normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
@@ -218,6 +218,13 @@ export default function OffertaDocumentPanel({
   const togglePagamento = (oid) => setDoc(d => {
     const cur = d.pagamento.opzioni || [];
     return { ...d, pagamento: { ...d.pagamento, opzioni: cur.includes(oid) ? cur.filter(x => x !== oid) : [...cur, oid] } };
+  });
+  // Testo modificato di un'opzione A/B: salvato in pagamento.testi[id]; se
+  // torna uguale al testo di base viene rimosso (così segue i default).
+  const setTestoOpzione = (oid, testo, base) => setDoc(d => {
+    const testi = { ...(d.pagamento.testi || {}) };
+    if (testo === base) delete testi[oid]; else testi[oid] = testo;
+    return { ...d, pagamento: { ...d.pagamento, testi } };
   });
   const setRateC = (idx, patch) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: (d.pagamento.rateC || []).map((r, i) => i === idx ? { ...r, ...patch } : r) } }));
   const addRateC = () => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: [...(d.pagamento.rateC || []), { percentuale: 0, descrizione: "" }] } }));
@@ -852,9 +859,27 @@ export default function OffertaDocumentPanel({
                   <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
                     <div style={{ paddingTop: 2 }}><Check checked={selected} onChange={() => togglePagamento(o.id)} /></div>
                     <span style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
-                      <b>Opzione {o.id} —</b> {o.rate ? "pagamento a stato avanzamento (percentuali personalizzabili)." : o.testo}
+                      <b>Opzione {o.id} —</b> {o.rate ? "pagamento a stato avanzamento (percentuali personalizzabili)." : selected ? "testo modificabile:" : testoOpzionePagamento(o, doc.pagamento)}
                     </span>
                   </label>
+                  {!o.rate && selected && (() => {
+                    const val = doc.pagamento.testi?.[o.id] ?? o.testo;
+                    const modificato = testoOpzionePagamento(o, doc.pagamento) !== o.testo;
+                    return (
+                      <div style={{ marginTop: 8, marginLeft: 28, display: "flex", flexDirection: "column", gap: 4 }}>
+                        <textarea value={val} onChange={e => setTestoOpzione(o.id, e.target.value, o.testo)}
+                          rows={Math.min(6, Math.max(2, val.split("\n").length))}
+                          placeholder={o.testo}
+                          style={{ ...inputSt, fontSize: 11.5, padding: "6px 8px", resize: "vertical" }} />
+                        {modificato && (
+                          <button type="button" onClick={() => setTestoOpzione(o.id, o.testo, o.testo)}
+                            style={{ ...mono, alignSelf: "flex-start", fontSize: 9.5, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>
+                            ↺ Ripristina testo di base
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {o.rate && selected && (
                     <div style={{ marginTop: 8, marginLeft: 28, display: "flex", flexDirection: "column", gap: 6 }}>
                       {(doc.pagamento.rateC || []).map((r, i) => (
