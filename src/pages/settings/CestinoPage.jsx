@@ -4,6 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { usePageTitleOnMount } from '../../hooks/usePageTitle';
 import { supabase } from '../../lib/supabase';
 import { useToast } from "../../contexts/ToastContext";
+import { pulisciFotoOrfane } from "../../lib/reportFoto";
 
 const CATEGORIE = [
   { id: 'projects',      label: 'Progetti',          icon: '📁', rpc: 'cestino_projects',
@@ -93,6 +94,9 @@ export default function CestinoPage() {
   };
 
   useEffect(() => { if (studioId) loadAll(); }, [studioId]);
+  // Rimuove i file dei report già eliminati definitivamente (anche dalla
+  // pulizia automatica dei 30 giorni o insieme a un progetto).
+  useEffect(() => { if (studioId) pulisciFotoOrfane(studioId); }, [studioId]);
 
   const handleRestore = async (item) => {
     setRestoring(item.id);
@@ -113,6 +117,7 @@ export default function CestinoPage() {
     setRestoring(item.id);
     const { error } = await supabase.rpc('elimina_definitivo', { p_tabella: item._tabella, p_id: item.id, p_studio_id: studioId });
     if (error) showToast('Errore eliminazione: ' + error.message);
+    else pulisciFotoOrfane(studioId);
     setRestoring(null);
     await loadAll();
   };

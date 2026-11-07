@@ -678,24 +678,11 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
     }
   };
 
-  // ── elimina report + foto dallo storage ─────────────────────────
+  // ── sposta il report nel cestino ────────────────────────────────
+  // Le foto restano (su Storage e in report_cantiere_foto) così il report si
+  // può ripristinare completo; i file vengono rimossi solo quando il report è
+  // eliminato definitivamente (vedi pulisciFotoOrfane in Cestino).
   const handleDelete = async (id) => {
-    // 1. Recupera tutte le foto del report
-    const { data: fotoList } = await supabase
-      .from("report_cantiere_foto").select("id, url").eq("report_id", id);
-
-    // 2. Elimina file dallo storage
-    if (fotoList?.length) {
-      const paths = fotoList
-        .map(f => f.url.split("/report-foto/")[1]?.split("?")[0])
-        .filter(Boolean);
-      if (paths.length) await supabase.storage.from("report-foto").remove(paths);
-
-      // 3. Elimina record foto dal DB
-      await supabase.from("report_cantiere_foto").delete().eq("report_id", id);
-    }
-
-    // 4. Soft-delete del report
     const { error: delErr } = await supabase.rpc("elimina_report_cantiere", { p_id: id });
     if (delErr) { showToast("Errore eliminazione report: " + delErr.message); return; }
     setConfirmDel(null); load();
