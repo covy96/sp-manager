@@ -216,245 +216,240 @@ function exportExcel(lavorazioni, projectName) {
 }
 
 // ── EXPORT PDF ────────────────────────────────────────────────────
-function exportPDF(lavorazioni, projectName, viewMode = 'week') {
-  const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine);
+// Un'unica tabella HTML: le colonne attività e le colonne giorno stanno nella
+// stessa riga, quindi la barra resta sempre allineata al nome dell'attività
+// anche quando il nome va a capo. Nessun testo dentro le barre.
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function fmtPdfDate(iso) {
+  const d = parseDate(iso);
+  if (!d) return '—';
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+}
+
+// Prima data del Gantt (inizio della prima lavorazione), proposta come
+// prima data visibile nell'export PDF.
+function ganttFirstDate(lavorazioni) {
+  const starts = lavorazioni.filter(l => l.data_inizio && l.data_fine).map(l => l.data_inizio);
+  return starts.length ? starts.reduce((a, b) => a < b ? a : b) : toISO(new Date());
+}
+
+// fromISO: prima data visibile scelta all'export. Le lavorazioni finite prima
+// non compaiono; quelle a cavallo partono dal bordo sinistro.
+function exportPDF(lavorazioni, projectName, fromISO = null) {
+  const cutISO = fromISO && parseDate(fromISO) ? fromISO : null;
+  const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine && (!cutISO || l.data_fine >= cutISO));
 
   // Range date
   const allISO = valid.flatMap(l => [l.data_inizio, l.data_fine]);
   const minISO = allISO.length ? allISO.reduce((a, b) => a < b ? a : b) : toISO(new Date());
   const maxISO = allISO.length ? allISO.reduce((a, b) => a > b ? a : b) : toISO(addDays(new Date(), 60));
-  const chartStart = addDays(parseDate(minISO), -2);
-  const chartEnd   = addDays(parseDate(maxISO), 5);
+  // Il calendario parte dal lunedì e finisce la domenica: settimane sempre intere.
+  // Con una prima data scelta si parte esattamente da quel giorno.
+  const chartStart = cutISO ? parseDate(cutISO) : getMondayOf(addDays(parseDate(minISO), -1));
+  const lastDay    = addDays(parseDate(maxISO), 2);
+  const chartEnd   = addDays(lastDay, (7 - lastDay.getDay()) % 7);
   const totalDays  = diffDays(chartStart, chartEnd) + 1;
   const todayISO   = toISO(new Date());
+  const days = Array.from({ length: totalDays }, (_, i) => addDays(chartStart, i));
 
-  // Dimensioni — ROW e HDR uguali per tabella e SVG (allineamento perfetto)
-  const ROW = 30;
-  // Vista mesi: solo riga mesi (HDR 26) — Vista settimane: mesi + giorni (HDR 44)
-  const HDR = viewMode === 'month' ? 26 : 44;
-  const H   = HDR + valid.length * ROW;
+  // Larghezze — A3 orizzontale meno margini ≈ 1490px
+  const COLS = [
+    { label: 'Attività', w: 200 },
+    { label: 'Impresa',  w: 120 },
+    { label: 'Inizio',   w: 66 },
+    { label: 'Fine',     w: 66 },
+    { label: 'Dur.',     w: 40 },
+  ];
+  const LEFT_W = COLS.reduce((s, c) => s + c.w, 0);
+  const PAGE_W = 1490;
+  // Ogni giorno ha almeno lo spazio per il suo numero scritto in orizzontale;
+  // se il calendario non ci sta, l'intera tabella viene rimpicciolita per
+  // stare nella larghezza della pagina.
+  const dayW   = Math.max(13, (PAGE_W - LEFT_W) / totalDays);
+  const TABLE_W = LEFT_W + totalDays * dayW;
+  const zoom   = Math.min(1, PAGE_W / TABLE_W);
+  const showWeekday = dayW >= 20;     // giorni larghi: anche L M M G V S D
+  const WD = ['D','L','M','M','G','V','S'];
+  const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
-  // A3 landscape usabile ≈ 1496px totali, tabella sinistra ≈ 380px → SVG ≈ 1116px
-  // dayW calcolato per far sì che W ≈ containerWidth → nessuno stretching
-  const SVG_TARGET_W = 1100;
-  const dayW = Math.max(viewMode === 'month' ? 6 : 10, Math.round(SVG_TARGET_W / totalDays));
-  const W    = totalDays * dayW;
-
-  // Mappa colori imprese
-  const cMap = buildImpresaColorMap(valid);
+  // Colori calcolati su tutto il Gantt, così restano gli stessi anche
+  // quando la prima data visibile esclude alcune lavorazioni
+  const cMap = buildImpresaColorMap(lavorazioni.filter(l => l.data_inizio && l.data_fine));
   const getColor = l => lavColor(l, cMap, '#13315C');
-  const uniqueImprese = Object.keys(cMap);
+  const uniqueImprese = Object.keys(cMap).filter(imp => valid.some(l => impKey(l.operatore) === imp));
 
-  const dX = iso => diffDays(chartStart, parseDate(iso)) * dayW;
+  const dayCls = (d, i) => {
+    const c = [];
+    if (d.getDay() === 0 || d.getDay() === 6) c.push('we');
+    if (toISO(d) === todayISO) c.push('today');
+    if (d.getDate() === 1 && i > 0) c.push('mstart');
+    else if (d.getDay() === 1 && i > 0) c.push('wstart');
+    return c.join(' ');
+  };
 
-  // ── MESI ──
-  const MONTH_NAMES = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-  const mHdrH = HDR; // header mesi occupa tutto HDR in entrambe le viste
-  let monthSvg = '', prevMKey = null, prevMStart = 0;
-  for (let i = 0; i <= totalDays; i++) {
-    const d = addDays(chartStart, i);
-    const mKey = `${d.getFullYear()}-${d.getMonth()}`;
-    if (mKey !== prevMKey) {
-      if (prevMKey !== null) {
-        const [y, m] = prevMKey.split('-');
-        const mW = i * dayW - prevMStart;
-        const mRowH = viewMode === 'month' ? HDR : 22;
-        monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="${mRowH}" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-        const fSize = viewMode === 'month' ? 13 : 11;
-        const fY    = viewMode === 'month' ? HDR / 2 + 5 : 15;
-        monthSvg += `<text x="${prevMStart + 8}" y="${fY}" font-family="var(--font-ui)" font-size="${fSize}" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
-      }
-      prevMKey = mKey; prevMStart = i * dayW;
-    }
-  }
-  if (prevMKey) {
-    const [y, m] = prevMKey.split('-');
-    const mW = W - prevMStart;
-    const mRowH = viewMode === 'month' ? HDR : 22;
-    monthSvg += `<rect x="${prevMStart}" y="0" width="${mW}" height="${mRowH}" fill="#EEF1F6" stroke="#ccc" stroke-width="0.5"/>`;
-    const fSize = viewMode === 'month' ? 13 : 11;
-    const fY    = viewMode === 'month' ? HDR / 2 + 5 : 15;
-    monthSvg += `<text x="${prevMStart + 8}" y="${fY}" font-family="var(--font-ui)" font-size="${fSize}" font-weight="700" fill="#13315C">${MONTH_NAMES[+m].toUpperCase()} ${y}</text>`;
-  }
+  // ── INTESTAZIONE: mesi / settimane / giorni ──
+  const segments = keyOf => {
+    const out = [];
+    days.forEach((d, i) => {
+      const k = keyOf(d);
+      if (!out.length || out[out.length - 1].k !== k) out.push({ k, d, i, n: 1 });
+      else out[out.length - 1].n++;
+    });
+    return out;
+  };
+  const leftHead = COLS.map(c => `<th class="lh" rowspan="3">${c.label}</th>`).join('');
+  const monthRow = segments(d => `${d.getFullYear()}-${d.getMonth()}`).map(s => {
+    const label = s.n * dayW >= 90 ? `${MONTHS[s.d.getMonth()]} ${s.d.getFullYear()}` : s.n * dayW >= 40 ? `${MONTHS[s.d.getMonth()].slice(0,3)} ${String(s.d.getFullYear()).slice(2)}` : '';
+    return `<th class="mh${s.i > 0 ? ' mstart' : ''}" colspan="${s.n}">${label}</th>`;
+  }).join('');
+  const weekRow = segments(d => toISO(getMondayOf(d))).map(s => {
+    const num = getISOWeek(s.d);
+    const label = s.n * dayW >= 60 ? `Sett. ${num}` : `S${num}`;
+    const cls = s.i > 0 ? (s.d.getDate() === 1 ? ' mstart' : ' wstart') : '';
+    return `<th class="wh${cls}" colspan="${s.n}">${label}</th>`;
+  }).join('');
+  const dayRow = days.map((d, i) => {
+    const num = d.getDate();
+    const inner = `${showWeekday ? `<span class="wd">${WD[d.getDay()]}</span>` : ''}${num}`;
+    return `<th class="dh ${dayCls(d, i)}">${inner}</th>`;
+  }).join('');
 
-  // ── NUMERI GIORNO (solo in vista settimane, ogni lunedì) ──
-  let weekSvg = '';
-  if (viewMode === 'week') {
-    for (let i = 0; i < totalDays; i++) {
-      const d = addDays(chartStart, i);
-      if (d.getDay() === 1 || i === 0) {
-        weekSvg += `<text x="${i * dayW + 3}" y="${HDR - 7}" font-family="var(--font-label)" font-size="9" fill="#999"><tspan font-weight="700" fill="#13315C">S${getISOWeek(d)}</tspan> · ${d.getDate()}</text>`;
-      }
-    }
-  }
-
-  // ── SFONDO COLONNE ──
-  let bgSvg = '';
-  for (let i = 0; i < totalDays; i++) {
-    const d = addDays(chartStart, i);
-    const isWE    = d.getDay() === 0 || d.getDay() === 6;
-    const isOdd   = Math.floor(i / 7) % 2 === 1;
-    const isToday = toISO(d) === todayISO;
-    if (viewMode === 'month') {
-      // Vista mesi: sfondo alternato per settimana, linee solo a inizio mese
-      if (i % 7 === 0) {
-        const fill = isOdd ? 'rgba(19,49,92,0.04)' : 'white';
-        bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${Math.min(7 * dayW, (totalDays - i) * dayW)}" height="${valid.length * ROW}" fill="${fill}"/>`;
-      }
-      if (d.getDate() === 1 && i > 0) bgSvg += `<line x1="${i*dayW}" y1="0" x2="${i*dayW}" y2="${H}" stroke="#bbb" stroke-width="1"/>`;
-    } else {
-      // Vista settimane: sfondo per giorno, linee ogni lunedì
-      const fill = isToday ? 'rgba(19,49,92,0.10)' : isWE ? '#f0f0f0' : isOdd ? 'rgba(19,49,92,0.03)' : 'white';
-      bgSvg += `<rect x="${i * dayW}" y="${HDR}" width="${dayW}" height="${valid.length * ROW}" fill="${fill}"/>`;
-      if (d.getDay() === 1) bgSvg += `<line x1="${i*dayW}" y1="22" x2="${i*dayW}" y2="${H}" stroke="#ddd" stroke-width="0.5"/>`;
-    }
-  }
-
-  // ── LINEA OGGI ──
-  const tX = dX(todayISO);
-  const todayLine = (tX >= 0 && tX <= W)
-    ? `<line x1="${tX}" y1="${HDR}" x2="${tX}" y2="${H}" stroke="#13315C" stroke-width="1.5" opacity="0.6" stroke-dasharray="4,3"/>`
-    : '';
-
-  // ── BARRE ──
-  let rowsSvg = '', barsSvg = '';
-  const clipDefs = [];
-  valid.forEach((lav, i) => {
-    const y = HDR + i * ROW;
-    rowsSvg += `<rect x="0" y="${y}" width="${W}" height="${ROW}" fill="${i % 2 ? '#fafafa' : 'white'}" opacity="0.5"/>`;
-    rowsSvg += `<line x1="0" y1="${y+ROW}" x2="${W}" y2="${y+ROW}" stroke="#eee" stroke-width="0.5"/>`;
-    if (!lav.data_inizio) return;
-    const bX = dX(lav.data_inizio);
-    const bW = Math.max(Number(lav.durata_giorni || 1) * dayW, 6);
-    const bY = y + ROW * 0.18;
-    const bH = ROW * 0.64;
+  // ── RIGHE ──
+  const bodyRows = valid.map((lav, r) => {
     const color = getColor(lav);
-    barsSvg += `<rect x="${bX}" y="${bY}" width="${bW}" height="${bH}" fill="${color}" rx="3"/>`;
-    if (bW > 40 && lav.descrizione) {
-      const cId = `c${i}`;
-      clipDefs.push(`<clipPath id="${cId}"><rect x="${bX+5}" y="${bY}" width="${bW-10}" height="${bH}"/></clipPath>`);
-      barsSvg += `<text x="${bX+8}" y="${bY+bH*0.68}" font-family="var(--font-ui)" font-size="10.5" font-weight="600" fill="white" letter-spacing="-0.2" text-rendering="geometricPrecision" clip-path="url(#${cId})">${lav.descrizione}</text>`;
-    }
-  });
-
-  // ── DIPENDENZE ──
-  let arrowsSvg = '';
-  valid.forEach(lav => {
-    if (!lav.dipendenza_id) return;
-    const dep = valid.find(d => d.id === lav.dipendenza_id);
-    if (!dep?.data_inizio || !lav.data_inizio) return;
-    const x1 = dX(dep.data_inizio) + Number(dep.durata_giorni||1)*dayW;
-    const y1 = HDR + valid.indexOf(dep)*ROW + ROW/2;
-    const x2 = dX(lav.data_inizio);
-    const y2 = HDR + valid.indexOf(lav)*ROW + ROW/2;
-    arrowsSvg += `<path d="M${x1} ${y1} C${x1+16} ${y1} ${x2-16} ${y2} ${x2} ${y2}" fill="none" stroke="#bbb" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
-  });
-
-  // SVG — W calcolato ≈ containerWidth → preserveAspectRatio:none non distorce
-  const svgHtml = `
-    <svg xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 ${W} ${H}"
-      preserveAspectRatio="none"
-      style="display:block; width:100%; height:${H}px;"
-    >
-      <defs>
-        <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 Z" fill="#bbb"/>
-        </marker>
-        ${clipDefs.join('')}
-      </defs>
-      ${monthSvg}
-      ${weekSvg}
-      <line x1="0" y1="${HDR}" x2="${W}" y2="${HDR}" stroke="#ccc" stroke-width="1"/>
-      ${bgSvg}
-      ${rowsSvg}
-      ${todayLine}
-      ${barsSvg}
-      ${arrowsSvg}
-    </svg>`;
-
-  // ── TABELLA SINISTRA — senza colonna % ──
-  const thSt = `style="padding:0 8px; height:${HDR}px; font-size:8px; letter-spacing:0.12em; text-transform:uppercase; color:#555; border-bottom:2px solid #ccc; background:#EEF1F6; text-align:left; white-space:nowrap; font-family:'IBM Plex Mono', monospace;"`;
-  const tableHeader = `
-    <tr>
-      <th ${thSt}>Attività</th>
-      <th ${thSt}>Impresa</th>
-      <th ${thSt}>Inizio</th>
-      <th ${thSt}>Fine</th>
-      <th ${thSt}>Dur.</th>
-    </tr>`;
-  const tableRows = valid.map((lav, i) => {
-    const color = getColor(lav);
-    const bg = i % 2 ? '#fafafa' : 'white';
-    const tdBase = `padding:0 8px; height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${bg}; vertical-align:middle; white-space:nowrap; font-family:'IBM Plex Mono', monospace;`;
-    return `<tr>
-      <td style="padding:0 8px; min-height:${ROW}px; font-size:9px; border-bottom:1px solid #eee; background:${bg}; vertical-align:middle; white-space:normal; word-break:break-word; max-width:180px; font-family:'IBM Plex Mono', monospace;">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;flex-shrink:0;"></span>
-        <span style="font-weight:600; font-size:10px; font-family:'Space Grotesk', sans-serif;">${lav.descrizione||'—'}</span>
-      </td>
-      <td style="${tdBase}">${lav.operatore||'—'}</td>
-      <td style="${tdBase}">${lav.data_inizio||'—'}</td>
-      <td style="${tdBase}">${lav.data_fine||'—'}</td>
-      <td style="${tdBase} text-align:center;">${lav.durata_giorni||'—'}gg</td>
+    const rawStart = diffDays(chartStart, parseDate(lav.data_inizio));
+    const dur   = Math.max(1, Number(lav.durata_giorni) || 1);
+    const start = Math.min(totalDays - 1, Math.max(0, rawStart));
+    const end   = Math.min(totalDays, Math.max(start + 1, rawStart + dur));
+    let cells = '';
+    for (let i = 0; i < start; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
+    cells += `<td class="dc bar-cell ${dayCls(days[start], start)}" colspan="${end - start}"><div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}"></div></td>`;
+    for (let i = end; i < totalDays; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
+    return `<tr class="${r % 2 ? 'odd' : ''}">
+      <td class="lc name"><div class="nm"><span class="dot" style="background:${color}"></span><span>${escHtml(lav.descrizione) || '—'}</span></div></td>
+      <td class="lc mono">${escHtml(lav.operatore) || '—'}</td>
+      <td class="lc mono">${fmtPdfDate(lav.data_inizio)}</td>
+      <td class="lc mono">${fmtPdfDate(lav.data_fine)}</td>
+      <td class="lc mono c last">${lav.durata_giorni || '—'}gg</td>
+      ${cells}
     </tr>`;
   }).join('');
 
-  // ── LEGENDA IMPRESE (senza "Oggi") ──
+  // Dipendenze tracciate dopo l'impaginazione (posizioni reali delle barre)
+  const deps = valid
+    .filter(l => l.dipendenza_id && valid.some(d => d.id === l.dipendenza_id))
+    .map(l => [String(l.dipendenza_id), String(l.id)]);
+
   const legendHtml = uniqueImprese.length ? `
-    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:14px; padding:8px 14px; background:#f8f8f8; border:1px solid #eee;">
-      <span style="font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:'IBM Plex Mono', monospace; margin-right:2px;">Imprese:</span>
-      ${uniqueImprese.map(imp => `
-        <span style="display:inline-flex; align-items:center; gap:6px;">
-          <span style="display:inline-block; width:13px; height:13px; background:${cMap[imp]||'#13315C'}; border-radius:2px; flex-shrink:0;"></span>
-          <span style="font-size:11px; font-family:'Space Grotesk', sans-serif; font-weight:600; color:#333;">${imp}</span>
-        </span>`).join('')}
+    <div class="legend">
+      <span class="lg-title">Imprese</span>
+      ${uniqueImprese.map(imp => `<span class="lg-item"><span class="lg-sw" style="background:${cMap[imp] || '#13315C'}"></span>${escHtml(imp)}</span>`).join('')}
     </div>` : '';
 
+  const colgroup = `<colgroup>${COLS.map(c => `<col style="width:${c.w}px">`).join('')}${days.map(() => `<col style="width:${dayW}px">`).join('')}</colgroup>`;
+
   const win = window.open('', '_blank');
-  win.document.write(`
-    <html><head><title>Gantt — ${projectName}</title>
+  if (!win) return;
+  win.document.write(`<!doctype html>
+    <html><head><meta charset="utf-8"><title>Gantt — ${escHtml(projectName)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       body { font-family: 'Space Grotesk', sans-serif; font-size: 11px; padding: 18px; color: #0E0E0D; background: white; }
       @page { size: A3 landscape; margin: 12mm; }
-      @media print {
-        body { padding: 0; }
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      @media print { body { padding: 0; } }
+      .top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; border-bottom:2px solid #13315C; padding-bottom:8px; }
+      .top h1 { font-size:20px; font-weight:700; letter-spacing:-0.02em; }
+      .top .exp { font-family:'IBM Plex Mono', monospace; font-size:9px; color:#999; }
+      .legend { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; margin-bottom:12px; padding:8px 14px; background:#f8f8f8; border:1px solid #eee; }
+      .lg-title { font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:'IBM Plex Mono', monospace; }
+      .lg-item { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#333; }
+      .lg-sw { display:inline-block; width:12px; height:12px; border-radius:2px; }
+      .wrap { position:relative; width:${TABLE_W}px; zoom:${zoom}; }
+      table { border-collapse:collapse; table-layout:fixed; width:${TABLE_W}px; border:1px solid #ccc; }
+      thead { display:table-header-group; }
+      tr { page-break-inside:avoid; break-inside:avoid; }
+      th { background:#EEF1F6; color:#13315C; font-weight:700; overflow:hidden; white-space:nowrap; }
+      .lh { padding:0 8px; font-size:8px; letter-spacing:0.12em; text-transform:uppercase; color:#555; text-align:left; font-family:'IBM Plex Mono', monospace; vertical-align:bottom; padding-bottom:6px; border-bottom:2px solid #ccc; }
+      .lh:nth-child(5) { border-right:2px solid #ccc; }
+      .mh { height:20px; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; text-align:left; padding:0 6px; border-bottom:1px solid #d6dbe4; }
+      .wh { height:18px; font-size:9px; font-family:'IBM Plex Mono', monospace; text-align:left; padding:0 4px; background:#F5F7FA; border-bottom:1px solid #d6dbe4; }
+      .dh { height:${showWeekday ? 30 : 20}px; font-size:${dayW < 16 ? 8 : 9}px; letter-spacing:${dayW < 16 ? '-0.04em' : '0'}; font-family:'IBM Plex Mono', monospace; font-weight:500; color:#333; background:white; text-align:center; padding:0; border-bottom:2px solid #ccc; line-height:1.1; }
+      .dh .wd { display:block; font-size:7px; color:#999; font-weight:400; }
+      .dh.we { background:#f0f0f0; color:#999; }
+      .dh.today { background:#13315C; color:white; }
+      td { padding:0; }
+      .lc { padding:5px 8px; min-height:26px; font-size:9px; border-bottom:1px solid #eee; vertical-align:middle; font-family:'IBM Plex Mono', monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .lc.c { text-align:center; }
+      .lc.last { border-right:2px solid #ccc; }
+      .lc.name { white-space:normal; word-break:break-word; font-family:'Space Grotesk', sans-serif; font-size:10px; font-weight:600; }
+      .lc.name .nm { display:flex; align-items:center; gap:6px; }
+      .lc.name .dot { flex:none; width:8px; height:8px; border-radius:50%; }
+      tr.odd .lc { background:#fafafa; }
+      .dc { height:26px; border-bottom:1px solid #eee; }
+      tr.odd .dc { background:#fcfcfc; }
+      .we, tr.odd .we { background:#f3f3f3; }
+      .today, tr.odd .today { background:rgba(19,49,92,0.10); }
+      .wstart { border-left:1px solid #dcdcdc; }
+      .mstart { border-left:1px solid #9aa3b2; }
+      .bar-cell { position:relative; vertical-align:middle; }
+      .bar { height:14px; border-radius:3px; margin:0 1px; }
+      svg.deps { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
     </style></head>
     <body>
-      <!-- Header -->
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; border-bottom:2px solid #13315C; padding-bottom:8px;">
-        <div style="font-size:20px; font-weight:700; letter-spacing:-0.02em; color:#0E0E0D; font-family:'Space Grotesk', sans-serif;">Gantt — ${projectName}</div>
-        <div style="font-family:'IBM Plex Mono', monospace; font-size:9px; color:#999;">Esportato il ${new Date().toLocaleDateString('it-IT')}</div>
-      </div>
-
-      <!-- Legenda -->
+      <div class="top"><h1>Gantt — ${escHtml(projectName)}</h1><div class="exp">Esportato il ${new Date().toLocaleDateString('it-IT')}</div></div>
       ${legendHtml}
-
-      <!-- Layout principale: tabella sx + calendario dx -->
-      <div style="display:flex; border:1px solid #ccc;">
-
-        <!-- Tabella attività (sinistra, larghezza fissa) -->
-        <div style="flex-shrink:0; border-right:2px solid #ccc;">
-          <table style="border-collapse:collapse; width:100%;">
-            <thead>${tableHeader}</thead>
-            <tbody>${tableRows}</tbody>
-          </table>
-        </div>
-
-        <!-- Calendario SVG (destra, larghezza piena) -->
-        <div style="flex:1; min-width:0; overflow:hidden;">
-          ${svgHtml}
-        </div>
-
+      <div class="wrap">
+        <table>
+          ${colgroup}
+          <thead>
+            <tr>${leftHead}${monthRow}</tr>
+            <tr>${weekRow}</tr>
+            <tr>${dayRow}</tr>
+          </thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
       </div>
     </body></html>`);
   win.document.close();
-  win.print();
+
+  const doc = win.document;
+  const drawDeps = () => {
+    if (!deps.length) return;
+    const wrap = doc.querySelector('.wrap');
+    // Con zoom le misure arrivano già rimpicciolite: si riportano in scala 1
+    const z = wrap.getBoundingClientRect().width / wrap.offsetWidth || 1;
+    const sc = r => ({ left: r.left / z, right: r.right / z, top: r.top / z, height: r.height / z, width: r.width / z });
+    const base = sc(wrap.getBoundingClientRect());
+    const bars = {};
+    doc.querySelectorAll('.bar').forEach(b => { bars[b.dataset.id] = sc(b.getBoundingClientRect()); });
+    let paths = '';
+    deps.forEach(([from, to]) => {
+      const a = bars[from], b = bars[to];
+      if (!a || !b) return;
+      const x1 = a.right - base.left, y1 = a.top + a.height / 2 - base.top;
+      const x2 = b.left - base.left,  y2 = b.top + b.height / 2 - base.top;
+      paths += `<path d="M${x1} ${y1} C${x1 + 14} ${y1} ${x2 - 14} ${y2} ${x2} ${y2}" fill="none" stroke="#aaa" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr)"/>`;
+    });
+    wrap.insertAdjacentHTML('beforeend', `<svg class="deps" width="${base.width}" height="${base.height}"><defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#aaa"/></marker></defs>${paths}</svg>`);
+  };
+  let printed = false;
+  const go = () => {
+    if (printed) return;
+    printed = true;
+    try { drawDeps(); } catch { /* le frecce sono facoltative */ }
+    win.focus();
+    win.print();
+  };
+  // Aspetta i font: l'altezza delle righe dipende dal testo che va a capo
+  Promise.race([
+    doc.fonts?.ready ?? Promise.resolve(),
+    new Promise(r => setTimeout(r, 1500)),
+  ]).then(go, go);
 }
 
 // ── VERSIONI GANTT ────────────────────────────────────────────────
@@ -745,6 +740,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [registro, setRegistro] = useState([]);
   const [registroError, setRegistroError] = useState(false);
   const [showRegistro, setShowRegistro] = useState(false);
+  const [pdfFrom, setPdfFrom] = useState(null); // null = finestra export PDF chiusa
   const [voceSuggest, setVoceSuggest] = useState(false);
   const chartRef     = useRef(null);
   // Scorrimento verticale sincronizzato: si scorre sia dall'elenco sia dal grafico
@@ -914,6 +910,40 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     await loadData(addedIds);
     return true;
   };
+
+  const pdfModal = pdfFrom !== null && (() => {
+    const first = ganttFirstDate(lavorazioni);
+    const fromOk = !!parseDate(pdfFrom);
+    const hidden = fromOk ? lavorazioni.filter(l => l.data_inizio && l.data_fine && l.data_fine < pdfFrom).length : 0;
+    const lbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:T.muted };
+    return (
+      <BodyPortal>
+        <div onClick={() => setPdfFrom(null)} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(10,16,30,0.35)', backdropFilter:'blur(4px)', WebkitBackdropFilter:'blur(4px)', display:'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent:'center', padding: isMobile ? 0 : 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.glassBg, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius: isMobile ? `${T.radiusLg} ${T.radiusLg} 0 0` : T.radiusLg, padding:'20px 20px', paddingBottom: isMobile ? 'calc(20px + env(safe-area-inset-bottom))' : 20 }}>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+              <div style={{ fontFamily:"var(--font-ui)", fontSize:17, fontWeight:700, letterSpacing:'-0.02em', color:T.ink }}>Esporta PDF</div>
+              <button onClick={() => setPdfFrom(null)} aria-label="Chiudi" style={{ background:T.navyLight, border:'none', borderRadius:'50%', width:28, height:28, cursor:'pointer', color:T.navy, fontSize:16, lineHeight:1, flexShrink:0 }}>×</button>
+            </div>
+            <label style={{ display:'block', marginTop:16 }}>
+              <div style={lbl}>Prima data visibile</div>
+              <input type="date" value={pdfFrom} onChange={e => setPdfFrom(e.target.value)}
+                style={{ marginTop:6, width:'100%', boxSizing:'border-box', padding:'9px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-ui)", fontSize:15 }}/>
+            </label>
+            <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:8, lineHeight:1.5, minHeight:15 }}>
+              {pdfFrom !== first
+                ? <>{hidden > 0 ? `${hidden} ${hidden === 1 ? 'lavorazione finita prima non verrà mostrata' : 'lavorazioni finite prima non verranno mostrate'}. ` : ''}<button onClick={() => setPdfFrom(first)} style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:T.navy, fontFamily:'inherit', fontSize:'inherit', textDecoration:'underline' }}>Dall'inizio del Gantt</button></>
+                : 'Inizio del Gantt'}
+            </div>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:18 }}>
+              <button onClick={() => setPdfFrom(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', color:T.muted, padding:'8px 14px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Annulla</button>
+              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom === first ? null : pdfFrom); setPdfFrom(null); }}
+                style={{ background:T.navy, border:'none', borderRadius:T.radiusSm, cursor: fromOk ? 'pointer' : 'default', opacity: fromOk ? 1 : 0.5, color:'#fff', padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Esporta</button>
+            </div>
+          </div>
+        </div>
+      </BodyPortal>
+    );
+  })();
 
   const registroModal = showRegistro && (
     <GanttRegistroModal
@@ -1451,11 +1481,12 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               onChange={setViewMode}
             />
             <button onClick={()=>exportExcel(lavorazioni,project.name)} style={mBtn}>Excel</button>
-            <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={mBtn}>PDF</button>
+            <button onClick={()=>setPdfFrom(ganttFirstDate(lavorazioni))} style={mBtn}>PDF</button>
             <button onClick={()=>setShowRegistro(true)} style={{...mBtn,color:T.navy}}>Registro voci</button>
           </div>
         </div>
         {registroModal}
+        {pdfModal}
 
         {onlyChart ? (
           /* ── VISTA GRAFICO — colonna nomi sticky + chart scrollabile ── */
@@ -1648,6 +1679,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
       {registroModal}
+      {pdfModal}
 
       {/* Toolbar */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
@@ -1666,7 +1698,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>setPdfFrom(ganttFirstDate(lavorazioni))} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
