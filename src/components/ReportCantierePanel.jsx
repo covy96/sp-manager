@@ -797,6 +797,14 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
   const updateP = (i, k, v) => setForm(f => { const a=[...f.presenti]; a[i]={...a[i],[k]:v}; return {...f,presenti:a}; });
   const addP    = ()        => setForm(f => ({ ...f, presenti:[...f.presenti, {figura:"",azienda:"",referente:"",email:"",telefono:""}] }));
   const removeP = (i)       => setForm(f => ({ ...f, presenti:f.presenti.filter((_,j)=>j!==i) }));
+  // Riordino presenti: sposta la riga `from` nella posizione `to` (frecce ↑↓ o trascinamento)
+  const moveP   = (from, to) => setForm(f => {
+    if (to < 0 || to >= f.presenti.length || from === to) return f;
+    const a = [...f.presenti]; const [row] = a.splice(from, 1); a.splice(to, 0, row);
+    return { ...f, presenti:a };
+  });
+  const [dragP, setDragP] = useState(null);   // indice riga trascinata
+  const [overP, setOverP] = useState(null);   // indice riga sotto il cursore
   const addFromTeam = (member) => {
     setTeamDropOpen(false);
     const entry = {
@@ -1321,14 +1329,32 @@ export default function ReportCantierePanel({ projectId, studioId, canManage = f
                     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
                       <thead>
                         <tr style={{ background:T.bg }}>
-                          {["Figura","Azienda","Referente","Email","Telefono",""].map(h=>(
-                            <th key={h} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
+                          {["","Figura","Azienda","Referente","Email","Telefono",""].map((h,hi)=>(
+                            <th key={hi} style={{ fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:T.muted, padding:'6px 8px', textAlign:'left', borderBottom:`0.5px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {form.presenti.map((p,i)=>(
-                          <tr key={i} style={{ borderBottom:`0.5px solid ${T.border}` }}>
+                          <tr key={i}
+                            onDragOver={e=>{ if (dragP===null) return; e.preventDefault(); e.dataTransfer.dropEffect='move'; if (overP!==i) setOverP(i); }}
+                            onDrop={e=>{ e.preventDefault(); if (dragP!==null) moveP(dragP,i); setDragP(null); setOverP(null); }}
+                            style={{ borderBottom:`0.5px solid ${T.border}`, opacity: dragP===i ? 0.4 : 1,
+                              boxShadow: dragP!==null && overP===i && dragP!==i ? `inset 0 ${dragP<i?-2:2}px 0 ${T.navy}` : 'none' }}>
+                            <td style={{ padding:'4px 2px', whiteSpace:'nowrap', width:1 }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+                                <span draggable title="Trascina per riordinare"
+                                  onDragStart={e=>{ setDragP(i); e.dataTransfer.effectAllowed='move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch {} const tr=e.currentTarget.closest('tr'); if (tr) e.dataTransfer.setDragImage(tr, 12, 16); }}
+                                  onDragEnd={()=>{ setDragP(null); setOverP(null); }}
+                                  style={{ cursor:'grab', color:T.muted, fontSize:13, padding:'0 3px', userSelect:'none', lineHeight:1 }}>⋮⋮</span>
+                                <div style={{ display:'flex', flexDirection:'column' }}>
+                                  <button type="button" onClick={()=>moveP(i,i-1)} disabled={i===0} title="Sposta su"
+                                    style={{ background:'none', border:'none', padding:'0 4px', fontSize:10, lineHeight:'13px', color: i===0 ? T.border : T.muted, cursor: i===0 ? 'default' : 'pointer' }}>▲</button>
+                                  <button type="button" onClick={()=>moveP(i,i+1)} disabled={i===form.presenti.length-1} title="Sposta giù"
+                                    style={{ background:'none', border:'none', padding:'0 4px', fontSize:10, lineHeight:'13px', color: i===form.presenti.length-1 ? T.border : T.muted, cursor: i===form.presenti.length-1 ? 'default' : 'pointer' }}>▼</button>
+                                </div>
+                              </div>
+                            </td>
                             {["figura","azienda","referente","email","telefono"].map(field=>(
                               <td key={field} style={{ padding:'4px 4px' }}>
                                 <input type="text" value={p[field]||""} onChange={e=>updateP(i,field,e.target.value)}
