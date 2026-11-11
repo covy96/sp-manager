@@ -1,6 +1,6 @@
 // Test unitari della duplicazione offerta (funzioni pure, niente rete).
 import { describe, it, expect } from "vitest";
-import { prossimoNumeroOfferta, datiDuplicaOfferta } from "./offertaModel";
+import { prossimoNumeroOfferta, datiDuplicaOfferta, ordinaOfferte } from "./offertaModel";
 
 describe("prossimoNumeroOfferta", () => {
   it("incrementa mantenendo gli zeri", () => {
@@ -50,5 +50,30 @@ describe("datiDuplicaOfferta", () => {
     expect(copia.data_offerta).toBe("2026-10-20");
     expect(copia.cliente).toBe("Rossi");
     expect(copia.sconto).toBe(10);
+  });
+});
+
+describe("ordinaOfferte", () => {
+  const lista = [
+    { id: "a", numero_offerta: "2026/002", created_at: "2026-03-01T10:00:00Z" },
+    { id: "b", numero_offerta: "2026/010", created_at: "2026-01-01T10:00:00Z" },
+    { id: "c", numero_offerta: "2025/099", created_at: "2026-05-01T10:00:00Z" },
+  ];
+  it("per creazione: più recenti prima", () => {
+    expect(ordinaOfferte(lista, "creazione").map((o) => o.id)).toEqual(["c", "a", "b"]);
+  });
+  it("per numero: anno poi progressivo, più alti prima", () => {
+    expect(ordinaOfferte(lista, "numero").map((o) => o.id)).toEqual(["b", "a", "c"]);
+    expect(ordinaOfferte(lista, "numero", "asc").map((o) => o.id)).toEqual(["c", "a", "b"]);
+  });
+  it("numeri con anno in fondo o prefisso", () => {
+    const l = [{ id: "x", numero_offerta: "9/2026" }, { id: "y", numero_offerta: "12/2026" }, { id: "z", numero_offerta: "30/2025" }];
+    expect(ordinaOfferte(l, "numero").map((o) => o.id)).toEqual(["y", "x", "z"]);
+    const p = [{ id: "1", numero_offerta: "OFF.9" }, { id: "2", numero_offerta: "OFF.10" }];
+    expect(ordinaOfferte(p, "numero").map((o) => o.id)).toEqual(["2", "1"]);
+  });
+  it("non modifica la lista originale", () => {
+    ordinaOfferte(lista, "numero");
+    expect(lista[0].id).toBe("a");
   });
 });

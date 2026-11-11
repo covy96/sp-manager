@@ -10,6 +10,17 @@ import { useToast } from "../contexts/ToastContext";
 import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 import { duplicaOfferta } from "../lib/offertaDuplica";
+import { ordinaOfferte } from "../lib/offertaModel";
+import SlidingTabs from "../components/SlidingTabs";
+
+const ORDINE_KEY = "asm_offerte_ordine";
+function leggiOrdine() {
+  try {
+    const v = JSON.parse(localStorage.getItem(ORDINE_KEY) || "null");
+    if (v && ["creazione","numero"].includes(v.criterio) && ["asc","desc"].includes(v.verso)) return v;
+  } catch { /* storage non disponibile */ }
+  return { criterio: "creazione", verso: "desc" };
+}
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -43,6 +54,8 @@ export default function OffertePage() {
   const [filtroStato, setFiltroStato] = useState('tutti');
   const [annoFiltro, setAnnoFiltro]   = useState(new Date().getFullYear());
   const [searchQuery, setSearchQuery] = useState('');
+  const [ordine, setOrdine] = useState(leggiOrdine);   // { criterio: 'creazione'|'numero', verso: 'desc'|'asc' }
+  useEffect(() => { try { localStorage.setItem(ORDINE_KEY, JSON.stringify(ordine)); } catch { /* ignora */ } }, [ordine]);
   const [choiceOpen, setChoiceOpen]     = useState(false);  // popup scelta tipo creazione
   const [docCreateOpen, setDocCreateOpen] = useState(false); // pannello documento in create
   // Popup "collega progetto" post-creazione offerta
@@ -419,12 +432,12 @@ export default function OffertePage() {
   const visibili = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (q) {
-      return offerte.filter(o =>
+      return ordinaOfferte(offerte.filter(o =>
         (o.nome_offerta || "").toLowerCase().includes(q) ||
         (o.cliente || "").toLowerCase().includes(q) ||
         (o.numero_offerta || "").toLowerCase().includes(q) ||
         (o.project_name || "").toLowerCase().includes(q)
-      );
+      ), ordine.criterio, ordine.verso);
     }
     let list = filtroStato === 'tutti' ? offerte : offerte.filter(o=>o.stato===filtroStato);
     if (annoFiltro !== 0) {
@@ -433,8 +446,8 @@ export default function OffertePage() {
         return d && new Date(d).getFullYear() === annoFiltro;
       });
     }
-    return list;
-  }, [offerte, filtroStato, annoFiltro, searchQuery]);
+    return ordinaOfferte(list, ordine.criterio, ordine.verso);
+  }, [offerte, filtroStato, annoFiltro, searchQuery, ordine]);
 
   // KPI — filtrati per anno selezionato
   const offerteAnno = annoFiltro === 0 ? offerte : offerte.filter(o => {
@@ -513,6 +526,31 @@ export default function OffertePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Ordinamento lista */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap:8 }}>
+        <span style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>Ordina per</span>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <SlidingTabs
+            tabs={[{ key:'creazione', label:'Creazione' }, { key:'numero', label:'Numero' }]}
+            active={ordine.criterio}
+            onChange={k => setOrdine(p => ({ ...p, criterio:k }))}
+          />
+          <button
+            type="button"
+            onClick={() => setOrdine(p => ({ ...p, verso: p.verso === 'desc' ? 'asc' : 'desc' }))}
+            title={ordine.criterio === 'numero'
+              ? (ordine.verso === 'desc' ? 'Dal numero più alto' : 'Dal numero più basso')
+              : (ordine.verso === 'desc' ? 'Dalla più recente' : 'Dalla più vecchia')}
+            aria-label="Inverti ordine"
+            style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.navy, fontFamily:"var(--font-ui)", fontSize:12, fontWeight:600, lineHeight:'18px', cursor:'pointer', whiteSpace:'nowrap', backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm }}>
+            {ordine.criterio !== 'numero' && <span aria-hidden style={{ fontSize:13 }}>{ordine.verso === 'desc' ? '↓' : '↑'}</span>}
+            {ordine.criterio === 'numero'
+              ? (ordine.verso === 'desc' ? '9→1' : '1→9')
+              : (ordine.verso === 'desc' ? 'Recenti' : 'Vecchie')}
+          </button>
+        </div>
       </div>
 
       {/* Lista offerte */}

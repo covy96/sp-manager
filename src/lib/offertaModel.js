@@ -266,3 +266,35 @@ export function datiDuplicaOfferta(offerta, numeriEsistenti = [], oggi = new Dat
   }
   return copia;
 }
+
+// ── Ordinamento lista offerte ────────────────────────────────────────────────
+// Chiave per ordinare per numero: [anno, progressivo]. L'anno è un gruppo
+// 19xx/20xx (se c'è), il progressivo è l'ultimo gruppo di cifre che non è un
+// anno. Così "2026/014", "14/2026" e "OFF.014" si ordinano tutti bene.
+export function chiaveNumeroOfferta(numero) {
+  const gruppi = [...String(numero || "").matchAll(/\d+/g)].map((g) => g[0]);
+  const anno = gruppi.find((g) => /^(19|20)\d\d$/.test(g));
+  const nonAnni = gruppi.filter((g) => g !== anno);
+  const prog = nonAnni.length ? nonAnni.at(-1) : (anno && gruppi.length === 1 ? null : gruppi.at(-1));
+  return [anno ? Number(anno) : 0, prog != null ? Number(prog) : -1];
+}
+
+const dataCreazione = (o) => new Date(o?.created_at || o?.created_date || o?.data_offerta || 0).getTime() || 0;
+
+// criterio: "creazione" | "numero"; verso: "desc" (più recenti / più alti
+// prima) | "asc". Restituisce una nuova lista, quella originale non cambia.
+export function ordinaOfferte(lista, criterio = "creazione", verso = "desc") {
+  const segno = verso === "asc" ? 1 : -1;
+  const cmpCreazione = (a, b) => dataCreazione(a) - dataCreazione(b);
+  const cmpNumero = (a, b) => {
+    const [ya, na] = chiaveNumeroOfferta(a.numero_offerta);
+    const [yb, nb] = chiaveNumeroOfferta(b.numero_offerta);
+    if (ya !== yb) return ya - yb;
+    if (na !== nb) return na - nb;
+    return String(a.numero_offerta || "").localeCompare(String(b.numero_offerta || ""), "it", { numeric: true });
+  };
+  return [...(lista || [])].sort((a, b) => {
+    const r = criterio === "numero" ? (cmpNumero(a, b) || cmpCreazione(a, b)) : (cmpCreazione(a, b) || cmpNumero(a, b));
+    return r * segno;
+  });
+}
