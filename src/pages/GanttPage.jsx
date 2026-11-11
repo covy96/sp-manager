@@ -228,15 +228,26 @@ function fmtPdfDate(iso) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
 }
 
-function exportPDF(lavorazioni, projectName, viewMode = 'week') {
-  const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine);
+// Prima data del Gantt (inizio della prima lavorazione), proposta come
+// prima data visibile nell'export PDF.
+function ganttFirstDate(lavorazioni) {
+  const starts = lavorazioni.filter(l => l.data_inizio && l.data_fine).map(l => l.data_inizio);
+  return starts.length ? starts.reduce((a, b) => a < b ? a : b) : toISO(new Date());
+}
+
+// fromISO: prima data visibile scelta all'export. Le lavorazioni finite prima
+// non compaiono; quelle a cavallo partono dal bordo sinistro.
+function exportPDF(lavorazioni, projectName, fromISO = null) {
+  const cutISO = fromISO && parseDate(fromISO) ? fromISO : null;
+  const valid = lavorazioni.filter(l => l.data_inizio && l.data_fine && (!cutISO || l.data_fine >= cutISO));
 
   // Range date
   const allISO = valid.flatMap(l => [l.data_inizio, l.data_fine]);
   const minISO = allISO.length ? allISO.reduce((a, b) => a < b ? a : b) : toISO(new Date());
   const maxISO = allISO.length ? allISO.reduce((a, b) => a > b ? a : b) : toISO(addDays(new Date(), 60));
-  // Il calendario parte dal lunedì e finisce la domenica: settimane sempre intere
-  const chartStart = getMondayOf(addDays(parseDate(minISO), -1));
+  // Il calendario parte dal lunedì e finisce la domenica: settimane sempre intere.
+  // Con una prima data scelta si parte esattamente da quel giorno.
+  const chartStart = cutISO ? parseDate(cutISO) : getMondayOf(addDays(parseDate(minISO), -1));
   const lastDay    = addDays(parseDate(maxISO), 2);
   const chartEnd   = addDays(lastDay, (7 - lastDay.getDay()) % 7);
   const totalDays  = diffDays(chartStart, chartEnd) + 1;
@@ -253,15 +264,21 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   ];
   const LEFT_W = COLS.reduce((s, c) => s + c.w, 0);
   const PAGE_W = 1490;
-  const dayW   = Math.max(9, (PAGE_W - LEFT_W) / totalDays);
-  const vertical = dayW < 17;         // giorni stretti: numero ruotato
+  // Ogni giorno ha almeno lo spazio per il suo numero scritto in orizzontale;
+  // se il calendario non ci sta, l'intera tabella viene rimpicciolita per
+  // stare nella larghezza della pagina.
+  const dayW   = Math.max(13, (PAGE_W - LEFT_W) / totalDays);
+  const TABLE_W = LEFT_W + totalDays * dayW;
+  const zoom   = Math.min(1, PAGE_W / TABLE_W);
   const showWeekday = dayW >= 20;     // giorni larghi: anche L M M G V S D
   const WD = ['D','L','M','M','G','V','S'];
   const MONTHS = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
-  const cMap = buildImpresaColorMap(valid);
+  // Colori calcolati su tutto il Gantt, così restano gli stessi anche
+  // quando la prima data visibile esclude alcune lavorazioni
+  const cMap = buildImpresaColorMap(lavorazioni.filter(l => l.data_inizio && l.data_fine));
   const getColor = l => lavColor(l, cMap, '#13315C');
-  const uniqueImprese = Object.keys(cMap);
+  const uniqueImprese = Object.keys(cMap).filter(imp => valid.some(l => impKey(l.operatore) === imp));
 
   const dayCls = (d, i) => {
     const c = [];
@@ -295,18 +312,17 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   }).join('');
   const dayRow = days.map((d, i) => {
     const num = d.getDate();
-    const inner = vertical
-      ? `<span class="vnum">${num}</span>`
-      : `${showWeekday ? `<span class="wd">${WD[d.getDay()]}</span>` : ''}${num}`;
+    const inner = `${showWeekday ? `<span class="wd">${WD[d.getDay()]}</span>` : ''}${num}`;
     return `<th class="dh ${dayCls(d, i)}">${inner}</th>`;
   }).join('');
 
   // ── RIGHE ──
   const bodyRows = valid.map((lav, r) => {
     const color = getColor(lav);
-    const start = Math.max(0, diffDays(chartStart, parseDate(lav.data_inizio)));
+    const rawStart = diffDays(chartStart, parseDate(lav.data_inizio));
     const dur   = Math.max(1, Number(lav.durata_giorni) || 1);
-    const end   = Math.min(totalDays, start + dur);
+    const start = Math.min(totalDays - 1, Math.max(0, rawStart));
+    const end   = Math.min(totalDays, Math.max(start + 1, rawStart + dur));
     let cells = '';
     for (let i = 0; i < start; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
     cells += `<td class="dc bar-cell ${dayCls(days[start], start)}" colspan="${end - start}"><div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}"></div></td>`;
@@ -353,8 +369,8 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
       .lg-title { font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:#888; font-family:'IBM Plex Mono', monospace; }
       .lg-item { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:#333; }
       .lg-sw { display:inline-block; width:12px; height:12px; border-radius:2px; }
-      .wrap { position:relative; width:${LEFT_W + totalDays * dayW}px; }
-      table { border-collapse:collapse; table-layout:fixed; width:${LEFT_W + totalDays * dayW}px; border:1px solid #ccc; }
+      .wrap { position:relative; width:${TABLE_W}px; zoom:${zoom}; }
+      table { border-collapse:collapse; table-layout:fixed; width:${TABLE_W}px; border:1px solid #ccc; }
       thead { display:table-header-group; }
       tr { page-break-inside:avoid; break-inside:avoid; }
       th { background:#EEF1F6; color:#13315C; font-weight:700; overflow:hidden; white-space:nowrap; }
@@ -362,9 +378,8 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
       .lh:nth-child(5) { border-right:2px solid #ccc; }
       .mh { height:20px; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; text-align:left; padding:0 6px; border-bottom:1px solid #d6dbe4; }
       .wh { height:18px; font-size:9px; font-family:'IBM Plex Mono', monospace; text-align:left; padding:0 4px; background:#F5F7FA; border-bottom:1px solid #d6dbe4; }
-      .dh { height:${vertical ? 26 : showWeekday ? 30 : 20}px; font-size:${vertical ? 8 : 9}px; font-family:'IBM Plex Mono', monospace; font-weight:500; color:#333; background:white; text-align:center; padding:0; border-bottom:2px solid #ccc; line-height:1.1; }
+      .dh { height:${showWeekday ? 30 : 20}px; font-size:${dayW < 16 ? 8 : 9}px; letter-spacing:${dayW < 16 ? '-0.04em' : '0'}; font-family:'IBM Plex Mono', monospace; font-weight:500; color:#333; background:white; text-align:center; padding:0; border-bottom:2px solid #ccc; line-height:1.1; }
       .dh .wd { display:block; font-size:7px; color:#999; font-weight:400; }
-      .dh .vnum { display:inline-block; writing-mode:vertical-rl; transform:rotate(180deg); }
       .dh.we { background:#f0f0f0; color:#999; }
       .dh.today { background:#13315C; color:white; }
       td { padding:0; }
@@ -406,9 +421,12 @@ function exportPDF(lavorazioni, projectName, viewMode = 'week') {
   const drawDeps = () => {
     if (!deps.length) return;
     const wrap = doc.querySelector('.wrap');
-    const base = wrap.getBoundingClientRect();
+    // Con zoom le misure arrivano già rimpicciolite: si riportano in scala 1
+    const z = wrap.getBoundingClientRect().width / wrap.offsetWidth || 1;
+    const sc = r => ({ left: r.left / z, right: r.right / z, top: r.top / z, height: r.height / z, width: r.width / z });
+    const base = sc(wrap.getBoundingClientRect());
     const bars = {};
-    doc.querySelectorAll('.bar').forEach(b => { bars[b.dataset.id] = b.getBoundingClientRect(); });
+    doc.querySelectorAll('.bar').forEach(b => { bars[b.dataset.id] = sc(b.getBoundingClientRect()); });
     let paths = '';
     deps.forEach(([from, to]) => {
       const a = bars[from], b = bars[to];
@@ -722,6 +740,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   const [registro, setRegistro] = useState([]);
   const [registroError, setRegistroError] = useState(false);
   const [showRegistro, setShowRegistro] = useState(false);
+  const [pdfFrom, setPdfFrom] = useState(null); // null = finestra export PDF chiusa
   const [voceSuggest, setVoceSuggest] = useState(false);
   const chartRef     = useRef(null);
   // Scorrimento verticale sincronizzato: si scorre sia dall'elenco sia dal grafico
@@ -891,6 +910,40 @@ function ProjectGantt({ project, studioId, onBack, version }) {
     await loadData(addedIds);
     return true;
   };
+
+  const pdfModal = pdfFrom !== null && (() => {
+    const first = ganttFirstDate(lavorazioni);
+    const fromOk = !!parseDate(pdfFrom);
+    const hidden = fromOk ? lavorazioni.filter(l => l.data_inizio && l.data_fine && l.data_fine < pdfFrom).length : 0;
+    const lbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase', color:T.muted };
+    return (
+      <BodyPortal>
+        <div onClick={() => setPdfFrom(null)} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(10,16,30,0.35)', backdropFilter:'blur(4px)', WebkitBackdropFilter:'blur(4px)', display:'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent:'center', padding: isMobile ? 0 : 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:380, background:T.glassBg, border:`1px solid ${T.glassBorder}`, boxShadow:T.shadowLg, borderRadius: isMobile ? `${T.radiusLg} ${T.radiusLg} 0 0` : T.radiusLg, padding:'20px 20px', paddingBottom: isMobile ? 'calc(20px + env(safe-area-inset-bottom))' : 20 }}>
+            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+              <div style={{ fontFamily:"var(--font-ui)", fontSize:17, fontWeight:700, letterSpacing:'-0.02em', color:T.ink }}>Esporta PDF</div>
+              <button onClick={() => setPdfFrom(null)} aria-label="Chiudi" style={{ background:T.navyLight, border:'none', borderRadius:'50%', width:28, height:28, cursor:'pointer', color:T.navy, fontSize:16, lineHeight:1, flexShrink:0 }}>×</button>
+            </div>
+            <label style={{ display:'block', marginTop:16 }}>
+              <div style={lbl}>Prima data visibile</div>
+              <input type="date" value={pdfFrom} onChange={e => setPdfFrom(e.target.value)}
+                style={{ marginTop:6, width:'100%', boxSizing:'border-box', padding:'9px 10px', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.ink, fontFamily:"var(--font-ui)", fontSize:15 }}/>
+            </label>
+            <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:8, lineHeight:1.5, minHeight:15 }}>
+              {pdfFrom !== first
+                ? <>{hidden > 0 ? `${hidden} ${hidden === 1 ? 'lavorazione finita prima non verrà mostrata' : 'lavorazioni finite prima non verranno mostrate'}. ` : ''}<button onClick={() => setPdfFrom(first)} style={{ background:'none', border:'none', padding:0, cursor:'pointer', color:T.navy, fontFamily:'inherit', fontSize:'inherit', textDecoration:'underline' }}>Dall'inizio del Gantt</button></>
+                : 'Inizio del Gantt'}
+            </div>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:18 }}>
+              <button onClick={() => setPdfFrom(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', color:T.muted, padding:'8px 14px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Annulla</button>
+              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom === first ? null : pdfFrom); setPdfFrom(null); }}
+                style={{ background:T.navy, border:'none', borderRadius:T.radiusSm, cursor: fromOk ? 'pointer' : 'default', opacity: fromOk ? 1 : 0.5, color:'#fff', padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Esporta</button>
+            </div>
+          </div>
+        </div>
+      </BodyPortal>
+    );
+  })();
 
   const registroModal = showRegistro && (
     <GanttRegistroModal
@@ -1428,11 +1481,12 @@ function ProjectGantt({ project, studioId, onBack, version }) {
               onChange={setViewMode}
             />
             <button onClick={()=>exportExcel(lavorazioni,project.name)} style={mBtn}>Excel</button>
-            <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={mBtn}>PDF</button>
+            <button onClick={()=>setPdfFrom(ganttFirstDate(lavorazioni))} style={mBtn}>PDF</button>
             <button onClick={()=>setShowRegistro(true)} style={{...mBtn,color:T.navy}}>Registro voci</button>
           </div>
         </div>
         {registroModal}
+        {pdfModal}
 
         {onlyChart ? (
           /* ── VISTA GRAFICO — colonna nomi sticky + chart scrollabile ── */
@@ -1625,6 +1679,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
   return (
     <div style={{display:'flex',flexDirection:'column',gap:0,height:'calc(100vh - 120px)'}}>
       {registroModal}
+      {pdfModal}
 
       {/* Toolbar */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius: T.radius, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, boxShadow: T.shadow, padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
@@ -1643,7 +1698,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
           <button onClick={()=>exportExcel(lavorazioni,project.name)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             Excel
           </button>
-          <button onClick={()=>exportPDF(lavorazioni,project.name,viewMode)} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
+          <button onClick={()=>setPdfFrom(ganttFirstDate(lavorazioni))} style={{background:'none',border:`0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm,cursor:'pointer',color:T.muted,padding:'5px 12px',fontFamily:"var(--font-label)",fontSize:10,letterSpacing:'0.08em',textTransform:'uppercase'}}>
             PDF
           </button>
           {/* Solo grafico */}
