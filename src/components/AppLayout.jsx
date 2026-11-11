@@ -60,6 +60,7 @@ const UsersIcon     = mkIcon("M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v
 const BriefcaseIcon = mkIcon("M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z");
 const ArchiveIcon   = mkIcon("M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4");
 const FolderIcon    = mkIcon("M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z");
+const MailIcon      = mkIcon("M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z");
 const BellIcon      = mkIcon("M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9");
 const CardIcon      = mkIcon("M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z");
 const SwitchIcon    = mkIcon("M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4");
@@ -680,6 +681,7 @@ export default function AppLayout({ session, children }) {
                     <DropItem icon={CardIcon} label="Piano" onClick={() => goSettings("/impostazioni/piano")}/>
                   )}
                   <DropItem icon={UserIcon}     label="Profilo"        onClick={() => goSettings("/impostazioni/profilo")}/>
+                  <DropItem icon={MailIcon}     label="Posta Outlook"  onClick={() => goSettings("/impostazioni/outlook")}/>
                   <DropItem icon={BuildingIcon} label="Profilo Studio" onClick={() => goSettings("/impostazioni/profilo-studio")}/>
                 </div>
 
