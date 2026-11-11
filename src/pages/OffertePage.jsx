@@ -479,6 +479,26 @@ export default function OffertePage() {
           <div style={{ ...mono, fontSize:10, color:T.muted }}>{offerte.length} offerte totali</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <SlidingTabs
+              tabs={[{ key:'creazione', label:'Creazione' }, { key:'numero', label:'Numero' }]}
+              active={ordine.criterio}
+              onChange={k => setOrdine(p => ({ ...p, criterio:k }))}
+            />
+            <button
+              type="button"
+              onClick={() => setOrdine(p => ({ ...p, verso: p.verso === 'desc' ? 'asc' : 'desc' }))}
+              title={ordine.criterio === 'numero'
+                ? (ordine.verso === 'desc' ? 'Dal numero più alto' : 'Dal numero più basso')
+                : (ordine.verso === 'desc' ? 'Dalla più recente' : 'Dalla più vecchia')}
+              aria-label="Inverti ordine"
+              style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 10px', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.navy, fontFamily:"var(--font-ui)", fontSize:12, fontWeight:600, lineHeight:'18px', cursor:'pointer', whiteSpace:'nowrap', backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm }}>
+              {ordine.criterio !== 'numero' && <span aria-hidden style={{ fontSize:13 }}>{ordine.verso === 'desc' ? '↓' : '↑'}</span>}
+              {ordine.criterio === 'numero'
+                ? (ordine.verso === 'desc' ? '9→1' : '1→9')
+                : (ordine.verso === 'desc' ? 'Recenti' : 'Vecchie')}
+            </button>
+          </div>
           <input
             type="text"
             placeholder="Cerca offerta, cliente..."
@@ -526,31 +546,6 @@ export default function OffertePage() {
             </div>
           );
         })}
-      </div>
-
-      {/* Ordinamento lista */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap:8 }}>
-        <span style={{ ...mono, fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted }}>Ordina per</span>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <SlidingTabs
-            tabs={[{ key:'creazione', label:'Creazione' }, { key:'numero', label:'Numero' }]}
-            active={ordine.criterio}
-            onChange={k => setOrdine(p => ({ ...p, criterio:k }))}
-          />
-          <button
-            type="button"
-            onClick={() => setOrdine(p => ({ ...p, verso: p.verso === 'desc' ? 'asc' : 'desc' }))}
-            title={ordine.criterio === 'numero'
-              ? (ordine.verso === 'desc' ? 'Dal numero più alto' : 'Dal numero più basso')
-              : (ordine.verso === 'desc' ? 'Dalla più recente' : 'Dalla più vecchia')}
-            aria-label="Inverti ordine"
-            style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', border:`1px solid ${T.borderMd}`, borderRadius:T.radiusSm, background:T.surface, color:T.navy, fontFamily:"var(--font-ui)", fontSize:12, fontWeight:600, lineHeight:'18px', cursor:'pointer', whiteSpace:'nowrap', backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm }}>
-            {ordine.criterio !== 'numero' && <span aria-hidden style={{ fontSize:13 }}>{ordine.verso === 'desc' ? '↓' : '↑'}</span>}
-            {ordine.criterio === 'numero'
-              ? (ordine.verso === 'desc' ? '9→1' : '1→9')
-              : (ordine.verso === 'desc' ? 'Recenti' : 'Vecchie')}
-          </button>
-        </div>
       </div>
 
       {/* Lista offerte */}
