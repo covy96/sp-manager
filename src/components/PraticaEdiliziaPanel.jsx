@@ -226,7 +226,7 @@ function VariantiModal({ pratica, onClose, onSaved, onVarianteAdded }) {
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:80, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(14,14,13,0.6)", padding:16 }}>
-      <div style={{ width:"100%", maxWidth:580, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:28, maxHeight:"88vh", overflowY:"auto" }}>
+      <div style={{ width:"100%", maxWidth:580, background:T.glassBg, backdropFilter:T.blur, WebkitBackdropFilter:T.blur, border:`1px solid ${T.glassBorder}`, borderRadius:T.radiusLg, padding:"clamp(18px, 5vw, 28px)", maxHeight:"88vh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
           <div>
@@ -638,13 +638,28 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
   const isSameDate = SAME_DATE.includes(form.tipo_pratica);
 
   // Bottone azione inline
-  const ActionBtn = ({ onClick, active, children }) => (
-    <button onClick={onClick} style={{
-      ...mono, fontSize:10,
-      color: active ? T.navy : T.muted,
-      background:"none",
-      border:`0.5px solid ${active ? T.navy : T.border}`,
-      borderRadius:T.radiusSm, padding:"2px 8px", cursor:"pointer", flexShrink:0,
+  const ActionBtn = ({ onClick, active, color, children }) => {
+    const c = color || T.navy;
+    return (
+      <button onClick={onClick} style={{
+        ...mono, fontSize:10, whiteSpace:"nowrap",
+        color: active ? c : T.muted,
+        background: active ? `color-mix(in srgb, ${c} 10%, transparent)` : "transparent",
+        border:`0.5px solid ${active ? "transparent" : T.borderMd}`,
+        borderRadius:999, padding:"4px 10px", cursor:"pointer", flexShrink:0,
+        fontWeight: active ? 600 : 400,
+      }}>
+        {children}
+      </button>
+    );
+  };
+
+  // Bottone icona (modifica / elimina)
+  const IconBtn = ({ onClick, title, danger, children }) => (
+    <button onClick={onClick} title={title} aria-label={title} style={{
+      width:28, height:28, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+      background:"transparent", border:"none", borderRadius:999, cursor:"pointer",
+      color: danger ? T.red : T.muted, opacity: danger ? 0.75 : 1,
     }}>
       {children}
     </button>
@@ -702,6 +717,7 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                       {items.map(p => {
                         const { varianti, scadenza, stato: statoId } = parseNote(p.note);
                         const statoObj   = getStato(statoId);
+                        const statoColor = statoObj.id === "in_istruttoria" ? T.navy : statoObj.color; // navy leggibile anche in dark
                         const isEdilizia = cat.id === "edilizia";
                         const hasFl = !!p.data_fine_lavori;
                         const today = new Date().toISOString().slice(0,10);
@@ -709,58 +725,61 @@ export default function PraticaEdiliziaPanel({ projectId, studioId, commesse = [
                         const scadSoon   = scadenza?.data && !scadExpired && Math.round((new Date(scadenza.data) - new Date(today)) / 86400000) <= 7;
                         const scadColor  = scadExpired ? T.red : scadSoon ? "#b45309" : T.navy;
                         return (
-                          <div key={p.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", background:T.surface, border:`0.5px solid ${scadExpired ? T.red : T.border}`, borderRadius:T.radiusSm, marginBottom:4, flexWrap:"wrap" }}>
-                            {/* Badge tipo */}
-                            <span style={{ ...mono, fontSize:10, color:T.navy, border:`0.5px solid ${T.navy}`, borderRadius:T.radiusSm, padding:"1px 8px", flexShrink:0 }}>
-                              {p.tipo_pratica}
-                            </span>
-                            {/* Badge stato — select inline */}
-                            <select
-                              value={statoId || "in_istruttoria"}
-                              onChange={e => { e.stopPropagation(); handleChangeStato(p, e.target.value); }}
-                              onClick={e => e.stopPropagation()}
-                              style={{ ...mono, fontSize:10, color:statoObj.color, background:"transparent", border:`0.5px solid ${statoObj.color}`, borderRadius:T.radiusSm, padding:"1px 6px", cursor:"pointer", outline:"none", flexShrink:0 }}>
-                              {STATI_PRATICA.map(s => (
-                                <option key={s.id} value={s.id}>{s.label}</option>
-                              ))}
-                            </select>
-                            {/* Info: protocollo + data pres. */}
-                            <div style={{ flex:1, minWidth:80 }}>
-                              {p.protocollo && <span style={{ ...mono, fontSize:10, color:T.ink }}>{p.protocollo}</span>}
-                              {p.data_presentazione && (
-                                <span style={{ ...mono, fontSize:10, color:T.muted, marginLeft: p.protocollo?8:0 }}>
-                                  pres. {fmtDate(p.data_presentazione)}
-                                </span>
-                              )}
-                              {scadenza?.data && (
-                                <span style={{ ...mono, fontSize:10, color:scadColor, marginLeft:8, border:`0.5px solid ${scadColor}`, borderRadius:T.radiusSm, padding:"1px 6px" }}>
-                                  {scadExpired ? "SCADUTA" : `scad. ${fmtDate(scadenza.data)}`}
-                                </span>
-                              )}
+                          <div key={p.id} style={{ background:T.surface, border:`0.5px solid ${scadExpired ? T.red : T.border}`, borderRadius:T.radiusSm, padding:"12px 14px", marginBottom:8 }}>
+                            {/* Riga 1: tipo + azioni */}
+                            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                              <div style={{ flex:1, minWidth:0, fontSize:14, fontWeight:600, color:T.ink, letterSpacing:"-0.01em", lineHeight:1.3 }}>
+                                {p.tipo_pratica}
+                              </div>
+                              <IconBtn title="Modifica" onClick={() => openEdit(p)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                              </IconBtn>
+                              <IconBtn title="Elimina" danger onClick={() => handleDelete(p.id)}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                              </IconBtn>
                             </div>
-                            {/* Azioni edilizia */}
-                            {isEdilizia && <>
+                            {/* Riga meta: stato + protocollo + presentazione */}
+                            <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", columnGap:12, rowGap:6, marginTop:6 }}>
+                              <div style={{ position:"relative", flexShrink:0 }}>
+                                <select
+                                  value={statoId || "in_istruttoria"}
+                                  onChange={e => { e.stopPropagation(); handleChangeStato(p, e.target.value); }}
+                                  onClick={e => e.stopPropagation()}
+                                  title="Cambia stato"
+                                  style={{ ...mono, fontSize:10, fontWeight:600, color:statoColor, background:`color-mix(in srgb, ${statoColor} 12%, transparent)`, border:"none", borderRadius:999, padding:"4px 22px 4px 10px", cursor:"pointer", outline:"none", appearance:"none", WebkitAppearance:"none", whiteSpace:"nowrap" }}>
+                                  {STATI_PRATICA.map(s => (
+                                    <option key={s.id} value={s.id}>{s.label}</option>
+                                  ))}
+                                </select>
+                                <span aria-hidden style={{ position:"absolute", right:9, top:"50%", transform:"translateY(-50%)", fontSize:7, color:statoColor, pointerEvents:"none" }}>▼</span>
+                              </div>
+                              {p.protocollo && <span style={{ ...mono, fontSize:10, color:T.muted, whiteSpace:"nowrap" }}>Prot. <span style={{ color:T.ink }}>{p.protocollo}</span></span>}
+                              {p.data_presentazione && <span style={{ ...mono, fontSize:10, color:T.muted, whiteSpace:"nowrap" }}>pres. {fmtDate(p.data_presentazione)}</span>}
+                            </div>
+                            {/* Riga 2: chip azioni */}
+                            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10, paddingTop:10, borderTop:`0.5px solid ${T.border}` }}>
+                              {isEdilizia && <>
+                                <ActionBtn
+                                  active={hasFl}
+                                  onClick={() => { setFineLavoriPraticaId(p.id); setFineLavoriOpen(true); }}>
+                                  {hasFl ? `Fine lavori · ${fmtDate(p.data_fine_lavori)}` : "+ Fine lavori"}
+                                </ActionBtn>
+                                <ActionBtn
+                                  active={varianti.length > 0}
+                                  onClick={() => { setVariantePraticaId(p.id); setVariantiOpen(true); }}>
+                                  {varianti.length > 0 ? `Varianti (${varianti.length})` : "+ Variante"}
+                                </ActionBtn>
+                              </>}
+                              {/* Scadenza — visibile per tutte le categorie, colorata se vicina/scaduta */}
                               <ActionBtn
-                                active={hasFl}
-                                onClick={() => { setFineLavoriPraticaId(p.id); setFineLavoriOpen(true); }}>
-                                {hasFl ? `FL ${fmtDate(p.data_fine_lavori)}` : "Fine lavori"}
+                                active={!!scadenza?.data}
+                                color={scadenza?.data ? scadColor : undefined}
+                                onClick={() => { setScadenzaPraticaId(p.id); setScadenzaTipo(p.tipo_pratica); setScadenzaOpen(true); }}>
+                                {scadenza?.data
+                                  ? `${scadExpired ? "Scaduta" : "Scadenza"} · ${fmtDate(scadenza.data)}`
+                                  : "+ Scadenza"}
                               </ActionBtn>
-                              <ActionBtn
-                                active={varianti.length > 0}
-                                onClick={() => { setVariantePraticaId(p.id); setVariantiOpen(true); }}>
-                                {varianti.length > 0 ? `Varianti (${varianti.length})` : "Variante"}
-                              </ActionBtn>
-                            </>}
-                            {/* Scadenza — visibile per tutte le categorie */}
-                            <ActionBtn
-                              active={!!scadenza?.data}
-                              onClick={() => { setScadenzaPraticaId(p.id); setScadenzaTipo(p.tipo_pratica); setScadenzaOpen(true); }}>
-                              {scadenza?.data ? `⏰ ${fmtDate(scadenza.data)}` : "Scadenza"}
-                            </ActionBtn>
-                            {/* Modifica */}
-                            <ActionBtn active={false} onClick={() => openEdit(p)}>Modifica</ActionBtn>
-                            {/* Elimina */}
-                            <button onClick={() => handleDelete(p.id)} style={{ background:"none", border:"none", cursor:"pointer", color:T.muted, fontSize:15, lineHeight:1, flexShrink:0, padding:"0 2px" }}>×</button>
+                            </div>
                           </div>
                         );
                       })}
