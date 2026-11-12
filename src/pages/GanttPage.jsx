@@ -324,9 +324,14 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
     const start = Math.min(totalDays - 1, Math.max(0, rawStart));
     const end   = Math.min(totalDays, Math.max(start + 1, rawStart + dur));
     let cells = '';
-    for (let i = 0; i < start; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
-    cells += `<td class="dc bar-cell ${dayCls(days[start], start)}" colspan="${end - start}"><div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}"></div></td>`;
-    for (let i = end; i < totalDays; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
+    // Una cella per giorno (così le linee dei giorni restano visibili per
+    // tutta la riga); la barra parte dalla prima cella e si allunga sopra le altre.
+    for (let i = 0; i < totalDays; i++) {
+      const bar = i === start
+        ? `<div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}; width:${(end - start) * dayW - 2}px"></div>`
+        : '';
+      cells += `<td class="dc${bar ? ' bar-cell' : ''} ${dayCls(days[i], i)}">${bar}</td>`;
+    }
     return `<tr class="${r % 2 ? 'odd' : ''}">
       <td class="lc name"><div class="nm"><span class="dot" style="background:${color}"></span><span>${escHtml(lav.descrizione) || '—'}</span></div></td>
       <td class="lc mono">${escHtml(lav.operatore) || '—'}</td>
@@ -397,7 +402,8 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
       .today, tr.odd .today { background:rgba(19,49,92,0.10); }
       .wstart { border-left:1px solid #dcdcdc; }
       .mstart { border-left:1px solid #9aa3b2; }
-      .bar-cell { position:relative; vertical-align:middle; }
+      .bar-cell { position:relative; }
+      .bar-cell .bar { position:absolute; left:1px; top:50%; transform:translateY(-50%); z-index:1; margin:0; }
       .bar { height:14px; border-radius:3px; margin:0 1px; }
       svg.deps { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
     </style></head>
