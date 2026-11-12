@@ -390,7 +390,8 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
       .lc.name .nm { display:flex; align-items:center; gap:6px; }
       .lc.name .dot { flex:none; width:8px; height:8px; border-radius:50%; }
       tr.odd .lc { background:#fafafa; }
-      .dc { height:26px; border-bottom:1px solid #eee; }
+      .dc { height:26px; border-bottom:1px solid #eee; border-left:1px solid #ececec; }
+      .dh { border-left:1px solid #e2e2e2; }
       tr.odd .dc { background:#fcfcfc; }
       .we, tr.odd .we { background:#f3f3f3; }
       .today, tr.odd .today { background:rgba(19,49,92,0.10); }
@@ -401,7 +402,7 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
       svg.deps { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
     </style></head>
     <body>
-      <div class="top"><h1>Gantt — ${escHtml(projectName)}</h1><div class="exp">Esportato il ${new Date().toLocaleDateString('it-IT')}</div></div>
+      <div class="top"><h1>Gantt — ${escHtml(projectName)}</h1><div class="exp">${cutISO ? `Dal ${fmtPdfDate(cutISO)} · ` : ''}Esportato il ${new Date().toLocaleDateString('it-IT')}</div></div>
       ${legendHtml}
       <div class="wrap">
         <table>
@@ -936,7 +937,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:18 }}>
               <button onClick={() => setPdfFrom(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', color:T.muted, padding:'8px 14px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Annulla</button>
-              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom === first ? null : pdfFrom); setPdfFrom(null); }}
+              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom); setPdfFrom(null); }}
                 style={{ background:T.navy, border:'none', borderRadius:T.radiusSm, cursor: fromOk ? 'pointer' : 'default', opacity: fromOk ? 1 : 0.5, color:'#fff', padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Esporta</button>
             </div>
           </div>
