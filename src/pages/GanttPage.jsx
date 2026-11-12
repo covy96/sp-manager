@@ -324,9 +324,14 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
     const start = Math.min(totalDays - 1, Math.max(0, rawStart));
     const end   = Math.min(totalDays, Math.max(start + 1, rawStart + dur));
     let cells = '';
-    for (let i = 0; i < start; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
-    cells += `<td class="dc bar-cell ${dayCls(days[start], start)}" colspan="${end - start}"><div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}"></div></td>`;
-    for (let i = end; i < totalDays; i++) cells += `<td class="dc ${dayCls(days[i], i)}"></td>`;
+    // Una cella per giorno (così le linee dei giorni restano visibili per
+    // tutta la riga); la barra parte dalla prima cella e si allunga sopra le altre.
+    for (let i = 0; i < totalDays; i++) {
+      const bar = i === start
+        ? `<div class="bar" data-id="${escHtml(lav.id)}" style="background:${color}; width:${(end - start) * dayW - 2}px"></div>`
+        : '';
+      cells += `<td class="dc${bar ? ' bar-cell' : ''} ${dayCls(days[i], i)}">${bar}</td>`;
+    }
     return `<tr class="${r % 2 ? 'odd' : ''}">
       <td class="lc name"><div class="nm"><span class="dot" style="background:${color}"></span><span>${escHtml(lav.descrizione) || '—'}</span></div></td>
       <td class="lc mono">${escHtml(lav.operatore) || '—'}</td>
@@ -390,18 +395,20 @@ function exportPDF(lavorazioni, projectName, fromISO = null) {
       .lc.name .nm { display:flex; align-items:center; gap:6px; }
       .lc.name .dot { flex:none; width:8px; height:8px; border-radius:50%; }
       tr.odd .lc { background:#fafafa; }
-      .dc { height:26px; border-bottom:1px solid #eee; }
+      .dc { height:26px; border-bottom:1px solid #eee; border-left:1px solid #ececec; }
+      .dh { border-left:1px solid #e2e2e2; }
       tr.odd .dc { background:#fcfcfc; }
       .we, tr.odd .we { background:#f3f3f3; }
       .today, tr.odd .today { background:rgba(19,49,92,0.10); }
       .wstart { border-left:1px solid #dcdcdc; }
       .mstart { border-left:1px solid #9aa3b2; }
-      .bar-cell { position:relative; vertical-align:middle; }
+      .bar-cell { position:relative; }
+      .bar-cell .bar { position:absolute; left:1px; top:50%; transform:translateY(-50%); z-index:1; margin:0; }
       .bar { height:14px; border-radius:3px; margin:0 1px; }
       svg.deps { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
     </style></head>
     <body>
-      <div class="top"><h1>Gantt — ${escHtml(projectName)}</h1><div class="exp">Esportato il ${new Date().toLocaleDateString('it-IT')}</div></div>
+      <div class="top"><h1>Gantt — ${escHtml(projectName)}</h1><div class="exp">${cutISO ? `Dal ${fmtPdfDate(cutISO)} · ` : ''}Esportato il ${new Date().toLocaleDateString('it-IT')}</div></div>
       ${legendHtml}
       <div class="wrap">
         <table>
@@ -936,7 +943,7 @@ function ProjectGantt({ project, studioId, onBack, version }) {
             </div>
             <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:18 }}>
               <button onClick={() => setPdfFrom(null)} style={{ background:'none', border:`0.5px solid ${T.borderMd}`, borderRadius:T.radiusSm, cursor:'pointer', color:T.muted, padding:'8px 14px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Annulla</button>
-              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom === first ? null : pdfFrom); setPdfFrom(null); }}
+              <button disabled={!fromOk} onClick={() => { exportPDF(lavorazioni, project.name, pdfFrom); setPdfFrom(null); }}
                 style={{ background:T.navy, border:'none', borderRadius:T.radiusSm, cursor: fromOk ? 'pointer' : 'default', opacity: fromOk ? 1 : 0.5, color:'#fff', padding:'8px 16px', fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.08em', textTransform:'uppercase' }}>Esporta</button>
             </div>
           </div>
