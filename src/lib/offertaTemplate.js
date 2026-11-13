@@ -28,6 +28,19 @@ export function compilaTesto(testo, valori = {}) {
   });
 }
 
+// Testo di una voce nel documento di una singola offerta: se nella
+// compilazione l'utente ha riscritto la voce (vc.testoLibero) usa quel testo,
+// altrimenti il testo standard del template con i campi «…» compilati.
+// Il template dello studio resta invariato: la modifica vale solo per l'offerta.
+export function testoVoce(v, vc) {
+  const t = vc?.testoLibero;
+  if (typeof t === "string" && t.trim()) return t;
+  return compilaTesto(v?.testo || "", vc?.campi);
+}
+
+// Vero se la voce ha un testo riscritto per questa offerta.
+export const voceModificata = (vc) => typeof vc?.testoLibero === "string" && vc.testoLibero.trim() !== "";
+
 // Spezza un testo in segmenti { text, bold } interpretando **…**
 export function segmentaGrassetto(testo) {
   const parts = String(testo).split(/\*\*/);

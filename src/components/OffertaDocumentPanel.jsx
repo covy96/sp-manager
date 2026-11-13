@@ -5,7 +5,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useEscKey } from "../hooks/useEscKey";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import {
-  resolveTemplate, estraiCampi, compilaTesto, testoOpzionePagamento,
+  resolveTemplate, estraiCampi, compilaTesto, testoOpzionePagamento, testoVoce,
 } from "../lib/offertaTemplate";
 import {
   normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
@@ -797,6 +797,8 @@ export default function OffertaDocumentPanel({
                         {g.label && <div style={{ ...mono, fontSize: 9.5, letterSpacing: "0.14em", color: T.muted, marginBottom: 8 }}>{g.label}</div>}
                         {g.voci.map(v => {
                           const vc = cfgS.voci[v.id];
+                          // Testo riscritto solo per questa offerta (il template resta invariato).
+                          const inModifica = typeof vc.testoLibero === "string";
                           return (
                             <div key={v.id} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: `0.5px solid ${T.border}`, opacity: vc.attiva ? 1 : 0.5 }}>
                               <div style={{ paddingTop: 2 }}>
@@ -806,10 +808,32 @@ export default function OffertaDocumentPanel({
                                 {v.nomeApp && (
                                   <span style={{ display: "inline-block", ...mono, fontSize: 8.5, fontWeight: 700, letterSpacing: "0.08em", color: T.navy, background: T.navyLight || T.surface2, border: `1px solid ${T.navy}`, borderRadius: 5, padding: "1px 6px", marginBottom: 4 }}>{v.nomeApp}</span>
                                 )}
-                                <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5, whiteSpace: "pre-line" }}>
-                                  {pulisci(compilaTesto(v.testo, vc.campi))}
-                                </div>
-                                {vc.attiva && <CampiTesto testo={v.testo} valori={vc.campi} onChange={(k, val) => setCampoVoce(sez.id, v.id, k, val)} inputSt={inputSt} />}
+                                {inModifica ? (
+                                  <textarea value={vc.testoLibero} autoFocus={!vc.testoLibero}
+                                    onChange={e => setVoce(sez.id, v.id, { testoLibero: e.target.value })}
+                                    rows={Math.min(12, Math.max(4, Math.ceil(vc.testoLibero.length / 45) + vc.testoLibero.split("\n").length - 1))}
+                                    placeholder={pulisci(compilaTesto(v.testo, vc.campi))}
+                                    style={{ ...inputSt, display: "block", width: "100%", boxSizing: "border-box", fontSize: 11.5, lineHeight: 1.5, padding: "8px 10px", resize: "vertical", borderColor: T.navy }} />
+                                ) : (
+                                  <div style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                                    {pulisci(testoVoce(v, vc))}
+                                  </div>
+                                )}
+                                {vc.attiva && !inModifica && <CampiTesto testo={v.testo} valori={vc.campi} onChange={(k, val) => setCampoVoce(sez.id, v.id, k, val)} inputSt={inputSt} />}
+                                {vc.attiva && (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginTop: 6 }}>
+                                    {inModifica ? (
+                                      <>
+                                        <span style={{ ...mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: T.navy, background: T.navyLight || T.surface2, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" }}>SOLO QUESTA OFFERTA</span>
+                                        <button type="button" onClick={() => setVoce(sez.id, v.id, { testoLibero: undefined })}
+                                          style={{ ...mono, fontSize: 9.5, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0, whiteSpace: "nowrap" }}>↺ Ripristina testo standard</button>
+                                      </>
+                                    ) : (
+                                      <button type="button" onClick={() => setVoce(sez.id, v.id, { testoLibero: compilaTesto(v.testo, vc.campi) })}
+                                        style={{ ...mono, fontSize: 9.5, background: "none", border: "none", color: T.navy, cursor: "pointer", padding: 0 }}>✎ Modifica testo</button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               {sez.modoPrezzo === "voci" && v.prezzo && (() => {
                                 const isCad = /cad/i.test(v.prezzoLabel || "");

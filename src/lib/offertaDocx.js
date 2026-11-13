@@ -7,7 +7,7 @@
 import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import {
   resolveTemplate, PAGAMENTO_CHIUSURA,
-  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC, testoOpzionePagamento,
+  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC, testoOpzionePagamento, testoVoce,
 } from "./offertaTemplate";
 import {
   sezioniAttive, vociAttive, importoVoce, calcolaTotali, euroSimbolo, numero2, importoInLettere, dataEstesa,
@@ -340,7 +340,7 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
       }
       gruppo.voci.forEach((v) => {
         const vc = cfg.sezioni[sez.id].voci[v.id] || {};
-        body.push(Bullet(compilaTesto(v.testo, vc.campi)));
+        body.push(Bullet(testoVoce(v, vc)));
         if (sez.modoPrezzo === "voci" && v.prezzo) {
           // Voci "cad.": unitario × quantità, mostrato come costo finale con "€".
           body.push(P(`€ ${numero2(importoVoce(v, vc))}`, { align: AlignmentType.RIGHT, bold: true, spacing: 140 }));

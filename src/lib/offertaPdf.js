@@ -10,7 +10,7 @@ import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import { buildFontSetter, urlToBase64, imageSize, drawFooters, NAVY } from "./pdfCommon";
 import {
   resolveTemplate, PAGAMENTO_CHIUSURA,
-  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC, testoOpzionePagamento,
+  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC, testoOpzionePagamento, testoVoce,
 } from "./offertaTemplate";
 import {
   sezioniAttive, vociAttive, importoSezione, importoVoce, calcolaTotali,
@@ -282,7 +282,7 @@ export async function generaOffertaPdf({ offerta, studio, documento, modo = "sal
       }
       gruppo.voci.forEach((v) => {
         const vc = cfg.sezioni[sez.id].voci[v.id] || {};
-        const testo = compilaTesto(v.testo, vc.campi);
+        const testo = testoVoce(v, vc);
         const conPrezzo = sez.modoPrezzo === "voci" && v.prezzo;
 
         // Riserva lo spazio per testo + eventuale riga prezzo: evita che
