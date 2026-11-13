@@ -1,6 +1,7 @@
 // Test unitari della duplicazione offerta (funzioni pure, niente rete).
 import { describe, it, expect } from "vitest";
-import { prossimoNumeroOfferta, datiDuplicaOfferta, ordinaOfferte } from "./offertaModel";
+import { prossimoNumeroOfferta, datiDuplicaOfferta, ordinaOfferte, normalizzaDocumento as _norm } from "./offertaModel";
+import { testoVoce, voceModificata } from "./offertaTemplate";
 
 describe("prossimoNumeroOfferta", () => {
   it("incrementa mantenendo gli zeri", () => {
@@ -75,5 +76,30 @@ describe("ordinaOfferte", () => {
   it("non modifica la lista originale", () => {
     ordinaOfferte(lista, "numero");
     expect(lista[0].id).toBe("a");
+  });
+});
+
+// ── Testo voce modificato per singola offerta ───────────────────────────────
+
+describe("testoVoce", () => {
+  const v = { id: "x", testo: "Presentazione di n° «_» pratiche." };
+  it("usa il testo standard con i campi compilati se non modificato", () => {
+    expect(testoVoce(v, { campi: { f0: "2" } })).toBe("Presentazione di n° 2 pratiche.");
+    expect(voceModificata({ campi: {} })).toBe(false);
+  });
+  it("usa il testo riscritto per l'offerta, con gli a capo", () => {
+    const vc = { campi: { f0: "2" }, testoLibero: "Testo mio\nseconda riga" };
+    expect(testoVoce(v, vc)).toBe("Testo mio\nseconda riga");
+    expect(voceModificata(vc)).toBe(true);
+  });
+  it("testo riscritto vuoto torna al testo standard", () => {
+    expect(testoVoce(v, { campi: {}, testoLibero: "   " })).toBe("Presentazione di n° _ pratiche.");
+  });
+  it("il testo riscritto sopravvive alla normalizzazione del documento", () => {
+    const base = _norm(null, {});
+    const sid = Object.keys(base.sezioni)[0];
+    const vid = Object.keys(base.sezioni[sid].voci)[0];
+    const salvato = { ...base, sezioni: { ...base.sezioni, [sid]: { ...base.sezioni[sid], voci: { ...base.sezioni[sid].voci, [vid]: { ...base.sezioni[sid].voci[vid], testoLibero: "Solo qui" } } } } };
+    expect(_norm(JSON.parse(JSON.stringify(salvato)), {}).sezioni[sid].voci[vid].testoLibero).toBe("Solo qui");
   });
 });
