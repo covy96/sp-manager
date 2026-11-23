@@ -193,7 +193,19 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // (misure, quantità e note proprie).
   const addVoce = (voce) => {
     const gia = righe.some((r) => r.voce_id && r.voce_id === voce.id);
-    setRighe((p) => [...p, rigaFromVoce(voce)]); touch();
+    // se la voce c'è già, la nuova copia va subito sotto l'ultima copia esistente
+    setRighe((p) => {
+      let last = -1;
+      p.forEach((r, i) => { if (r.voce_id && r.voce_id === voce.id) last = i; });
+      const nuova = rigaFromVoce(voce);
+      if (last < 0) return [...p, nuova];
+      nuova.categoria_code = p[last].categoria_code;
+      nuova.categoria_nome = p[last].categoria_nome;
+      const next = [...p];
+      next.splice(last + 1, 0, nuova);
+      return next;
+    });
+    touch();
     if (gia) showToast?.("Voce aggiunta di nuovo: inserisci le misure della nuova copia", "success");
   };
   // Duplica una riga del capitolato subito sotto, con le stesse misure (copia indipendente).
