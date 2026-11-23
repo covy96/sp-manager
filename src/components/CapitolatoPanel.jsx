@@ -166,11 +166,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // ── ricerca voci ─────────────────────────────────────────────────────────────
   const risultati = useMemo(() => {
     const q = norm(query.trim());
-    const usateIds = new Set(righe.map((r) => r.voce_id).filter(Boolean));
+    // quante volte ogni voce di libreria è già nel capitolato (la si può
+    // aggiungere più volte, es. stessa voce con dimensioni diverse)
+    const usate = new Map();
+    righe.forEach((r) => { if (r.voce_id) usate.set(r.voce_id, (usate.get(r.voce_id) || 0) + 1); });
     let list = libreria;
     if (catFilter) list = list.filter((v) => v.categoria_code === catFilter);
     if (q) list = list.filter((v) => norm(v.codice).includes(q) || norm(codiceVisibile(v.codice, v.categoria_code)).includes(q) || norm(v.titolo).includes(q) || norm(richToPlain(v.descrizione)).includes(q));
-    return list.slice(0, 80).map((v) => ({ ...v, _added: usateIds.has(v.id) }));
+    return list.slice(0, 80).map((v) => ({ ...v, _added: usate.get(v.id) || 0 }));
   }, [libreria, query, catFilter, righe]);
 
   const catConVoci = useMemo(() => {
@@ -186,9 +189,29 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // La voce aggiunta finisce nella SUA macro-categoria naturale (demolizioni,
   // costruzioni…): non si sceglie l'elenco ogni volta. Con il menu ⋮ della riga
   // la si può eventualmente spostare in un'altra mega-voce.
+  // La stessa voce si può aggiungere più volte: ogni copia è una riga a sé
+  // (misure, quantità e note proprie).
   const addVoce = (voce) => {
+    const gia = righe.some((r) => r.voce_id && r.voce_id === voce.id);
     setRighe((p) => [...p, rigaFromVoce(voce)]); touch();
+    if (gia) showToast?.("Voce aggiunta di nuovo: inserisci le misure della nuova copia", "success");
   };
+  // Duplica una riga del capitolato subito sotto, con le stesse misure (copia indipendente).
+  const duplicaRiga = (key) => setRighe((p) => {
+    const idx = p.findIndex((r) => r._key === key);
+    if (idx < 0) return p;
+    const src = p[idx];
+    const copia = {
+      ...JSON.parse(JSON.stringify(src)),
+      id: undefined,
+      _key: (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()),
+    };
+    delete copia.id;
+    const next = [...p];
+    next.splice(idx + 1, 0, copia);
+    touch();
+    return next;
+  });
   // Sposta una riga in un'altra macro-categoria (dal menu ⋮ della voce).
   const moveRigaCat = (key, code) => {
     const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === code);
@@ -630,13 +653,13 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         <button onClick={openNuovaVoce} style={{ ...btnGhost, padding: "6px 12px" }}>+ Crea nuova voce</button>
                       </div>
                     ) : risultati.map((v) => (
-                      <button key={v.id} onClick={() => addVoce(v)} disabled={v._added}
-                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginBottom: 6, background: v._added ? T.surface2 : "transparent", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: v._added ? "default" : "pointer", opacity: v._added ? 0.55 : 1 }}
-                        onMouseEnter={(e) => { if (!v._added) e.currentTarget.style.borderColor = T.navy; }}
+                      <button key={v.id} onClick={() => addVoce(v)} title={v._added ? "Già nel capitolato: clicca per aggiungerla un'altra volta" : "Aggiungi al capitolato"}
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginBottom: 6, background: v._added ? T.surface2 : "transparent", border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, cursor: "pointer" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.navy; }}
                         onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                           <span style={{ fontFamily: mono, fontSize: 10, color: T.navy, fontWeight: 600 }}>{codiceVisibile(v.codice, v.categoria_code)}</span>
-                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{letteraCategoria(v.categoria_code)}{v.unita ? " · " + v.unita : ""}{v._added ? " · ✓" : ""}</span>
+                          <span style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>{letteraCategoria(v.categoria_code)}{v.unita ? " · " + v.unita : ""}{v._added ? <span style={{ marginLeft: 6, padding: "1px 6px", borderRadius: 999, background: T.navyLight, color: T.navy, fontWeight: 700 }}>✓ ×{v._added}</span> : null}</span>
                         </div>
                         <div style={{ fontSize: 11.5, fontWeight: 600, color: T.ink, marginTop: 2 }}>{v.titolo}</div>
                         <RichText value={v.descrizione} style={{ fontSize: 10, color: T.muted, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", whiteSpace: "normal" }} />
@@ -660,6 +683,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                         <RigaEditor key={r._key} r={r} T={T} mono={mono} miniInput={miniInput}
                           onPatch={(patch) => patchRiga(r._key, patch)}
                           onRemove={() => removeRiga(r._key)}
+                          onDuplica={() => duplicaRiga(r._key)}
                           onMove={(d) => moveRiga(r._key, d)}
                           onMoveCat={(code) => moveRigaCat(r._key, code)}
                           onAddMisura={() => addMisura(r._key)}
@@ -815,7 +839,7 @@ function chip(T, active) {
 }
 
 // ── Editor di una singola voce (riga) ──────────────────────────────────────────
-function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCat, onAddMisura, onPatchMisura, onRemoveMisura }) {
+function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMove, onMoveCat, onAddMisura, onPatchMisura, onRemoveMisura }) {
   const [catMenu, setCatMenu] = useState(false); // menu ⋮ "sposta in un'altra mega-voce"
   const tot = totaleRigaEff(r);
   const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
@@ -846,6 +870,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onMove, onMoveCa
         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
           <button title="Su" onClick={() => onMove(-1)} style={iconBtn(T)}>↑</button>
           <button title="Giù" onClick={() => onMove(1)} style={iconBtn(T)}>↓</button>
+          <button title="Duplica voce (copia con misure proprie, subito sotto)" onClick={onDuplica} style={iconBtn(T)}>⧉</button>
           <div style={{ position: "relative" }}>
             <button title="Sposta in un'altra mega-voce" onClick={() => setCatMenu((v) => !v)} style={iconBtn(T)}>⋮</button>
             {catMenu && (
