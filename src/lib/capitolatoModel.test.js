@@ -284,3 +284,16 @@ describe("voci eliminate (override disattivati)", () => {
     expect(out.filter((v) => v.attiva !== false)).toEqual([]);
   });
 });
+
+describe("stessa voce aggiunta più volte", () => {
+  it("ogni copia è una riga a sé con codice proprio e misure indipendenti", () => {
+    const voce = { id: "v1", categoria_code: "D", codice: "D01", titolo: "Serramento", unita: "mq" };
+    const a = rigaFromVoce(voce);
+    const b = rigaFromVoce(voce);
+    expect(a._key).not.toBe(b._key);
+    a.misurazioni[0].lung = "1.2";
+    expect(b.misurazioni[0].lung).not.toBe("1.2");
+    const [g] = componiGruppi([a, b]);
+    expect(g.items.map((r) => r._code)).toEqual(["A01", "A02"]);
+  });
+});
