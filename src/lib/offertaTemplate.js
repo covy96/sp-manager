@@ -355,6 +355,51 @@ export function testoOpzionePagamento(o, pagamento) {
   return (typeof t === "string" && t.trim()) ? t : o.testo;
 }
 
+// Legge le rate scritte a mano nel testo di un'opzione di pagamento, una per
+// riga (o separate da ";"): "50% accettazione offerta" → { percentuale: 50,
+// descrizione: "accettazione offerta" }. Le righe senza "%" vengono ignorate.
+export function rateDaTesto(testo) {
+  if (typeof testo !== "string") return [];
+  const out = [];
+  for (const riga of testo.split(/\r?\n|;/)) {
+    const m = riga.trim().match(/^[-•*\s]*(\d+(?:[.,]\d+)?)\s*%\s*[-–—:]?\s*(.*)$/);
+    if (!m) continue;
+    const percentuale = Number(m[1].replace(",", "."));
+    if (!(percentuale > 0)) continue;
+    const descrizione = m[2].trim().replace(/[.;,]+$/, "").trim();
+    out.push({ percentuale, descrizione });
+  }
+  return out;
+}
+
+// Rate della commessa dalla modalità di pagamento del documento:
+//  - Opzione C → una rata per ogni percentuale personalizzata;
+//  - Opzione A/B → se nel testo dell'opzione ci sono righe con "%" (es.
+//    "50% accettazione offerta"), una rata per riga (con un saldo se la
+//    somma non arriva al 100%); altrimenti una rata unica al 100%.
+// Ritorna [{ label, percentuale }]; vuoto se non è scelta nessuna opzione.
+export function rateCommessaDaPagamento(pagamento) {
+  const opz = pagamento?.opzioni || [];
+  const maiusc = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  if (opz.includes("C") && Array.isArray(pagamento?.rateC) && pagamento.rateC.length > 0) {
+    return pagamento.rateC.map((r, i) => ({
+      label: (r.descrizione || "").trim() || `Rata ${i + 1}`,
+      percentuale: Number(r.percentuale) || 0,
+    }));
+  }
+  const id = ["A", "B"].find(x => opz.includes(x));
+  if (!id) return [];
+  const opzione = MODALITA_PAGAMENTO.find(o => o.id === id);
+  const lette = rateDaTesto(testoOpzionePagamento(opzione, pagamento));
+  if (lette.length > 0) {
+    const rate = lette.map((r, i) => ({ label: maiusc(r.descrizione) || `Rata ${i + 1}`, percentuale: r.percentuale }));
+    const somma = rate.reduce((s, r) => s + r.percentuale, 0);
+    if (somma < 99.995) rate.push({ label: "Saldo", percentuale: Math.round((100 - somma) * 100) / 100 });
+    return rate;
+  }
+  return [{ label: id === "A" ? "Saldo alla presentazione" : "Saldo all'accettazione", percentuale: 100 }];
+}
+
 export const PAGAMENTO_CHIUSURA = "Pagamenti per rimessa diretta a mezzo di bonifico bancario o assegno bancario.";
 
 // ── Testi di contorno ────────────────────────────────────────────────────────

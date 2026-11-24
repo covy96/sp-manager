@@ -936,7 +936,7 @@ export default function CommessaDetailPage() {
                 <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `0.5px solid ${T.border}` }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: r.pagato ? T.green : pf ? T.navy : T.borderMd }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? <span style={{ fontWeight: 400, color: T.muted }}> · {pct(r.percentuale)}</span> : null}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink }}>Rata {r.numero_rata || i + 1}{r.percentuale ? <span style={{ fontWeight: 400, color: T.muted }}> · {pct(r.percentuale)}</span> : null}{r.label && !/^rata\s*\d+$/i.test(r.label.trim()) ? <span style={{ fontWeight: 400, color: T.muted }}> · {r.label}</span> : null}</div>
                     <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: r.pagato ? T.green : T.muted }}>
                       {r.pagato ? `pagata${r.data_pagamento ? ' ' + new Date(r.data_pagamento).toLocaleDateString('it-IT') : ''}` : pf ? <span style={{ color: T.navy }}>pf {pf.numero_proforma}</span> : 'in attesa'}
                     </div>
