@@ -9,6 +9,7 @@ import { useToast } from "../contexts/ToastContext";
 import { usePermissions } from "../hooks/usePermissions";
 import OffertaDocumentPanel from "../components/OffertaDocumentPanel";
 import { duplicaOfferta } from "../lib/offertaDuplica";
+import { rateCommessaDaPagamento } from "../lib/offertaTemplate";
 
 function currency(v) {
   return new Intl.NumberFormat("it-IT", { style:"currency", currency:"EUR", maximumFractionDigits:2 }).format(Number(v)||0);
@@ -254,21 +255,12 @@ export default function OfferteDetailPage() {
     if (error) { showToast('Errore: '+error.message); setSaving(false); return; }
 
     // Genera la suddivisione pagamenti della commessa dalla modalità scelta nel
-    // documento: Opzione C → una rata per percentuale; Opzione A/B → rata unica 100%.
-    const pagDoc = offerta?.documento?.pagamento;
-    const opz = pagDoc?.opzioni || [];
-    let rateRows = null;
-    if (pagDoc && opz.includes('C') && Array.isArray(pagDoc.rateC) && pagDoc.rateC.length > 0) {
-      rateRows = pagDoc.rateC.map((r, i) => ({
-        commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
-        label: (r.descrizione||'').trim() || `Rata ${i+1}`,
-        percentuale: Number(r.percentuale) || 0, importo_fisso: null, pagato: false,
-      }));
-    } else if (pagDoc && (opz.includes('A') || opz.includes('B'))) {
-      const label = opz.includes('A') ? 'Saldo alla presentazione' : "Saldo all'accettazione";
-      rateRows = [{ commessa_id: commessa.id, studio: studioId, numero_rata: 1, label, percentuale: 100, importo_fisso: null, pagato: false }];
-    }
-    if (rateRows && rateRows.length > 0) {
+    // documento (Opzione C, oppure le % scritte nel testo dell'Opzione A/B).
+    const rateRows = rateCommessaDaPagamento(offerta?.documento?.pagamento).map((r, i) => ({
+      commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
+      label: r.label, percentuale: r.percentuale, importo_fisso: null, pagato: false,
+    }));
+    if (rateRows.length > 0) {
       const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);
       if (rErr) showToast('Rate non generate: '+rErr.message, 'error');
     }

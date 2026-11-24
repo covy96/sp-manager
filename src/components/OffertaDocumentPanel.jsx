@@ -6,6 +6,7 @@ import { useEscKey } from "../hooks/useEscKey";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import {
   resolveTemplate, estraiCampi, compilaTesto, testoOpzionePagamento, testoVoce,
+  rateCommessaDaPagamento,
 } from "../lib/offertaTemplate";
 import {
   normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
@@ -321,22 +322,12 @@ export default function OffertaDocumentPanel({
     showToast(`Versione ${v.n} caricata — premi Salva per renderla principale`, "success");
   };
 
-  // Righe rata dal documento (Opzione C → una per %, A/B → unica 100%).
-  const buildRateRows = (commessaId, pagamento) => {
-    const opz = pagamento?.opzioni || [];
-    if (opz.includes("C") && Array.isArray(pagamento?.rateC) && pagamento.rateC.length > 0) {
-      return pagamento.rateC.map((r, i) => ({
-        commessa_id: commessaId, studio: offerta.studio, numero_rata: i + 1,
-        label: (r.descrizione || "").trim() || `Rata ${i + 1}`,
-        percentuale: Number(r.percentuale) || 0, importo_fisso: null, pagato: false,
-      }));
-    }
-    if (opz.includes("A") || opz.includes("B")) {
-      const label = opz.includes("A") ? "Saldo alla presentazione" : "Saldo all'accettazione";
-      return [{ commessa_id: commessaId, studio: offerta.studio, numero_rata: 1, label, percentuale: 100, importo_fisso: null, pagato: false }];
-    }
-    return [];
-  };
+  // Righe rata dal documento (Opzione C, oppure % scritte nell'Opzione A/B).
+  const buildRateRows = (commessaId, pagamento) =>
+    rateCommessaDaPagamento(pagamento).map((r, i) => ({
+      commessa_id: commessaId, studio: offerta.studio, numero_rata: i + 1,
+      label: r.label, percentuale: r.percentuale, importo_fisso: null, pagato: false,
+    }));
 
   // Dopo aver salvato un'offerta accettata: se il totale cambia, propone di
   // aggiornare la commessa e ricalibrare le rate.
