@@ -15,6 +15,16 @@ describe("prossimoNumeroOfferta", () => {
   it("salta i numeri già usati", () => {
     expect(prossimoNumeroOfferta("2026/014", ["2026/015", "2026/016"])).toBe("2026/017");
   });
+  it("anno a 2 cifre in fondo: non tocca l'anno, prende il prossimo progressivo dell'anno", () => {
+    expect(prossimoNumeroOfferta("197-26", [], 2026)).toBe("198-26");
+    expect(prossimoNumeroOfferta("197-26", ["197-26", "210-26", "300-25"], 2026)).toBe("211-26");
+    expect(prossimoNumeroOfferta("005-26", ["005-26", "007-26"], 2026)).toBe("008-26");
+  });
+  it("duplicando un'offerta dell'anno scorso usa l'anno di oggi", () => {
+    expect(prossimoNumeroOfferta("197-25", ["197-25", "12-26", "3-26"], 2026)).toBe("13-26");
+    expect(prossimoNumeroOfferta("2025/090", ["2026/004"], 2026)).toBe("2026/005");
+    expect(prossimoNumeroOfferta("197-25", [], 2026)).toBe("1-26");
+  });
   it("senza cifre aggiunge un suffisso", () => {
     expect(prossimoNumeroOfferta("ABC", ["ABC-2"])).toBe("ABC-3");
   });
@@ -70,6 +80,8 @@ describe("ordinaOfferte", () => {
   it("numeri con anno in fondo o prefisso", () => {
     const l = [{ id: "x", numero_offerta: "9/2026" }, { id: "y", numero_offerta: "12/2026" }, { id: "z", numero_offerta: "30/2025" }];
     expect(ordinaOfferte(l, "numero").map((o) => o.id)).toEqual(["y", "x", "z"]);
+    const q = [{ id: "a", numero_offerta: "9-26" }, { id: "b", numero_offerta: "197-25" }, { id: "c", numero_offerta: "12-26" }];
+    expect(ordinaOfferte(q, "numero").map((o) => o.id)).toEqual(["c", "a", "b"]);
     const p = [{ id: "1", numero_offerta: "OFF.9" }, { id: "2", numero_offerta: "OFF.10" }];
     expect(ordinaOfferte(p, "numero").map((o) => o.id)).toEqual(["2", "1"]);
   });

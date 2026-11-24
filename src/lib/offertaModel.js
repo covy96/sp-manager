@@ -213,11 +213,30 @@ export function vociAttive(s, doc) {
 }
 
 // ── Duplicazione offerta ─────────────────────────────────────────────────────
-// Propone il numero successivo partendo da quello dell'offerta originale:
-// incrementa l'ultimo gruppo di cifre che non sia un anno (es. "2026/014" →
-// "2026/015", "15/2026" → "16/2026"), mantenendo gli zeri iniziali e saltando
-// i numeri già usati nello studio.
-export function prossimoNumeroOfferta(numero, esistenti = []) {
+// Scompone un numero offerta in anno e progressivo. L'anno è un gruppo 19xx/20xx
+// oppure, se ci sono almeno due gruppi di cifre, un gruppo di 2 cifre che
+// sembra un anno (00..anno corrente+1), preferendo l'ultimo: "197-26" → anno
+// 2026, progressivo 197. Il progressivo è l'ultimo gruppo che non è l'anno.
+function scomponiNumeroOfferta(numero, annoRif = new Date().getFullYear()) {
+  const gruppi = [...String(numero || "").matchAll(/\d+/g)];
+  let anno = gruppi.find((g) => /^(19|20)\d\d$/.test(g[0])) || null;
+  if (!anno && gruppi.length >= 2) {
+    const yyMax = (annoRif % 100) + 1;
+    anno = [...gruppi].reverse().find((g) => g[0].length === 2 && Number(g[0]) <= yyMax) || null;
+  }
+  const altri = gruppi.filter((g) => g !== anno);
+  const prog = altri.length ? altri.at(-1) : null;
+  const annoNum = anno ? (anno[0].length === 2 ? 2000 + Number(anno[0]) : Number(anno[0])) : null;
+  return { anno, annoNum, prog };
+}
+
+// Propone il numero per una nuova offerta partendo dal formato di quella
+// originale. Se il numero contiene un anno ("197-26", "2026/014", "15/2026"),
+// l'anno diventa quello di oggi e il progressivo è il successivo al più alto
+// già usato in quell'anno (es. ultimo 2026 = 210-26 → "211-26"). Senza anno
+// incrementa il progressivo. Mantiene gli zeri iniziali e salta i numeri già
+// usati nello studio.
+export function prossimoNumeroOfferta(numero, esistenti = [], annoOggi = new Date().getFullYear()) {
   const base = String(numero || "").trim();
   const usati = new Set(esistenti.map((n) => String(n || "").trim().toLowerCase()));
   const gruppi = [...base.matchAll(/\d+/g)];
@@ -226,14 +245,34 @@ export function prossimoNumeroOfferta(numero, esistenti = []) {
     while (usati.has(cand.toLowerCase())) cand = `${base}-${++k}`;
     return cand;
   }
-  const nonAnni = gruppi.filter((g) => !/^(19|20)\d\d$/.test(g[0]));
-  const g = (nonAnni.length ? nonAnni : gruppi).at(-1);
-  const prima = base.slice(0, g.index), dopo = base.slice(g.index + g[0].length);
+  const { anno, annoNum, prog } = scomponiNumeroOfferta(base, annoOggi);
+  const g = prog || gruppi.at(-1);
+  // Pezzi da sostituire (in ordine di posizione): progressivo ed eventuale anno.
+  const componi = (n) => {
+    // Zeri iniziali solo se l'originale li aveva ("014" → "015", "197" → "13").
+    const pezzi = [{ g, txt: g[0].startsWith("0") ? String(n).padStart(g[0].length, "0") : String(n) }];
+    if (prog && anno) {
+      const yy = anno[0].length === 2 ? String(annoOggi % 100).padStart(2, "0") : String(annoOggi);
+      pezzi.push({ g: anno, txt: yy });
+    }
+    pezzi.sort((a, b) => b.g.index - a.g.index);
+    let out = base;
+    pezzi.forEach(({ g: x, txt }) => { out = out.slice(0, x.index) + txt + out.slice(x.index + x[0].length); });
+    return out;
+  };
   let n = Number(g[0]);
+  if (prog && anno) {
+    // Più alto progressivo già usato nell'anno di oggi (originale compreso).
+    n = 0;
+    [base, ...esistenti].forEach((num) => {
+      const k = scomponiNumeroOfferta(num, annoOggi);
+      if (k.annoNum === annoOggi && k.prog) n = Math.max(n, Number(k.prog[0]));
+    });
+  }
   let cand;
   do {
     n += 1;
-    cand = prima + String(n).padStart(g[0].length, "0") + dopo;
+    cand = componi(n);
   } while (usati.has(cand.toLowerCase()));
   return cand;
 }
@@ -250,7 +289,7 @@ const CAMPI_NON_DUPLICABILI = [
 export function datiDuplicaOfferta(offerta, numeriEsistenti = [], oggi = new Date().toISOString().slice(0, 10)) {
   const copia = { ...offerta };
   CAMPI_NON_DUPLICABILI.forEach((k) => { delete copia[k]; });
-  copia.numero_offerta = prossimoNumeroOfferta(offerta.numero_offerta, numeriEsistenti);
+  copia.numero_offerta = prossimoNumeroOfferta(offerta.numero_offerta, numeriEsistenti, Number(String(oggi).slice(0, 4)) || new Date().getFullYear());
   copia.nome_offerta = `${(offerta.nome_offerta || "").trim()} (copia)`.trim();
   copia.data_offerta = oggi;
   copia.stato = "offerta";
@@ -269,14 +308,12 @@ export function datiDuplicaOfferta(offerta, numeriEsistenti = [], oggi = new Dat
 
 // ── Ordinamento lista offerte ────────────────────────────────────────────────
 // Chiave per ordinare per numero: [anno, progressivo]. L'anno è un gruppo
-// 19xx/20xx (se c'è), il progressivo è l'ultimo gruppo di cifre che non è un
-// anno. Così "2026/014", "14/2026" e "OFF.014" si ordinano tutti bene.
+// 19xx/20xx o, con più gruppi, un 2 cifre tipo "-26"; il progressivo è l'ultimo
+// gruppo che non è l'anno. Così "2026/014", "14/2026", "197-26" e "OFF.014"
+// si ordinano tutti bene.
 export function chiaveNumeroOfferta(numero) {
-  const gruppi = [...String(numero || "").matchAll(/\d+/g)].map((g) => g[0]);
-  const anno = gruppi.find((g) => /^(19|20)\d\d$/.test(g));
-  const nonAnni = gruppi.filter((g) => g !== anno);
-  const prog = nonAnni.length ? nonAnni.at(-1) : (anno && gruppi.length === 1 ? null : gruppi.at(-1));
-  return [anno ? Number(anno) : 0, prog != null ? Number(prog) : -1];
+  const { annoNum, prog } = scomponiNumeroOfferta(numero);
+  return [annoNum || 0, prog ? Number(prog[0]) : -1];
 }
 
 const dataCreazione = (o) => new Date(o?.created_at || o?.created_date || o?.data_offerta || 0).getTime() || 0;
