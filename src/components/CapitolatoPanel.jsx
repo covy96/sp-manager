@@ -6,6 +6,7 @@ import { richToPlain } from "../lib/richText";
 import { useTheme } from "../contexts/ThemeContext";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { useEscKey } from "../hooks/useEscKey";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { useToast } from "../contexts/ToastContext";
 import { CAPITOLATO_CATEGORIE, codiceVisibile, letteraCategoria } from "../lib/capitolatoTemplate";
 import {
@@ -13,6 +14,7 @@ import {
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
   defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi, assistenzaPerc,
+  sezioniCustomEffettive, isSezioneCustom, nuovoCodiceSezione, inserisciSezione, rimuoviSezione, spostaSezione,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
 
@@ -65,6 +67,7 @@ const formattaData = (iso) => {
 export default function CapitolatoPanel({ projectId, studioId, project, openSignal }) {
   const { T } = useTheme();
   const showToast = useToast();
+  const isMobile = useIsMobile();
 
   const [open, setOpen] = useState(false);
   useBodyScrollLock(open);
@@ -77,6 +80,12 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const [studio, setStudio] = useState(null);
   const [meta, setMeta] = useState({ id: null, nome: "Capitolato", committente: "", localita: "", data: oggi(), revisione: "" });
   const [righe, setRighe] = useState([]);
+  // macrovoci personalizzate del capitolato: [{ code, nome, dopo }]
+  const [sezioni, setSezioni] = useState([]);
+  const [sezModal, setSezModal] = useState(null); // { code|null, nome, pos } form macrovoce
+  const [dest, setDest] = useState(""); // macrovoce in cui finiscono le voci aggiunte ("" = sezione naturale)
+  const [metaAperta, setMetaAperta] = useState(false); // su telefono i dati copertina stanno chiusi
+  const scrollSez = useRef(null); // macrovoce da portare in vista dopo la creazione
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [saving, setSaving] = useState(false);
@@ -126,14 +135,19 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
           capIdRef.current = c.id;
           setMeta(m);
           setRighe(existing.righe);
+          const sez = sezioniCustomEffettive(c.sezioni_custom, existing.righe);
+          setSezioni(sez);
+          setDest("");
           const vers = Array.isArray(c.versioni) ? c.versioni : [];
           setVersioni(vers);
-          const snap = JSON.stringify(snapshotCapitolato(m, existing.righe));
+          const snap = JSON.stringify(snapshotCapitolato({ ...m, sezioni_custom: sez }, existing.righe));
           setVersioneAttiva(vers.find((v) => JSON.stringify(v.snapshot) === snap)?.n ?? null);
         } else {
           capIdRef.current = null;
           setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
           setRighe([]);
+          setSezioni([]);
+          setDest("");
           setVersioni([]);
           setVersioneAttiva(null);
         }
@@ -182,7 +196,19 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   }, [libreria]);
 
   // righe raggruppate per categoria, con lettere/codici re-assegnati (come nell'export)
-  const gruppi = useMemo(() => componiGruppi(righe), [righe]);
+  const sezioniEff = useMemo(() => sezioniCustomEffettive(sezioni, righe), [sezioni, righe]);
+  const gruppi = useMemo(() => componiGruppi(righe, sezioniEff), [righe, sezioniEff]);
+  // nell'editor compaiono anche le macrovoci ancora vuote (per riempirle)
+  const gruppiEdit = useMemo(() => componiGruppi(righe, sezioniEff, { includiVuote: true }), [righe, sezioniEff]);
+  const macrovoci = useMemo(() => gruppiEdit.filter((g) => g.custom).map((g) => ({ code: g.originalCode, lettera: g.code, nome: g.nomeIndice })), [gruppiEdit]);
+  const destGruppo = dest ? gruppiEdit.find((g) => g.originalCode === dest) : null;
+  useEffect(() => { if (dest && !sezioniEff.some((x) => x.code === dest)) setDest(""); }, [dest, sezioniEff]);
+  useEffect(() => {
+    if (!scrollSez.current) return;
+    const el = document.getElementById(`cap-sez-${scrollSez.current}`);
+    scrollSez.current = null;
+    el?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [gruppiEdit]);
 
   // ── mutazioni righe ──────────────────────────────────────────────────────────
   const touch = () => setDirty(true);
@@ -192,6 +218,13 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   // La stessa voce si può aggiungere più volte: ogni copia è una riga a sé
   // (misure, quantità e note proprie).
   const addVoce = (voce) => {
+    // macrovoce di destinazione scelta: la voce entra lì, in fondo
+    if (dest) {
+      const sez = sezioniEff.find((x) => x.code === dest);
+      setRighe((p) => [...p, { ...rigaFromVoce(voce), categoria_code: dest, categoria_nome: sez?.nome || "" }]);
+      touch();
+      return;
+    }
     const gia = righe.some((r) => r.voce_id && r.voce_id === voce.id);
     // se la voce c'è già, la nuova copia va subito sotto l'ultima copia esistente
     setRighe((p) => {
@@ -226,8 +259,55 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   });
   // Sposta una riga in un'altra macro-categoria (dal menu ⋮ della voce).
   const moveRigaCat = (key, code) => {
-    const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === code);
-    patchRiga(key, { categoria_code: code, categoria_nome: cat?.nome || "" });
+    const nome = isSezioneCustom(code)
+      ? sezioniEff.find((x) => x.code === code)?.nome
+      : CAPITOLATO_CATEGORIE.find((c) => c.code === code)?.nome;
+    patchRiga(key, { categoria_code: code, categoria_nome: nome || "" });
+  };
+
+  // ── Macrovoci personalizzate ────────────────────────────────────────────────
+  // Posizione nel form: "__fine" (in fondo), "__inizio", oppure il codice della
+  // sezione dopo cui metterla (tra quelle visibili nel capitolato).
+  const posAttuale = (code) => {
+    const sez = sezioniEff.find((x) => x.code === code);
+    if (!sez || sez.dopo == null) return "__fine";
+    const i = gruppiEdit.findIndex((g) => g.originalCode === code);
+    return i <= 0 ? "__inizio" : gruppiEdit[i - 1].originalCode;
+  };
+  const apriNuovaMacrovoce = () => setSezModal({ code: null, nome: "", pos: "__fine" });
+  const apriModificaMacrovoce = (code) => {
+    const sez = sezioniEff.find((x) => x.code === code);
+    if (sez) setSezModal({ code, nome: sez.nome, pos: posAttuale(code), pos0: posAttuale(code) });
+  };
+  const dopoDaPos = (pos) => (pos === "__fine" ? null : pos === "__inizio" ? "" : pos);
+  const confermaMacrovoce = () => {
+    const nome = sezModal.nome.trim();
+    if (!nome) { showToast?.("Dai un nome alla macrovoce", "error"); return; }
+    if (!sezModal.code) {
+      const code = nuovoCodiceSezione(sezioniEff);
+      setSezioni(inserisciSezione(sezioniEff, { code, nome, dopo: dopoDaPos(sezModal.pos) }));
+      setDest(code); // le prossime voci aggiunte vanno nella nuova macrovoce
+      scrollSez.current = code;
+      showToast?.(`Macrovoce "${nome}" aggiunta: ora scegli le voci da inserire`, "success");
+    } else {
+      const code = sezModal.code;
+      let next = sezioniEff.map((x) => (x.code === code ? { ...x, nome } : x));
+      if (sezModal.pos !== sezModal.pos0) next = spostaSezione(next, code, dopoDaPos(sezModal.pos));
+      setSezioni(next);
+      setRighe((p) => p.map((r) => (r.categoria_code === code ? { ...r, categoria_nome: nome } : r)));
+    }
+    touch();
+    setSezModal(null);
+  };
+  const eliminaMacrovoce = (code) => {
+    const sez = sezioniEff.find((x) => x.code === code);
+    const n = righe.filter((r) => r.categoria_code === code).length;
+    if (n > 0 && !window.confirm(`Eliminare la macrovoce "${sez?.nome || ""}" e ${n === 1 ? "la sua voce" : `le sue ${n} voci`}?`)) return;
+    setSezioni(rimuoviSezione(sezioniEff, code));
+    setRighe((p) => p.filter((r) => r.categoria_code !== code));
+    if (dest === code) setDest("");
+    touch();
+    setSezModal(null);
   };
   const removeRiga = (key) => { setRighe((p) => p.filter((r) => r._key !== key)); touch(); };
   const patchRiga = (key, patch) => { setRighe((p) => p.map((r) => (r._key === key ? { ...r, ...patch } : r))); touch(); };
@@ -250,13 +330,13 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   });
 
   // ── salvataggio ed export ─────────────────────────────────────────────────────
-  const metaDb = () => ({ nome: meta.nome || "Capitolato", committente: meta.committente || null, localita: meta.localita || null, data: meta.data || null, revisione: meta.revisione || null });
+  const metaDb = () => ({ nome: meta.nome || "Capitolato", committente: meta.committente || null, localita: meta.localita || null, data: meta.data || null, revisione: meta.revisione || null, sezioni_custom: sezioniEff });
 
   // ── Nuova voce (non in libreria) ─────────────────────────────────────────────
   // Apre il form precompilando il titolo dalla ricerca; la categoria si sceglie
   // nel form (la voce personalizzata non ne ha una naturale).
   const openNuovaVoce = () => {
-    setNuova({ titolo: query.trim(), descrizione: "", categoria_code: "", unita: "mq", tipo: "singolo", salvaLibreria: true });
+    setNuova({ titolo: query.trim(), descrizione: "", categoria_code: dest || "", unita: "mq", tipo: "singolo", salvaLibreria: !dest });
     setNuovaOpen(true);
   };
   const confermaNuovaVoce = async () => {
@@ -265,7 +345,10 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     if (!nuova.categoria_code) { showToast?.("Scegli la categoria (mega voce)", "error"); return; }
     setBusy(true);
     try {
-      const cat = CAPITOLATO_CATEGORIE.find((c) => c.code === nuova.categoria_code);
+      const inMacrovoce = isSezioneCustom(nuova.categoria_code);
+      const cat = inMacrovoce
+        ? { nome: sezioniEff.find((x) => x.code === nuova.categoria_code)?.nome }
+        : CAPITOLATO_CATEGORIE.find((c) => c.code === nuova.categoria_code);
       let voce = {
         id: null, categoria_code: nuova.categoria_code, categoria_nome: cat?.nome || "",
         codice: "", titolo, descrizione: nuova.descrizione.trim(), unita: nuova.unita, tipo: nuova.tipo,
@@ -274,7 +357,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
       // Salvataggio in libreria (opzionale): dà un id per collegare la riga e la
       // rende ricercabile nei prossimi capitolati. Codice univoco per non collidere
       // con altre voci custom nella stessa categoria (dedup per categoria+codice).
-      if (nuova.salvaLibreria && studioId) {
+      // (le macrovoci personalizzate esistono solo in questo capitolato: niente libreria)
+      if (nuova.salvaLibreria && studioId && !inMacrovoce) {
         try {
           voce = { ...voce, codice: "PERS-" + Math.random().toString(36).slice(2, 7).toUpperCase() };
           const saved = await saveVoceLibreria(voce, studioId);
@@ -297,7 +381,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   useEffect(() => {
     if (!open || loading) return;
     if (skipAutosave.current) { skipAutosave.current = false; return; }
-    if (!capIdRef.current && righe.length === 0) return; // niente da persistere, niente righe fantasma
+    if (!capIdRef.current && righe.length === 0 && sezioni.length === 0) return; // niente da persistere, niente righe fantasma
     setAutoState("saving");
     clearTimeout(autosaveTimer.current);
     const run = async () => {
@@ -323,7 +407,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     autosaveTimer.current = setTimeout(run, 900);
     return () => clearTimeout(autosaveTimer.current);
     // deps: le righe e i campi meta (non meta.id, per non ri-scattare dopo la create)
-  }, [righe, meta.nome, meta.committente, meta.localita, meta.data, meta.revisione]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [righe, sezioni, meta.nome, meta.committente, meta.localita, meta.data, meta.revisione]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Alla chiusura del pannello annulla eventuali auto-save ancora in coda.
   useEffect(() => { if (!open) clearTimeout(autosaveTimer.current); }, [open]);
@@ -386,6 +470,8 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
       misurazioni: Array.isArray(r.misurazioni) && r.misurazioni.length ? r.misurazioni : [emptyMisurazione()],
       sommano_labels: Array.isArray(r.sommano_labels) ? r.sommano_labels : [],
     })));
+    setSezioni(Array.isArray(s.sezioni_custom) ? s.sezioni_custom : []);
+    setDest("");
     setVersioneAttiva(v.n); setDirty(false); setMenuVer(null); setView("recap");
   };
 
@@ -396,6 +482,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
     capIdRef.current = null;
     setMeta({ id: null, nome: "Capitolato", committente: project?.committente || project?.cliente || "", localita: "", data: oggi(), revisione: "" });
     setRighe([]);
+    setSezioni([]); setDest("");
     setVersioni([]);
     setVersioneAttiva(null);
     setAutoState("idle");
@@ -408,6 +495,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const nuovoCapitolato = () => {
     setMenuVer(null);
     setRighe([]);
+    setSezioni([]); setDest("");
     setMeta((m) => ({ ...m, revisione: "", data: oggi() }));
     setVersioneAttiva(null);
     setCatFilter(""); setQuery("");
@@ -497,7 +585,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
   const inputSt = { padding: "6px 10px", boxSizing: "border-box", border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-ui)", outline: "none" };
   const miniInput = { ...inputSt, padding: "4px 6px", fontSize: 11, fontFamily: mono, textAlign: "right", width: "100%" };
   const labelSt = { fontFamily: mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: T.muted, marginBottom: 4 };
-  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: "8px 16px", cursor: "pointer" };
+  const btnGhost = { border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.ink, fontFamily: mono, fontSize: isMobile ? 10 : 11, letterSpacing: "0.06em", textTransform: "uppercase", padding: isMobile ? "8px 10px" : "8px 16px", cursor: "pointer" };
   const btnPrimary = { ...btnGhost, border: "none", background: T.navy, color: T.bg };
 
   return (
@@ -603,7 +691,7 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       <button onClick={() => setView("edit")} style={btnPrimary}>+ Aggiungi voce</button>
                     </div>
                   ) : gruppi.map((g) => (
-                    <button key={g.code} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
+                    <button key={g.originalCode} onClick={() => setView("edit")} style={{ display: "block", width: "100%", textAlign: "left", marginBottom: 10, padding: 0, background: "none", border: "none", cursor: "pointer" }}>
                       <div style={{ border: `0.5px solid ${T.border}`, borderRadius: T.radiusSm, overflow: "hidden", background: T.surface }}>
                         <div style={{ background: T.navy, color: "#fff", padding: "8px 12px", fontFamily: mono, fontSize: 11, fontWeight: 700, display: "flex", justifyContent: "space-between" }}>
                           <span>{g.titoloPagina}</span>
@@ -625,8 +713,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
               </div>
             ) : (
               <>
-                {/* Meta copertina */}
-                <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: "2fr 2fr 1.4fr 1fr", gap: 10, flexShrink: 0 }}>
+                {/* Meta copertina (su telefono richiudibile, per lasciare spazio alle voci) */}
+                {isMobile && (
+                  <button onClick={() => setMetaAperta((v) => !v)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "none", border: "none", borderBottom: `1px solid ${T.border}`, cursor: "pointer", fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, flexShrink: 0 }}>
+                    <span>Dati copertina{!metaAperta && meta.nome ? ` · ${meta.nome}` : ""}</span><span>{metaAperta ? "▴" : "▾"}</span>
+                  </button>
+                )}
+                {(!isMobile || metaAperta) && (
+                <div style={{ padding: isMobile ? "10px 12px" : "12px 20px", borderBottom: `1px solid ${T.border}`, display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 2fr 1.4fr 1fr", gap: 10, flexShrink: 0 }}>
                   {[
                     ["Nome / Locale", "nome"],
                     ["Committente", "committente"],
@@ -639,11 +733,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                     </div>
                   ))}
                 </div>
-                <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-                {/* Colonna ricerca */}
-                <div style={{ width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                )}
+                <div style={{ flex: 1, display: "flex", flexDirection: isMobile ? "column" : "row", minHeight: 0 }}>
+                {/* Colonna ricerca (su telefono sopra, ad altezza ridotta) */}
+                <div style={isMobile
+                  ? { height: "42%", flexShrink: 0, borderBottom: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }
+                  : { width: 340, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", minHeight: 0 }}>
                   {/* Le voci finiscono da sole nella loro mega-voce; con ⋮ si spostano */}
-                  <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ padding: "10px 16px", borderBottom: `1px solid ${T.border}`, display: isMobile ? "none" : "block" }}>
                     <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, lineHeight: 1.4 }}>
                       Ogni voce entra nella sua mega-voce (demolizioni, costruzioni…). Usa ⋮ sulla voce per spostarla.
                     </div>
@@ -657,6 +754,15 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                       ))}
                     </div>
                     <button onClick={openNuovaVoce} style={{ ...btnGhost, width: "100%", marginTop: 8, padding: "8px 10px", borderStyle: "dashed" }}>+ Nuova voce (non in libreria)</button>
+                    {destGruppo && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "8px 10px", borderRadius: T.radiusSm, background: T.navyLight, border: `0.5px solid ${T.navy}` }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted }}>Le voci vanno in</div>
+                          <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{destGruppo.titoloPagina}</div>
+                        </div>
+                        <button onClick={() => setDest("")} title="Torna alla sezione naturale di ogni voce" style={{ ...iconBtn(T), width: "auto", padding: "0 8px", fontFamily: mono, fontSize: 10 }}>Fine ✕</button>
+                      </div>
+                    )}
                   </div>
                   <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
                     {risultati.length === 0 ? (
@@ -681,16 +787,33 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                 </div>
 
                 {/* Colonna capitolato composto */}
-                <div style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0 }}>
-                  {gruppi.length === 0 ? (
+                <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? 10 : 16, minHeight: 0 }}>
+                  {gruppiEdit.length === 0 ? (
                     <div style={{ color: T.muted, fontFamily: mono, fontSize: 12, textAlign: "center", marginTop: 40 }}>
                       Cerca una voce a sinistra e aggiungila al capitolato.
                     </div>
-                  ) : gruppi.map((g) => (
-                    <div key={g.code} style={{ marginBottom: 24 }}>
-                      <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", marginBottom: 8 }}>
-                        {g.titoloPagina}
+                  ) : gruppiEdit.map((g) => (
+                    <div key={g.originalCode} id={`cap-sez-${g.originalCode}`} style={{ marginBottom: 24, scrollMarginTop: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, minHeight: 26 }}>
+                        <div style={{ fontFamily: mono, fontSize: 11, fontWeight: 700, color: T.navy, letterSpacing: "0.05em", flex: 1, minWidth: 0 }}>
+                          {g.titoloPagina}
+                        </div>
+                        {g.custom && (
+                          <>
+                            <button onClick={() => setDest(dest === g.originalCode ? "" : g.originalCode)}
+                              title="Le voci che scegli a sinistra entrano in questa macrovoce"
+                              style={{ ...btnGhost, padding: "4px 10px", fontSize: 10, borderRadius: 999, ...(dest === g.originalCode ? { background: T.navy, color: T.bg, border: `0.5px solid ${T.navy}` } : { color: T.navy, borderColor: T.navy }) }}>
+                              {dest === g.originalCode ? "✓ Aggiungi qui" : "+ Voci qui"}
+                            </button>
+                            <button onClick={() => apriModificaMacrovoce(g.originalCode)} title="Rinomina, sposta o elimina la macrovoce" style={iconBtn(T)}>✎</button>
+                          </>
+                        )}
                       </div>
+                      {g.custom && g.items.length === 0 && (
+                        <div style={{ border: `1px dashed ${T.borderMd}`, borderRadius: T.radiusSm, padding: "14px 12px", marginBottom: 8, color: T.muted, fontFamily: mono, fontSize: 11, textAlign: "center", lineHeight: 1.5 }}>
+                          Macrovoce vuota. {dest === g.originalCode ? "Scegli le voci dalla libreria a sinistra (o crea una nuova voce): entrano qui." : "Premi “+ Voci qui” e scegli le voci dalla libreria."}
+                        </div>
+                      )}
                       {g.items.map((r) => (
                         <RigaEditor key={r._key} r={r} T={T} mono={mono} miniInput={miniInput}
                           onPatch={(patch) => patchRiga(r._key, patch)}
@@ -698,12 +821,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                           onDuplica={() => duplicaRiga(r._key)}
                           onMove={(d) => moveRiga(r._key, d)}
                           onMoveCat={(code) => moveRigaCat(r._key, code)}
+                          macrovoci={macrovoci}
                           onAddMisura={() => addMisura(r._key)}
                           onPatchMisura={(i, p) => patchMisura(r._key, i, p)}
                           onRemoveMisura={(i) => removeMisura(r._key, i)} />
                       ))}
                     </div>
                   ))}
+                  <button onClick={apriNuovaMacrovoce} style={{ ...btnGhost, width: "100%", padding: "12px 10px", borderStyle: "dashed", color: T.navy, borderColor: T.navy, marginTop: gruppiEdit.length ? 0 : 16 }}>+ Aggiungi macrovoce</button>
                 </div>
               </div>
               </>
@@ -711,14 +836,14 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
 
             {/* Footer azioni — per vista */}
             {!loading && view !== "versioni" && (
-              <div style={{ padding: "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ padding: isMobile ? "10px 12px" : "12px 20px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: isMobile ? 8 : 12, flexWrap: isMobile ? "wrap" : "nowrap", flexShrink: 0 }}>
+                <div style={{ display: isMobile ? "none" : "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ fontFamily: mono, fontSize: 10, color: T.muted }}>
                     {nVoci} voci in {gruppi.length} {gruppi.length === 1 ? "categoria" : "categorie"}
                   </div>
                   <button onClick={openImport} disabled={busy} style={{ ...btnGhost, padding: "6px 12px", opacity: busy ? 0.5 : 1 }}>⤵ Importa da progetto</button>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: isMobile ? 6 : 8, flexWrap: isMobile ? "wrap" : "nowrap", width: isMobile ? "100%" : "auto", justifyContent: "flex-end" }}>
                   <div style={{ position: "relative" }}>
                     <button onClick={() => setXlsxMenu(m => !m)} disabled={busy || !nVoci} style={{ ...btnGhost, opacity: busy || !nVoci ? 0.5 : 1 }}>Export Excel ▾</button>
                     {xlsxMenu && (
@@ -814,6 +939,11 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   <select value={nuova.categoria_code} onChange={(e) => setNuova((n) => ({ ...n, categoria_code: e.target.value }))} style={{ ...inputSt, width: "100%", cursor: "pointer" }}>
                     <option value="">— scegli —</option>
                     {CAPITOLATO_CATEGORIE.map((c) => <option key={c.code} value={c.code}>{c.lettera}) {c.nomeIndice || c.nome}</option>)}
+                    {macrovoci.length > 0 && (
+                      <optgroup label="Macrovoci di questo capitolato">
+                        {macrovoci.map((m) => <option key={m.code} value={m.code}>{m.lettera}) {m.nome}</option>)}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -825,10 +955,16 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
                   </select>
                 </div>
               </div>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: mono, fontSize: 11, color: T.ink, cursor: studioId ? "pointer" : "not-allowed", opacity: studioId ? 1 : 0.5 }}>
-                <input type="checkbox" checked={nuova.salvaLibreria && !!studioId} disabled={!studioId} onChange={(e) => setNuova((n) => ({ ...n, salvaLibreria: e.target.checked }))} />
-                Salva anche in libreria (riutilizzabile nei prossimi capitolati)
-              </label>
+              {isSezioneCustom(nuova.categoria_code) ? (
+                <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, lineHeight: 1.4 }}>
+                  La voce resta solo in questo capitolato (le macrovoci personalizzate non sono in libreria).
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: mono, fontSize: 11, color: T.ink, cursor: studioId ? "pointer" : "not-allowed", opacity: studioId ? 1 : 0.5 }}>
+                  <input type="checkbox" checked={nuova.salvaLibreria && !!studioId} disabled={!studioId} onChange={(e) => setNuova((n) => ({ ...n, salvaLibreria: e.target.checked }))} />
+                  Salva anche in libreria (riutilizzabile nei prossimi capitolati)
+                </label>
+              )}
             </div>
             <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button onClick={() => setNuovaOpen(false)} style={btnGhost}>Annulla</button>
@@ -837,6 +973,64 @@ export default function CapitolatoPanel({ projectId, studioId, project, openSign
           </div>
         </div>
       )}
+
+      {/* Form macrovoce personalizzata: nome libero + posizione */}
+      {sezModal && (() => {
+        const altri = gruppiEdit.filter((g) => g.originalCode !== sezModal.code);
+        // anteprima della lettera che prenderà nella posizione scelta
+        const idx = sezModal.pos === "__inizio" ? 0
+          : sezModal.pos === "__fine" ? altri.length
+          : altri.findIndex((g) => g.originalCode === sezModal.pos) + 1;
+        const lettera = "ABCDEFGHILMNOPQRSTUVZ"[idx] || "?";
+        const scalano = altri.slice(idx).filter((g) => g.items.length > 0 || g.custom);
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 85, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", padding: 16 }}
+            onClick={() => setSezModal(null)}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, maxHeight: "88vh", display: "flex", flexDirection: "column", background: T.glassBg, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, border: `1px solid ${T.glassBorder}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.35)" }}>
+              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>{sezModal.code ? "Modifica macrovoce" : "Nuova macrovoce"}</div>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>Sezione personalizzata di questo capitolato</div>
+                </div>
+                <button onClick={() => setSezModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div>
+                  <div style={labelSt}>Nome *</div>
+                  <input autoFocus value={sezModal.nome} onChange={(e) => setSezModal((m) => ({ ...m, nome: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") confermaMacrovoce(); }}
+                    placeholder="es. Opere da giardiniere" style={{ ...inputSt, width: "100%", fontSize: 14 }} />
+                </div>
+                <div>
+                  <div style={labelSt}>Posizione</div>
+                  <select value={sezModal.pos} onChange={(e) => setSezModal((m) => ({ ...m, pos: e.target.value }))} style={{ ...inputSt, width: "100%", cursor: "pointer", fontSize: 13 }}>
+                    <option value="__fine">In fondo</option>
+                    <option value="__inizio">All'inizio</option>
+                    {altri.map((g) => <option key={g.originalCode} value={g.originalCode}>Dopo {g.titoloPagina}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: T.radiusSm, background: T.navyLight }}>
+                  <span style={{ width: 34, height: 34, borderRadius: 10, background: T.navy, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: mono, fontSize: 16, fontWeight: 700, flexShrink: 0 }}>{lettera}</span>
+                  <div style={{ fontSize: 12, color: T.ink, lineHeight: 1.4 }}>
+                    <div style={{ fontWeight: 600 }}>{lettera}) {(sezModal.nome.trim() || "Nuova macrovoce").toUpperCase()}</div>
+                    <div style={{ fontFamily: mono, fontSize: 10, color: T.muted, marginTop: 2 }}>
+                      {scalano.length ? `Le sezioni successive scalano di una lettera (${scalano[0].titoloPagina.split(")")[0]} → ${"ABCDEFGHILMNOPQRSTUVZ"[idx + 1] || "?"}…)` : "Ultima sezione del capitolato"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+                {sezModal.code && (
+                  <button onClick={() => eliminaMacrovoce(sezModal.code)} style={{ ...btnGhost, color: T.red, borderColor: T.red }}>Elimina</button>
+                )}
+                <div style={{ flex: 1 }} />
+                <button onClick={() => setSezModal(null)} style={btnGhost}>Annulla</button>
+                <button onClick={confermaMacrovoce} disabled={!sezModal.nome.trim()} style={{ ...btnPrimary, opacity: sezModal.nome.trim() ? 1 : 0.5 }}>{sezModal.code ? "Salva" : "Aggiungi"}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       </BodyPortal>
     </>
   );
@@ -851,7 +1045,7 @@ function chip(T, active) {
 }
 
 // ── Editor di una singola voce (riga) ──────────────────────────────────────────
-function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMove, onMoveCat, onAddMisura, onPatchMisura, onRemoveMisura }) {
+function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMove, onMoveCat, macrovoci = [], onAddMisura, onPatchMisura, onRemoveMisura }) {
   const [catMenu, setCatMenu] = useState(false); // menu ⋮ "sposta in un'altra mega-voce"
   const tot = totaleRigaEff(r);
   const labels = (r.sommano_labels && r.sommano_labels.length) ? r.sommano_labels : [`SOMMANO ${r.unita || ""}`.trim()];
@@ -897,6 +1091,20 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMov
                         style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: cur ? T.navyLight : "none", border: "none", cursor: cur ? "default" : "pointer", fontFamily: mono, fontSize: 11, color: cur ? T.navy : T.ink, padding: "8px 12px" }}>
                         <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{c.lettera}</span>
                         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nomeIndice || c.nome}</span>
+                        {cur ? <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span> : null}
+                      </button>
+                    );
+                  })}
+                  {macrovoci.length > 0 && (
+                    <div style={{ padding: "8px 12px", fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted, borderTop: `0.5px solid ${T.border}`, borderBottom: `0.5px solid ${T.border}` }}>Macrovoci personalizzate</div>
+                  )}
+                  {macrovoci.map((m) => {
+                    const cur = m.code === r.categoria_code;
+                    return (
+                      <button key={m.code} onClick={() => { if (!cur) onMoveCat(m.code); setCatMenu(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: cur ? T.navyLight : "none", border: "none", cursor: cur ? "default" : "pointer", fontFamily: mono, fontSize: 11, color: cur ? T.navy : T.ink, padding: "8px 12px" }}>
+                        <span style={{ fontWeight: 700, width: 18, flexShrink: 0 }}>{m.lettera}</span>
+                        <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.nome}</span>
                         {cur ? <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span> : null}
                       </button>
                     );

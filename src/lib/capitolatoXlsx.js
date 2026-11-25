@@ -84,7 +84,7 @@ function testataFoglio(ws, wb, nomeProgetto, logo) {
 }
 
 function buildCategoria(wb, g, nomeProgetto, logo, assistenzePending) {
-  const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.slice(0, 31), { views: [{ showGridLines: false, style: "pageLayout" }] });
+  const ws = wb.addWorksheet(`${g.code} - ${g.nomeIndice}`.replace(/[\\/?*[\]:]/g, " ").slice(0, 31).trim(), { views: [{ showGridLines: false, style: "pageLayout" }] });
   COLS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
   let r = 0;
   const setRow = (cells, h) => {
@@ -229,7 +229,7 @@ function scarica(blob, filename) {
 
 export async function generaCapitolatoXlsx({ capitolato, righe, project, studio, modo = "salva", protetto = true, password = "" }) {
   const wb = new ExcelJS.Workbook();
-  const gruppi = componiGruppi(righe);
+  const gruppi = componiGruppi(righe, capitolato?.sezioni_custom);
   const nomeProgetto = capitolato?.nome && capitolato.nome !== "Capitolato"
     ? capitolato.nome : (project?.name || "Progetto");
   const s = studio || {};

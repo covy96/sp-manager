@@ -11,6 +11,7 @@ import {
   fmtNum, parseNum, parseMisura, qtaMisurazione, totaleRiga, totaleRigaEff,
   rigaFromVoce, defaultSommanoLabels, componiGruppi, ALFABETO_IT,
   assistenzaPerc, assistenzaLabel, applicaLayout, spostaVoce, scambiaCodici, prossimoCodice, ordinaLibreria, componiLibreria, codiceDuplicato,
+  ordineSezioni, inserisciSezione, rimuoviSezione, spostaSezione, sezioniCustomEffettive, snapshotCapitolato,
 } from "./capitolatoModel";
 
 describe("fmtNum", () => {
@@ -177,6 +178,60 @@ describe("componiGruppi (re-letterazione)", () => {
     const g = componiGruppi([{ categoria_code: "C", titolo: "y" }]);
     expect(g[0].originalCode).toBe("C");
     expect(g[0].code).toBe("A"); // prima categoria usata -> lettera A
+  });
+});
+
+describe("macrovoci personalizzate", () => {
+  const righe = [
+    { categoria_code: "A", titolo: "a" },
+    { categoria_code: "C", titolo: "c" },
+    { categoria_code: "X-GIA", categoria_nome: "Giardino", titolo: "g" },
+  ];
+  it("in fondo prende la lettera successiva", () => {
+    const g = componiGruppi(righe, [{ code: "X-GIA", nome: "Giardino", dopo: null }]);
+    expect(g.map((x) => x.titoloPagina)).toEqual(["A) OPERE PROVVISIONALI", "B) OPERE DI COSTRUZIONE", "C) GIARDINO"]);
+    expect(g[2].items[0]._code).toBe("C01");
+    expect(g[2].custom).toBe(true);
+  });
+  it("in mezzo rinumera le sezioni che seguono", () => {
+    const g = componiGruppi(righe, [{ code: "X-GIA", nome: "Giardino", dopo: "A" }]);
+    expect(g.map((x) => x.code + ":" + x.originalCode)).toEqual(["A:A", "B:X-GIA", "C:C"]);
+    expect(g[2].items[0]._code).toBe("C01");
+  });
+  it("all'inizio diventa A", () => {
+    const g = componiGruppi(righe, [{ code: "X-GIA", nome: "Giardino", dopo: "" }]);
+    expect(g[0].originalCode).toBe("X-GIA");
+    expect(g[0].code).toBe("A");
+  });
+  it("vuota compare solo nell'editor", () => {
+    const sez = [{ code: "X-NEW", nome: "Nuova", dopo: null }];
+    expect(componiGruppi(righe.slice(0, 2), sez).length).toBe(2);
+    expect(componiGruppi(righe.slice(0, 2), sez, { includiVuote: true }).map((x) => x.code)).toEqual(["A", "B", "C"]);
+  });
+  it("righe con macrovoce non salvata non spariscono (in fondo col loro nome)", () => {
+    const eff = sezioniCustomEffettive([], righe);
+    expect(eff).toEqual([{ code: "X-GIA", nome: "Giardino", dopo: null }]);
+    expect(componiGruppi(righe).at(-1).titoloPagina).toBe("C) GIARDINO");
+  });
+  it("inserire sulla stessa posizione mette la nuova subito dopo l'ancora", () => {
+    let s = inserisciSezione([], { code: "X-1", nome: "uno", dopo: "A" });
+    s = inserisciSezione(s, { code: "X-2", nome: "due", dopo: "A" });
+    const o = ordineSezioni(s);
+    expect(o.slice(0, 4)).toEqual(["A", "X-2", "X-1", "B"]);
+  });
+  it("spostare e rimuovere riagganciano le altre", () => {
+    let s = inserisciSezione([], { code: "X-1", nome: "uno", dopo: "A" });
+    s = inserisciSezione(s, { code: "X-2", nome: "due", dopo: "X-1" });
+    expect(ordineSezioni(s).slice(0, 4)).toEqual(["A", "X-1", "X-2", "B"]);
+    const r = rimuoviSezione(s, "X-1");
+    expect(ordineSezioni(r).slice(0, 3)).toEqual(["A", "X-2", "B"]);
+    const m = spostaSezione(s, "X-1", null);
+    expect(ordineSezioni(m).slice(0, 3)).toEqual(["A", "X-2", "B"]);
+    expect(ordineSezioni(m).at(-1)).toBe("X-1");
+  });
+  it("lo snapshot non cambia per i capitolati senza macrovoci", () => {
+    expect(snapshotCapitolato({ nome: "x", sezioni_custom: [] }, [])).not.toHaveProperty("sezioni_custom");
+    expect(snapshotCapitolato({ nome: "x", sezioni_custom: [{ code: "X-1" }] }, []).sezioni_custom).toHaveLength(1);
   });
 });
 

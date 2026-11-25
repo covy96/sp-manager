@@ -81,7 +81,7 @@ export async function generaCapitolatoPdf({ capitolato, righe, project, studio, 
   const committente = capitolato?.committente || project?.client || "";
   const localita = capitolato?.localita || project?.address || "";
 
-  const gruppi = componiGruppi(righe);
+  const gruppi = componiGruppi(righe, capitolato?.sezioni_custom);
 
   let y = 0;
   let bodyTop = 0; // y di inizio corpo tabella (per le righe verticali continue)
