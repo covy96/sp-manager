@@ -6,7 +6,7 @@ import { useEscKey } from "../hooks/useEscKey";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import {
   resolveTemplate, estraiCampi, compilaTesto, testoOpzionePagamento, testoVoce,
-  rateCommessaDaPagamento,
+  rateCommessaDaPagamento, importiD, RATE_D_DEFAULT,
 } from "../lib/offertaTemplate";
 import {
   normalizzaDocumento, calcolaTotali, importoSezione, euro, quantitaVoce,
@@ -264,6 +264,12 @@ export default function OffertaDocumentPanel({
   });
   const setRateC = (idx, patch) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: (d.pagamento.rateC || []).map((r, i) => i === idx ? { ...r, ...patch } : r) } }));
   const addRateC = () => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: [...(d.pagamento.rateC || []), { percentuale: 0, descrizione: "" }] } }));
+  // Opzione D: importi in euro (stringhe come digitate, convertite in numero
+  // solo per totali, documento e rate della commessa).
+  const rateDCorr = (d) => Array.isArray(d.pagamento.rateD) ? d.pagamento.rateD : RATE_D_DEFAULT.map(r => ({ ...r }));
+  const setRateD = (idx, patch) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateD: rateDCorr(d).map((r, i) => i === idx ? { ...r, ...patch } : r) } }));
+  const addRateD = () => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateD: [...rateDCorr(d), { importo: "", descrizione: "" }] } }));
+  const removeRateD = (idx) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateD: rateDCorr(d).filter((_, i) => i !== idx) } }));
   const removeRateC = (idx) => setDoc(d => ({ ...d, pagamento: { ...d.pagamento, rateC: (d.pagamento.rateC || []).filter((_, i) => i !== idx) } }));
 
   // ── azioni ─────────────────────────────────────────────────────────────────
@@ -358,10 +364,10 @@ export default function OffertaDocumentPanel({
   };
 
   // Righe rata dal documento (Opzione C, oppure % scritte nell'Opzione A/B).
-  const buildRateRows = (commessaId, pagamento) =>
-    rateCommessaDaPagamento(pagamento).map((r, i) => ({
+  const buildRateRows = (commessaId, pagamento, totale) =>
+    rateCommessaDaPagamento(pagamento, totale).map((r, i) => ({
       commessa_id: commessaId, studio: offerta.studio, numero_rata: i + 1,
-      label: r.label, percentuale: r.percentuale, importo_fisso: null, pagato: false,
+      label: r.label, percentuale: r.percentuale, importo_fisso: r.importo ?? null, pagato: false,
     }));
 
   // Dopo aver salvato un'offerta accettata: se il totale cambia, propone di
@@ -418,7 +424,7 @@ export default function OffertaDocumentPanel({
       if (scelta === "ricalibra") {
         // Nessun pagamento: se il nuovo documento definisce una modalità di
         // pagamento, rigenera le rate; altrimenti mantiene le rate (%) esistenti.
-        const nuove = buildRateRows(sm.commessaId, doc.pagamento);
+        const nuove = buildRateRows(sm.commessaId, doc.pagamento, sm.newTotal);
         if (nuove.length > 0) {
           const ids = [...sm.pagate, ...sm.nonPagate].map(r => r.id);
           if (ids.length) await supabase.from("suddivisione_pagamenti").update({ deleted_at: new Date().toISOString() }).in("id", ids);
@@ -909,7 +915,7 @@ export default function OffertaDocumentPanel({
                   <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
                     <div style={{ paddingTop: 2 }}><Check checked={selected} onChange={() => togglePagamento(o.id)} /></div>
                     <span style={{ fontSize: 11.5, color: T.ink, lineHeight: 1.5 }}>
-                      <b>Opzione {o.id} —</b> {o.rate ? "pagamento a stato avanzamento (percentuali personalizzabili)." : selected ? "testo modificabile:" : testoOpzionePagamento(o, doc.pagamento)}
+                      <b>Opzione {o.id} —</b> {o.rate ? "pagamento a stato avanzamento (percentuali personalizzabili)." : o.importi ? (selected ? "importi fissi in euro, testo modificabile:" : "pagamento a importi fissi (in euro, senza percentuali).") : selected ? "testo modificabile:" : testoOpzionePagamento(o, doc.pagamento)}
                     </span>
                   </label>
                   {!o.rate && selected && (() => {
@@ -927,6 +933,45 @@ export default function OffertaDocumentPanel({
                             ↺ Ripristina testo di base
                           </button>
                         )}
+                      </div>
+                    );
+                  })()}
+                  {o.importi && selected && (() => {
+                    const righe = Array.isArray(doc.pagamento.rateD) ? doc.pagamento.rateD : RATE_D_DEFAULT;
+                    const somma = importiD(righe).reduce((acc, r) => acc + r.importo, 0);
+                    const diff = round2(tot.totale - somma);
+                    const ok = tot.totale > 0 && Math.abs(diff) < 0.005;
+                    const nota = tot.totale <= 0 ? ""
+                      : ok ? " — pari al totale offerta"
+                      : diff > 0 ? ` — mancano ${euro(diff)} (diventano una rata «Saldo»)`
+                      : ` — superano il totale di ${euro(-diff)}`;
+                    return (
+                      <div style={{ marginTop: 8, marginLeft: 28, display: "flex", flexDirection: "column", gap: 6 }}>
+                        {righe.map((r, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ ...mono, fontSize: 11, color: T.muted }}>€</span>
+                            <input inputMode="decimal" value={r.importo ?? ""} placeholder="0,00"
+                              onChange={e => setRateD(i, { importo: e.target.value })}
+                              style={{ ...inputSt, width: 84, flexShrink: 0, padding: "4px 8px", fontSize: 11.5, textAlign: "right" }} />
+                            <input value={r.descrizione} onChange={e => setRateD(i, { descrizione: e.target.value })}
+                              placeholder="descrizione (es. inizio lavori)"
+                              style={{ ...inputSt, flex: 1, minWidth: 0, padding: "4px 8px", fontSize: 11.5 }} />
+                            <button type="button" onClick={() => removeRateD(i)} aria-label="Rimuovi importo"
+                              style={{ background: "none", border: "none", cursor: "pointer", color: T.red, fontSize: 15, lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>×</button>
+                          </div>
+                        ))}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                          <button type="button" onClick={addRateD}
+                            style={{ ...mono, fontSize: 10, letterSpacing: "0.06em", border: `0.5px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: "transparent", color: T.muted, padding: "6px 12px", cursor: "pointer" }}>
+                            + Aggiungi importo
+                          </button>
+                          <span style={{ ...mono, fontSize: 10, color: tot.totale <= 0 ? T.muted : ok ? T.green : diff > 0 ? T.navy : T.red }}>
+                            Totale {euro(somma)}{nota}
+                          </span>
+                        </div>
+                        <div style={{ ...mono, fontSize: 9.5, color: T.muted, lineHeight: 1.5 }}>
+                          Nel documento ogni importo va su una riga sotto il testo. All'accettazione dell'offerta diventano le rate (a importo fisso) della commessa.
+                        </div>
                       </div>
                     );
                   })()}

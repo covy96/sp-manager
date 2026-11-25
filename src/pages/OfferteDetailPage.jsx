@@ -256,9 +256,9 @@ export default function OfferteDetailPage() {
 
     // Genera la suddivisione pagamenti della commessa dalla modalità scelta nel
     // documento (Opzione C, oppure le % scritte nel testo dell'Opzione A/B).
-    const rateRows = rateCommessaDaPagamento(offerta?.documento?.pagamento).map((r, i) => ({
+    const rateRows = rateCommessaDaPagamento(offerta?.documento?.pagamento, totaleAccetta).map((r, i) => ({
       commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
-      label: r.label, percentuale: r.percentuale, importo_fisso: null, pagato: false,
+      label: r.label, percentuale: r.percentuale, importo_fisso: r.importo ?? null, pagato: false,
     }));
     if (rateRows.length > 0) {
       const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);

@@ -332,9 +332,9 @@ export default function OffertePage() {
     // alla modalità di pagamento scelta nel documento dell'offerta (Opzione C,
     // oppure le % scritte nel testo dell'Opzione A/B; altrimenti rata unica).
     // Le rate sono a percentuale, quindi si scalano sul totale della commessa.
-    const rateRows = rateCommessaDaPagamento(offertaOriginale?.documento?.pagamento).map((r, i) => ({
+    const rateRows = rateCommessaDaPagamento(offertaOriginale?.documento?.pagamento, totaleAccetta).map((r, i) => ({
       commessa_id: commessa.id, studio: studioId, numero_rata: i + 1,
-      label: r.label, percentuale: r.percentuale, importo_fisso: null, pagato: false,
+      label: r.label, percentuale: r.percentuale, importo_fisso: r.importo ?? null, pagato: false,
     }));
     if (rateRows.length > 0) {
       const { error: rErr } = await supabase.from('suddivisione_pagamenti').insert(rateRows);

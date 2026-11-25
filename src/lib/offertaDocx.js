@@ -7,7 +7,7 @@
 import { FIRMA_STUDIO_PNG, FIRMA_STUDIO_RATIO } from "../assets/firmaStudio";
 import {
   resolveTemplate, PAGAMENTO_CHIUSURA,
-  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeRateC, testoOpzionePagamento, testoVoce,
+  TESTI, STUDIO_NOME, compilaTesto, segmentaGrassetto, righeOpzionePagamento, testoVoce,
 } from "./offertaTemplate";
 import {
   sezioniAttive, vociAttive, importoVoce, calcolaTotali, euroSimbolo, numero2, importoInLettere, dataEstesa,
@@ -437,10 +437,8 @@ export async function generaOffertaDocx({ offerta, studio, documento }) {
   if (opzioni.length > 0 || cfg.pagamento?.testoLibero) {
     TitoloBlocco(TESTI.pagamentiTitolo).forEach(p => body.push(p));
     // Opzione a rate (C): una riga per ogni rata; le altre opzioni un bullet ciascuna.
-    opzioni.forEach(o => {
-      if (o.rate) righeRateC(cfg.pagamento?.rateC).forEach(r => body.push(Bullet(r)));
-      else body.push(Bullet(testoOpzionePagamento(o, cfg.pagamento)));
-    });
+    // Opzione a importi (D): testo dell'opzione + una riga per importo.
+    opzioni.forEach(o => righeOpzionePagamento(o, cfg.pagamento).forEach(r => body.push(Bullet(r))));
     if (cfg.pagamento?.testoLibero) body.push(P(cfg.pagamento.testoLibero, { spacing: 140 }));
     body.push(P(PAGAMENTO_CHIUSURA, { spacing: 300, spacingBefore: 200 }));
   }
