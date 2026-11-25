@@ -108,15 +108,108 @@ export function totaleRigaEff(riga) {
   return String(riga?.unita || "").toLowerCase() === "a corpo" ? 1 : t;
 }
 
+// ── Macrovoci personalizzate ─────────────────────────────────────────────────
+// Oltre alle sezioni standard, ogni capitolato può avere macrovoci create a mano
+// (capitolati.sezioni_custom): [{ code: "X-AB12C", nome: "Opere da giardiniere",
+// dopo: "C" | "" | null }]. `dopo` è la sezione dopo cui va (codice standard o di
+// un'altra macrovoce), "" = all'inizio, null = in fondo. Le righe della macrovoce
+// hanno categoria_code = code e categoria_nome = nome.
+export const PREFISSO_SEZIONE_CUSTOM = "X-";
+export const isSezioneCustom = (code) => String(code || "").startsWith(PREFISSO_SEZIONE_CUSTOM);
+export function nuovoCodiceSezione(esistenti = []) {
+  const usati = new Set(esistenti.map((s) => s.code));
+  let code;
+  do code = PREFISSO_SEZIONE_CUSTOM + Math.random().toString(36).slice(2, 7).toUpperCase();
+  while (usati.has(code));
+  return code;
+}
+
+const CODICI_STANDARD = new Set(CAPITOLATO_CATEGORIE_TUTTE.map((c) => c.code));
+
+// Macrovoci effettive: quelle salvate + quelle che compaiono solo nelle righe
+// (import da un altro progetto, colonna sezioni_custom non ancora creata…), che
+// vanno in fondo col nome salvato sulla riga. Così una riga non sparisce mai.
+export function sezioniCustomEffettive(sezioni, righe = []) {
+  const out = (Array.isArray(sezioni) ? sezioni : [])
+    .filter((s) => s && s.code)
+    .map((s) => ({ code: s.code, nome: s.nome || "", dopo: s.dopo === undefined ? null : s.dopo }));
+  const note = new Set(out.map((s) => s.code));
+  for (const r of righe || []) {
+    const c = r?.categoria_code;
+    if (!c || CODICI_STANDARD.has(c) || note.has(c)) continue;
+    note.add(c);
+    out.push({ code: c, nome: r.categoria_nome || c, dopo: null });
+  }
+  return out;
+}
+
+// Ordine di tutte le sezioni (standard + macrovoci), come lista di codici.
+export function ordineSezioni(sezioni) {
+  const lista = CAPITOLATO_CATEGORIE_TUTTE.map((c) => c.code);
+  const inizio = [];
+  const fine = [];
+  const ancorate = [];
+  for (const s of sezioni || []) {
+    if (s.dopo === "") inizio.push(s.code);
+    else if (s.dopo == null) fine.push(s.code);
+    else ancorate.push(s);
+  }
+  lista.unshift(...inizio);
+  // una macrovoce può essere ancorata a un'altra: si ripete finché si sistemano tutte
+  let resto = ancorate;
+  for (let giro = 0; resto.length && giro <= ancorate.length; giro++) {
+    const nonPiazzate = [];
+    for (const s of resto) {
+      const i = lista.indexOf(s.dopo);
+      if (i < 0) { nonPiazzate.push(s); continue; }
+      // dopo l'ancora e dopo le macrovoci già messe sulla stessa ancora
+      let j = i + 1;
+      while (j < lista.length && resto.some((x) => x.code === lista[j] && x.dopo === s.dopo)) j++;
+      lista.splice(j, 0, s.code);
+    }
+    resto = nonPiazzate;
+  }
+  lista.push(...resto.map((s) => s.code), ...fine); // ancora sparita → in fondo
+  return lista;
+}
+
+// Inserisce/sposta/toglie una macrovoce. Chi era "subito dopo" la stessa posizione
+// viene riagganciato, così la macrovoce va esattamente dove l'utente l'ha messa.
+export function inserisciSezione(sezioni, sez) {
+  const lista = (sezioni || []).map((s) => (s.dopo != null && s.dopo === sez.dopo ? { ...s, dopo: sez.code } : s));
+  return [...lista, sez];
+}
+export function rimuoviSezione(sezioni, code) {
+  const tolta = (sezioni || []).find((s) => s.code === code);
+  return (sezioni || []).filter((s) => s.code !== code)
+    .map((s) => (s.dopo === code ? { ...s, dopo: tolta ? tolta.dopo : null } : s));
+}
+export function spostaSezione(sezioni, code, dopo) {
+  const sez = (sezioni || []).find((s) => s.code === code);
+  if (!sez || dopo === code) return sezioni;
+  return inserisciSezione(rimuoviSezione(sezioni, code), { ...sez, dopo });
+}
+
 // ── Composizione documento: categorie usate + re-letterazione ─────────────────
-// Raggruppa le righe nelle categorie usate (ordine ufficiale) e riassegna le
-// lettere in sequenza (A, B, C…) saltando eventuali categorie mancanti; le voci
-// prendono un codice progressivo <lettera><nn>. Usato da UI, PDF ed Excel.
-export function componiGruppi(righe) {
+// Raggruppa le righe nelle categorie usate (ordine ufficiale, con le macrovoci
+// personalizzate al loro posto) e riassegna le lettere in sequenza (A, B, C…)
+// saltando eventuali categorie mancanti; le voci prendono un codice progressivo
+// <lettera><nn>. Usato da UI, PDF ed Excel. Con includiVuote le macrovoci
+// personalizzate ancora senza voci compaiono lo stesso (solo nell'editor).
+export function componiGruppi(righe, sezioni = [], { includiVuote = false } = {}) {
+  const custom = sezioniCustomEffettive(sezioni, righe);
+  const customByCode = new Map(custom.map((s) => [s.code, s]));
   // anche le sezioni tolte dalla libreria: i capitolati vecchi che le usano le stampano ancora
-  const presenti = CAPITOLATO_CATEGORIE_TUTTE
-    .map((cat) => ({ cat, items: righe.filter((r) => r.categoria_code === cat.code) }))
-    .filter((g) => g.items.length > 0);
+  const stdByCode = new Map(CAPITOLATO_CATEGORIE_TUTTE.map((c) => [c.code, c]));
+  const presenti = ordineSezioni(custom)
+    .map((code) => {
+      const cs = customByCode.get(code);
+      const cat = cs
+        ? { code, nomeIndice: cs.nome || "Nuova macrovoce", titoloPagina: `X) ${(cs.nome || "Nuova macrovoce").toUpperCase()}`, custom: true }
+        : stdByCode.get(code);
+      return { cat, items: righe.filter((r) => r.categoria_code === code) };
+    })
+    .filter((g) => g.cat && (g.items.length > 0 || (includiVuote && g.cat.custom)));
   return presenti.map((g, gi) => {
     const letter = ALFABETO_IT[gi] || g.cat.code;
     const namePart = (g.cat.titoloPagina || "").split(") ").slice(1).join(") ")
@@ -126,6 +219,7 @@ export function componiGruppi(righe) {
       nomeIndice: g.cat.nomeIndice,
       titoloPagina: `${letter}) ${namePart}`,
       originalCode: g.cat.code,
+      custom: !!g.cat.custom,
       items: g.items.map((r, ri) => ({ ...r, _code: `${letter}${String(ri + 1).padStart(2, "0")}` })),
     };
   });
@@ -500,6 +594,8 @@ export function snapshotCapitolato(meta, righe) {
       tipo: r.tipo || "singolo", sommano_labels: r.sommano_labels || [], misurazioni: r.misurazioni || [], note: r.note || null,
       assistenza: r.assistenza || null,
     })),
+    // solo se presenti: così le versioni salvate prima restano identiche allo stato attuale
+    ...(Array.isArray(meta?.sezioni_custom) && meta.sezioni_custom.length ? { sezioni_custom: meta.sezioni_custom } : {}),
   };
 }
 
@@ -519,10 +615,12 @@ export async function deleteCapitolato(capitolatoId) {
   if (error) throw error;
 }
 
+const senzaSezioni = ({ sezioni_custom, ...m }) => m; // eslint-disable-line no-unused-vars
+
 export async function createCapitolato(projectId, meta = {}) {
   const { data, error } = await supabase
     .from("capitolati")
-    .insert({ project_id: projectId, ...meta })
+    .insert({ project_id: projectId, ...senzaSezioni(meta) }) // le macrovoci le scrive saveCapitolato (con fallback)
     .select("*")
     .single();
   if (error) throw error;
@@ -535,10 +633,17 @@ export async function createCapitolato(projectId, meta = {}) {
 export async function saveCapitolato(capitolatoId, meta, righe, versioni) {
   const patch = { ...meta, updated_at: new Date().toISOString() };
   if (versioni !== undefined) patch.versioni = versioni;
-  const { error: eMeta } = await supabase
+  let { error: eMeta } = await supabase
     .from("capitolati")
     .update(patch)
     .eq("id", capitolatoId);
+  // colonna 'sezioni_custom' non ancora creata (migration mancante): salva senza.
+  // Le righe tengono comunque il nome della macrovoce (categoria_nome).
+  if (eMeta && "sezioni_custom" in patch && (eMeta.code === "42703" || eMeta.code === "PGRST204" || /sezioni_custom/i.test(eMeta.message || ""))) {
+    const { sezioni_custom, ...senza } = patch; // eslint-disable-line no-unused-vars
+    ({ error: eMeta } = await supabase.from("capitolati").update(senza).eq("id", capitolatoId));
+    if (!eMeta) console.warn("capitolati.sezioni_custom mancante: esegui database/capitolato_macrovoci.sql");
+  }
   if (eMeta) throw eMeta;
 
   const { data: vecchie, error: eOld } = await supabase
