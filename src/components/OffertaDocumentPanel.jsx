@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../contexts/ThemeContext";
 import { useToast } from "../contexts/ToastContext";
@@ -53,6 +53,41 @@ function CampiTesto({ testo, valori, onChange, inputSt }) {
         </div>
       ))}
     </div>
+  );
+}
+
+// Campo rosso "in linea" che va a capo insieme al testo (contentEditable):
+// la larghezza resta quella della riga e il testo lungo continua sotto,
+// con il punto finale subito dopo l'ultima parola.
+function CampoInlineMultiriga({ value, onChange, placeholder = "", color, style }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && el.innerText !== (value || "")) el.innerText = value || "";
+  }, [value]);
+  const leggi = e => onChange(e.currentTarget.innerText.replace(/\s*\n\s*/g, " "));
+  return (
+    <span
+      ref={ref}
+      className="asm-campo-multiriga"
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      data-placeholder={placeholder}
+      onInput={leggi}
+      onKeyDown={e => { if (e.key === "Enter") e.preventDefault(); }}
+      onPaste={e => {
+        e.preventDefault();
+        const t = (e.clipboardData.getData("text/plain") || "").replace(/\s*\n\s*/g, " ");
+        document.execCommand("insertText", false, t);
+      }}
+      style={{
+        color, fontWeight: 600, outline: "none", padding: "0 4px",
+        borderBottom: `1px dashed ${color}`, wordBreak: "break-word", overflowWrap: "anywhere",
+        WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone", cursor: "text",
+        ...style,
+      }}
+    />
   );
 }
 
@@ -646,7 +681,7 @@ export default function OffertaDocumentPanel({
                   style={{ display: "inline-block", border: "none", borderBottom: `1px dashed ${T.red}`, background: "transparent", color: T.red, fontWeight: 600, fontFamily: "inherit", fontSize: "inherit", padding: "0 4px", outline: "none" }} />
               </div>
               <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                {numeroEdit.trim() || offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER {campoInline(doc.oggettoIncarico, v => set({ oggettoIncarico: v }), "oggetto dell'incarico", { textTransform: "uppercase" })}.
+                {numeroEdit.trim() || offerta?.numero_offerta || "OFF."} PRESTAZIONI PROFESSIONALI PER <CampoInlineMultiriga value={doc.oggettoIncarico} onChange={v => set({ oggettoIncarico: v })} placeholder="oggetto dell'incarico" color={T.red} style={{ textTransform: "uppercase" }} />.
               </div>
               <div style={{ borderTop: `1px solid ${T.borderMd}`, margin: "8px 0 16px" }} />
               <div style={{ marginBottom: 12 }}>OGGETTO: Offerta di prestazioni professionali.</div>
