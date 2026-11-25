@@ -341,11 +341,62 @@ export function righeRateC(rate) {
   return list.map(r => `${Number(r.percentuale) || 0}% ${(r.descrizione || "").trim()}`.trim());
 }
 
+// Opzione D (pagamento a importi fissi): importi in euro scelti nella singola
+// offerta, senza percentuali. Nel documento il testo dell'opzione (modificabile
+// come A/B) è seguito da una riga per importo: "€ 5.000,00 accettazione offerta".
+export const RATE_D_DEFAULT = [
+  { importo: "", descrizione: "accettazione offerta" },
+  { importo: "", descrizione: "fine lavori" },
+];
+
+// Importo it-IT deterministico ("€ 18.400,00"), come euroSimbolo in offertaModel.
+const _euroD = (v) => {
+  const n = Number(v) || 0;
+  const [intero, dec] = Math.abs(n).toFixed(2).split(".");
+  return `€ ${n < 0 ? "-" : ""}${intero.replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${dec}`;
+};
+
+// Converte quanto scritto nel campo importo ("5.000", "5000,50", 5000) in numero.
+export function numeroImporto(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  let t = String(v ?? "").replace(/[€\s]/g, "");
+  if (!t) return 0;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const n = Number(t);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Importi dell'Opzione D validi (> 0), con importo numerico.
+export function importiD(rate) {
+  return (Array.isArray(rate) ? rate : [])
+    .map(r => ({ importo: numeroImporto(r?.importo), descrizione: (r?.descrizione || "").trim() }))
+    .filter(r => r.importo > 0);
+}
+
+// Righe dell'Opzione D per Word/PDF: ["€ 5.000,00 accettazione offerta", …].
+export function righeRateD(rate) {
+  return importiD(rate).map(r => `${_euroD(r.importo)} ${r.descrizione}`.trim());
+}
+
 export const MODALITA_PAGAMENTO = [
   { id: "A", testo: "SALDO alla presentazione." },
   { id: "B", testo: "Saldo all'accettazione dell'offerta." },
   { id: "C", testo: testoRateC(RATE_C_DEFAULT), rate: true },
+  { id: "D", testo: "Pagamento a importi fissi:", importi: true },
 ];
+
+// Righe di un'opzione nel documento (Word/PDF): C → una per rata; D → testo
+// dell'opzione (se non vuoto) seguito da una riga per importo; A/B → il testo.
+export function righeOpzionePagamento(o, pagamento) {
+  if (o.rate) return righeRateC(pagamento?.rateC);
+  if (o.importi) {
+    const t = pagamento?.testi?.[o.id];
+    const testo = typeof t === "string" ? t.trim() : o.testo;
+    return [...(testo ? [testo] : []), ...righeRateD(pagamento?.rateD)];
+  }
+  return [testoOpzionePagamento(o, pagamento)];
+}
 
 // Testo di un'opzione di pagamento (A/B) nel documento: usa il testo scritto
 // nella compilazione dell'offerta (pagamento.testi[id]) se presente, altrimenti
@@ -377,27 +428,42 @@ export function rateDaTesto(testo) {
 //  - Opzione A/B → se nel testo dell'opzione ci sono righe con "%" (es.
 //    "50% accettazione offerta"), una rata per riga (con un saldo se la
 //    somma non arriva al 100%); altrimenti una rata unica al 100%.
-// Ritorna [{ label, percentuale }]; vuoto se non è scelta nessuna opzione.
-export function rateCommessaDaPagamento(pagamento) {
+//  - Opzione D → una rata a importo fisso per ogni importo (con un saldo se,
+//    passato il totale della commessa, gli importi non lo coprono tutto).
+// Ritorna [{ label, percentuale, importo }] (importo null per le rate a
+// percentuale, percentuale null per quelle a importo); vuoto se non è scelta
+// nessuna opzione.
+export function rateCommessaDaPagamento(pagamento, totale) {
   const opz = pagamento?.opzioni || [];
   const maiusc = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
   if (opz.includes("C") && Array.isArray(pagamento?.rateC) && pagamento.rateC.length > 0) {
     return pagamento.rateC.map((r, i) => ({
       label: (r.descrizione || "").trim() || `Rata ${i + 1}`,
       percentuale: Number(r.percentuale) || 0,
+      importo: null,
     }));
+  }
+  if (opz.includes("D")) {
+    const imp = importiD(pagamento?.rateD);
+    if (imp.length > 0) {
+      const rate = imp.map((r, i) => ({ label: maiusc(r.descrizione) || `Rata ${i + 1}`, percentuale: null, importo: Math.round(r.importo * 100) / 100 }));
+      const somma = rate.reduce((s, r) => s + r.importo, 0);
+      const tot = Number(totale) || 0;
+      if (tot > 0 && tot - somma > 0.005) rate.push({ label: "Saldo", percentuale: null, importo: Math.round((tot - somma) * 100) / 100 });
+      return rate;
+    }
   }
   const id = ["A", "B"].find(x => opz.includes(x));
   if (!id) return [];
   const opzione = MODALITA_PAGAMENTO.find(o => o.id === id);
   const lette = rateDaTesto(testoOpzionePagamento(opzione, pagamento));
   if (lette.length > 0) {
-    const rate = lette.map((r, i) => ({ label: maiusc(r.descrizione) || `Rata ${i + 1}`, percentuale: r.percentuale }));
+    const rate = lette.map((r, i) => ({ label: maiusc(r.descrizione) || `Rata ${i + 1}`, percentuale: r.percentuale, importo: null }));
     const somma = rate.reduce((s, r) => s + r.percentuale, 0);
-    if (somma < 99.995) rate.push({ label: "Saldo", percentuale: Math.round((100 - somma) * 100) / 100 });
+    if (somma < 99.995) rate.push({ label: "Saldo", percentuale: Math.round((100 - somma) * 100) / 100, importo: null });
     return rate;
   }
-  return [{ label: id === "A" ? "Saldo alla presentazione" : "Saldo all'accettazione", percentuale: 100 }];
+  return [{ label: id === "A" ? "Saldo alla presentazione" : "Saldo all'accettazione", percentuale: 100, importo: null }];
 }
 
 export const PAGAMENTO_CHIUSURA = "Pagamenti per rimessa diretta a mezzo di bonifico bancario o assegno bancario.";
