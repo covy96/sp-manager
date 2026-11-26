@@ -144,7 +144,7 @@ function KpiCard({ label, value, note, valueColor, isMobile, onClick, icon, acce
   );
 }
 
-function Panel({ title, icon, accent, count, children, isMobile }) {
+function Panel({ title, icon, accent, count, children, isMobile, action }) {
   const { T } = useTheme();
   return (
     <div className="glass-card" style={{ padding: isMobile ? '16px 16px' : '22px 24px', minWidth: 0 }}>
@@ -163,6 +163,7 @@ function Panel({ title, icon, accent, count, children, isMobile }) {
             borderRadius: 99, padding: '3px 9px',
           }}>{count}</span>
         )}
+        {action}
       </div>
       {children}
     </div>
@@ -307,6 +308,14 @@ export default function DashboardPage() {
   // Offerte "In attesa" da 30/60+ giorni — solo per chi è scelto in Team
   const [offerteAttesa, setOfferteAttesa] = useState([]);
   const riceveAlertOfferte = studioMember?.alert_offerte === true;
+  // Filtro della card: tutte / solo 60+ / solo 30–59 / nessuna (ricordato sul dispositivo)
+  const [filtroAttesa, setFiltroAttesa] = useState(() => {
+    try { return localStorage.getItem("asm_dash_offerte_attesa") || "tutte"; } catch { return "tutte"; }
+  });
+  const cambiaFiltroAttesa = (v) => {
+    setFiltroAttesa(v);
+    try { localStorage.setItem("asm_dash_offerte_attesa", v); } catch { /* storage non disponibile */ }
+  };
 
   const greeting    = useMemo(() => {
     const h = new Date().getHours();
@@ -555,12 +564,32 @@ export default function DashboardPage() {
 
       {/* Offerte in attesa da 30 / 60+ giorni */}
       {riceveAlertOfferte && offerteAttesa.length > 0 && (
-        <Panel title="Offerte in attesa di risposta" icon="alert" accent={AMBER} count={offerteAttesa.length} isMobile={isMobile}>
+        <Panel title={isMobile ? "Offerte in attesa" : "Offerte in attesa di risposta"} icon="alert" accent={AMBER} isMobile={isMobile}
+          action={
+            <select value={filtroAttesa} onChange={e => cambiaFiltroAttesa(e.target.value)}
+              aria-label="Filtra offerte in attesa"
+              style={{
+                fontFamily: "var(--font-ui)", fontSize: 12, color: T.ink,
+                background: 'var(--glass-bg)', border: '1px solid var(--glass-edge)',
+                borderRadius: 99, padding: '5px 10px', cursor: 'pointer', outline: 'none', flexShrink: 0,
+                width: 'auto', maxWidth: isMobile ? 150 : 220,
+              }}>
+              <option value="tutte">Tutte ({offerteAttesa.length})</option>
+              <option value="60">60+ giorni ({offerteAttesa.filter(o => o.soglia >= 60).length})</option>
+              <option value="30">30–59 giorni ({offerteAttesa.filter(o => o.soglia === 30).length})</option>
+              <option value="nessuna">Nessuna</option>
+            </select>
+          }>
+          {filtroAttesa !== "nessuna" && (
           <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: -6, marginBottom: 8 }}>
             Ancora in attesa dopo 30 o 60 giorni dalla data dell'offerta
           </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {offerteAttesa.map(o => {
+            {filtroAttesa !== "nessuna" && offerteAttesa.length > 0 && offerteAttesa.filter(o => filtroAttesa === "60" ? o.soglia >= 60 : filtroAttesa === "30" ? o.soglia === 30 : true).length === 0 && (
+              <EmptyState label="Nessuna offerta in questa fascia" />
+            )}
+            {(filtroAttesa === "nessuna" ? [] : offerteAttesa.filter(o => filtroAttesa === "60" ? o.soglia >= 60 : filtroAttesa === "30" ? o.soglia === 30 : true)).map(o => {
               const c = o.soglia >= 60 ? T.red : AMBER;
               const importo = Number(o.importo_totale || o.importo_offerta_base || 0);
               return (
