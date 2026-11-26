@@ -299,6 +299,27 @@ export default function TeamPage() {
   const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
   const isOwnProfile = selectedMember?.id === currentMember?.id;
 
+  // ── avvisi offerte in attesa (30/60 giorni): chi li riceve ─────────
+  const [savingAlert, setSavingAlert] = useState(null);
+  // Solo il Titolare decide chi riceve gli avvisi
+  const canSetAlertOfferte = currentMember?.role_internal === "Owner";
+  const toggleAlertOfferte = async (m) => {
+    if (!canSetAlertOfferte || savingAlert) return;
+    const next = !(m.alert_offerte === true);
+    setSavingAlert(m.id);
+    const { error: e } = await supabase.from("team_members").update({ alert_offerte: next }).eq("id", m.id);
+    setSavingAlert(null);
+    if (e) {
+      const manca = /alert_offerte/.test(e.message || "");
+      showToast(manca ? "Manca la colonna alert_offerte: esegui lo script SQL in Supabase." : "Errore: " + e.message);
+      return;
+    }
+    setMembers(p => p.map(x => x.id === m.id ? { ...x, alert_offerte: next } : x));
+    setSelectedMember(p => p && p.id === m.id ? { ...p, alert_offerte: next } : p);
+    // allinea il membro corrente nel contesto condiviso (la Dashboard lo legge da lì)
+    if (m.id === currentMember?.id && currentMember) currentMember.alert_offerte = next;
+  };
+
   // ── stili comuni ──────────────────────────────────────────────────
   const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
   const statLbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 };
@@ -467,6 +488,28 @@ export default function TeamPage() {
                     <div style={{ height:2, background:T.navy, width:`${progress}%`, transition:'width 0.3s' }}/>
                   </div>
                 </div>
+
+                {/* Avvisi offerte in attesa — lo decide solo il Titolare */}
+                {canSetAlertOfferte && (() => {
+                  const on = selectedMember.alert_offerte === true;
+                  return (
+                    <div style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', marginBottom:20, background:T.bg, border:`1px solid ${T.border}`, borderRadius:T.radiusSm }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.ink }}>Avvisi offerte in attesa</div>
+                        <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:3, lineHeight:1.5 }}>
+                          Riceve un avviso quando un'offerta è ancora in attesa dopo 30 e 60 giorni, e la vede in Dashboard.
+                        </div>
+                      </div>
+                      <button type="button" role="switch" aria-checked={on} aria-label="Avvisi offerte in attesa"
+                        disabled={!!savingAlert} onClick={() => toggleAlertOfferte(selectedMember)}
+                        style={{ position:'relative', width:44, height:26, borderRadius:13, flexShrink:0, border:'none', padding:0,
+                          background: on ? T.navy : T.borderMd, cursor: savingAlert ? 'wait' : 'pointer',
+                          opacity: savingAlert ? 0.6 : 1, transition:'background 0.2s' }}>
+                        <span style={{ position:'absolute', top:3, left: on ? 21 : 3, width:20, height:20, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 3px rgba(0,0,0,0.25)', transition:'left 0.2s' }} />
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* Tabs gestione */}
                 <div style={{ borderTop:`0.5px solid ${T.border}`, paddingTop:16 }}>

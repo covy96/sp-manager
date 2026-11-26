@@ -1,6 +1,7 @@
 // supabase/functions/check-scadenze/index.ts
 // Cron giornaliero (es. ogni giorno alle 08:00 Europe/Rome)
-// Controlla: task in scadenza oggi, task scadute, proforma in scadenza, commesse con residuo >60gg
+// Controlla: task in scadenza oggi, task scadute, proforma in scadenza, commesse con residuo >60gg,
+// offerte ancora "In attesa" dopo 30 e 60 giorni
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -58,12 +59,13 @@ function isMuted(prefs: any, now: Date = new Date()): boolean {
   return false;
 }
 
-/** Crea notifica in DB + invia push. Gestisce preferenze e dedup (non duplica se già inviata oggi). */
+/** Crea notifica in DB + invia push. Gestisce preferenze e dedup (non duplica se già inviata oggi;
+ *  con onlyOnce non la ripete mai per lo stesso tipo + link). */
 async function notify({
-  studioId, userEmail, type, title, message, link, taskId,
+  studioId, userEmail, type, title, message, link, taskId, onlyOnce,
 }: {
   studioId: string; userEmail: string; type: string;
-  title: string; message: string; link?: string; taskId?: string;
+  title: string; message: string; link?: string; taskId?: string; onlyOnce?: boolean;
 }) {
   // Leggi preferenze e token del destinatario
   const { data: member } = await db
@@ -82,8 +84,8 @@ async function notify({
     .select("id", { count: "exact", head: true })
     .eq("studio", studioId)
     .eq("user_email", userEmail)
-    .eq("type", type)
-    .gte("created_at", todayISO);
+    .eq("type", type);
+  if (!onlyOnce) dedupQ = dedupQ.gte("created_at", todayISO);
 
   if (taskId) {
     dedupQ = dedupQ.eq("task_id", taskId);
@@ -326,6 +328,69 @@ async function checkCommesseResiduo() {
   }
 }
 
+// ── 4. Offerte ancora "In attesa" dopo 30 e 60 giorni ───────────────────────
+// Destinatari: membri con team_members.alert_offerte = true (scelti in Team).
+// Un solo avviso per offerta e per soglia; la finestra di 7 giorni evita di
+// mandare in blocco gli avvisi di offerte vecchie alla prima attivazione.
+
+const SOGLIE_OFFERTE = [60, 30];
+const FINESTRA_GIORNI = 7;
+
+function giorniDa(dateStr: string): number {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  const [ty, tm, td] = todayISO.split("-").map(Number);
+  return Math.floor((Date.UTC(ty, tm - 1, td) - Date.UTC(y, m - 1, d)) / 86400000);
+}
+
+async function checkOfferteInAttesa() {
+  const { data: destinatari, error: errDest } = await db
+    .from("team_members")
+    .select("studio, user_email")
+    .eq("alert_offerte", true)
+    .eq("active", true);
+  if (errDest) { console.error("[offerte] destinatari:", errDest.message); return; }
+  if (!destinatari?.length) return;
+
+  const perStudio: Record<string, string[]> = {};
+  for (const d of destinatari) {
+    if (!d.studio || !d.user_email) continue;
+    (perStudio[d.studio] ??= []).push(d.user_email);
+  }
+  const studioIds = Object.keys(perStudio);
+  if (!studioIds.length) return;
+
+  const { data: offerte, error } = await db
+    .from("offerte")
+    .select("id, studio, numero_offerta, nome_offerta, cliente, data_offerta, created_at")
+    .in("studio", studioIds)
+    .eq("stato", "offerta")
+    .eq("archived", false)
+    .is("deleted_at", null);
+  if (error) { console.error("[offerte]", error.message); return; }
+
+  for (const o of (offerte ?? [])) {
+    const inizio = o.data_offerta || o.created_at;
+    if (!inizio) continue;
+    const giorni = giorniDa(String(inizio));
+    const soglia = SOGLIE_OFFERTE.find((s) => giorni >= s && giorni < s + FINESTRA_GIORNI);
+    if (!soglia) continue;
+
+    const nome = o.nome_offerta || "Offerta";
+    const num = o.numero_offerta ? ` n. ${o.numero_offerta}` : "";
+    const cliente = o.cliente ? ` (${o.cliente})` : "";
+    for (const userEmail of perStudio[o.studio] ?? []) {
+      await notify({
+        studioId: o.studio, userEmail,
+        type: `offerta_attesa_${soglia}`,
+        title: `Offerta in attesa da ${soglia} giorni`,
+        message: `"${nome}"${num}${cliente} non è ancora stata accettata o rifiutata`,
+        link: `/offerte/${o.id}`,
+        onlyOnce: true,
+      });
+    }
+  }
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -353,6 +418,7 @@ serve(async (req) => {
       checkTaskScadenze(),
       checkProformaScadenze(),
       checkCommesseResiduo(),
+      checkOfferteInAttesa(),
     ]);
     console.log(`[check-scadenze] completato`);
     return new Response(JSON.stringify({ success: true, date: todayISO }), {
