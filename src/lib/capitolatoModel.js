@@ -256,6 +256,35 @@ export function defaultSommanoLabels(unita, tipo) {
   return [`SOMMANO ${u}`.trim()];
 }
 
+// ── Fornitura + Posa: togliere una delle due righe ────────────────────────────
+// Per le voci "fornitura_posa" si può togliere la riga FORNITURA o la riga POSA
+// (es. impresa che fa solo la posa). Si salva semplicemente togliendo
+// l'etichetta da sommano_labels, così Excel e PDF la ignorano già.
+export function parteSommano(label) {
+  const t = String(label || "").trim().toUpperCase();
+  if (t.startsWith("FORNITURA")) return "fornitura";
+  if (t.startsWith("POSA")) return "posa";
+  return null;
+}
+// Etichette di default che mancano (da poter ripristinare), nell'ordine standard.
+export function partiMancantiSommano(r) {
+  if (!r || r.tipo !== "fornitura_posa") return [];
+  const presenti = new Set((r.sommano_labels || []).map(parteSommano).filter(Boolean));
+  return defaultSommanoLabels(r.unita, r.tipo).filter((l) => !presenti.has(parteSommano(l)));
+}
+// Nuove etichette dopo aver tolto quella in posizione idx (ne resta sempre almeno una).
+export function togliEtichettaSommano(labels, idx) {
+  const arr = Array.isArray(labels) ? labels : [];
+  if (arr.length <= 1) return arr;
+  return arr.filter((_, i) => i !== idx);
+}
+// Nuove etichette dopo aver rimesso la parte mancante (FORNITURA prima di POSA).
+export function ripristinaEtichettaSommano(r, label) {
+  const ordine = { fornitura: 0, posa: 1 };
+  const arr = [...(r.sommano_labels || []), label];
+  return arr.sort((a, b) => (ordine[parteSommano(a)] ?? 9) - (ordine[parteSommano(b)] ?? 9));
+}
+
 // ── Assistenze murarie a percentuale ──────────────────────────────────────────
 // Voce speciale: nessuna misurazione, ma una % applicata al TOTALE di uno o più
 // impianti (E idrico, F elettrico, G meccanico). Nell'Excel diventa una formula

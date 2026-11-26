@@ -13,7 +13,7 @@ import {
   loadLibreria, loadCapitolato, createCapitolato, saveCapitolato,
   rigaFromVoce, emptyMisurazione, qtaMisurazione, totaleRigaEff, fmtNum, componiGruppi,
   snapshotCapitolato, saveVersioni, deleteCapitolato, loadCapitolatiImportabili, loadRigheImport,
-  defaultSommanoLabels, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi, assistenzaPerc,
+  defaultSommanoLabels, partiMancantiSommano, togliEtichettaSommano, ripristinaEtichettaSommano, saveVoceLibreria, IMPIANTI_ASSISTENZA, assistenzaLabel, assistenzaBasi, assistenzaPerc,
   sezioniCustomEffettive, isSezioneCustom, nuovoCodiceSezione, inserisciSezione, rimuoviSezione, spostaSezione,
 } from "../lib/capitolatoModel";
 import { generaCapitolatoPdf } from "../lib/capitolatoPdf";
@@ -1067,7 +1067,7 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMov
               onChange={(e) => { const p = presetPatch(r, e.target.value); if (p) onPatch(p); }}
               style={{ flexShrink: 0, fontFamily: mono, fontSize: 10, color: r.tipo === "fornitura_posa" ? "#b45309" : T.navy, background: T.surface, border: `0.5px solid ${T.borderMd}`, borderRadius: 3, padding: "2px 4px", cursor: "pointer", outline: "none" }}>
               {presetKeyOf(r) === "" && <option value="">{r.unita || "unità…"}</option>}
-              {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+              {SOMMANO_PRESETS.map((p) => <option key={p.key} value={p.key}>{p.key === "fp" && r.tipo === "fornitura_posa" && labels.length === 1 ? `Solo ${labels[0].split(" - ")[0].toLowerCase()}` : p.label}</option>)}
             </select>
           </div>
           <RichTextEditor T={T} compact minRows={1} value={r.descrizione} onChange={(v) => onPatch({ descrizione: v })}
@@ -1152,9 +1152,22 @@ function RigaEditor({ r, T, mono, miniInput, onPatch, onRemove, onDuplica, onMov
       {/* SOMMANO */}
       <div style={{ marginTop: 6, paddingTop: 6, borderTop: `0.5px dashed ${T.border}` }}>
         {labels.map((lab, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", fontFamily: mono, fontSize: 10.5, fontWeight: 700, color: T.ink }}>
-            <span>{lab}</span><span>{fmtNum(tot)}</span>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: mono, fontSize: 10.5, fontWeight: 700, color: T.ink, minHeight: 20 }}>
+            <span style={{ flex: 1, minWidth: 0 }}>{lab}</span><span>{fmtNum(tot)}</span>
+            {r.tipo === "fornitura_posa" && (
+              labels.length > 1 ? (
+                <button title={`Togli la riga ${lab.split(" - ")[0]}`} aria-label={`Togli ${lab}`}
+                  onClick={() => onPatch({ sommano_labels: togliEtichettaSommano(labels, i) })}
+                  style={{ width: 18, height: 18, flexShrink: 0, borderRadius: "50%", border: "none", background: T.border, color: T.muted, cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>×</button>
+              ) : <span style={{ width: 18, flexShrink: 0 }} />
+            )}
           </div>
+        ))}
+        {r.tipo === "fornitura_posa" && partiMancantiSommano({ ...r, sommano_labels: labels }).map((lab) => (
+          <button key={lab} title="Rimetti questa riga" onClick={() => onPatch({ sommano_labels: ripristinaEtichettaSommano({ ...r, sommano_labels: labels }, lab) })}
+            style={{ marginTop: 4, fontFamily: mono, fontSize: 10, color: T.navy, background: "none", border: `0.5px dashed ${T.borderMd}`, borderRadius: 999, cursor: "pointer", padding: "2px 10px", letterSpacing: "0.05em" }}>
+            + rimetti {lab.split(" - ")[0].toLowerCase()}
+          </button>
         ))}
       </div>
       </>)}
