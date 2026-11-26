@@ -12,6 +12,7 @@ import {
   rigaFromVoce, defaultSommanoLabels, componiGruppi, ALFABETO_IT,
   assistenzaPerc, assistenzaLabel, applicaLayout, spostaVoce, scambiaCodici, prossimoCodice, ordinaLibreria, componiLibreria, codiceDuplicato,
   ordineSezioni, inserisciSezione, rimuoviSezione, spostaSezione, sezioniCustomEffettive, snapshotCapitolato,
+  parteSommano, partiMancantiSommano, togliEtichettaSommano, ripristinaEtichettaSommano,
 } from "./capitolatoModel";
 
 describe("fmtNum", () => {
@@ -350,5 +351,21 @@ describe("stessa voce aggiunta più volte", () => {
     expect(b.misurazioni[0].lung).not.toBe("1.2");
     const [g] = componiGruppi([a, b]);
     expect(g.items.map((r) => r._code)).toEqual(["A01", "A02"]);
+  });
+});
+
+describe("fornitura + posa: togli / rimetti", () => {
+  const fp = ["FORNITURA - sommano mq", "POSA - sommano mq"];
+  it("toglie una riga ma ne lascia sempre una", () => {
+    expect(togliEtichettaSommano(fp, 0)).toEqual(["POSA - sommano mq"]);
+    expect(togliEtichettaSommano(["POSA - sommano mq"], 0)).toEqual(["POSA - sommano mq"]);
+  });
+  it("trova la parte mancante e la rimette in ordine", () => {
+    const r = { tipo: "fornitura_posa", unita: "mq", sommano_labels: ["POSA - sommano mq"] };
+    expect(parteSommano("POSA - sommano mq")).toBe("posa");
+    expect(partiMancantiSommano(r)).toEqual(["FORNITURA - sommano mq"]);
+    expect(ripristinaEtichettaSommano(r, "FORNITURA - sommano mq")).toEqual(fp);
+    expect(partiMancantiSommano({ ...r, sommano_labels: fp })).toEqual([]);
+    expect(partiMancantiSommano({ tipo: "singolo", unita: "mq", sommano_labels: ["SOMMANO mq"] })).toEqual([]);
   });
 });
