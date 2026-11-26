@@ -9,6 +9,7 @@ const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true, task_promemoria: true,
   nuovo_membro: true, proforma_in_scadenza: true, commessa_residuo_60gg: true,
   nota_condivisa: true, nota_aggiornata: true,
+  offerta_attesa_30: true, offerta_attesa_60: true,
 };
 
 const NOTIF_ITEMS = [
@@ -19,6 +20,8 @@ const NOTIF_ITEMS = [
   { key: "nuovo_membro",          emoji: "👤", label: "Nuovo membro aggiunto allo studio" },
   { key: "proforma_in_scadenza",  emoji: "📄", label: "Proforma in scadenza", hasDays: true },
   { key: "commessa_residuo_60gg", emoji: "💰", label: "Commessa con residuo da +60 giorni" },
+  { key: "offerta_attesa_30",     emoji: "⏳", label: "Offerta in attesa da 30 giorni", soloAlertOfferte: true },
+  { key: "offerta_attesa_60",     emoji: "⌛", label: "Offerta in attesa da 60 giorni", soloAlertOfferte: true },
   { key: "nota_condivisa",        emoji: "📝", label: "Nota della scrivania condivisa con me" },
   { key: "nota_aggiornata",       emoji: "✏️", label: "Nota condivisa modificata da un collega" },
 ];
@@ -193,7 +196,7 @@ export default function NotifichePage() {
         <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: T.muted, padding: '10px 20px', borderBottom: `0.5px solid ${T.border}` }}>Tipo di notifica</div>
         {prefsLoading ? (
           <div style={{ padding: '24px 0', textAlign: 'center', fontFamily: "var(--font-label)", fontSize: 11, color: T.muted }}>Caricamento...</div>
-        ) : NOTIF_ITEMS.map(item => (
+        ) : NOTIF_ITEMS.filter(item => !item.soloAlertOfferte || teamMember?.alert_offerte === true).map(item => (
           <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderBottom: `0.5px solid ${T.border}` }}>
             <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
             <div style={{ flex: 1 }}>

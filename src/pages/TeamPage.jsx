@@ -299,6 +299,25 @@ export default function TeamPage() {
   const canEditRoles = currentMember?.role_internal === "Owner" || currentMember?.role_internal === "Partner";
   const isOwnProfile = selectedMember?.id === currentMember?.id;
 
+  // ── avvisi offerte in attesa (30/60 giorni): chi li riceve ─────────
+  const [savingAlert, setSavingAlert] = useState(null);
+  const destinatariAlert = members.filter(m => m.alert_offerte === true);
+  const toggleAlertOfferte = async (m) => {
+    if (!canEditRoles || savingAlert) return;
+    const next = !(m.alert_offerte === true);
+    setSavingAlert(m.id);
+    const { error: e } = await supabase.from("team_members").update({ alert_offerte: next }).eq("id", m.id);
+    setSavingAlert(null);
+    if (e) {
+      const manca = /alert_offerte/.test(e.message || "");
+      showToast(manca ? "Manca la colonna alert_offerte: esegui lo script SQL in Supabase." : "Errore: " + e.message);
+      return;
+    }
+    setMembers(p => p.map(x => x.id === m.id ? { ...x, alert_offerte: next } : x));
+    // allinea il membro corrente nel contesto condiviso (la Dashboard lo legge da lì)
+    if (m.id === currentMember?.id && currentMember) currentMember.alert_offerte = next;
+  };
+
   // ── stili comuni ──────────────────────────────────────────────────
   const statSt  = { background:T.bg, border:`1px solid ${T.border}`, padding:'10px 12px', borderRadius:T.radiusSm };
   const statLbl = { fontFamily:"var(--font-label)", fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', color:T.muted, marginBottom:6 };
@@ -342,6 +361,53 @@ export default function TeamPage() {
           )}
         </div>
       </div>
+
+      {/* ── AVVISI OFFERTE IN ATTESA ── */}
+      {canEditRoles && !selectedMember && (
+        <div className="asm-fade-in" style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:T.radius, backdropFilter:T.blurSm, WebkitBackdropFilter:T.blurSm, boxShadow:T.shadow, padding: isMobile ? '16px 16px' : '18px 24px' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:12, flexWrap:'wrap' }}>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:15, fontWeight:600, color:T.ink, letterSpacing:'-0.01em' }}>Avvisi offerte in attesa</div>
+              <div style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, marginTop:3, lineHeight:1.5 }}>
+                Chi è selezionato riceve un avviso quando un'offerta è ancora in attesa dopo 30 e dopo 60 giorni, e la vede in Dashboard.
+              </div>
+            </div>
+            <span style={{ fontFamily:"var(--font-label)", fontSize:10, color:T.muted, whiteSpace:'nowrap' }}>
+              {destinatariAlert.length === 0 ? "Nessun destinatario" : `${destinatariAlert.length} destinatar${destinatariAlert.length === 1 ? "io" : "i"}`}
+            </span>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {members.map(m => {
+              const on = m.alert_offerte === true;
+              const busy = savingAlert === m.id;
+              return (
+                <button key={m.id} type="button" role="switch" aria-checked={on} disabled={!!savingAlert}
+                  onClick={() => toggleAlertOfferte(m)}
+                  style={{
+                    display:'inline-flex', alignItems:'center', gap:8, padding:'5px 12px 5px 5px',
+                    borderRadius:99, cursor: savingAlert ? 'wait' : 'pointer',
+                    border:`1px solid ${on ? T.navy : T.borderMd}`,
+                    background: on ? `color-mix(in srgb, ${T.navy} 12%, transparent)` : 'transparent',
+                    color: on ? T.navy : T.ink, fontFamily:"var(--font-ui)", fontSize:12, fontWeight: on ? 600 : 500,
+                    opacity: busy ? 0.6 : 1, transition:'background 0.15s, border-color 0.15s',
+                  }}>
+                  <span style={{ width:22, height:22, borderRadius:'50%', background:m.color || avatarColor(m.user_name || m.user_email || ""), color:'#fff', fontSize:9, fontWeight:600, display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    {getInitials(m.user_name || m.user_email)}
+                  </span>
+                  <span style={{ whiteSpace:'nowrap' }}>{(m.user_name || m.user_email || "—").trim()}</span>
+                  <span aria-hidden="true" style={{
+                    width:16, height:16, borderRadius:'50%', flexShrink:0,
+                    border:`1px solid ${on ? T.navy : T.borderMd}`, background: on ? T.navy : 'transparent',
+                    display:'inline-flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    {on && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── BODY: griglia card (nessuna selezione) o split view ── */}
       {!selectedMember ? (

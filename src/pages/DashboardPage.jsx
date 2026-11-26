@@ -8,6 +8,9 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato, formatOre } from "../lib/utils";
 import SlidingTabs from "../components/SlidingTabs";
+import { offerteDaSollecitare } from "../lib/offerteAttesa";
+
+const AMBER = "#b45309";
 
 // ── HELPERS ──────────────────────────────────────────────────────
 function currency(value) {
@@ -54,6 +57,7 @@ const ICONS = {
   calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></>,
   arrow: <path d="M5 12h14M12 5l7 7-7 7" />,
+  alert: <><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></>,
 };
 
 function Icon({ name, size = 16, color }) {
@@ -300,6 +304,9 @@ export default function DashboardPage() {
   const [overdueTasks, setOverdueTasks]   = useState([]);
   const [tomorrowTasks, setTomorrowTasks] = useState([]);
   const [scadenzePratiche, setScadenzePratiche] = useState([]);
+  // Offerte "In attesa" da 30/60+ giorni — solo per chi è scelto in Team
+  const [offerteAttesa, setOfferteAttesa] = useState([]);
+  const riceveAlertOfferte = studioMember?.alert_offerte === true;
 
   const greeting    = useMemo(() => {
     const h = new Date().getHours();
@@ -434,6 +441,17 @@ export default function DashboardPage() {
             setScadenzePratiche(eventi);
           })(),
 
+          // 7. Offerte in attesa da 30/60+ giorni (destinatari scelti in Team)
+          (async () => {
+            if (!riceveAlertOfferte) { setOfferteAttesa([]); return; }
+            const { data: off } = await supabase
+              .from("offerte")
+              .select("id, numero_offerta, nome_offerta, cliente, project_name, data_offerta, created_at, stato, importo_totale, importo_offerta_base, archived, deleted_at")
+              .eq("studio", studioId).eq("stato", "offerta")
+              .eq("archived", false).is("deleted_at", null);
+            setOfferteAttesa(offerteDaSollecitare(off || []));
+          })(),
+
           // 6. Task di domani (o lunedì se weekend) — sempre personali
           (async () => {
             if (!memberId) return;
@@ -452,7 +470,7 @@ export default function DashboardPage() {
       setLoading(false);
     };
     init();
-  }, [todayStr, studioId, studioLoading, studioUser, studioMember, scope]);
+  }, [todayStr, studioId, studioLoading, studioUser, studioMember, scope, riceveAlertOfferte]);
 
   const toggleTaskStatus = async (task) => {
     const newStatus = task.status === "completed" ? "open" : "completed";
@@ -534,6 +552,48 @@ export default function DashboardPage() {
             valueColor={T.green} icon="euro" accent={T.green} ring={incassatoPct} />
         )}
       </div>
+
+      {/* Offerte in attesa da 30 / 60+ giorni */}
+      {riceveAlertOfferte && offerteAttesa.length > 0 && (
+        <Panel title="Offerte in attesa di risposta" icon="alert" accent={AMBER} count={offerteAttesa.length} isMobile={isMobile}>
+          <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: -6, marginBottom: 8 }}>
+            Ancora in attesa dopo 30 o 60 giorni dalla data dell'offerta
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {offerteAttesa.map(o => {
+              const c = o.soglia >= 60 ? T.red : AMBER;
+              const importo = Number(o.importo_totale || o.importo_offerta_base || 0);
+              return (
+                <div key={o.id} className="glass-row" role="button" tabIndex={0}
+                  onClick={() => navigate(`/offerte/${o.id}`)}
+                  onKeyDown={e => { if (e.key === "Enter") navigate(`/offerte/${o.id}`); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', cursor: 'pointer' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: c }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.ink, fontFamily: "var(--font-ui)", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {o.nome_offerta || "Offerta"}
+                      {o.numero_offerta && <span style={{ fontWeight: 400, color: T.muted }}> · n. {o.numero_offerta}</span>}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {o.cliente || o.project_name || '—'}
+                      {importo > 0 && ` · ${currency(importo)}`}
+                      {o.data_offerta && ` · del ${new Date(o.data_offerta).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })}`}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                    <span style={{
+                      fontFamily: "var(--font-label)", fontSize: 10, fontWeight: 600, color: c,
+                      background: `color-mix(in srgb, ${c} 14%, transparent)`,
+                      borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap',
+                    }}>{o.soglia}+ giorni</span>
+                    <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>{o.giorni} gg</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+      )}
 
       {/* Two columns */}
       <div className="glass-stagger" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 18 }}>
