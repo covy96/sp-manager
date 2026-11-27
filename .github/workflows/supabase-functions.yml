@@ -49,10 +49,10 @@ jobs:
       # (non un login utente), quindi vanno pubblicate senza verifica JWT come oggi.
       - name: check-scadenze
         if: steps.check.outputs.ready == 'true'
-        run: supabase functions deploy check-scadenze --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy check-scadenze --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
       - name: check-promemoria
         if: steps.check.outputs.ready == 'true'
-        run: supabase functions deploy check-promemoria --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+        run: supabase functions deploy check-promemoria --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
       - name: send-push-notification
         if: steps.check.outputs.ready == 'true'
-        run: supabase functions deploy send-push-notification --project-ref "$PROJECT_REF" --use-api
+        run: supabase functions deploy send-push-notification --project-ref "$PROJECT_REF" --use-api --yes

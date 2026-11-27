@@ -4,6 +4,7 @@ import { useStudio } from "../../hooks/useStudio";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
+import { createNotification } from "../../lib/notifications";
 
 const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true, task_promemoria: true,
@@ -136,6 +137,22 @@ export default function NotifichePage() {
     setPushEnabled(false); setPushLoading(false);
   };
 
+  const [testSending, setTestSending] = useState(false);
+  const handleTestPush = async () => {
+    if (!teamMember?.user_email || !teamMember?.studio) return;
+    setTestSending(true);
+    try {
+      await createNotification({
+        studioId: teamMember.studio, userEmail: teamMember.user_email,
+        type: "prova", title: "Notifica di prova",
+        message: "Se la vedi, le notifiche di ASM funzionano su questo dispositivo.",
+        link: "/impostazioni/notifiche",
+      });
+      showToast("Notifica di prova inviata: dovrebbe arrivare in pochi secondi.", "success");
+    } catch (e) { showToast("Errore: " + e.message); }
+    finally { setTestSending(false); }
+  };
+
   const handleTogglePref = async (key, value) => {
     if (!teamMember?.id) return; setSavingKey(key);
     const newPrefs = { ...prefs, [key]: value }; setPrefs(newPrefs);
@@ -198,6 +215,12 @@ export default function NotifichePage() {
         </div>
         {pushLoading && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 10 }}>{pushEnabled ? "Disattivazione..." : "Attivazione..."}</div>}
         {pushError && <div style={{ fontFamily: "var(--font-label)", fontSize: 11, color: T.red, marginTop: 10 }}>{pushError}</div>}
+        {pushEnabled && (
+          <button type="button" onClick={handleTestPush} disabled={testSending}
+            style={{ marginTop: 14, background: 'transparent', color: T.navy, border: `1px solid ${T.navy}`, borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '8px 14px', cursor: testSending ? 'default' : 'pointer', opacity: testSending ? 0.6 : 1 }}>
+            {testSending ? "Invio..." : "Invia notifica di prova"}
+          </button>
+        )}
       </div>
 
       {/* Lista preferenze */}
