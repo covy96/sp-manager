@@ -112,6 +112,7 @@ export default function NotifichePage() {
       if (token) {
         const prevToken = localStorage.getItem('asm-fcm-token');
         localStorage.setItem('asm-fcm-token', token);
+        localStorage.removeItem('asm-push-off');
         const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
         // Rimuove solo il vecchio token di QUESTO dispositivo, lascia intatti gli altri
         const existing = (tm?.fcm_tokens ?? []).filter(t => prevToken ? t !== prevToken : true);
@@ -133,6 +134,7 @@ export default function NotifichePage() {
       const updated = (tm?.fcm_tokens ?? []).filter(t => t !== currentToken);
       await supabase.from("team_members").update({ fcm_token: null, fcm_tokens: updated }).eq("id", teamMember.id);
       localStorage.removeItem('asm-fcm-token');
+      localStorage.setItem('asm-push-off', '1');
     }
     setPushEnabled(false); setPushLoading(false);
   };
