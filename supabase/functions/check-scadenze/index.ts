@@ -111,25 +111,11 @@ async function notify({
   // "Non disturbare": la notifica resta nello storico, ma non parte alcuna push.
   if (isMuted(member.notification_preferences)) return;
 
-  // Push FCM
-  const tokens: string[] = member.fcm_tokens?.length
-    ? member.fcm_tokens
-    : (member.fcm_token ? [member.fcm_token] : []);
+  // Push su tutti i dispositivi
+  await db.functions.invoke("send-push-notification", {
+    body: { user_email: userEmail, studio: studioId, title, message, link: link ?? "/", notification_id: notif.id },
+  }).catch((e: Error) => console.warn("[push]", e.message));
 
-  for (const fcm_token of tokens) {
-    await db.functions.invoke("send-push-notification", {
-      body: { fcm_token, title, message, link: link ?? "/", notification_id: notif.id },
-    }).catch((e: Error) => console.warn("[push FCM]", e.message));
-  }
-
-  if (member.web_push_subscription) {
-    await db.functions.invoke("send-push-notification", {
-      body: {
-        web_push_subscription: member.web_push_subscription,
-        title, body: message, link: link ?? "/", notification_id: notif.id,
-      },
-    }).catch((e: Error) => console.warn("[push Web]", e.message));
-  }
 }
 
 // ── 1. Task in scadenza oggi / scadute ───────────────────────────────────────

@@ -5,7 +5,9 @@ name: Pubblica funzioni notifiche
 #
 # Serve UN segreto nel repository (Settings → Secrets and variables → Actions):
 #   SUPABASE_ACCESS_TOKEN  token personale da https://supabase.com/dashboard/account/tokens
-# Senza il segreto il job viene saltato (non fallisce).
+# Le chiavi delle notifiche Web Push (VAPID) le crea il workflow la prima volta e le
+# salva solo nei segreti di Supabase: nessuno deve copiarle a mano.
+# Senza SUPABASE_ACCESS_TOKEN il job viene saltato (non fallisce).
 #
 # Si può lanciare anche a mano: tab Actions → "Pubblica funzioni notifiche" → Run workflow.
 
@@ -16,6 +18,7 @@ on:
       - "supabase/functions/check-scadenze/**"
       - "supabase/functions/check-promemoria/**"
       - "supabase/functions/send-push-notification/**"
+      - "database/web_push_dispositivi.sql"
       - ".github/workflows/supabase-functions.yml"
   workflow_dispatch:
 
@@ -45,6 +48,21 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         with:
           version: latest
+      - name: Chiavi Web Push (create solo la prima volta)
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          esistenti=$(supabase secrets list --project-ref "$PROJECT_REF")
+          if echo "$esistenti" | grep -q "VAPID_PRIVATE_KEY" && echo "$esistenti" | grep -q "VAPID_PUBLIC_KEY"; then
+            echo "Chiavi Web Push già presenti"
+          else
+            keys=$(npx -y web-push@3.6.7 generate-vapid-keys --json)
+            pub=$(echo "$keys" | jq -r .publicKey)
+            priv=$(echo "$keys" | jq -r .privateKey)
+            echo "::add-mask::$priv"
+            supabase secrets set --project-ref "$PROJECT_REF" \
+              "VAPID_PUBLIC_KEY=$pub" "VAPID_PRIVATE_KEY=$priv" "VAPID_SUBJECT=mailto:noreply@sp-manager.app" > /dev/null
+            echo "Chiavi Web Push create"
+          fi
       # check-scadenze e check-promemoria sono chiamate dal cron con il CRON_SECRET
       # (non un login utente), quindi vanno pubblicate senza verifica JWT come oggi.
       - name: check-scadenze
