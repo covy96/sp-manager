@@ -5,6 +5,10 @@
 // A differenza di check-scadenze (giornaliero, raggruppa le scadenze del giorno),
 // qui si notifica al minuto: quando l'ora impostata (Europe/Rome) è arrivata.
 // La deduplica del tipo notifica + task_id evita invii ripetuti nei run successivi.
+//
+// Qui c'è anche il promemoria "compila le ore": dal lunedì al venerdì, all'orario
+// scelto in Impostazioni → Notifiche (default 18:00), avvisa chi oggi non ha ancora
+// inserito ore nel timesheet. Solo per chi ha usato il timesheet negli ultimi 30 giorni.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -174,6 +178,69 @@ async function checkTaskPromemoria() {
   }
 }
 
+// ── Promemoria "compila le ore" ──────────────────────────────────────────────
+const ORE_ORARIO_DEFAULT = "18:00";
+const ORE_GIORNI_ATTIVITA = 30;
+
+function romeWeekday(): number {
+  const wd = new Intl.DateTimeFormat("en-GB", { timeZone: ROME_TZ, weekday: "short" }).format(new Date());
+  return _dayIdx[wd] ?? 0;
+}
+
+function isoMenoGiorni(dateISO: string, n: number): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10);
+}
+
+async function checkOreDaCompilare() {
+  const wd = romeWeekday();
+  if (wd === 0 || wd === 6) return; // solo lun–ven
+  const { dateISO, minutes: nowMin } = romeNow();
+
+  // Chi ha usato il timesheet di recente (evita di avvisare chi non lo usa)
+  const { data: recenti, error } = await db
+    .from("timesheet")
+    .select("team_member, date")
+    .gte("date", isoMenoGiorni(dateISO, ORE_GIORNI_ATTIVITA))
+    .lte("date", dateISO)
+    .is("deleted_at", null)
+    .not("team_member", "is", null)
+    .limit(10000);
+  if (error) { console.error("[ore]", error.message); return; }
+  if (!recenti?.length) return;
+
+  const conOreOggi = new Set<string>();
+  const attivi = new Set<string>();
+  for (const r of recenti) {
+    attivi.add(r.team_member);
+    if (String(r.date).slice(0, 10) === dateISO) conOreOggi.add(r.team_member);
+  }
+  const daAvvisare = [...attivi].filter((id) => !conOreOggi.has(id));
+  if (!daAvvisare.length) return;
+
+  const { data: members } = await db
+    .from("team_members")
+    .select("id, user_email, studio, active, notification_preferences")
+    .in("id", daAvvisare);
+
+  for (const m of (members ?? [])) {
+    if (!m.user_email || !m.studio || m.active === false) continue;
+    const prefs = m.notification_preferences ?? {};
+    if (prefs.ore_da_compilare === false) continue;
+    const orario = /^\d{1,2}:\d{2}$/.test(prefs.ore_orario ?? "") ? prefs.ore_orario : ORE_ORARIO_DEFAULT;
+    if (nowMin < _hmToMin(orario)) continue;
+    await notify({
+      studioId: m.studio,
+      userEmail: m.user_email,
+      type: "ore_da_compilare",
+      title: "Compila le ore",
+      message: "Oggi non hai ancora inserito ore nel timesheet.",
+      link: "/timesheet",
+      todayISO: dateISO,
+    });
+  }
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 serve(async (req) => {
   if (req.method === "GET") return new Response("check-promemoria OK", { status: 200 });
@@ -188,6 +255,7 @@ serve(async (req) => {
 
   try {
     await checkTaskPromemoria();
+    await checkOreDaCompilare();
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" },
     });
