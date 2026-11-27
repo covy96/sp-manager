@@ -45,10 +45,13 @@ async function fetchIn(build, col, ids, size = 150) {
 const dedupe = rows => [...new Map(rows.map(r => [r.id, r])).values()];
 
 // ── UI condivisa (stesso stile della pagina) ──────────────────────
-function Kpi({ label, value, sub, color, T }) {
+function Kpi({ label, value, sub, color, T, action }) {
   return (
     <div style={{ background: T.surface, backdropFilter: T.blurSm, WebkitBackdropFilter: T.blurSm, border: `1px solid ${T.border}`, borderRadius: T.radius, boxShadow: T.shadow, padding: "16px 20px", minWidth: 0 }}>
-      <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 8 }}>
+        <div style={{ fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: T.muted, flex: 1, minWidth: 0 }}>{label}</div>
+        {action}
+      </div>
       <div style={{ fontFamily: "var(--font-ui)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.03em", color: color || T.ink, lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted, marginTop: 8 }}>{sub}</div>}
     </div>
@@ -90,11 +93,19 @@ const griglia = (isMobile, min = 160) => ({ display: "grid", gridTemplateColumns
 const tooltipStyle = T => ({ background: T.surface, border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, fontFamily: "var(--font-label)", fontSize: 11 });
 
 // ══ COMMESSE E INCASSI ════════════════════════════════════════════
+const PERIODO_KEY = "asm_stat_periodo_incassi";
+const PERIODI = [
+  { v: 1, label: "1 mese" }, { v: 3, label: "3 mesi" }, { v: 6, label: "6 mesi" },
+  { v: 12, label: "12 mesi" }, { v: 0, label: "Tutto" },
+];
 export function StatCommesseIncassi({ T, studioId, commesse, offerte, anno, isMobile }) {
   const navigate = useNavigate();
   const st = useStili(T);
   const [dati, setDati] = useState(null);
   const [vistaFatt, setVistaFatt] = useState("cliente");
+  // Periodo della card "Da incassare": 3 mesi di default, scelta ricordata
+  const [periodoInc, setPeriodoIncState] = useState(() => { try { const v = localStorage.getItem(PERIODO_KEY); return v != null && PERIODI.some(p => String(p.v) === v) ? Number(v) : 3; } catch { return 3; } });
+  const setPeriodoInc = v => { setPeriodoIncState(v); try { localStorage.setItem(PERIODO_KEY, String(v)); } catch { /* storage non disponibile */ } };
 
   useEffect(() => {
     if (!studioId) return;
@@ -118,6 +129,15 @@ export function StatCommesseIncassi({ T, studioId, commesse, offerte, anno, isMo
 
   if (!dati) return <Caricamento T={T} />;
   const periodo = anno === 0 ? "tutti gli anni" : String(anno);
+  const daIncassare = periodoInc === 0
+    ? previsti.totMesi + previsti.oltre + previsti.senzaScad
+    : previsti.mesi.slice(0, periodoInc).reduce((s, b) => s + b.importo, 0);
+  const selPeriodo = (
+    <select value={periodoInc} onChange={e => setPeriodoInc(Number(e.target.value))} aria-label="Periodo"
+      style={{ fontFamily: "var(--font-label)", fontSize: 10, padding: "2px 4px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, borderRadius: T.radiusSm, outline: "none", cursor: "pointer", flexShrink: 0 }}>
+      {PERIODI.map(p => <option key={p.v} value={p.v}>{p.label}</option>)}
+    </select>
+  );
   const chartPrev = [
     ...(previsti.totScaduto > 0 ? [{ label: "Scaduti", importo: previsti.totScaduto, scaduto: true }] : []),
     ...previsti.mesi,
@@ -131,7 +151,7 @@ export function StatCommesseIncassi({ T, studioId, commesse, offerte, anno, isMo
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={griglia(isMobile)}>
-        <Kpi T={T} label="Da incassare (3 mesi)" value={eur(previsti.prossimi3)} sub="proforma in scadenza" />
+        <Kpi T={T} label="Da incassare" action={selPeriodo} value={eur(daIncassare)} sub={periodoInc === 0 ? "tutte le proforma non scadute" : `proforma in scadenza, ${periodoInc === 1 ? "questo mese" : `prossimi ${periodoInc} mesi`}`} />
         <Kpi T={T} label="Scaduto" value={eur(previsti.totScaduto)} color={previsti.totScaduto > 0 ? T.red : T.ink} sub={`${previsti.scadute.length} proforma`} />
         <Kpi T={T} label="Rate da fatturare" value={eur(previsti.totDaFatturare)} sub={`${previsti.nRateDaFatturare} rate, senza proforma`} />
         <Kpi T={T} label="Giorni medi d'incasso" value={gg(tempi.mediaIncasso)} sub={`dall'emissione · ${periodo}`} />
