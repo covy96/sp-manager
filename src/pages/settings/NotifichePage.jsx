@@ -10,11 +10,14 @@ const DEFAULT_PREFS = {
   nuovo_membro: true, proforma_in_scadenza: true, commessa_residuo_60gg: true,
   nota_condivisa: true, nota_aggiornata: true,
   offerta_attesa_30: true, offerta_attesa_60: true,
+  ore_da_compilare: true,
 };
+const ORE_ORARIO_DEFAULT = "18:00";
 
 const NOTIF_ITEMS = [
   { key: "task_assegnata",        emoji: "🔔", label: "Task assegnata a me" },
   { key: "task_promemoria",       emoji: "⏰", label: "Promemoria task all'ora impostata" },
+  { key: "ore_da_compilare",      emoji: "🕒", label: "Promemoria compila le ore (lun–ven)", hasTime: true },
   { key: "task_scadenza_oggi",    emoji: "📅", label: "Task con scadenza oggi" },
   { key: "task_scaduta",          emoji: "⚠️", label: "Task scaduta non completata" },
   { key: "nuovo_membro",          emoji: "👤", label: "Nuovo membro aggiunto allo studio" },
@@ -147,6 +150,12 @@ export default function NotifichePage() {
     await supabase.from("team_members").update({ notification_preferences: newPrefs }).eq("id", teamMember.id);
   };
 
+  const handleOreOrario = async value => {
+    if (!teamMember?.id) return;
+    const newPrefs = { ...prefs, ore_orario: value }; setPrefs(newPrefs);
+    await supabase.from("team_members").update({ notification_preferences: newPrefs }).eq("id", teamMember.id);
+  };
+
   // Silenzio programmato (fascia ricorrente settimanale)
   const quiet = { ...DEFAULT_QUIET, ...(prefs.quiet_hours ?? {}) };
   const saveQuiet = async patch => {
@@ -200,7 +209,15 @@ export default function NotifichePage() {
           <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderBottom: `0.5px solid ${T.border}` }}>
             <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: T.ink, marginBottom: item.hasDays && prefs[item.key] ? 8 : 0 }}>{item.label}</div>
+              <div style={{ fontSize: 13, color: T.ink, marginBottom: (item.hasDays || item.hasTime) && prefs[item.key] ? 8 : 0 }}>{item.label}</div>
+              {item.hasTime && prefs[item.key] && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>Alle</span>
+                  <input type="time" value={prefs.ore_orario || ORE_ORARIO_DEFAULT} onChange={e => e.target.value && handleOreOrario(e.target.value)}
+                    style={{ padding: '4px 8px', border: `1px solid ${T.borderMd}`, borderRadius: T.radiusSm, background: T.surface, color: T.ink, fontSize: 12, fontFamily: "var(--font-label)", outline: 'none' }} />
+                  <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>se oggi non hai ancora inserito ore</span>
+                </div>
+              )}
               {item.hasDays && prefs[item.key] && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontFamily: "var(--font-label)", fontSize: 10, color: T.muted }}>Avvisami</span>

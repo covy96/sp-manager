@@ -1,0 +1,58 @@
+name: Pubblica funzioni notifiche
+
+# Come nell'app Giulia (nido): a ogni merge su main che tocca le funzioni delle
+# notifiche, GitHub le pubblica da solo su Supabase. Niente più deploy a mano.
+#
+# Serve UN segreto nel repository (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  token personale da https://supabase.com/dashboard/account/tokens
+# Senza il segreto il job viene saltato (non fallisce).
+#
+# Si può lanciare anche a mano: tab Actions → "Pubblica funzioni notifiche" → Run workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/check-scadenze/**"
+      - "supabase/functions/check-promemoria/**"
+      - "supabase/functions/send-push-notification/**"
+      - ".github/workflows/supabase-functions.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Pubblica su Supabase
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: rwysezttfgdicpvymeiw
+    steps:
+      - name: Controlla il segreto
+        id: check
+        run: |
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Segreto SUPABASE_ACCESS_TOKEN non impostato: pubblicazione saltata."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+      - uses: supabase/setup-cli@v1
+        if: steps.check.outputs.ready == 'true'
+        with:
+          version: latest
+      # check-scadenze e check-promemoria sono chiamate dal cron con il CRON_SECRET
+      # (non un login utente), quindi vanno pubblicate senza verifica JWT come oggi.
+      - name: check-scadenze
+        if: steps.check.outputs.ready == 'true'
+        run: supabase functions deploy check-scadenze --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+      - name: check-promemoria
+        if: steps.check.outputs.ready == 'true'
+        run: supabase functions deploy check-promemoria --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+      - name: send-push-notification
+        if: steps.check.outputs.ready == 'true'
+        run: supabase functions deploy send-push-notification --project-ref "$PROJECT_REF" --use-api
