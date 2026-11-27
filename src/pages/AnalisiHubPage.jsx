@@ -18,6 +18,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import { supabase } from "../lib/supabase";
 import { calcolaIncassato } from "../lib/utils";
 import SlidingTabs from "../components/SlidingTabs";
+import { StatCommesseIncassi, StatOre, StatCantieri } from "../components/StatisticheSezioni";
 
 // ── helpers ──────────────────────────────────────────────────────
 function currency(v, decimals = 0) {
@@ -985,7 +986,7 @@ function TabEconomica({ T, studioId, navigate, anno: annoFiltro, setAnno: setAnn
 // tempo medio di accettazione (proxy: data_commessa − data_offerta, solo
 // accettate, perché non esiste una data di esito salvata) e viste per
 // mese e per cliente.
-function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa, studioId, isOwner, T, anno, isMobile }) {
+function StatOfferte({ offerte, commesse, vociTemplate, incassatoPerCommessa, studioId, isOwner, T, anno, isMobile }) {
   const mono = { fontFamily: "var(--font-label)" };
   const media = arr => (arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0);
   const imp   = o => Number(o.importo_offerta_base) || 0;
@@ -1535,6 +1536,28 @@ function TabStatistiche({ offerte, commesse, vociTemplate, incassatoPerCommessa,
   );
 }
 
+// ── TAB 4: Statistiche (sezioni) ──────────────────────────────────
+const STAT_SEZIONI = [
+  { key: "offerte",  label: "Offerte" },
+  { key: "incassi",  label: "Commesse e incassi" },
+  { key: "ore",      label: "Ore" },
+  { key: "cantieri", label: "Cantieri" },
+];
+function TabStatistiche({ sezione, setSezione, ...props }) {
+  const { T, studioId, commesse, offerte, anno, isMobile } = props;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={isMobile ? { overflowX: "auto", margin: "0 -16px", padding: "0 16px", scrollbarWidth: "none" } : undefined}>
+        <SlidingTabs tabs={STAT_SEZIONI} active={sezione} onChange={setSezione} style={isMobile ? { minWidth: "max-content" } : undefined} />
+      </div>
+      {sezione === "offerte"  && <StatOfferte {...props} />}
+      {sezione === "incassi"  && <StatCommesseIncassi T={T} studioId={studioId} commesse={commesse} offerte={offerte} anno={anno} isMobile={isMobile} />}
+      {sezione === "ore"      && <StatOre T={T} studioId={studioId} commesse={commesse} isMobile={isMobile} />}
+      {sezione === "cantieri" && <StatCantieri T={T} studioId={studioId} isMobile={isMobile} />}
+    </div>
+  );
+}
+
 // ── MAIN PAGE ─────────────────────────────────────────────────────
 const HUB_TABS = [
   { key: "offerte",     label: "Offerte"      },
@@ -1563,6 +1586,8 @@ export default function AnalisiHubPage() {
   const [searchEco, setSearchEco]       = useState("");
   const [anniEco, setAnniEco]           = useState([0]);
   const [costiEcoPanel, setCostiEcoPanel] = useState(false);
+  const [statSezione, setStatSezioneState] = useState(() => { try { return localStorage.getItem("asm_stat_sezione") || "offerte"; } catch { return "offerte"; } });
+  const setStatSezione = k => { setStatSezioneState(k); try { localStorage.setItem("asm_stat_sezione", k); } catch { /* storage non disponibile */ } };
 
   useEffect(() => {
     if (studioLoading || !studioId) return;
@@ -1594,7 +1619,8 @@ export default function AnalisiHubPage() {
   }, [commesse]);
 
   const anniOfferte = useMemo(() => {
-    const s = new Set(offerte.map(o => new Date(o.data_offerta || o.created_at).getFullYear()).filter(Boolean));
+    const s = new Set([new Date().getFullYear()]);
+    offerte.forEach(o => { const y = new Date(o.data_offerta || o.created_at).getFullYear(); if (y) s.add(y); });
     return [...s].sort((a, b) => b - a);
   }, [offerte]);
 
@@ -1622,7 +1648,7 @@ export default function AnalisiHubPage() {
       {/* Tabs + filtri */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <SlidingTabs tabs={permissions.isOwner ? HUB_TABS : HUB_TABS.filter(t => t.key !== "economica")} active={activeTab} onChange={setActiveTab} />
-        {(activeTab === "offerte" || activeTab === "statistiche") && (
+        {(activeTab === "offerte" || (activeTab === "statistiche" && (statSezione === "offerte" || statSezione === "incassi"))) && (
           <select value={annoOfferte} onChange={e => setAnnoOfferte(Number(e.target.value))}
             style={{ marginLeft: isMobile ? 0 : "auto", fontFamily: "var(--font-label)", fontSize: 11, padding: "6px 10px", border: `1px solid ${T.border}`, background: T.surface, color: T.ink, cursor: "pointer", outline: "none", borderRadius: T.radiusSm }}>
             <option value={0}>Tutti gli anni</option>
@@ -1652,7 +1678,7 @@ export default function AnalisiHubPage() {
         <TabOfferte offerte={offerte} commessaByNumero={commessaByNumero} vociTemplate={vociTemplate} T={T} navigate={navigate} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "statistiche" && (
-        <TabStatistiche offerte={offerte} commesse={commesse} vociTemplate={vociTemplate} incassatoPerCommessa={incassatoPerCommessa} studioId={studioId} isOwner={permissions.isOwner} T={T} anno={annoOfferte} isMobile={isMobile} />
+        <TabStatistiche sezione={statSezione} setSezione={setStatSezione} offerte={offerte} commesse={commesse} vociTemplate={vociTemplate} incassatoPerCommessa={incassatoPerCommessa} studioId={studioId} isOwner={permissions.isOwner} T={T} anno={annoOfferte} isMobile={isMobile} />
       )}
       {activeTab === "commesse" && (
         <TabCommesse commesse={commesse} incassatoPerCommessa={incassatoPerCommessa} permissions={permissions} T={T} navigate={navigate} isMobile={isMobile} />
