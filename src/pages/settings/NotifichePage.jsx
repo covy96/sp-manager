@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useToast } from "../../contexts/ToastContext";
 import { createNotification } from "../../lib/notifications";
+import { enablePush, disablePush, isPushActive } from "../../lib/webPush";
 
 const DEFAULT_PREFS = {
   task_assegnata: true, task_scadenza_oggi: true, task_scaduta: true, task_promemoria: true,
@@ -67,9 +68,7 @@ export default function NotifichePage() {
   const [savingKey, setSavingKey]       = useState(null);
 
   useEffect(() => {
-    if (typeof Notification !== 'undefined') {
-      setPushEnabled(Notification.permission === "granted");
-    }
+    isPushActive().then(setPushEnabled);
   }, []);
 
   useEffect(() => {
@@ -80,7 +79,6 @@ export default function NotifichePage() {
       if (data) {
         setPrefs({ ...DEFAULT_PREFS, ...(data.notification_preferences ?? {}) });
         if (data.notification_preferences?.proforma_days) setProformaDays(data.notification_preferences.proforma_days);
-        if (data.fcm_token && Notification.permission === "granted") setPushEnabled(true);
       }
       setPrefsLoading(false);
     };
@@ -88,54 +86,15 @@ export default function NotifichePage() {
   }, [teamMember?.id]);
 
   const handleEnablePush = async () => {
-    if (typeof Notification === 'undefined') {
-      setPushError('Le notifiche push non sono supportate su questo browser.');
-      return;
-    }
-    try {
-      setPushLoading(true); setPushError("");
-      let perm = Notification.permission;
-      if (perm === "default") perm = await Notification.requestPermission();
-      if (perm !== "granted") { showToast("Abilita le notifiche nelle impostazioni del browser.", "warning"); setPushLoading(false); return; }
-      await Promise.race([navigator.serviceWorker.register("/firebase-messaging-sw.js"), new Promise((_,r) => setTimeout(() => r(new Error("SW timeout")), 5000))]);
-      let richiediFCMToken;
-      try {
-        const fb = await import('../../lib/firebase');
-        richiediFCMToken = fb.richiediFCMToken;
-      } catch(e) {
-        console.warn('Firebase non disponibile:', e);
-      }
-      const token = richiediFCMToken
-        ? await Promise.race([richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY), new Promise((_,r) => setTimeout(() => r(new Error("Token timeout")), 10000))])
-        : null;
-      if (!teamMember?.id) { setPushError("Utente non trovato."); setPushLoading(false); return; }
-      if (token) {
-        const prevToken = localStorage.getItem('asm-fcm-token');
-        localStorage.setItem('asm-fcm-token', token);
-        localStorage.removeItem('asm-push-off');
-        const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
-        // Rimuove solo il vecchio token di QUESTO dispositivo, lascia intatti gli altri
-        const existing = (tm?.fcm_tokens ?? []).filter(t => prevToken ? t !== prevToken : true);
-        const updated = existing.includes(token) ? existing : [...existing, token];
-        // Azzera la subscription WebPush: questo dispositivo usa FCM, altrimenti
-        // riceverebbe la push due volte (una via FCM, una via WebPush).
-        const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated, web_push_subscription: null }).eq("id", teamMember.id);
-        if (error) setPushError("Errore: " + error.message); else setPushEnabled(true);
-      }
-    } catch (e) { showToast("Errore: " + e.message); }
-    finally { setPushLoading(false); }
+    setPushLoading(true); setPushError("");
+    const err = await enablePush(teamMember?.id);
+    if (err) setPushError(err); else setPushEnabled(true);
+    setPushLoading(false);
   };
 
   const handleDisablePush = async () => {
     setPushLoading(true); setPushError("");
-    if (teamMember?.id) {
-      const currentToken = localStorage.getItem('asm-fcm-token');
-      const { data: tm } = await supabase.from("team_members").select("fcm_tokens").eq("id", teamMember.id).single();
-      const updated = (tm?.fcm_tokens ?? []).filter(t => t !== currentToken);
-      await supabase.from("team_members").update({ fcm_token: null, fcm_tokens: updated }).eq("id", teamMember.id);
-      localStorage.removeItem('asm-fcm-token');
-      localStorage.setItem('asm-push-off', '1');
-    }
+    await disablePush(teamMember?.id);
     setPushEnabled(false); setPushLoading(false);
   };
 

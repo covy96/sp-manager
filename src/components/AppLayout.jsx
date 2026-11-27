@@ -11,7 +11,7 @@ import { getUserStudios, supabase } from "../lib/supabase";
 import GuidaApp from "./GuidaApp";
 import { getSavedAccounts, updateSavedAccountStudio } from "../lib/accounts";
 import { getUnreadNotifications, markAllRead, markOneRead, isMuted } from "../lib/notifications";
-import { messaging, onMessage } from "../lib/firebase";
+import { refreshPush } from "../lib/webPush";
 import AsmSeal from "./AsmSeal";
 import MobileLayout from "./MobileLayout";
 
@@ -197,50 +197,14 @@ export default function AppLayout({ session, children }) {
     }
   }, []);
 
-  // Tiene aggiornato il token push di questo dispositivo: i token FCM cambiano o
-  // scadono, e prima serviva spegnere e riaccendere le notifiche per ricevere di nuovo.
-  // Se l'utente le ha spente dall'app (asm-push-off) non le riattiva.
+  // Notifiche push (Web Push standard, come nido): all'apertura rinnova l'iscrizione
+  // di questo dispositivo, così non serve spegnere e riaccendere le notifiche.
   const pushRefreshTried = useRef(false);
   useEffect(() => {
-    if (pushRefreshTried.current || !teamMember?.id || !messaging) return;
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    if (localStorage.getItem("asm-push-off")) return;
+    if (pushRefreshTried.current || !teamMember?.id) return;
     pushRefreshTried.current = true;
-    (async () => {
-      try {
-        const { richiediFCMToken } = await import("../lib/firebase");
-        const token = await richiediFCMToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
-        if (!token) return;
-        const prevToken = localStorage.getItem("asm-fcm-token");
-        const { data: tm } = await supabase.from("team_members").select("fcm_token, fcm_tokens").eq("id", teamMember.id).single();
-        const existing = tm?.fcm_tokens ?? [];
-        if (prevToken === token && existing.includes(token)) return; // già a posto
-        const updated = [...existing.filter(t => t !== prevToken && t !== token), token];
-        const { error } = await supabase.from("team_members").update({ fcm_token: token, fcm_tokens: updated }).eq("id", teamMember.id);
-        if (!error) localStorage.setItem("asm-fcm-token", token);
-      } catch (e) {
-        console.warn("[push] aggiornamento token non riuscito:", e?.message);
-      }
-    })();
+    refreshPush(teamMember.id).catch(e => console.warn("[push] rinnovo non riuscito:", e?.message));
   }, [teamMember?.id]);
-
-  // Notifiche in foreground (app aperta) — usa SW per bypassare la soppressione macOS
-  useEffect(() => {
-    if (!messaging) return;
-    return onMessage(messaging, (payload) => {
-      // Messaggi data-only: titolo e corpo arrivano in payload.data
-      const { title, body } = payload.data ?? {};
-      const link = payload.data?.link || '/';
-      if (Notification.permission !== 'granted') return;
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title ?? 'SP Manager', {
-          body: body ?? '',
-          icon: '/icon-192.png',
-          data: { url: link },
-        });
-      });
-    });
-  }, []);
 
   // Carica notifiche non lette
   useEffect(() => {

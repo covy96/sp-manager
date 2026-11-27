@@ -106,20 +106,10 @@ export async function createNotification({ studioId, userEmail, type, title, mes
   // "Non disturbare": la notifica resta nello storico, ma non parte alcuna push.
   if (isMuted(member?.notification_preferences)) return;
 
-  // Invia a tutti i dispositivi FCM registrati
-  const tokens = (member?.fcm_tokens?.length ? member.fcm_tokens : member?.fcm_token ? [member.fcm_token] : []);
-  tokens.forEach(fcm_token => {
-    supabase.functions.invoke("send-push-notification", {
-      body: { fcm_token, title, message, link: link || "/", notification_id: notif?.id || "" },
-    }).catch(e => console.warn("Push send error (FCM):", e.message));
-  });
-
-  // Invia via Web Push nativo (Safari, Firefox)
-  if (member?.web_push_subscription) {
-    supabase.functions.invoke("send-push-notification", {
-      body: { web_push_subscription: member.web_push_subscription, title, body: message, link: link || "/", notification_id: notif?.id || "" },
-    }).catch(e => console.warn("Push send error (WebPush):", e.message));
-  }
+  // Push su tutti i dispositivi del destinatario (Web Push come nido + eventuali token vecchi)
+  supabase.functions.invoke("send-push-notification", {
+    body: { user_email: userEmail, studio: studioId, title, message, link: link || "/", notification_id: notif?.id || "" },
+  }).catch(e => console.warn("Push send error:", e.message));
 }
 
 /**
